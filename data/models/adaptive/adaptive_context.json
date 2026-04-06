@@ -1,0 +1,21 @@
+{
+  "version": 0,
+  "updated_at": "2026-04-06T10:46:47.080370+00:00",
+  "best_thresholds": {
+    "meta_model_min_confidence": 0.6,
+    "min_reward_risk": 2.0,
+    "forecast_confidence_min": 0.5,
+    "fta_score_min": 0.0
+  },
+  "recent_performance": {
+    "n_sessions": 0,
+    "total_trades": 0,
+    "win_rate": 0.0,
+    "total_return_pct": 0.0,
+    "max_drawdown_pct": 0.0,
+    "sharpe_ratio": 0.0
+  },
+  "regime_stats": {},
+  "feature_importance": {},
+  "per_ticker_stats": {}
+}

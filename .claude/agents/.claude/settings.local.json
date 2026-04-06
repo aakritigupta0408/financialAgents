@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(python -m pytest tests/test_phase1_contracts.py -v)",
+      "Bash(python:*)",
+      "Bash(pip index:*)",
+      "Bash(pip show:*)",
+      "Bash(pytest scripts/smoke_backtest.py --co -q)",
+      "Bash(pytest -x tests/test_phase6_backtest.py::test_backtest_runs_without_error -s)",
+      "Bash(pytest tests/test_phase6_backtest.py::test_summary_prints -s --no-header -rN)",
+      "Bash(pip list:*)",
+      "mcp__claude_ai_Alpha_Vantage__TOOL_LIST",
+      "mcp__claude_ai_Alpha_Vantage__TOOL_GET",
+      "mcp__claude_ai_Alpha_Vantage__TOOL_CALL",
+      "Bash(grep -v \"^$\")",
+      "Bash(ls /Users/aakritigupta/trading-system/tests/test_phase1* /Users/aakritigupta/trading-system/tests/test_phase12*)",
+      "Bash(grep -v \"compiled using\\\\|cannot be run in\\\\|may crash\\\\|downgrade\\\\|upgrade\\\\|modules must\\\\|pybind\\\\|user of\\\\|We expect\\\\|some modules\\\\|Traceback\\\\|^  File\\\\|ImportError\\\\|multiarray\\\\|numpy.core\\\\|_ARRAY_API\\\\|bottleneck\\\\|numexpr\\\\|from pandas\\\\|from pyarrow\\\\|import pyarrow\\\\|from .move\\\\|^$\")",
+      "Bash(pytest tests/test_phase15.py::TestPhase15Runner::test_phase15_report_prints -v -s --tb=short)",
+      "Bash(pytest tests/test_phase15.py -v --tb=short --capture=fd)",
+      "Bash(pytest -x --tb=short --capture=no -q tests/test_phase15.py::TestPhase15Runner::test_phase15_report_prints)"
+    ]
+  }
+}

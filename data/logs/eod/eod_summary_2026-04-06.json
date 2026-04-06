@@ -1,0 +1,11 @@
+[
+  {
+    "ticker": "AAPL",
+    "session_date": "2026-04-06",
+    "n_trades": 1,
+    "daily_pnl": 1200.0,
+    "model_retrained": false,
+    "model_improved": false,
+    "status": "ok"
+  }
+]

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trading System Architecture</title>
+  <script src="https://unpkg.com/cytoscape@3.25.2/dist/cytoscape.min.js"></script>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #f7f8fb; color: #222; }
+    header { padding: 16px 24px; background: #1f3d7a; color: #fff; }
+    header h1 { margin: 0; font-size: 1.75rem; }
+    header p { margin: 8px 0 0; opacity: 0.85; }
+    .container { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; }
+    .pane { border-radius: 12px; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow: hidden; }
+    .pane h2 { margin: 0; padding: 16px 20px; background: #e5edf8; font-size: 1.1rem; }
+    .graph { width: 100%; min-height: 420px; }
+    .info { padding: 16px 20px; border-top: 1px solid #eee; background: #fafbff; line-height: 1.6; }
+    .info strong { color: #1f3d7a; }
+    .toolbar { padding: 12px 20px; display: flex; gap: 12px; align-items: center; background: #f2f6ff; border-top: 1px solid #e6ebff; }
+    .toolbar button { border: none; padding: 10px 14px; border-radius: 8px; background: #1f3d7a; color: #fff; cursor: pointer; transition: background .2s; }
+    .toolbar button:hover { background: #0f2557; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Trading System Architecture</h1>
+    <p>Interact with the system, module, and unit-level graphs by zooming, panning, and clicking nodes.</p>
+  </header>
+
+  <div class="container">
+    <section class="pane">
+      <h2>System Level</h2>
+      <div id="systemGraph" class="graph"></div>
+      <div class="toolbar">
+        <button onclick="resetView(systemCy)">Reset View</button>
+        <button onclick="fitGraph(systemCy)">Fit Graph</button>
+      </div>
+      <div class="info" id="systemInfo">Click a node to see details.</div>
+    </section>
+
+    <section class="pane">
+      <h2>Module Level</h2>
+      <div id="moduleGraph" class="graph"></div>
+      <div class="toolbar">
+        <button onclick="resetView(moduleCy)">Reset View</button>
+        <button onclick="fitGraph(moduleCy)">Fit Graph</button>
+      </div>
+      <div class="info" id="moduleInfo">Click a node to see details.</div>
+    </section>
+
+    <section class="pane">
+      <h2>Unit Level</h2>
+      <div id="unitGraph" class="graph"></div>
+      <div class="toolbar">
+        <button onclick="resetView(unitCy)">Reset View</button>
+        <button onclick="fitGraph(unitCy)">Fit Graph</button>
+      </div>
+      <div class="info" id="unitInfo">Click a node to see details.</div>
+    </section>
+  </div>
+
+  <script>
+    const systemNodes = [
+      { data: { id: 'api', label: 'Alpha Vantage API' } },
+      { data: { id: 'store', label: 'Local Parquet Store' } },
+      { data: { id: 'engine', label: 'Trading Engine' } },
+      { data: { id: 'users', label: 'Users' } },
+      { data: { id: 'outputs', label: 'Outputs' } }
+    ];
+    const systemEdges = [
+      { data: { source: 'api', target: 'engine', label: 'fetch' } },
+      { data: { source: 'store', target: 'engine', label: 'cache/persist' } },
+      { data: { source: 'users', target: 'engine', label: 'configure/monitor' } },
+      { data: { source: 'engine', target: 'outputs', label: 'emit' } },
+      { data: { source: 'outputs', target: 'users', label: 'analyze' } }
+    ];
+
+    const moduleNodes = [
+      { data: { id: 'data', label: 'DATA' } },
+      { data: { id: 'feature', label: 'FEATURES' } },
+      { data: { id: 'predict', label: 'PREDICTION' } },
+      { data: { id: 'signal', label: 'SIGNAL' } },
+      { data: { id: 'execute', label: 'EXECUTION' } }
+    ];
+    const moduleEdges = [
+      { data: { source: 'data', target: 'feature' } },
+      { data: { source: 'feature', target: 'predict' } },
+      { data: { source: 'predict', target: 'signal' } },
+      { data: { source: 'signal', target: 'execute' } }
+    ];
+
+    const unitNodes = [
+      { data: { id: 'provider', label: 'Data Provider' } },
+      { data: { id: 'fta', label: 'FTA Filter' } },
+      { data: { id: 'meta', label: 'Meta Model' } },
+      { data: { id: 'risk', label: 'Risk Gate' } }
+    ];
+    const unitEdges = [
+      { data: { source: 'provider', target: 'fta' } },
+      { data: { source: 'fta', target: 'meta' } },
+      { data: { source: 'meta', target: 'risk' } }
+    ];
+
+    function createCy(container, nodes, edges, infoId) {
+      const cy = cytoscape({
+        container: document.getElementById(container),
+        elements: { nodes, edges },
+        style: [
+          { selector: 'node', style: { 'background-color': '#2e86de', label: 'data(label)', color: '#fff', 'text-valign': 'center', 'text-halign': 'center', 'font-size': 12, 'width': 140, 'height': 60, 'text-wrap': 'wrap', 'text-max-width': 130 } },
+          { selector: 'edge', style: { 'curve-style': 'bezier', 'target-arrow-shape': 'triangle', 'line-color': '#a2d5f2', 'target-arrow-color': '#a2d5f2', 'label': 'data(label)', 'font-size': 10, 'text-rotation': 'autorotate', 'text-margin-y': -8 } },
+          { selector: ':selected', style: { 'background-color': '#1b4f72', 'line-color': '#07689f', 'target-arrow-color': '#07689f' } }
+        ],
+        layout: { name: 'dagre', rankDir: 'LR', nodeSep: 70, rankSep: 100 },
+        userZoomingEnabled: true,
+        userPanningEnabled: true,
+        wheelSensitivity: 0.2,
+        selectionType: 'single'
+      });
+
+      cy.on('tap', 'node', (event) => {
+        const node = event.target;
+        const info = document.getElementById(infoId);
+        info.innerHTML = `<strong>${node.data('label')}</strong><br/>ID: ${node.id()}<br/>Description: ${getDescription(node.id())}`;
+      });
+
+      cy.on('tap', (event) => {
+        if (event.target === cy) {
+          document.getElementById(infoId).innerHTML = 'Click a node to see details.';
+        }
+      });
+
+      return cy;
+    }
+
+    function getDescription(id) {
+      const descriptions = {
+        api: 'External OHLCV market data service.',
+        store: 'Local Parquet-based persistence store for cached historical data.',
+        engine: 'Core trading loop that builds signals, validates them, and executes trades.',
+        users: 'Researcher/Trader/Analyst interacting with the system.',
+        outputs: 'Equity, trade journal, and risk/report outputs.',
+        data: 'Fetch, cache, and assemble raw market data.',
+        feature: 'Compute structured market signals for each bar.',
+        predict: 'Generate directional forecasts with confidence.',
+        signal: 'Build trade candidates and validate them.',
+        execute: 'Open and manage positions while updating portfolio state.',
+        provider: 'Component responsible for data provision and caching.',
+        fta: 'Structural trade filter ensuring pattern validity.',
+        meta: 'ML scorer assigning confidence to trades.',
+        risk: 'Hard risk gate for position sizing and exposure checks.'
+      };
+      return descriptions[id] || 'No description available.';
+    }
+
+    function resetView(cy) {
+      cy.reset();
+    }
+    function fitGraph(cy) {
+      cy.fit(50);
+    }
+
+    const systemCy = createCy('systemGraph', systemNodes, systemEdges, 'systemInfo');
+    const moduleCy = createCy('moduleGraph', moduleNodes, moduleEdges, 'moduleInfo');
+    const unitCy = createCy('unitGraph', unitNodes, unitEdges, 'unitInfo');
+
+    fitGraph(systemCy);
+    fitGraph(moduleCy);
+    fitGraph(unitCy);
+  </script>
+</body>
+</html>
