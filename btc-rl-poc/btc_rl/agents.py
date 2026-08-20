@@ -196,6 +196,11 @@ class DistDQNAgent:
         z = max(-3.0, min(3.0, z))
         return min(range(len(self.bins)), key=lambda i: abs(self.bins[i] - z))
 
+    def probs(self, x) -> list[float]:
+        """The predicted delta distribution (full support incl. tail bins)."""
+        with self.torch.no_grad():
+            return self.torch.softmax(self._logits(x), dim=-1).tolist()
+
     def learn_dist(self, x, z: float) -> None:
         t = self.torch.tensor([self.target_bin(z)])
         loss = self.loss_fn(self._logits(x).unsqueeze(0), t)

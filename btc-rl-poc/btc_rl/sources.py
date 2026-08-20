@@ -170,6 +170,32 @@ def fetch_recent_trades(limit: int = 1000) -> list[dict]:
         return []
 
 
+def fetch_kalshi_btc15() -> dict | None:
+    """Current Robinhood/Kalshi 'BTC price up in next 15 mins?' market.
+
+    Public no-auth endpoint; these contracts settle on 60-second averages of
+    CF Benchmarks' BRTI — the index our composite approximates. Prices are
+    in cents (probability x 100).
+    """
+    try:
+        resp = _session.get(
+            "https://api.elections.kalshi.com/trade-api/v2/markets",
+            params={"limit": 1, "status": "open",
+                    "series_ticker": "KXBTC15M"}, timeout=8)
+        resp.raise_for_status()
+        ms = resp.json().get("markets") or []
+        if not ms:
+            return None
+        m = ms[0]
+        return {"ticker": m["ticker"], "title": m.get("title"),
+                "strike": m.get("floor_strike"),
+                "close_time": m.get("close_time"),
+                "yes_bid": m.get("yes_bid"), "yes_ask": m.get("yes_ask"),
+                "last_price": m.get("last_price")}
+    except Exception:
+        return None
+
+
 def fetch_brti_composite() -> dict | None:
     """BRTI-style live BTC price: volume-weighted across CME CF BRTI
     constituent exchanges that expose open, no-auth tickers.

@@ -40,6 +40,7 @@ from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, OFI_DIM, TREND_DIM,
                        trend_feature_vector)
 from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
+                      fetch_kalshi_btc15,
                       fetch_deribit_mark, fetch_fear_greed, fetch_mempool_fee,
                       fetch_okx_funding_rate, fetch_range, fetch_recent_trades)
 
@@ -214,6 +215,32 @@ def _band_map(ledger: list[dict]) -> dict:
         if len(v) >= 20:
             out[k] = (int(v[int(0.1 * len(v))]),
                       int(v[min(len(v) - 1, int(0.9 * len(v)))]))
+    return out
+
+
+def _pm_view(arms: dict, feat: dict, snap: dict | None,
+             brti: dict | None) -> dict | None:
+    """The Robinhood/Kalshi BTC-15-min market + our model's P(up) beside it.
+
+    Their contract: BRTI 60s-avg at window close >= at window open. Our
+    estimate: t8-h15's predicted delta distribution, thresholded at the
+    strike (approximate — full-15-min sigma vs the remaining window)."""
+    m = fetch_kalshi_btc15()
+    if not m:
+        return None
+    out = dict(m)
+    out["brti_now"] = brti["price"] if brti else None
+    try:
+        agents = arms.get("t8-h15")
+        agent = agents.get(15) if agents else None
+        base_price = out["brti_now"] or feat["price"]
+        if agent is not None and m.get("strike") and base_price:
+            z0 = (m["strike"] - base_price) / _horizon_sigma(feat, 15)
+            probs = agent.probs(_context(VARIANTS["t8-h15"], feat, snap))
+            out["model_p_up"] = round(sum(
+                pb for k, pb in zip(agent.bins, probs) if k >= z0), 3)
+    except Exception:
+        pass
     return out
 
 
@@ -761,6 +788,7 @@ def run(once: bool = False) -> None:
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"],
                 "brti": brti,
+                "pm": _pm_view(arms, feat, snap, brti),
                 "live_features": snap,
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],

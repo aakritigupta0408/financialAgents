@@ -163,6 +163,23 @@ footer { color: var(--muted); font-size: 12.5px; }
   </div>
 </section>
 
+<section>
+  <h2>Prediction market — BTC 15-min up/down
+    <span class="arm-tag agg">Robinhood via Kalshi · settles on CF BRTI</span></h2>
+  <p class="sub muted">The live contract asks: will the 60-second BRTI average at window
+  close be at least the window-open average? Market odds beside our own P(up) from t8's
+  predicted delta distribution (thresholded at the strike; approximate). Our BRTI-style
+  composite tracks the settlement index.</p>
+  <div class="statusbar" style="margin-top:10px">
+    <div class="stat"><div class="k">Window closes</div><div class="bignum" id="pm-close">–</div></div>
+    <div class="stat"><div class="k">Strike (window open)</div><div class="bignum" id="pm-strike">–</div></div>
+    <div class="stat"><div class="k">BRTI-style now</div><div class="bignum" id="pm-brti">–</div></div>
+    <div class="stat"><div class="k">Market P(up)</div><div class="bignum" id="pm-mkt">–</div></div>
+    <div class="stat"><div class="k">Our model P(up)</div><div class="bignum" id="pm-us">–</div></div>
+    <div class="stat"><div class="k">Ticker</div><div class="bignum" id="pm-tkr" style="font-size:14px">–</div></div>
+  </div>
+</section>
+
 <div class="range-bar">
   <span class="muted">window:</span>
   <button class="chip" data-span="3600">1h</button>
@@ -628,6 +645,21 @@ async function poll() {
           + " · ±$10: " + (100 * consScored.filter(p => p.abs_err <= 10).length / consScored.length).toFixed(0)
           + "% (" + consScored.length + ")"
         : "collecting…";
+      const pm = status.pm;
+      if (pm) {
+        document.getElementById("pm-close").textContent = pm.close_time
+          ? fmtTime(Date.parse(pm.close_time) / 1000) + " PST" : "–";
+        document.getElementById("pm-strike").textContent = pm.strike
+          ? "$" + pm.strike.toLocaleString() : "–";
+        document.getElementById("pm-brti").textContent = pm.brti_now
+          ? "$" + Math.round(pm.brti_now).toLocaleString() : "–";
+        const mkt = pm.last_price ?? ((pm.yes_bid + pm.yes_ask) / 2);
+        document.getElementById("pm-mkt").textContent =
+          mkt != null && !isNaN(mkt) ? mkt + "%" : "–";
+        document.getElementById("pm-us").textContent =
+          pm.model_p_up != null ? (100 * pm.model_p_up).toFixed(0) + "%" : "–";
+        document.getElementById("pm-tkr").textContent = pm.ticker || "–";
+      }
       document.getElementById("retrains").textContent = status.retrains_this_session;
       document.getElementById("qupd").textContent =
         (status.online_updates_session ?? 0).toLocaleString();
