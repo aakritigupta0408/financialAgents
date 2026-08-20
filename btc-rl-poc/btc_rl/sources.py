@@ -106,6 +106,28 @@ def fetch_okx_funding_rate() -> float | None:
         return None
 
 
+def fetch_deribit_mark() -> float | None:
+    """Deribit BTC-PERPETUAL mark price (for perp-vs-spot basis)."""
+    try:
+        resp = _session.get("https://www.deribit.com/api/v2/public/ticker"
+                            "?instrument_name=BTC-PERPETUAL", timeout=6)
+        resp.raise_for_status()
+        return float(resp.json()["result"]["mark_price"])
+    except Exception:
+        return None
+
+
+def fetch_mempool_fee() -> float | None:
+    """mempool.space fastest fee (sat/vB) — on-chain congestion."""
+    try:
+        resp = _session.get("https://mempool.space/api/v1/fees/recommended",
+                            timeout=6)
+        resp.raise_for_status()
+        return float(resp.json()["fastestFee"])
+    except Exception:
+        return None
+
+
 def fetch_brti_composite() -> dict | None:
     """BRTI-style live BTC price: volume-weighted across CME CF BRTI
     constituent exchanges that expose open, no-auth tickers.

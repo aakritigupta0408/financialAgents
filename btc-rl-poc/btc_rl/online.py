@@ -28,10 +28,15 @@ from pathlib import Path
 from . import config
 from .agents import LinUCBAgent, TabularQAgent
 from .env import build_episodes, reward
-from .features import compute_features, discretize, feature_vector
-from .sources import fetch_brti_composite, fetch_fear_greed, fetch_range
+from .features import (LIVE_DIM, compute_features, discretize, feature_vector,
+                       live_feature_vector)
+from .sources import (fetch_brti_composite, fetch_deribit_mark,
+                      fetch_fear_greed, fetch_mempool_fee,
+                      fetch_okx_funding_rate, fetch_range)
 
 FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
+SNAP_FILE_NAME = "live_snapshots.jsonl"  # streamed-feature history (t3)
+SNAP_MAX_AGE_S = 600   # a snapshot older than 10 min doesn't describe a slot
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 PRED_LOG = RESULTS_DIR / "prediction_log.jsonl"
@@ -53,6 +58,11 @@ VARIANTS: dict[str, dict] = {
     "t2-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb"},
     "t2-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb"},
     "t2-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb"},
+    # TREATMENT 3: LinUCB + 5 live-streamed features (perp basis, funding,
+    # cross-exchange dispersion, composite gap, mempool fee). t2 untouched.
+    "t3-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb", "live": True},
+    "t3-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb", "live": True},
+    "t3-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb", "live": True},
 }
 
 # Betting rules: each committed prediction stakes $10 from a shared $1,000
@@ -82,13 +92,41 @@ def _bandit_path(variant: str) -> Path:
     return RESULTS_DIR / f"linucb_{variant}.json"
 
 
-def _load_bandits(variant: str, horizons: list[int]) -> dict[int, LinUCBAgent]:
+def _load_bandits(variant: str, horizons: list[int],
+                  dim: int) -> dict[int, LinUCBAgent]:
     path = _bandit_path(variant)
     if path.exists():
         raw = json.loads(path.read_text())
-        return {h: LinUCBAgent.from_dict(raw[f"h{h}"]) for h in horizons
-                if f"h{h}" in raw} or {h: LinUCBAgent(FEATURE_DIM) for h in horizons}
-    return {h: LinUCBAgent(FEATURE_DIM) for h in horizons}
+        loaded = {h: LinUCBAgent.from_dict(raw[f"h{h}"]) for h in horizons
+                  if f"h{h}" in raw and raw[f"h{h}"]["dim"] == dim}
+        if loaded:
+            return loaded
+    return {h: LinUCBAgent(dim) for h in horizons}
+
+
+def _load_snapshots() -> list[dict]:
+    path = RESULTS_DIR / SNAP_FILE_NAME
+    if not path.exists():
+        return []
+    out = []
+    for line in path.read_text().splitlines():
+        try:
+            out.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return out[-3000:]
+
+
+def _nearest_snap(snaps: list[dict], ts: int) -> dict | None:
+    best = None
+    for s in snaps:  # snaps are appended in time order
+        if s["ts"] <= ts:
+            best = s
+        else:
+            break
+    if best and ts - best["ts"] <= SNAP_MAX_AGE_S:
+        return best
+    return None
 
 
 def _load_agents(variant: str, horizons: list[int]) -> dict[int, TabularQAgent]:
@@ -140,7 +178,8 @@ def _save_ledger(rows: list[dict]) -> None:
 
 def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 bars_upto: list[dict], fng, slot_ts: int,
-                horizons: list[int], bet_start_ts: float) -> list[dict]:
+                horizons: list[int], bet_start_ts: float,
+                live_x: list[float] | None = None) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts."""
     feat = compute_features(bars_upto, fng)
     state = discretize(feat)
@@ -149,7 +188,7 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
         agent = agents[horizon]
         row_extra: dict = {}
         if isinstance(agent, LinUCBAgent):
-            x = feature_vector(feat)
+            x = feature_vector(feat) + (live_x or [])
             delta = config.ACTION_DELTAS[agent.select(x)]
             row_extra["x"] = [round(v, 5) for v in x]
         else:
@@ -224,10 +263,12 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
 
 def run(once: bool = False) -> None:
     RESULTS_DIR.mkdir(exist_ok=True)
-    arms = {v: (_load_bandits(v, spec["horizons"])
+    arms = {v: (_load_bandits(v, spec["horizons"],
+                              FEATURE_DIM + (LIVE_DIM if spec.get("live") else 0))
                 if spec.get("agent") == "linucb"
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
+    snaps = _load_snapshots()
     cold_bandits = {v for v, spec in VARIANTS.items()
                     if spec.get("agent") == "linucb"
                     and all(a.total_pulls == 0 for a in arms[v].values())}
@@ -260,14 +301,41 @@ def run(once: bool = False) -> None:
             by_ts = {b["ts"]: b for b in bars}
             fng = fetch_fear_greed().get(now.date().isoformat())
 
-            # 0. cold-start: warm a fresh bandit up on recent history so its
-            #    first real bets aren't pure exploration
+            # 0a. stream a live-feature snapshot (t3's extra context)
+            brti = fetch_brti_composite()
+            spot = bars[-1]["close"] if bars else None
+            mark = fetch_deribit_mark()
+            snap = {
+                "ts": now_ts,
+                "funding": fetch_okx_funding_rate(),
+                "basis_bp": ((mark - spot) / spot * 1e4
+                             if mark and spot else None),
+                "disp_bp": None, "gap_bp": None,
+                "fee": fetch_mempool_fee(),
+            }
+            if brti and spot:
+                cons_prices = list(brti["constituents"].values())
+                mean_p = sum(cons_prices) / len(cons_prices)
+                var = sum((p - mean_p) ** 2 for p in cons_prices) / len(cons_prices)
+                snap["disp_bp"] = (var ** 0.5) / mean_p * 1e4
+                snap["gap_bp"] = (brti["price"] - spot) / spot * 1e4
+            snaps.append(snap)
+            snaps = snaps[-3000:]
+            with (RESULTS_DIR / SNAP_FILE_NAME).open("a") as f:
+                f.write(json.dumps(snap) + "\n")
+
+            # 0b. cold-start: warm a fresh bandit up on recent history so its
+            #     first real bets aren't pure exploration
             if cold_bandits:
                 warm_eps = build_episodes({"warm": bars}, {"warm": None})
                 for v in sorted(cold_bandits):
+                    is_live = VARIANTS[v].get("live")
                     for h, agent in arms[v].items():
                         for e in (e for e in warm_eps if e.horizon_min == h):
                             x = feature_vector(e.features)
+                            if is_live:
+                                x = x + live_feature_vector(
+                                    _nearest_snap(snaps, e.minute_ts))
                             a = agent.select(x)
                             pred = e.price_now + config.ACTION_DELTAS[a]
                             r = (BET_PAYOUT - BET_STAKE
@@ -291,8 +359,11 @@ def run(once: bool = False) -> None:
                     upto = [b for b in bars if b["ts"] <= slot_ts]
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
+                    live_x = (live_feature_vector(_nearest_snap(snaps, slot_ts))
+                              if spec.get("live") else None)
                     rows = _predict_at(variant, arms[variant], upto, fng,
-                                       slot_ts, spec["horizons"], bet_start_ts)
+                                       slot_ts, spec["horizons"], bet_start_ts,
+                                       live_x=live_x)
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
@@ -306,21 +377,24 @@ def run(once: bool = False) -> None:
                               if r["variant"] == "consensus"}
             by_slot: dict[int, dict] = {}
             for r in ledger:
-                if r["horizon"] == 5 and r["variant"] in ("h5", "t2-h5") \
+                if r["horizon"] == 5 and r["variant"] in ("h5", "t2-h5", "t3-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             for slot_ts, votes in sorted(by_slot.items()):
-                if len(votes) < 2:
+                if "h5" not in votes or "t2-h5" not in votes:
                     continue
                 base = votes["h5"]
-                polled = sorted([votes["h5"]["pred"], votes["t2-h5"]["pred"],
-                                 int(base["price_now"])])
+                polled = sorted([v["pred"] for v in votes.values()]
+                                + [int(base["price_now"])])
+                mid = len(polled) // 2
+                final = (polled[mid] if len(polled) % 2
+                         else (polled[mid - 1] + polled[mid]) // 2)
                 ledger.append({
                     "variant": "consensus", "made_ts": slot_ts,
                     "target_ts": slot_ts + 300, "horizon": 5,
                     "price_now": base["price_now"],
-                    "pred": int(polled[1]),  # median of the three voters
-                    "delta": int(polled[1]) - int(base["price_now"]),
+                    "pred": int(final),  # median of all voters
+                    "delta": int(final) - int(base["price_now"]),
                     "votes": polled, "state": None,
                     "actual": None, "abs_err": None, "hit": None, "bet": 0,
                 })
@@ -403,7 +477,8 @@ def run(once: bool = False) -> None:
             STATUS.write_text(json.dumps({
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"],
-                "brti": fetch_brti_composite(),
+                "brti": brti,
+                "live_features": snap,
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],
                                  "agent": s.get("agent", "tabular"),

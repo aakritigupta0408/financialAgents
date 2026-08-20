@@ -87,6 +87,27 @@ def feature_vector(feat: dict) -> list[float]:
     ]
 
 
+LIVE_DIM = 5
+
+
+def live_feature_vector(snap: dict | None) -> list[float]:
+    """Streamed market-microstructure features, normalized to ~O(1).
+
+    All centered so a missing snapshot (None) legitimately reads as neutral:
+      funding rate (x1e4), perp basis bp (/10), cross-exchange dispersion
+      bp (/5), BRTI-composite-vs-Coinbase gap bp (/5), mempool fee (/10).
+    """
+    if not snap:
+        return [0.0] * LIVE_DIM
+    return [
+        (snap.get("funding") or 0.0) * 1e4,
+        (snap.get("basis_bp") or 0.0) / 10,
+        (snap.get("disp_bp") or 0.0) / 5,
+        (snap.get("gap_bp") or 0.0) / 5,
+        (snap.get("fee") or 0.0) / 10,
+    ]
+
+
 def _bucket3(x: float, lo: float, hi: float) -> int:
     """3-way bucket: 0 below lo, 1 between, 2 above hi."""
     if x < lo:
