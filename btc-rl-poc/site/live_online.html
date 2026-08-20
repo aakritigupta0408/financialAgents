@@ -78,6 +78,12 @@ section { background: var(--surface); border: 1px solid var(--border);
   border-radius: 2px; vertical-align: 3px; background: none; }
 .sw.ring { background: transparent; border: 2px solid var(--muted); }
 svg { width: 100%; height: auto; display: block; }
+.chart-box svg { cursor: crosshair; touch-action: none; }
+.chart-box.panning svg { cursor: grabbing; }
+svg .xhair { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 3;
+  opacity: .55; pointer-events: none; }
+.range-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  margin: 4px 0 2px; font-size: 13px; color: var(--ink-2); }
 svg text { font: 11.5px system-ui, sans-serif; fill: var(--muted);
   font-variant-numeric: tabular-nums; }
 svg .gridline { stroke: var(--grid); stroke-width: 1; }
@@ -153,6 +159,16 @@ footer { color: var(--muted); font-size: 12.5px; }
   </div>
 </section>
 
+<div class="range-bar">
+  <span class="muted">window:</span>
+  <button class="chip" data-span="3600">1h</button>
+  <button class="chip on" data-span="10800">3h</button>
+  <button class="chip" data-span="21600">6h</button>
+  <button class="chip" data-span="0">all</button>
+  <button class="chip on" id="follow-btn">● live</button>
+  <span class="muted">scroll to zoom · drag to pan</span>
+</div>
+
 <div id="horizon-sections"></div>
 
 <section>
@@ -210,16 +226,28 @@ document.getElementById("horizon-sections").innerHTML = `
   </table></div>
 </section>`).join("");
 
-function frame(prices, preds) {
+// shared zoom/pan state across all three graphs
+const view = { span: 10800, end: null };   // end=null → follow latest
+const chartMeta = {};                       // per-horizon px↔ts mapping
+
+function frame(prices, preds, h) {
   const W = 920, H = 280, L = 62, R = 16, T = 12, B = 28;
-  const t0 = prices[0].ts;
-  const t1 = Math.max(prices[prices.length - 1].ts, ...preds.map(p => p.target_ts), t0 + 1);
+  const dataMax = Math.max(prices[prices.length - 1].ts,
+    ...preds.map(p => p.target_ts));
+  const dataMin = prices[0].ts;
+  const end = view.end ?? dataMax;
+  const span = view.span || (dataMax - dataMin);
+  const t0 = Math.max(dataMin, end - span), t1 = end;
+  prices = prices.filter(p => p.ts >= t0 && p.ts <= t1);
+  preds = preds.filter(p => p.target_ts >= t0 && p.target_ts <= t1);
+  if (h != null) chartMeta[h] = { t0, t1, L, R, W, dataMin, dataMax };
+  if (!prices.length) prices = [{ ts: t0, c: 0 }];
   let ymin = Infinity, ymax = -Infinity;
   for (const p of prices) { ymin = Math.min(ymin, p.c); ymax = Math.max(ymax, p.c); }
   for (const p of preds) { ymin = Math.min(ymin, p.pred); ymax = Math.max(ymax, p.pred); }
-  const pad = (ymax - ymin) * 0.08 || 20;
+  const pad = (ymax - ymin) * 0.08 || 20;   // y auto-scales to the visible window
   ymin -= pad; ymax += pad;
-  const X = ts => L + (ts - t0) / (t1 - t0) * (W - L - R);
+  const X = ts => L + (ts - t0) / Math.max(1, t1 - t0) * (W - L - R);
   const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
   let g = "";
   for (let i = 0; i <= 4; i++) {
@@ -227,12 +255,14 @@ function frame(prices, preds) {
     g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
          `<text x="${L - 8}" y="${y + 4}" text-anchor="end">$${Math.round(v).toLocaleString()}</text>`;
   }
-  const hourStep = Math.max(1, Math.ceil((t1 - t0) / 3600 / 7));
-  for (let ts = Math.ceil(t0 / 3600) * 3600; ts <= t1; ts += 3600 * hourStep)
+  const stepS = [300, 900, 1800, 3600, 7200, 14400].find(x => (t1 - t0) / x <= 8)
+    || 14400;
+  for (let ts = Math.ceil(t0 / stepS) * stepS; ts <= t1; ts += stepS)
     g += `<text x="${X(ts)}" y="${H - 8}" text-anchor="middle">${fmtTime(ts)}</text>`;
   g += `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`;
   g += `<path class="actual" d="${prices.map((p, i) =>
     `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("")}"/>`;
+  g += `<line class="xhair" id="xhair-h${h}" x1="-9" y1="${T}" x2="-9" y2="${H - B}"/>`;
   return { W, H, X, Y, g };
 }
 
@@ -254,7 +284,9 @@ const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
-  const f = frame(prices, preds);
+  const f = frame(prices, preds, h);
+  const m = chartMeta[h];
+  preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
   // NB: colors go in style="", not presentation attributes — var() is
   // invalid in SVG attributes and silently renders stroke:none / black.
@@ -420,6 +452,90 @@ function renderArmCards(preds) {
     <dt>Online</dt><dd>${armOnline(preds, a.variants)}</dd>
   </dl>`).join("");
 }
+
+
+// ── zoom / pan / crosshair (containers persist across redraws) ─────────────
+function pxToTs(h, clientX, svg) {
+  const m = chartMeta[h]; if (!m) return null;
+  const r = svg.getBoundingClientRect();
+  const xv = (clientX - r.left) / r.width * m.W;
+  return m.t0 + (xv - m.L) / (m.W - m.L - m.R) * (m.t1 - m.t0);
+}
+function setFollow(on) {
+  if (on) view.end = null;
+  document.getElementById("follow-btn").classList.toggle("on", view.end == null);
+}
+function bindChart(h) {
+  const box = document.getElementById(`chart-h${h}`);
+  box.classList.add("chart-box");
+  let dragX = null, moved = false;
+  box.addEventListener("wheel", e => {
+    const svg = box.querySelector("svg"); if (!svg || !latest) return;
+    e.preventDefault();
+    const m = chartMeta[h], ts = pxToTs(h, e.clientX, svg);
+    const f = e.deltaY > 0 ? 1.25 : 0.8;
+    const span = Math.min(Math.max((m.t1 - m.t0) * f, 900), 86400);
+    view.span = span;
+    view.end = Math.min(ts + (m.t1 - ts) * f, m.dataMax);
+    if (view.end >= m.dataMax - 60) view.end = null;
+    setFollow(false); draw();
+  }, { passive: false });
+  box.addEventListener("mousedown", e => { dragX = e.clientX; moved = false;
+    box.classList.add("panning"); });
+  window.addEventListener("mouseup", () => { dragX = null;
+    box.classList.remove("panning"); });
+  box.addEventListener("mousemove", e => {
+    const svg = box.querySelector("svg"); if (!svg || !latest) return;
+    const m = chartMeta[h]; if (!m) return;
+    if (dragX != null) {
+      const r = svg.getBoundingClientRect();
+      const dt = (e.clientX - dragX) / r.width * (m.t1 - m.t0);
+      if (Math.abs(e.clientX - dragX) > 2) moved = true;
+      dragX = e.clientX;
+      view.span = m.t1 - m.t0;
+      view.end = Math.min((view.end ?? m.dataMax) - dt, m.dataMax);
+      if (view.end >= m.dataMax - 60) view.end = null;
+      setFollow(false); draw(); return;
+    }
+    // crosshair + readout across every horizon graph (synced)
+    const ts = pxToTs(h, e.clientX, svg);
+    for (const hh of T1_HORIZONS) {
+      const mm = chartMeta[hh], ln = document.getElementById(`xhair-h${hh}`);
+      if (!mm || !ln) continue;
+      const x = mm.L + (ts - mm.t0) / (mm.t1 - mm.t0) * (mm.W - mm.L - mm.R);
+      ln.setAttribute("x1", x.toFixed(1)); ln.setAttribute("x2", x.toFixed(1));
+    }
+    const { prices, preds } = latest;
+    const near = prices.reduce((b, p2) =>
+      Math.abs(p2.ts - ts) < Math.abs(b.ts - ts) ? p2 : b, prices[0]);
+    const slot = Math.round(ts / 300) * 300;
+    const calls = preds.filter(p => p.horizon === h && p.target_ts === slot)
+      .map(p => `${armOf(p)} $${p.pred.toLocaleString()}`).join(" · ");
+    const tip = document.getElementById("tip");
+    tip.textContent = `${fmtTime(near.ts)} PST — actual $${Math.round(near.c).toLocaleString()}`
+      + (calls ? `  |  ${calls}` : "");
+    tip.style.opacity = 1;
+    tip.style.left = Math.min(e.clientX + 14, innerWidth - 320) + "px";
+    tip.style.top = (e.clientY + 16) + "px";
+  });
+  box.addEventListener("mouseleave", () => {
+    document.getElementById("tip").style.opacity = 0;
+    for (const hh of T1_HORIZONS) {
+      const ln = document.getElementById(`xhair-h${hh}`);
+      if (ln) { ln.setAttribute("x1", -9); ln.setAttribute("x2", -9); }
+    }
+  });
+}
+for (const h of T1_HORIZONS) bindChart(h);
+document.querySelectorAll(".range-bar .chip[data-span]").forEach(el =>
+  el.addEventListener("click", () => {
+    view.span = +el.dataset.span || 0; view.end = null;
+    document.querySelectorAll(".range-bar .chip[data-span]")
+      .forEach(c => c.classList.toggle("on", c === el));
+    setFollow(true); draw();
+  }));
+document.getElementById("follow-btn").addEventListener("click",
+  () => { setFollow(true); draw(); });
 
 async function poll() {
   try {
