@@ -13,6 +13,7 @@
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
   --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #4a3aa7;
   --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
 }
 @media (prefers-color-scheme: dark) {
@@ -23,6 +24,7 @@
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
     --series-3: #199e70; --series-4: #c98500;
+    --series-5: #9085e9;
     --good-text: #0ca30c;
   }
 }
@@ -33,6 +35,7 @@
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
   --series-3: #199e70; --series-4: #c98500;
+  --series-5: #9085e9;
   --good-text: #0ca30c;
 }
 * { box-sizing: border-box; }
@@ -51,6 +54,7 @@ h2 { margin: 0 0 2px; font-size: 17px; }
 .arm-tag.agg { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 13%, transparent); }
 .arm-tag.t3 { color: var(--series-2); background: color-mix(in srgb, var(--series-2) 13%, transparent); }
 .arm-tag.t4 { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 13%, transparent); }
+.arm-tag.t5 { color: var(--series-5); background: color-mix(in srgb, var(--series-5) 13%, transparent); }
 .consensus-num { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
 section { background: var(--surface); border: 1px solid var(--border);
@@ -187,7 +191,11 @@ footer { color: var(--muted); font-size: 12.5px; }
       multi-scale alignment, range position), order-book features (top-20 bid/ask
       imbalance, spread), and an <b>abstain arm</b> — reward 0 for not betting — so it
       learns to decline negative-EV slots instead of bleeding $10 into high-volatility
-      noise.</dd>
+      noise. <b>Treatment 5</b>: t4's context plus a frozen open-source fintech LLM
+      trained on Bitcoin text — <b>CryptoBERT</b> scores live CoinDesk/Cointelegraph/
+      Decrypt headlines into sentiment, 1h sentiment momentum, and news intensity;
+      the RL policy still makes every decision (FinRL-contest pattern: LLM perceives,
+      RL decides).</dd>
     <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
       81 discrete states × 21 actions = 1,701 Q-values per horizon per arm.</dd>
     <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
@@ -216,6 +224,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [5, 15, 30];
 const armOf = p => p.variant === "consensus" ? "agg"
+  : (p.variant || "").startsWith("t5") ? "t5"
   : (p.variant || "").startsWith("t4") ? "t4"
   : (p.variant || "").startsWith("t3") ? "t3"
   : (p.variant || "").startsWith("t2") ? "t2" : "ctl";
@@ -239,6 +248,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-2)"></span>t2 (LinUCB)</span>
     <span><span class="sw" style="background:var(--series-3)"></span>t3 (+ live streams)</span>
     <span><span class="sw" style="background:var(--series-4)"></span>t4 (+ trend/book/abstain)</span>
+    <span><span class="sw" style="background:var(--series-5)"></span>t5 (+ CryptoBERT news)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-h${h}"></div>
@@ -289,7 +299,8 @@ function tipText(p) {
 }
 
 const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
-                    t3: "var(--series-3)", t4: "var(--series-4)" };
+                    t3: "var(--series-3)", t4: "var(--series-4)",
+                    t5: "var(--series-5)" };
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -299,14 +310,15 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "t2", "t3", "t4"]) {
+    for (const arm of ["ctl", "t2", "t3", "t4", "t5"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
         .sort((a, b) => a.target_ts - b.target_ts);
       const dash = arm === "t2" ? ' stroke-dasharray="6 5"'
         : arm === "t3" ? ' stroke-dasharray="2 4"'
-        : arm === "t4" ? ' stroke-dasharray="10 3 2 3"' : "";
+        : arm === "t4" ? ' stroke-dasharray="10 3 2 3"'
+        : arm === "t5" ? ' stroke-dasharray="1 3"' : "";
       if (scored.length) {
         g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
           `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
@@ -332,6 +344,7 @@ function ledgerRows(preds) {
     const hz = `<td>${arm === "t2" ? '<span class="arm-tag treatment">t2</span>'
       : arm === "t3" ? '<span class="arm-tag t3">t3</span>'
       : arm === "t4" ? '<span class="arm-tag t4">t4</span>'
+      : arm === "t5" ? '<span class="arm-tag t5">t5</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     const bet = p.abstained ? '<span class="pill miss">abstained</span>'
@@ -358,7 +371,7 @@ function stats(preds) {
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}` +
       (bets.length ? ` · bets ${wins}/${bets.length} won, P&L ${pnl >= 0 ? "+" : "−"}$${Math.abs(pnl)}` : "");
   };
-  return [one("ctl"), one("t2"), one("t3"), one("t4")].join("   |   ");
+  return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5")].join("   |   ");
 }
 
 function draw() {

@@ -28,9 +28,11 @@ from pathlib import Path
 from . import config
 from .agents import LinUCBAgent, TabularQAgent
 from .env import build_episodes, reward
-from .features import (BOOK_DIM, LIVE_DIM, TREND_DIM, book_feature_vector,
-                       compute_features, discretize, feature_vector,
-                       live_feature_vector, trend_feature_vector)
+from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, TREND_DIM,
+                       book_feature_vector, compute_features, discretize,
+                       feature_vector, live_feature_vector,
+                       llm_feature_vector, trend_feature_vector)
+from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_deribit_mark, fetch_fear_greed, fetch_mempool_fee,
                       fetch_okx_funding_rate, fetch_range)
@@ -73,13 +75,28 @@ VARIANTS: dict[str, dict] = {
                "live": True, "trend": True, "book": True, "abstain": True},
     "t4-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
                "live": True, "trend": True, "book": True, "abstain": True},
+    # TREATMENT 5 = t4 + a frozen open fintech LLM trained on Bitcoin text
+    # (ElKulako/cryptobert) as the perception module: live headline sentiment,
+    # its momentum, and news intensity join the context. The RL policy (this
+    # LinUCB + abstain, betting-P&L reward) stays the decision maker — the
+    # FinRL-Contest "LLM-engineered signals + RL agent" pattern.
+    "t5-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
+              "live": True, "trend": True, "book": True, "abstain": True,
+              "llm": True},
+    "t5-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "abstain": True,
+               "llm": True},
+    "t5-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "abstain": True,
+               "llm": True},
 }
 
 
 def _ctx_dim(spec: dict) -> int:
     return (FEATURE_DIM + (TREND_DIM if spec.get("trend") else 0)
             + (LIVE_DIM if spec.get("live") else 0)
-            + (BOOK_DIM if spec.get("book") else 0))
+            + (BOOK_DIM if spec.get("book") else 0)
+            + (LLM_DIM if spec.get("llm") else 0))
 
 
 def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
@@ -90,6 +107,8 @@ def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
         x += live_feature_vector(snap)
     if spec.get("book"):
         x += book_feature_vector(snap)
+    if spec.get("llm"):
+        x += llm_feature_vector(snap)
     return x
 
 # Betting rules: each committed prediction stakes $10 from a shared $1,000
@@ -353,6 +372,18 @@ def run(once: bool = False) -> None:
                 "imb": book["imb"] if book else None,
                 "spread_bp": book["spread_bp"] if book else None,
             }
+            try:  # frozen crypto-LLM reads the news tape (cached per headline)
+                senti = sentiment_snapshot()
+            except Exception:
+                senti = {"sent": None, "news_n": None}
+            snap["sent"] = senti["sent"]
+            snap["news_n"] = senti["news_n"]
+            hour_ago = next((s0 for s0 in reversed(snaps)
+                             if s0["ts"] <= now_ts - 3300
+                             and s0.get("sent") is not None), None)
+            snap["sent_mom"] = (round(snap["sent"] - hour_ago["sent"], 4)
+                                if snap["sent"] is not None and hour_ago
+                                else None)
             if brti and spot:
                 cons_prices = list(brti["constituents"].values())
                 mean_p = sum(cons_prices) / len(cons_prices)
@@ -418,7 +449,8 @@ def run(once: bool = False) -> None:
             by_slot: dict[int, dict] = {}
             for r in ledger:
                 if r["horizon"] == 5 \
-                        and r["variant"] in ("h5", "t2-h5", "t3-h5", "t4-h5") \
+                        and r["variant"] in ("h5", "t2-h5", "t3-h5", "t4-h5",
+                                             "t5-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             for slot_ts, votes in sorted(by_slot.items()):

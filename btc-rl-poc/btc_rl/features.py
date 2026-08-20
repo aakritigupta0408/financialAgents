@@ -97,6 +97,18 @@ def feature_vector(feat: dict) -> list[float]:
 LIVE_DIM = 5
 TREND_DIM = 3
 BOOK_DIM = 2
+LLM_DIM = 3
+
+
+def llm_feature_vector(snap: dict | None) -> list[float]:
+    """CryptoBERT-derived context (t5): sentiment, its 1h momentum, intensity."""
+    if not snap:
+        return [0.0] * LLM_DIM
+    return [
+        snap.get("sent") or 0.0,               # mean P(bull)-P(bear), [-1, 1]
+        snap.get("sent_mom") or 0.0,           # sentiment change vs ~1h ago
+        min((snap.get("news_n") or 0) / 20, 1.5),  # headline intensity
+    ]
 
 
 def trend_feature_vector(feat: dict) -> list[float]:
