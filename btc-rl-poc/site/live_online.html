@@ -126,6 +126,27 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
 </section>
 
+<section>
+  <h2>Betting book <span class="arm-tag treatment">$10 per prediction · ±$10 pays $50</span></h2>
+  <p class="sub muted">Every committed prediction stakes $10 from a shared $1,000 bankroll;
+  a settled prediction within ±$10 of the actual price receives $50 (net +$40), a miss
+  loses the stake (net −$10). Bets settle the moment the target minute is scored.
+  History from before betting started never bets.</p>
+  <div class="statusbar" style="margin-top:10px">
+    <div class="stat"><div class="k">Bankroll</div><div class="bignum" id="bankroll">–</div></div>
+    <div class="stat"><div class="k">Settled P&amp;L</div><div class="bignum" id="bpnl">–</div></div>
+    <div class="stat"><div class="k">Bets settled</div><div class="bignum" id="bsettled">–</div></div>
+    <div class="stat"><div class="k">Wins (±$10)</div><div class="bignum" id="bwins">–</div></div>
+    <div class="stat"><div class="k">In play</div><div class="bignum" id="bpending">–</div></div>
+  </div>
+  <div class="scroll" style="margin-top:10px"><table>
+    <thead><tr><th>Stream</th><th class="num">Bets</th><th class="num">Settled</th>
+    <th class="num">Wins</th><th class="num">Win rate</th><th class="num">Staked</th>
+    <th class="num">Received</th><th class="num">P&amp;L</th></tr></thead>
+    <tbody id="book"></tbody>
+  </table></div>
+</section>
+
 <div id="horizon-sections"></div>
 
 <section>
@@ -182,7 +203,8 @@ document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th class="num">Predicted @ t</th>
-    <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
+    <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th>
+    <th class="num">Bet</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
 </section>`).join("");
@@ -258,10 +280,15 @@ function ledgerRows(preds, withHorizon) {
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
     const hz = withHorizon
       ? `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` : "";
+    const bet = !p.bet ? "no bet"
+      : p.pnl == null ? "$10 in play"
+      : p.pnl > 0 ? `<span class="pill hit">won +$${p.pnl}</span>`
+      : `<span class="pill miss">−$${-p.pnl}</span>`;
     return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
       `<td class="num">$${p.pred.toLocaleString()}</td>` +
       `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
-      `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td></tr>`;
+      `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td>` +
+      `<td class="num muted">${bet}</td></tr>`;
   }).join("");
 }
 
@@ -270,8 +297,12 @@ function stats(preds) {
   if (!sc.length) return "no scored predictions yet";
   const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
   const hits = sc.filter(p => p.hit).length;
+  const bets = sc.filter(p => p.bet);
+  const pnl = bets.reduce((a, p) => a + (p.pnl || 0), 0);
+  const wins = bets.filter(p => p.pnl > 0).length;
   return `scored ${sc.length} · MAE $${Math.round(mae)} · exact hits ${hits}` +
-    ` (${(100 * hits / sc.length).toFixed(2)}%)`;
+    ` (${(100 * hits / sc.length).toFixed(2)}%)` +
+    (bets.length ? ` · betting: ${wins}/${bets.length} won, P&L ${pnl >= 0 ? "+" : "−"}$${Math.abs(pnl)}` : "");
 }
 
 function draw() {
@@ -321,6 +352,34 @@ async function poll() {
           " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
       } else { brtiEl.textContent = "–"; }
       document.getElementById("retrains").textContent = status.retrains_this_session;
+      const bk = status.betting;
+      if (bk) {
+        const money = v => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString();
+        const pnlFmt = v => (v >= 0 ? "+$" : "−$") + Math.abs(v).toLocaleString();
+        document.getElementById("bankroll").textContent = money(bk.bankroll);
+        document.getElementById("bpnl").textContent = pnlFmt(bk.settled_pnl);
+        const agg = Object.values(bk.per_stream);
+        const settled = agg.reduce((a, s) => a + s.settled, 0);
+        document.getElementById("bsettled").textContent = settled;
+        document.getElementById("bwins").textContent =
+          agg.reduce((a, s) => a + s.wins, 0);
+        document.getElementById("bpending").textContent = money(bk.pending_staked);
+        document.getElementById("book").innerHTML =
+          Object.entries(bk.per_stream).map(([v, s]) =>
+            `<tr><td>+${v.slice(1)} min</td><td class="num">${s.bets}</td>` +
+            `<td class="num">${s.settled}</td><td class="num">${s.wins}</td>` +
+            `<td class="num">${s.settled ? (100 * s.wins / s.settled).toFixed(0) + "%" : "–"}</td>` +
+            `<td class="num">$${s.staked}</td><td class="num">$${s.received}</td>` +
+            `<td class="num">${pnlFmt(s.pnl)}</td></tr>`).join("") +
+          `<tr style="font-weight:650"><td>aggregate</td>` +
+          `<td class="num">${agg.reduce((a, s) => a + s.bets, 0)}</td>` +
+          `<td class="num">${settled}</td>` +
+          `<td class="num">${agg.reduce((a, s) => a + s.wins, 0)}</td>` +
+          `<td class="num">${settled ? (100 * agg.reduce((a, s) => a + s.wins, 0) / settled).toFixed(0) + "%" : "–"}</td>` +
+          `<td class="num">$${agg.reduce((a, s) => a + s.staked, 0)}</td>` +
+          `<td class="num">$${agg.reduce((a, s) => a + s.received, 0)}</td>` +
+          `<td class="num">${pnlFmt(bk.settled_pnl)}</td></tr>`;
+      }
       const armsGate = status.last_retrain?.arms;
       document.getElementById("gate").textContent = !armsGate ? "–" :
         Object.values(armsGate).some(g => Object.values(g).some(x => x.reverted))

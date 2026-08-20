@@ -43,6 +43,15 @@ VARIANTS: dict[str, dict] = {
     "h30": {"predict_every": 1800, "horizons": [30]},  # 9:00, 9:30, 10:00…
 }
 
+# Betting rules: each committed prediction stakes $10 from a shared $1,000
+# bankroll; |predicted - actual| <= $10 pays $50 (net +$40), a miss loses the
+# stake. Bets start at first deployment of this feature — history never bets.
+BET_STAKE = 10
+BET_PAYOUT = 50
+BET_TOLERANCE = 10
+BANKROLL_START = 1000
+BETTING_FILE_NAME = "betting.json"
+
 RETRAIN_EVERY = 3600           # 1 hour
 RETRAIN_WINDOW_H = 24          # replay the last day of bars
 VAL_HOLDOUT_H = 3              # newest hours validate, never train
@@ -101,7 +110,7 @@ def _save_ledger(rows: list[dict]) -> None:
 
 def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 bars_upto: list[dict], fng, slot_ts: int,
-                horizons: list[int]) -> list[dict]:
+                horizons: list[int], bet_start_ts: float) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts."""
     feat = compute_features(bars_upto, fng)
     state = discretize(feat)
@@ -117,6 +126,7 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             "horizon": horizon, "price_now": feat["price"],
             "pred": int(feat["price"] + delta), "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
+            "bet": BET_STAKE if slot_ts >= bet_start_ts else 0,
         })
     return rows
 
@@ -184,6 +194,17 @@ def run(once: bool = False) -> None:
     retrain_info: dict = {}
     retrains = 0
     started = time.time()
+
+    # Betting starts at first-ever deployment and survives restarts.
+    betting_file = RESULTS_DIR / BETTING_FILE_NAME
+    if betting_file.exists():
+        bet_start_ts = json.loads(betting_file.read_text())["start_ts"]
+    else:
+        bet_start_ts = time.time()
+        betting_file.write_text(json.dumps(
+            {"start_ts": bet_start_ts, "bankroll_start": BANKROLL_START,
+             "stake": BET_STAKE, "payout": BET_PAYOUT,
+             "tolerance": BET_TOLERANCE}))
     print(f"experiment runner up — arms: {', '.join(VARIANTS)}")
 
     while True:
@@ -208,7 +229,7 @@ def run(once: bool = False) -> None:
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
                     rows = _predict_at(variant, arms[variant], upto, fng,
-                                       slot_ts, spec["horizons"])
+                                       slot_ts, spec["horizons"], bet_start_ts)
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
@@ -226,6 +247,10 @@ def run(once: bool = False) -> None:
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
                 row["hit"] = int(row["pred"]) == int(bar["close"])
+                if row.get("bet"):  # settle the wager on evaluation
+                    win = row["abs_err"] <= BET_TOLERANCE
+                    row["payout"] = BET_PAYOUT if win else 0
+                    row["pnl"] = row["payout"] - row["bet"]
                 scored += 1
             if new_preds or scored:
                 ledger = ledger[-LEDGER_MAX_ROWS:]
@@ -239,7 +264,28 @@ def run(once: bool = False) -> None:
                 retrains += 1
                 last_retrain_slot = hour_slot
 
-            # 4. status + actual-price series for the charts
+            # 4. betting book: settled P&L per stream + shared bankroll
+            book: dict = {"per_stream": {}, "start_ts": bet_start_ts,
+                          "stake": BET_STAKE, "payout": BET_PAYOUT,
+                          "tolerance": BET_TOLERANCE,
+                          "bankroll_start": BANKROLL_START}
+            pending_staked = settled_pnl = 0
+            for v in VARIANTS:
+                vb = [r for r in ledger if r["variant"] == v and r.get("bet")]
+                settled = [r for r in vb if r["actual"] is not None]
+                wins = [r for r in settled if r["payout"]]
+                pnl = sum(r["pnl"] for r in settled)
+                book["per_stream"][v] = {
+                    "bets": len(vb), "settled": len(settled),
+                    "wins": len(wins), "staked": len(vb) * BET_STAKE,
+                    "received": sum(r["payout"] for r in settled), "pnl": pnl}
+                settled_pnl += pnl
+                pending_staked += (len(vb) - len(settled)) * BET_STAKE
+            book["settled_pnl"] = settled_pnl
+            book["pending_staked"] = pending_staked
+            book["bankroll"] = BANKROLL_START + settled_pnl - pending_staked
+
+            # 5. status + actual-price series for the charts
             feat = compute_features(bars, fng)
             recent = [{"ts": b["ts"], "c": b["close"]}
                       for b in bars if b["ts"] >= now_ts - BACKFILL_HOURS * 3600]
@@ -253,6 +299,7 @@ def run(once: bool = False) -> None:
                                  "states_known": {h: len(a.q)
                                                   for h, a in arms[v].items()}}
                              for v, s in VARIANTS.items()},
+                "betting": book,
                 "retrain_every_min": RETRAIN_EVERY // 60,
                 "retrains_this_session": retrains,
                 "last_retrain": retrain_info or None,
