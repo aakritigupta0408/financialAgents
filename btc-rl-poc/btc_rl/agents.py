@@ -32,8 +32,8 @@ class LinUCBAgent:
 
     Each arm a keeps a ridge model (A_a = lam*I + sum x xT, b_a = sum r x);
     selection is optimistic: argmax_a  theta_a . x + alpha * sqrt(xT A_a^-1 x).
-    Reward is the betting P&L (+40 within +-$10, else -10), so the bandit
-    directly maximizes the bankroll. Purely online — no batch retrain needed.
+    Reward is the shaped prediction reward plus a direction bonus (see
+    btc_rl/online.py). Purely online — no batch retrain needed.
     """
 
     name = "linucb"
@@ -44,11 +44,7 @@ class LinUCBAgent:
         self.np = np
         self.dim = dim
         self.alpha = alpha
-        # n_arms beyond the delta count adds an ABSTAIN arm (bet nothing,
-        # reward always 0) — the bandit learns when not to play.
         self.n_arms = n_arms or len(config.ACTION_DELTAS)
-        self.abstain_idx = (self.n_arms - 1
-                            if self.n_arms > len(config.ACTION_DELTAS) else None)
         self.A = [np.eye(dim) * lam for _ in range(self.n_arms)]
         self.b = [np.zeros(dim) for _ in range(self.n_arms)]
         self.pulls = [0] * self.n_arms

@@ -56,9 +56,9 @@ def test_calibration_bins():
 
 
 def test_kalshi_fee():
-    assert kalshi_fee_c(50) == 1.75                  # 7% * .5 * .5 * 100
-    assert kalshi_fee_c(1) < 0.1
-    assert kalshi_fee_c(99) < 0.1
+    assert kalshi_fee_c(50) == 2.0                   # ceil(7 * .5 * .5) cents
+    assert kalshi_fee_c(1) == 1.0                    # rounds up to a whole cent
+    assert kalshi_fee_c(99) == 1.0
 
 
 def test_max_drawdown():

@@ -93,9 +93,10 @@ def calibration_bins(ps: list[float], ys: list[int],
 
 def kalshi_fee_c(price_c: float) -> float:
     """Kalshi trading fee per contract in cents: 7% x P x (1-P) x 100,
-    rounded up to the next cent (their published general schedule)."""
+    rounded UP to the next whole cent (their published general schedule).
+    7 * p * (1-p) is already in cents for one contract."""
     p = price_c / 100
-    return math.ceil(7 * p * (1 - p) * 100) / 100
+    return float(math.ceil(7 * p * (1 - p)))
 
 
 def max_drawdown(cum: list[float]) -> float:

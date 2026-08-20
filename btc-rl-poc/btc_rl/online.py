@@ -45,7 +45,8 @@ from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_okx_funding_rate, fetch_range, fetch_recent_trades)
 
 FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
-SNAP_FILE_NAME = "live_snapshots.jsonl"  # streamed-feature history (t3)
+SNAP_FILE_NAME = "live_snapshots.jsonl"  # streamed-feature history — feeds
+                                         # the live-feature arms (t6/t10)
 SNAP_MAX_AGE_S = 600   # a snapshot older than 10 min doesn't describe a slot
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
@@ -57,13 +58,17 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # cadence (cadence == horizon), each with its own Q-table file. The h15/h30
 # tables warm-start from the original (control) model's batch tables; add new
 # dicts here for future treatments.
-# POLICY: a new treatment must pass scripts/offline_gate.py (MAE gate +
-# duplicate check) BEFORE being added here. t3/t4/t5 were retired as
+# POLICY: a new feature-bandit treatment must pass scripts/offline_gate.py
+# (MAE gate + duplicate check) BEFORE being added here; deep arms (t8/t9)
+# and live-only-signal arms (t6/t10/t11) are gated by batch-vs-persistence
+# comparisons recorded in metrics_history instead. t3/t4/t5 were retired as
 # offline-proven duplicates of t2/t6 (see results/offline_gate.json).
 # All arms predict every 5 minutes (9:00, 9:05, 9:10…). CONTROL arms (h5/h15/
-# h30, tabular Q) are frozen — do not touch. TREATMENT 2 (t2-*) is a LinUCB
-# contextual bandit over the same 21 integer-delta arms; every learner uses
-# the prediction reward: +1 exact integer match, else -|error|/100.
+# h30, tabular Q) are the original tabular baseline: their CONFIG is frozen,
+# but like every arm they learn online per scored prediction and in the
+# hourly replay. TREATMENT 2 (t2-*) is a LinUCB contextual bandit over the
+# 19 vol-scaled K_FACTORS arms; every learner uses the prediction reward:
+# +1 within the vol band max($5, 0.1·σ_h), else -|error|/100.
 VARIANTS: dict[str, dict] = {
     # +1-minute horizon: the one where the noise floor ($13.9 over 60 days)
     # permits MAE < $20 — every arm family runs there too.
@@ -224,10 +229,7 @@ ONLINE_ALPHA = 0.3             # LinUCB bonus — reward gaps are ~0.1, so a big
 DIR_BONUS = 0.1                # reward credit for a correct-sign deviation —
                                # cashes the measured 60%+ direction skill
 SIGMA_FLOOR = 5.0              # $ floor for the per-horizon vol estimate
-BIAS_WINDOW = 30               # trailing scored rows for online bias correction
-                               # (~2.5h at 5-min cadence — reacts to trends
-                               # the 50-row window lagged badly)
-CAL_VARIANT = "cal-h15"        # calibrated-winner meta-arm (+15m only)
+CAL_HORIZONS = (1, 5, 15, 30)  # calibrated-winner meta-arm: every horizon
 CAL_WINDOW = 30                # trailing scored residuals the calibrator sees
 CAL_MIN = 10                   # need this many residuals before correcting
 CAL_TRAIL = 50                 # scored rows per arm used to pick the winner
@@ -386,14 +388,16 @@ def _kb_cal_weights(kb: list[dict]) -> dict:
     per row so refits always see uncalibrated inputs."""
     out = {}
     for ph in ("early", "mid", "late"):
+        # rows without p_raw predate the raw/calibrated split — fitting on
+        # their calibrated p would bias the weight, so exclude them
         rows = [r for r in kb if r["actual"] is not None
+                and r.get("p_raw") is not None
                 and _kb_phase(r["mins_left"]) == ph][-400:]
         if len(rows) < 20:
             out[ph] = 1.0
             continue
-        num = sum((r.get("p_raw", r["p_up"]) - 0.5) * (r["actual"] - 0.5)
-                  for r in rows)
-        den = sum((r.get("p_raw", r["p_up"]) - 0.5) ** 2 for r in rows)
+        num = sum((r["p_raw"] - 0.5) * (r["actual"] - 0.5) for r in rows)
+        den = sum((r["p_raw"] - 0.5) ** 2 for r in rows)
         out[ph] = max(0.0, min(1.2, num / den)) if den > 1e-9 else 1.0
     return out
 
@@ -451,17 +455,27 @@ def _kb_summary(kb: list[dict]) -> dict | None:
     return out
 
 
-def _bias_map(ledger: list[dict]) -> dict:
-    """Trailing median residual (actual - pred) per treatment arm x horizon —
-    an adaptive intercept that removes conditional trend bias."""
+def _calibration_map(ledger: list[dict]) -> dict:
+    """Dual-window agreement-median calibration for EVERY model arm x
+    horizon: full strength when the trailing-30 and trailing-10 residual
+    medians agree on sign, zero when they disagree (a trend turn) — the
+    design validated by the cal meta-arm, replacing the old half-strength
+    treatment-only intercept. rp is excluded (it IS the chart-replay
+    definition) and meta rows never self-calibrate. Capped at apply time."""
     res: dict = {}
     for row in ledger:
-        if row["actual"] is None or not row["variant"].startswith("t"):
+        if (row["actual"] is None
+                or row["variant"].startswith(("rp", "consensus", "cal"))):
             continue
         res.setdefault((row["variant"], row["horizon"]), []).append(
             row["actual"] - row["pred"])
-    return {k: int(statistics.median(v[-BIAS_WINDOW:]))
-            for k, v in res.items() if len(v) >= 10}
+    out = {}
+    for k, v in res.items():
+        if len(v) >= CAL_MIN:
+            adj = _calibration_adj(v[-CAL_WINDOW:])
+            if adj:
+                out[k] = adj
+    return out
 
 
 def _history_snapshot(ledger: list[dict], kb: list[dict],
@@ -736,19 +750,20 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             # forecast (it was leaking ±3-sigma probes into predictions)
             arm = agent.select(x, greedy=True)
             delta = _vol_delta(_k_of(agent, arm), feat, horizon)
-            # shrink (x0.5) and cap (±0.5 sigma_h) the bias intercept — the
-            # uncapped version chased rallies and doubled the miss at turns
-            raw_adj = (bias or {}).get((variant, horizon), 0)
-            cap = 0.5 * _horizon_sigma(feat, horizon)
-            adj = int(max(-cap, min(cap, 0.5 * raw_adj)))
             row_extra["x"] = [round(v, 5) for v in x]
             row_extra["arm"] = arm
-            if adj:
-                row_extra["bias_adj"] = adj
         elif agent is not None:
             qs = agent.q.get(state)
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
                      if qs else 0)
+        if agent is not None:
+            # every model arm is calibrated: dual-window agreement median
+            # at full strength (it zeroes itself at turns), capped ±0.5σ_h
+            raw_adj = (bias or {}).get((variant, horizon), 0)
+            cap = 0.5 * _horizon_sigma(feat, horizon)
+            adj = int(max(-cap, min(cap, raw_adj)))
+            if adj:
+                row_extra["bias_adj"] = adj
         pred = int(feat["price"] + delta + adj)
         if isinstance(agent, DistDQNAgent):
             # native 80% interval from the model's own predicted distribution
@@ -801,17 +816,18 @@ def _bandit_val_mae(agent: LinUCBAgent, spec: dict, episodes: list,
 
 
 def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
-                snaps: list[dict]) -> dict:
+                snaps: list[dict], fng=None) -> dict:
     """Hourly retrain of every arm's OWN tables on the same replay window,
     each guarded by the hold-out no-regression gate. Bandits replay too —
     12 live updates/hour is a starvation diet next to control's replay."""
     now = datetime.now(tz=config.PACIFIC)
     bars = fetch_range(now - timedelta(hours=RETRAIN_WINDOW_H), now)
     cut_ts = int((now - timedelta(hours=VAL_HOLDOUT_H)).timestamp())
+    # same fng the live commits see — a None here was a train/serve mismatch
     train_eps = build_episodes({"replay": [b for b in bars if b["ts"] < cut_ts]},
-                               {"replay": None})
+                               {"replay": fng})
     val_eps = build_episodes({"replay": [b for b in bars if b["ts"] >= cut_ts]},
-                             {"replay": None})
+                             {"replay": fng})
     info: dict = {"at": now.isoformat(), "train_episodes": len(train_eps),
                   "val_episodes": len(val_eps), "epochs": RETRAIN_EPOCHS,
                   "arms": {}}
@@ -1003,7 +1019,7 @@ def run(once: bool = False) -> None:
             #     first real bets aren't pure exploration
             if cold_bandits:
                 warmed_this_session.update(cold_bandits)
-                warm_eps = build_episodes({"warm": bars}, {"warm": None})
+                warm_eps = build_episodes({"warm": bars}, {"warm": fng})
                 for v in sorted(cold_bandits):
                     vspec = VARIANTS[v]
                     for h, agent in arms[v].items():
@@ -1027,7 +1043,7 @@ def run(once: bool = False) -> None:
 
             # 1. commit predictions per arm, at each arm's own cadence
             #    (uniformly covers live boundaries and first-run backfill)
-            bias = _bias_map(ledger)
+            bias = _calibration_map(ledger)
             bands = _band_map(ledger)
             new_preds = 0
             for variant, spec in VARIANTS.items():
@@ -1084,6 +1100,11 @@ def run(once: bool = False) -> None:
             for (ch, slot_ts, hz), votes in sorted(by_slot.items()):
                 if "h" not in votes or "t2" not in votes:
                     continue  # need at least control + one treatment
+                # LEAKAGE GUARD: the trailing worst-voter drop + bands are
+                # computed from the ledger as of NOW — live slots only,
+                # never backfill (same rule as the other meta-arms)
+                if slot_ts < int(started):
+                    continue
                 base_fam = "h"
                 trail: dict[str, float] = {}
                 for fam in votes:
@@ -1107,6 +1128,8 @@ def run(once: bool = False) -> None:
                     "pred": int(final),  # median of the surviving voters
                     "delta": int(final) - int(base["price_now"]),
                     "votes": polled, "state": None,
+                    # base arm's sigma so scoring uses the vol-scaled band
+                    "sigma": base.get("sigma"),
                     "actual": None, "abs_err": None, "hit": None,
                 }
                 cband = bands.get((ch, hz))
@@ -1117,37 +1140,42 @@ def run(once: bool = False) -> None:
                 new_preds += 1
 
             # 1c. calibrated winner: shadow whichever arm currently leads on
-            #     trailing +15m MAE and re-center its committed prediction
+            #     trailing MAE at each horizon and re-center its prediction
             #     with a full-strength correction fit on that arm's own
             #     trailing residuals. Reporting-layer meta-arm like the
             #     consensus — no model state, never learns.
             #     LEAKAGE GUARD: the residual window is built from the
             #     ledger as of NOW, so only unscored live commits are
             #     shadowed (backfill would calibrate on its own future).
-            have_cal = {r["made_ts"] for r in ledger
-                        if r["variant"] == CAL_VARIANT}
-            win = _winner_variant(ledger, 15)
-            if win:
+            for cal_h in CAL_HORIZONS:
+                cal_v = f"cal-h{cal_h}"
+                have_cal = {r["made_ts"] for r in ledger
+                            if r["variant"] == cal_v}
+                win = _winner_variant(ledger, cal_h)
+                if not win:
+                    continue
                 res = [r["actual"] - r["pred"] for r in ledger
-                       if r["variant"] == win and r["horizon"] == 15
+                       if r["variant"] == win and r["horizon"] == cal_h
                        and r["actual"] is not None][-CAL_WINDOW:]
                 adj = (_calibration_adj(res) or 0) if len(res) >= CAL_MIN else 0
                 shadow = [r for r in ledger
-                          if r["variant"] == win and r["horizon"] == 15
+                          if r["variant"] == win and r["horizon"] == cal_h
                           and r["actual"] is None
                           and r["made_ts"] >= int(started)
                           and r["made_ts"] not in have_cal]
                 for src in shadow:
                     crow = {
-                        "variant": CAL_VARIANT, "made_ts": src["made_ts"],
-                        "target_ts": src["target_ts"], "horizon": 15,
+                        "variant": cal_v, "made_ts": src["made_ts"],
+                        "target_ts": src["target_ts"], "horizon": cal_h,
                         "price_now": src["price_now"],
                         "pred": int(src["pred"] + adj),
                         "delta": int(src["pred"] + adj - src["price_now"]),
                         "src": win, "cal_adj": int(adj), "state": None,
+                        # source arm's sigma so scoring uses the vol-scaled band
+                        "sigma": src.get("sigma"),
                         "actual": None, "abs_err": None, "hit": None,
                     }
-                    cband = bands.get((CAL_VARIANT, 15))
+                    cband = bands.get((cal_v, cal_h))
                     if cband:
                         crow["lo"] = crow["pred"] + cband[0]
                         crow["hi"] = crow["pred"] + cband[1]
@@ -1282,6 +1310,11 @@ def run(once: bool = False) -> None:
             for row in ledger:
                 if row["actual"] is not None:
                     continue
+                # Coinbase buckets are [ts, ts+60): only settle once the
+                # target bucket is COMPLETE, else "actual" is a mid-minute
+                # price that depends on poll phase
+                if row["target_ts"] + 60 > now_ts:
+                    continue
                 bar = by_ts.get(row["target_ts"])
                 if bar is None:
                     continue
@@ -1333,7 +1366,7 @@ def run(once: bool = False) -> None:
             hour_slot = now_ts // RETRAIN_EVERY
             if hour_slot > last_retrain_slot:
                 print(f"{now:%H:%M:%S} hourly retrain (all arms)...")
-                retrain_info = retrain_all(arms, snaps)
+                retrain_info = retrain_all(arms, snaps, fng)
                 retrains += 1
                 last_retrain_slot = hour_slot
                 try:  # persist gate outcomes + trailing snapshot forever
@@ -1343,6 +1376,17 @@ def run(once: bool = False) -> None:
                                                     now_ts)})
                 except Exception:
                     pass
+                # hourly trim of the append-only logs (last 5000 lines)
+                for log_name in (SNAP_FILE_NAME, "learning_log.jsonl"):
+                    lp = RESULTS_DIR / log_name
+                    try:
+                        lines = lp.read_text().splitlines()
+                        if len(lines) > 5000:
+                            tmp = lp.with_suffix(".tmp")
+                            tmp.write_text("\n".join(lines[-5000:]) + "\n")
+                            tmp.replace(lp)
+                    except OSError:
+                        pass
 
             # 4. status + actual-price series for the charts
             feat = compute_features(bars, fng)
@@ -1391,7 +1435,8 @@ def run(once: bool = False) -> None:
             print(f"poll error (will retry): {exc}")
         if once:
             for variant, agents in arms.items():
-                _checkpoint(variant, agents)
+                if agents:  # replay baseline has no model
+                    _checkpoint(variant, agents)
             break
         time.sleep(POLL_SECONDS)
 

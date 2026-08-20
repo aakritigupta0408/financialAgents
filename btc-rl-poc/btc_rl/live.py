@@ -1,4 +1,8 @@
-"""Live mode: at ~6:45 PM Pacific, predict the 7:00 and 7:15 PM integer prices.
+"""DEPRECATED — legacy daily-flow module. Predates the always-on experiment
+runner (btc_rl/online.py), which supersedes it; this script is not scheduled
+anywhere and is kept only for reference.
+
+Live mode: at ~6:45 PM Pacific, predict the 7:00 and 7:15 PM integer prices.
 
 Usage:  python -m btc_rl.live            # make predictions now
         python -m btc_rl.live --score    # score any past unscored predictions

@@ -71,12 +71,13 @@
   <div class="eyebrow"><span class="live-dot"></span> Live experiment · BTC price prediction ·
     <span style="font:italic 500 15px var(--display);text-transform:none;letter-spacing:.02em;color:var(--ink-2)">BTC 7PM Oracle</span></div>
   <h1>Treatment ladder — head to head</h1>
-  <p class="lede">Eight learning treatments, a frozen control and two naive baselines
+  <p class="lede">Seven learning treatments, a frozen control and two naive baselines
   predict Bitcoin every 5 minutes at +1/+5/+15/+30 min horizons, scored against the
-  same market with vol-scaled hit bands and 80% intervals. Each arm adds exactly one
-  capability over the last — continuous features, live streams, order flow, a
-  Bitcoin-trained LLM, the Kalshi prediction market (t10), RLHF human feedback (t11) —
-  so every metric gap is attributable. Meta-arms: <b>cal</b> re-centers the trailing
+  same market with vol-scaled hit bands and 80% intervals. Capabilities are added
+  stepwise — continuous features (t2); live streams, order book, news sentiment and
+  order flow bundled in one hop (t6); the Kalshi prediction market (t10); RLHF human
+  feedback (t11) — and every gap is measured against control and persistence on
+  identical slots. Meta-arms: <b>cal</b> re-centers the trailing
   +15m leader; <b>kb</b> calls the Kalshi 15-minute binary every minute and places
   exactly one fee-adjusted paper bet per window. Level accuracy is measured against
   the persistence floor (MASE), direction against Pesaran–Timmermann chance bounds,
@@ -285,21 +286,21 @@ const ARMS = [
     title: "Control — Tabular Q-learning",
     architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
     features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
-    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1.",
+    reward: "Learning: +1 within the vol-scaled hit band (max($5, 0.1σ_h)), else −|error|/100. Reporting: spec reward +1 / −1.",
     sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
     offline: "tabular-q-shaped" },
   { key: "t2", variants: ["t2-h1", "t2-h5", "t2-h15", "t2-h30"], color: "#3987e5",
     title: "Treatment 2 — LinUCB contextual bandit",
     architecture: "LinUCB (α=0.3) over 21 VOLATILITY-SCALED action arms — each arm is k × live σ_h, k ∈ 0…±3, so the action range tracks the regime instead of capping at ±$89 (which sat below the average 15/30-min move). Per-arm ridge model, optimistic selection.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
-    reward: "+1 exact integer match, else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control keeps the pure shaped reward.",
+    reward: "+1 within the vol-scaled hit band (max($5, 0.1σ_h)), else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control takes the same band reward without the direction credit.",
     sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated 24h replay; adaptive bias intercept (trailing median residual per arm × horizon).",
     offline: null },
   { key: "t6", variants: ["t6-h1", "t6-h5", "t6-h15", "t6-h30"], color: "#d95926",
     title: "Treatment 6 — + order-flow imbalance (research-backed)",
     architecture: "Same LinUCB machinery, 27-dim context.",
-    features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
-    reward: "Same prediction reward (+1 exact / −|error|/100).",
+    features: "27 dims: base 10 + trend 3 + live streams 5 + book 2 + news sentiment 3 + order flow 4. The order-flow block comes from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline — the literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
+    reward: "Same prediction reward (+1 within the vol-scaled hit band, else −|error|/100).",
     sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
     offline: null },
   { key: "t7", variants: ["t7-h1", "t7-h5", "t7-h15", "t7-h30"], color: "#199e70",
@@ -342,7 +343,7 @@ const ARMS = [
     reward: "Prediction reward + direction credit + human-agreement bonus (expires after 30 min; zero with no feedback).",
     sampling: "No feedback ⇒ exactly t2, so the t11-vs-t2 gap is the measured value of the human in the loop. Cold-started on recent episodes, then online + hourly gated replay.",
     offline: null },
-  { key: "cal", variants: ["cal-h15"], color: "#e66767",
+  { key: "cal", variants: ["cal-h1", "cal-h5", "cal-h15", "cal-h30"], color: "#e66767",
     title: "Calibrated winner — trailing-MAE leader, re-centered (+15 min)",
     architecture: "No model of its own: each slot it shadows whichever arm currently leads on trailing +15m MAE (last 50 scored rows) and adds a calibration correction fit on that arm's last 30 scored residuals — the full-strength A/B against the shrunk bias intercept treatments already get.",
     features: "The winner's committed prediction + its residual history.",
@@ -351,9 +352,9 @@ const ARMS = [
     offline: null },
   { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#f2efe6",
     title: "Consensus — median poll (our headline +5 min call)",
-    architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2…t6, persistence). Robust to any single model's bad slot.",
+    architecture: "No learning: at each 5-min slot, at all four horizons, it polls ctl, rp, t2, t6, t7 and t8 plus persistence (the current price), drops the voter with the worst trailing MAE (last 50 scored rows, once at least 3 voters have history), and takes the median of the rest. Robust to any single model's bad slot; the +5m poll is our headline call.",
     features: "Its voters.", reward: "Scored for accuracy only — never learns.",
-    sampling: "Emitted once per slot when ctl+t2 have committed; scored like any predictor.",
+    sampling: "Emitted once per slot when control plus at least one treatment have committed; scored like any predictor.",
     offline: null },
 ];
 const HKEYS = { 1: "h1", 5: "h5", 15: "h15", 30: "h30" };
@@ -378,8 +379,6 @@ function onlineStats(preds, variants) {
       w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
       w50: sc.length ? sc.filter(p => p.abs_err <= 50).length / sc.length : null,
       dir: moved.length ? dirHit / moved.length : null,
-      dirSig: moved.length >= 20
-        ? (dirHit - moved.length / 2) / Math.sqrt(moved.length / 4) > 1.64 : false,
       dirCov: sc.length ? moved.length / sc.length : null,
       replay: meanMove ? Math.max(0, 1 - meanDev / meanMove) : null,
       cov: (() => { const b = sc.filter(p => p.in_band != null);
@@ -503,7 +502,7 @@ function offlineBlock(metrics, agentKey) {
   return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
 }
 
-function pctChart(preds, metric, refs) {
+function pctChart(preds, metric, refs, label) {
   const order = ["ctl", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal", "agg", "rp"];
   const groups = [];
   for (const h of [1, 5, 15, 30]) {
@@ -544,7 +543,7 @@ function pctChart(preds, metric, refs) {
       `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
   });
   g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(255,255,255,.22)"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${g}</svg>`;
 }
 
 function retrainPanel(rows) {
@@ -560,7 +559,7 @@ function retrainPanel(rows) {
       const rev = Object.values(g).some(x => x.reverted);
       const t = new Date(r.ts * 1000).toLocaleTimeString("en-US",
         { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", hour12: false });
-      cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${t} PST: ` +
+      cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${t} PT: ` +
         Object.entries(g).map(([h, x]) =>
           `${h} $${x.val_mae_before.toFixed(0)}→$${x.val_mae_after.toFixed(0)}${x.reverted ? " reverted" : ""}`).join(" · ") + '"></span>';
     }
@@ -581,11 +580,14 @@ function binaryPanel(kb, bets) {
     const brier = done.reduce((a, r) => a + r.brier, 0) / done.length;
     const mk = done.filter(r => r.mkt_brier != null);
     const mBrier = mk.length ? mk.reduce((a, r) => a + r.mkt_brier, 0) / mk.length : null;
+    // BSS compares like with like: our Brier restricted to the same
+    // quoted subset the market Brier is computed on
+    const ourQuoted = mk.length ? mk.reduce((a, r) => a + r.brier, 0) / mk.length : null;
     const tiles = [
       [`${(100 * done.reduce((a, r) => a + r.hit, 0) / done.length).toFixed(0)}%`, `hit rate (n=${done.length})`],
       [brier.toFixed(3), "our Brier"],
       [mBrier == null ? "–" : mBrier.toFixed(3), "market Brier"],
-      [mBrier == null ? "–" : (1 - brier / mBrier).toFixed(2), "skill vs market (BSS)"],
+      [mBrier == null ? "–" : (1 - ourQuoted / mBrier).toFixed(2), "skill vs market (BSS)"],
       [(1 - brier / 0.25).toFixed(2), "skill vs coin flip"],
     ];
     document.getElementById("bin-tiles").innerHTML = tiles.map(([v, l]) =>
@@ -655,7 +657,7 @@ async function poll() {
     const scoredN = preds.filter(p => p.actual != null).length;
 
     document.getElementById("hero-pills").innerHTML = [
-      ["8 + control + 2 baselines", "arms"],
+      ["7 treatments + control + 2 baselines", "arms"],
       ["4", "horizons"],
       [preds.length.toLocaleString(), "predictions"],
       [scoredN.toLocaleString(), "scored"],
@@ -675,17 +677,20 @@ async function poll() {
       </div>`).join("");
 
     document.getElementById("rel-legend").innerHTML =
-      ARMS.filter(a => a.key !== "agg" || true).map(a =>
+      ARMS.map(a =>
         `<span><span class="dot" style="background:${a.color}"></span>${a.key}</span>`
       ).join("");
     document.getElementById("graph-rel").innerHTML = groupedChart(preds);
     document.getElementById("q-dir").innerHTML = pctChart(preds, st => st.dir,
       [{ v: 50, color: "rgba(255,255,255,.5)", dash: true, label: "coin flip 50%" },
-       { v: 55, color: "#6ee7b7", label: "target 55%" }]);
+       { v: 55, color: "#6ee7b7", label: "target 55%" }],
+      "direction accuracy by arm and horizon");
     document.getElementById("q-cov").innerHTML = pctChart(preds, st => st.cov,
-      [{ v: 80, color: "#6ee7b7", label: "well-calibrated 80%" }]);
+      [{ v: 80, color: "#6ee7b7", label: "well-calibrated 80%" }],
+      "80% band coverage by arm and horizon");
     document.getElementById("q-replay").innerHTML = pctChart(preds, st => st.replay,
-      [{ v: 100, color: "rgba(255,255,255,.5)", dash: true, label: "pure copy 100%" }]);
+      [{ v: 100, color: "rgba(255,255,255,.5)", dash: true, label: "pure copy 100%" }],
+      "replay index by arm and horizon");
 
     let sb = "";
     for (const arm of ARMS) {
@@ -726,13 +731,13 @@ async function poll() {
     <dt>Online metrics</dt><dd>${onlineStats(preds, arm.variants).map(s =>
       `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · RMSE ${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}` +
       ` · ±$10 ${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"} · dir ${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%"}` +
-      ` · replay ${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"} · exact ${s.hits}`
+      ` · replay ${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"} · hits ${s.hits} (±band)`
     ).join("<br>") || "no scored predictions yet"}</dd>
   </dl>
 </div>`).join("");
 
     document.getElementById("foot").textContent =
-      `updated ${new Date().toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles" })} PST · ` +
+      `updated ${new Date().toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles" })} PT · ` +
       `offline = 120-day batch backtest · online = live ledger since deployment`;
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for data… (" + e.message + ")";

@@ -18,7 +18,7 @@ rows = [json.loads(l) for l in
         (ROOT / "results" / "prediction_log.jsonl").read_text().splitlines()]
 cut = time.time() - args.era_min * 60
 
-ARMS = ["h", "t2", "t3", "t4", "t5", "t6", "t7"]
+ARMS = ["h", "t2", "t6", "t7", "t8", "t9", "t10", "t11"]
 
 
 def era(rs):
@@ -33,7 +33,7 @@ def era(rs):
 
 print(f"{'arm':6s} {'h':>3s}  OLD ERA{'':38s}NEW ERA (last {args.era_min}m)")
 for a in ARMS:
-    for h in (5, 15, 30):
+    for h in (1, 5, 15, 30):
         vn = f"{a}{h}" if a == "h" else f"{a}-h{h}"
         rs = [r for r in rows if r["variant"] == vn]
         old = era([r for r in rs if r["made_ts"] < cut])
@@ -46,7 +46,7 @@ for a in ARMS:
 # pathology flags on the newest rows
 print("NEW-ERA action behavior (last committed rows per arm):")
 for a in ARMS[1:]:
-    for h in (5, 15, 30):
+    for h in (1, 5, 15, 30):
         vn = f"{a}-h{h}"
         rs = [r for r in rows if r["variant"] == vn and r["made_ts"] >= cut]
         if not rs:

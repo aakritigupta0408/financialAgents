@@ -214,7 +214,12 @@ def main() -> None:
   <tbody>{hist_rows}</tbody></table></div>
 </section>""")
 
-    page = f"""<title>BTC 7PM Oracle</title>
+    page = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle</title>
 <link rel="stylesheet" href="theme.css">
 <style>
 .tiles {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; }}
@@ -239,6 +244,8 @@ svg .bar:hover {{ opacity: .8; }}
 .reward {{ border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-variant-numeric: tabular-nums; color: var(--ink-2); }}
 .reward b {{ font-size: 17px; color: var(--ink); }}
 </style>
+</head>
+<body>
 
 <main>
 <header>
@@ -333,6 +340,8 @@ document.querySelectorAll('[data-tip]').forEach(el => {{
   el.addEventListener('mouseleave', () => tip.style.opacity = 0);
 }});
 </script>
+</body>
+</html>
 """
     OUT.parent.mkdir(exist_ok=True)
     OUT.write_text(page)

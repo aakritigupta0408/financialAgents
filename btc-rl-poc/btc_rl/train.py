@@ -206,7 +206,9 @@ def main() -> None:
     from .history import append_history
     append_history("batch", {
         "source": "train_l1",
-        "agents": {name: {h: hv["all"]["mae"] for h, hv in by_h.items()}
+        "agents": {name: {h: hv.get("all", {}).get("mae")
+                          for h, hv in by_h.items()
+                          if hv.get("all", {}).get("mae") is not None}
                    for name, by_h in metrics["agents"].items()}})
     print(f"Wrote {RESULTS_DIR / 'metrics.json'}")
     _print_summary(metrics)

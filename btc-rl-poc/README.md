@@ -1,106 +1,113 @@
-# BTC Short-Horizon Price Prediction — an Online Reinforcement-Learning A/B Experiment
+# BTC Short-Horizon Prediction — an Online RL A/B Experiment
 
-A live, continuously-learning system that predicts Bitcoin's price 5, 15, and
-30 minutes ahead, structured as a **controlled experiment**: a frozen control
-model and a ladder of treatments, each isolating one capability, all scored
-against the same market minutes and against two explicit naive baselines.
-Built entirely on open, no-auth data streams.
+An always-on runner (`btc_rl/online.py`) predicts Bitcoin's price +1/+5/+15/+30
+minutes ahead, committing every 5 minutes from a roster of arms that share one
+action space and one reward but never share model state — so every metric gap
+is attributable to the single capability an arm adds. Built on open, no-auth
+data streams (Coinbase bars/book/trades, OKX funding, Deribit mark, RSS news
+via CryptoBERT, Kalshi's BTC-15-min market).
 
-## The model ladder
+## Arm roster
 
-| Arm | Model class | Isolates |
+| Arm | Model | Isolates |
 |---|---|---|
-| — | Persistence (predict no change) | the noise floor |
-| rp | Chart replay: past h-min move copied forward | the time-shift illusion |
-| control | Tabular Q-learning (81 states × 21 actions) | discretized RL baseline |
-| t2 | LinUCB contextual bandit (α=0.3) | continuous features + uncertainty-aware selection |
-| t6 | LinUCB + live streams (perp basis, funding, exchange dispersion, order-book imbalance/spread, order-flow imbalance, CryptoBERT news sentiment) | market microstructure + text |
-| t7 | Linear function approximation, SGD on Q(s,a) | the L2 rung |
-| t8 | Small distributional network: predicts the delta **distribution**, acts on its mode | the L3 rung |
-| t9 | LSTM over the raw 60-step 1m return sequence, distributional output | the L4 rung (sequence memory) |
-| consensus | Skill-weighted median poll of all +5-min predictors | ensembling |
+| control (`h*`) | Tabular Q-learning | discretized RL baseline |
+| rp | Chart replay: copy the last h-min move forward | the time-shift illusion |
+| t2 | LinUCB contextual bandit | continuous features + uncertainty-aware selection |
+| t6 | t2 + live streams, order book, news sentiment, order flow | market microstructure + text |
+| t7 | Linear-Q (SGD function approximation) | the L2 rung |
+| t8 | Distributional DQN (predicts the delta distribution, acts on its mode) | the L3 rung |
+| t9 | LSTM over the raw 1m return sequence | the L4 rung (sequence memory) |
+| t10 | t2 + Kalshi market features (crowd P(up), strike gap, clock, spread) | what the prediction market adds |
+| t11 | t2 + RLHF: `scripts/feedback.py up/down` votes blend ±0.15 into its reward for 30 min | the human in the loop |
 
-All learners share one action space (**volatility-scaled**: each action is
-k × live σ_h, k ∈ 0…±1.5 — an MAE-scored point forecast is a conditional
-median, so tail actions are excluded) and one reward (+1 on exact integer
-match, else −|error|/100, plus a small correct-direction credit for the
-function-approximation arms).
+Meta-arms (reporting layer, never learn):
 
-## Methodology (industry-standard evaluation)
+- **consensus** — median poll of the arms per slot, with the worst trailing
+  voter dropped; runs on all four horizons.
+- **cal-h15** — shadows the trailing +15m MAE leader and re-centers its
+  prediction with a dual-window agreement median (full-strength correction
+  when a 30-row and 10-row residual median agree on sign, zero at trend turns).
+- **kb** — calls the Kalshi 15-min binary (KXBTC15M) every minute:
+  P(up) from t8's distribution, per-phase calibrated, Brier-scored against
+  the market's own odds. A companion simulator places exactly one paper bet
+  per window (entry under 85c; edge / closing-door / forced-entry strikes;
+  Kalshi fee-adjusted P&L in `results/kb_bets.jsonl`).
 
-- **Chronological splits only** — train on the past, test on the future;
-  no shuffling, no lookahead. Live scoring uses only matured ground truth.
-- **Offline gate before online deployment** (`scripts/offline_gate.py`):
-  MAE within 2% of persistence AND <95% action-identity with any simpler
-  arm. Three treatments (t3/t4/t5) were retired as proven duplicates.
-- **Baselines on every chart**: persistence and chart-replay, so "beats
-  doing nothing" and "beats copying the chart" are visible per slot.
-- **Metrics**: MAE, RMSE, tolerance rates (±$10/±$50), directional accuracy
-  with one-sided binomial significance, a **replay index** (how much of a
-  prediction is the last price carried forward), and **calibrated 80%
-  prediction intervals** (rolling conformal quantiles) scored on coverage
-  and width.
-- **Two-speed online learning** with safety rails: an immediate update per
-  scored prediction, plus hourly experience replay over 24h gated by a 3h
-  hold-out — any retrain that worsens hold-out MAE is reverted.
-- **Adaptive bias intercept** (trailing median residual, shrunk ×0.5 and
-  capped at ±0.5σ) to remove conditional trend bias without trend-chasing.
+## Reward and learning
 
-## The noise floor (why MAE targets must respect physics)
+Reward per scored prediction: **+1** if within the vol-scaled hit band
+max($5, 0.1σ_h), else **−|error|/100**, plus a **0.1 direction credit** for a
+correct-sign deviation. Learning runs at two speeds: an immediate update the
+moment a prediction matures, and an hourly gated replay retrain over the last
+24h — a 3h hold-out must not regress or the retrain is reverted. Every retrain
+gate and batch run appends a git-SHA-stamped row to the append-only
+`results/metrics_history.jsonl`. `scripts/watchdog.py` (cron, every 5 min)
+restarts the daemon if its status heartbeat goes stale.
 
-MAE has a hard floor: the average unpredictable move. Measured on 60 days:
-**$31 / $50 / $72** at 5/15/30 min. Converged models sit within 1–7% of it
-(L2: $32.0/$50.7/$77.3). Errors above these levels on live dashboards track
-market volatility — persistence scores the same there — not model failure.
+## The noise floor
 
-## Live data streams (all open, verified)
+Minute-scale BTC is approximately a martingale: persistence (predict no
+change) is near-unbeatable on price *level*, so MASE ≈ 1 is the ceiling there.
+Real edges live in direction accuracy, interval calibration, and
+market-relative Brier — which is what the evaluation stack actually ranks.
 
-Coinbase Exchange (1m bars, L2 book, trades), Kraken, Bitstamp, Gemini,
-OKX (funding), Deribit (perp mark), alternative.me (Fear & Greed),
-mempool.space, a BRTI-style composite (volume-weighted across the CME CF
-BRTI constituent exchanges), CryptoBERT (local, Apple-GPU) over
-CoinDesk/Cointelegraph/Decrypt RSS, and the Robinhood/Kalshi BTC-15-min
-prediction market (which settles on CF BRTI) — tracked live with our own
-model-implied P(up) beside the market's odds.
+## Evaluation
+
+- `scripts/evaluate_all.py` — every task, every arm: MAE vs the persistence
+  floor on the same slots, direction, calibration, improvement over time,
+  kb accuracy/Brier vs market, meta-arm and t11-vs-t2 paired comparisons.
+- `scripts/standings.py` — MAE ranking + Diebold-Mariano + paired wins,
+  per horizon and era.
+- `scripts/offline_gate.py` — policy gate for new feature-bandit arms
+  (MAE within 2% of persistence, no near-duplicate of a simpler arm);
+  t3/t4/t5 were retired by it. See `results/offline_gate.json` and
+  `results/OFFLINE_METRICS.md`.
 
 ## Dashboards
 
+Four static pages in `site/`, served by any static server:
+
 | Page | Purpose |
 |---|---|
-| `site/live_online.html` | Live predictions: per-horizon graphs (zoom/pan/crosshair), prediction bands, ledgers, consensus call, prediction-market tracker |
-| `site/experiment_review.html` | The experiment, reviewed: arm cards (architecture/features/reward/sampling), offline + online scoreboards, per-horizon comparisons |
-| `site/live_training.html` | Batch training curves, streamed live during training |
-| `site/index.html` | 120-day batch backtest report |
-
-## Architecture
-
-```mermaid
-flowchart LR
-  A[Open streams\nCoinbase bars/book/trades · OKX · Deribit\nRSS→CryptoBERT · Kalshi] --> B[Features\n10 base + trend + live + book\n+ LLM + order-flow + 60-step sequence]
-  B --> C[RL arms\ncontrol tabular Q · LinUCB t2/t6\nlinear-Q t7 · dist-MLP t8 · LSTM t9\n+ persistence & chart-replay baselines]
-  C --> D[Prediction ledger\n80% intervals · scored at maturity\nper-horizon consensus · leakage guards]
-  D --> E[Dashboards\nlive · review DM tests · training · backtest]
-```
-
-## Reproducibility
-
-- Dependencies pinned in `requirements.txt`; unit tests in `tests/`
-  (`python3 tests/test_core.py`).
-- All learners use fixed seeds (7, or the horizon number for per-horizon
-  bandits); batch scripts are deterministic given the cached bar data.
-- Tick-level trades are being archived by `python -m btc_rl.ticks`
-  (results/ticks.jsonl) as the data foundation for future sub-minute models.
+| `live_online.html` | Live ticker, per-horizon predictions and bands, kb bets |
+| `experiment_review.html` | Scoreboard: MASE/DM/PT/pinball/BSS, reliability diagram, retrain timeline |
+| `index.html` | 120-day batch backtest report |
+| `live_training.html` | Batch training curves + retrain gate strip |
 
 ## Run it
 
 ```bash
 pip install -r requirements.txt
-python3 -m http.server 8787 &            # serve dashboards
-python3 -m btc_rl.online &               # live predict/learn daemon
-python3 -m btc_rl.train --days 120 --live   # batch RL + live curves
-python3 scripts/train_l2.py --days 60    # L2 batch training
-python3 scripts/train_l3.py --days 60    # L3 batch training
-python3 scripts/offline_gate.py          # gate any new treatment
-python3 scripts/evaluate.py              # multi-angle evaluation
-python3 scripts/debug_arms.py            # era-split per-arm debugging
+python3 -m btc_rl.online &               # always-on predict/learn runner
+python3 -m btc_rl.ticks &                # tick-level trade archiver
+# self-healing (cron, every 5 min):
+#   */5 * * * * cd <repo> && python3 scripts/watchdog.py
+python3 -m btc_rl.train --days 120 --live   # batch tabular-Q + live curves
+python3 scripts/train_l2.py              # batch linear-Q (t7)
+python3 scripts/train_l3.py              # batch distributional DQN (t8)
+python3 scripts/train_l4.py              # batch LSTM (t9)
+python3 scripts/evaluate_all.py          # full evaluation
+python3 scripts/standings.py             # current A/B standings
+python3 scripts/feedback.py up           # record an RLHF view for t11
+python3 -m http.server 8787              # serve site/ dashboards
+python3 -m pytest tests/                 # unit tests
+```
+
+## Repository layout
+
+```
+btc_rl/          runner (online.py), agents, features, env/reward, data
+                 sources, batch trainer (train.py), tick archiver (ticks.py);
+                 live.py is deprecated legacy (pre-runner demo)
+scripts/         trainers (train_l2/l3/l4), evaluators (evaluate_all,
+                 standings, offline_gate, debug_arms), feedback.py (RLHF),
+                 watchdog.py, build_site.py
+site/            the four dashboards (static HTML)
+tests/           pytest suite (test_core, test_metrics, test_hf, test_kb_cal)
+                 + check_* / noise_floor diagnostics (not collected)
+results/         tracked: batch models (dqn_h*.pt, lstm_h*.pt, q_table.json,
+                 linear_q.json), metrics.json, metrics_history.jsonl,
+                 offline_gate.json, OFFLINE_METRICS.md, live_status.json.
+                 Runtime state (logs, online models) is gitignored.
 ```

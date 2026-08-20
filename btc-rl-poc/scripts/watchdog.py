@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 STATUS = ROOT / "results" / "online_status.json"
 WLOG = ROOT / "results" / "watchdog_log.jsonl"
 STALE_S = 300
+GRACE_S = 600  # after a restart, a cold first poll can legitimately exceed 5 min
 
 age = None
 try:
@@ -27,8 +28,20 @@ except Exception:
 if age is not None and age < STALE_S:
     sys.exit(0)
 
-subprocess.run(["pkill", "-f", "btc_rl.online"], check=False)
-time.sleep(2)
+try:
+    last = json.loads(WLOG.read_text().splitlines()[-1])
+    if last.get("event") == "restarted" and time.time() - last["ts"] < GRACE_S:
+        sys.exit(0)  # restart grace period — give the fresh daemon time
+except (OSError, IndexError, ValueError):
+    pass
+
+# "btc_rl.online" is a substring match, so pkill could hit unrelated processes
+# (an editor with the file open, a --once run); pgrep first so we only kill
+# when something actually matches, and accept the residual substring risk.
+if subprocess.run(["pgrep", "-f", "btc_rl.online"],
+                  capture_output=True).returncode == 0:
+    subprocess.run(["pkill", "-f", "btc_rl.online"], check=False)
+    time.sleep(2)
 with (ROOT / "results" / "daemon.log").open("a") as out:
     subprocess.Popen([sys.executable, "-u", "-m", "btc_rl.online"],
                      cwd=ROOT, stdout=out, stderr=subprocess.STDOUT,

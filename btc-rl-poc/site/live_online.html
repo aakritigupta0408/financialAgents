@@ -121,9 +121,6 @@ section { background: var(--surface); border: 1px solid var(--border);
 .chip.on { color: var(--ink); border-color: var(--series-2);
   background: rgba(57,135,229,.14); }
 svg { width: 100%; height: auto; display: block; margin-top: 8px; }
-.chart-box svg { cursor: crosshair; touch-action: none; }
-.chart-box { user-select: none; -webkit-user-select: none; }
-.chart-box.panning svg { cursor: grabbing; }
 svg text { font: 11.5px ui-sans-serif, system-ui; fill: var(--muted);
   font-variant-numeric: tabular-nums; }
 svg .gridline { stroke: var(--grid); stroke-width: 1; }
@@ -207,7 +204,7 @@ details[open] > summary { margin-bottom: 6px; }
         text-transform: none; color: var(--ink-2)">BTC 7PM Oracle</span></div>
     <div class="price-big" id="price">–</div>
     <div class="delta" id="price-delta">loading…</div>
-    <p class="t-sub">Eight learning arms, a frozen control and two naive baselines
+    <p class="t-sub">Seven learning treatments, a frozen control and two naive baselines
     call Bitcoin's price at +1/+5/+15/+30 minutes, every five minutes, with 80%
     bands — and a YES/NO call on the live Kalshi 15-minute contract every minute.
     Times US Pacific.</p>
@@ -377,7 +374,7 @@ details[open] > summary { margin-bottom: 6px; }
       <tr><td><span class="sw" style="background:var(--series-3)"></span>t9</td><td>LSTM</td><td class="num">60-seq</td><td class="num">$13.9</td><td class="num">$33.2</td><td class="num">$53.6</td><td class="num">$78.4</td></tr>
       <tr><td><span class="sw" style="background:var(--series-8)"></span>t10</td><td>LinUCB + Kalshi market</td><td class="num">14</td><td class="num" colspan="4">online-only (no historical Kalshi feed)</td></tr>
       <tr><td><span class="sw" style="background:var(--series-9)"></span>t11</td><td>LinUCB + RLHF reward</td><td class="num">10</td><td class="num" colspan="4">online-only (human feedback blends into reward)</td></tr>
-      <tr><td><span class="sw" style="background:var(--series-10)"></span>cal</td><td>re-centered trailing winner</td><td class="num">meta</td><td class="num" colspan="4">online-only (+15m; no model of its own)</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-10)"></span>cal</td><td>re-centered trailing winner</td><td class="num">meta</td><td class="num" colspan="4">online-only (all horizons; no model of its own)</td></tr>
     </tbody>
   </table></div>
 
@@ -411,7 +408,6 @@ details[open] > summary { margin-bottom: 6px; }
     <button class="chip" data-span="21600">6h</button>
     <button class="chip" data-span="0">all</button>
     <button class="chip on" id="follow-btn">● live</button>
-    <span class="muted">scroll to zoom · drag to pan</span>
   </div>
   <div id="horizon-sections"></div>
   <details style="margin-top:14px"><summary>Prediction ledger — every commit, every arm</summary>
@@ -482,7 +478,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-3)"></span>t9 (L4 LSTM)</span>
     <span><span class="sw" style="background:var(--series-8)"></span>t10 (+Kalshi mkt)</span>
     <span><span class="sw" style="background:var(--series-9)"></span>t11 (RLHF)</span>
-    <span><span class="sw" style="background:var(--series-10)"></span>cal (winner recal · +15m)</span>
+    <span><span class="sw" style="background:var(--series-10)"></span>cal (winner recal)</span>
     <span><span class="sw" style="background:var(--muted)"></span>rp (chart replay)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
@@ -494,7 +490,7 @@ document.getElementById("horizon-sections").innerHTML = `
 document.getElementById("ledger-sections").innerHTML = T1_HORIZONS.map(h => `
 <div class="lsec" data-lsec="${h}"${h === 5 ? "" : " hidden"}>
   <div class="scroll ledger-scroll"><table>
-    <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
+    <thead><tr><th>Target T=t (PT)</th><th>Arm</th><th class="num">Predicted @ t</th>
     <th class="num">80% band</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
@@ -514,9 +510,33 @@ document.querySelectorAll(".ltab").forEach(b => b.addEventListener("click", () =
   });
 }));
 
-// shared zoom/pan state across all three graphs
+// shared time-range state across all the prediction graphs
 const view = { span: 10800, end: null };   // end=null → follow latest
 const chartMeta = {};                       // per-horizon px↔ts mapping
+
+// range chips: 1h/3h/6h/all (span 0 → full range)
+document.querySelectorAll(".chip[data-span]").forEach(b =>
+  b.addEventListener("click", () => {
+    view.span = +b.dataset.span;
+    document.querySelectorAll(".chip[data-span]").forEach(x =>
+      x.classList.toggle("on", x === b));
+    if (latest) draw();
+  }));
+// follow button: ● live follows the newest data; clicking freezes the
+// window at the current right edge, clicking again resumes following.
+document.getElementById("follow-btn").addEventListener("click", () => {
+  const btn = document.getElementById("follow-btn");
+  if (view.end == null) {
+    if (!latest || !latest.prices.length) return;  // nothing to freeze yet
+    view.end = latest.preds.reduce((m, p) => Math.max(m, p.target_ts),
+      latest.prices[latest.prices.length - 1].ts);
+    btn.classList.remove("on");
+  } else {
+    view.end = null;
+    btn.classList.add("on");
+  }
+  if (latest) draw();
+});
 
 function frame(prices, preds, h) {
   const W = 920, H = 280, L = 62, R = 16, T = 12, B = 28;
@@ -558,7 +578,7 @@ const fmtErr = p => p.err == null ? (p.abs_err == null ? "–" : "$" + p.abs_err
   : (p.err >= 0 ? "+$" : "−$") + Math.abs(p.err);
 
 function tipText(p) {
-  return `${fmtTime(p.target_ts)} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}` +
+  return `${fmtTime(p.target_ts)} PT (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}` +
     (p.actual != null
       ? `, actual $${Math.round(p.actual).toLocaleString()}, error ${fmtErr(p)}` +
         (p.hit ? ` — HIT (±$${p.hit_band ?? 5})` : "")
@@ -704,72 +724,6 @@ function draw() {
 }
 
 
-const ARM_INFO = [
-  { key: "ctl", variants: ["h5", "h15", "h30"],
-    title: "Control — Tabular Q-learning",
-    architecture: "One-step Q-learning: 81 discrete states × 21 fixed integer-delta actions (±$89 max). Frozen baseline — untouched since the experiment began.",
-    features: "4 discretized buckets: 5m/15m returns, 30m volatility, RSI(14).",
-    reward: "+1 exact integer match, else −|error|/100 (shaped); spec ±1 for reporting.",
-    sampling: "120-day batch (chronological 80/20) + per-prediction updates + hourly gated 24h replay.",
-    offline: "tabular-q-shaped" },
-  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"],
-    title: "Treatment 2 — LinUCB contextual bandit",
-    architecture: "LinUCB (α=0.3) over 21 volatility-scaled action arms: each arm is k × live σ_h (k ∈ 0…±3), so the action range adapts to the regime instead of capping at ±$89.",
-    features: "10 continuous dims: returns 1/5/15/60m, vol, RSI, EMA distance, volume ratio, Fear & Greed.",
-    reward: "+1 exact / −|error|/100, plus +0.1 direction credit for a correct-sign deviation.",
-    sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated replay; adaptive bias intercept (trailing median residual).",
-    offline: null },
-  { key: "t7", variants: ["t7-h5", "t7-h15", "t7-h30"],
-    title: "Treatment 7 — L2 linear function approximation",
-    architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x, one weight vector per vol-scaled action arm, plain SGD updates (lr 0.01). No exploration bonus — ε-greedy in batch, greedy online.",
-    features: "13 bar-derived dims (base 10 + trend 3) — deliberately snapshot-free so batch and live are identical.",
-    reward: "Same as t2 (+1 exact / −|error|/100 + direction credit).",
-    sampling: "Batch: 60 days through yesterday, 200k+ SGD updates per horizon, chronological 80/20 (test MAE within 1–4% of persistence). Online: per-prediction SGD + hourly gated replay + bias intercept.",
-    offline: null },
-  { key: "rp", variants: ["rp-h5", "rp-h15", "rp-h30"],
-    title: "Chart-replay baseline",
-    architecture: "No model: pred(t+h) = price(t) + (price(t) − price(t−h)) — the past graph copied forward. Exists so every arm is judged against literal chart replay.",
-    features: "The last h-minute move.", reward: "Scored only; never learns.",
-    sampling: "None.", offline: null },
-  { key: "t8", variants: ["t8-h5", "t8-h15", "t8-h30"],
-    title: "Treatment 8 — L3 distributional DQN",
-    architecture: "Small MLP (13→64→64→23) predicting the vol-normalized delta DISTRIBUTION over the action bins + overflow tail bins (targets only); greedy action = distribution mode, exploration = sampling the predicted distribution.",
-    features: "13 bar-derived dims (base + trend), like t7.",
-    reward: "Cross-entropy on the realized bin (distributional one-step target).",
-    sampling: "Batch: 60 days, ~60k steps/horizon (test MAE ties persistence at 5/15m, +4.5% at 30m). Online: per-prediction distributional update + hourly gated replay.",
-    offline: null },
-  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"],
-    title: "Treatment 6 — + order-flow imbalance",
-    architecture: "Same vol-scaled LinUCB, 27-dim context.",
-    features: "base + trend + live streams + book + news sentiment, plus signed taker-volume imbalance over 1/5/15 min and trade intensity (Coinbase trades stream).",
-    reward: "Same as t2.", sampling: "Same as t2; rolling 20-min trades store.",
-    offline: null },
-];
-
-function armOnline(preds, variants) {
-  const out = [];
-  for (const h of [5, 15, 30]) {
-    const sc = preds.filter(p => variants.includes(p.variant)
-      && p.horizon === h && p.actual != null);
-    if (!sc.length) continue;
-    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-    const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
-    out.push(`+${h}m: n=${sc.length} · MAE $${Math.round(mae)} · ±$10 ${(100 * w10).toFixed(0)}% · exact ${sc.filter(p => p.hit).length}`);
-  }
-  return out.join("<br>") || "no scored predictions yet";
-}
-
-function armOffline(metrics, key) {
-  if (!metrics) return "metrics.json unavailable";
-  const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
-    const st = metrics.agents[name]?.[hk]?.all;
-    return st ? `${hk.slice(1)}m: MAE $${st.mae.toFixed(0)} · ±$10 ${(100 * st["within_$10"]).toFixed(0)}%` : null;
-  }).filter(Boolean).join(" · ");
-  if (!key) return `online-only — persistence ref: ${rowsOf("persistence-baseline")}`;
-  return `${rowsOf(key)} (120-day test) · persistence ref: ${rowsOf("persistence-baseline")}`;
-}
-
-let batchMetrics = null;
 const LADDER_ARMS = [
   ["ctl", "var(--series-1)", ["h1", "h5", "h15", "h30"]],
   ["rp", "var(--faint)", ["rp-h1", "rp-h5", "rp-h15", "rp-h30"]],
@@ -960,12 +914,6 @@ async function poll() {
     latest = { prices, preds };
     draw();
     try { drawLearning(preds, learnLog.slice(-400)); } catch {}
-    if (!batchMetrics) {
-      try {
-        const r = await fetch("../results/metrics.json", { cache: "no-store" });
-        if (r.ok) batchMetrics = await r.json();
-      } catch {}
-    }
     renderArmCards(preds);
     document.getElementById("npred").textContent = preds.length.toLocaleString();
 
@@ -1007,7 +955,7 @@ async function poll() {
         document.getElementById("ring-p").textContent =
           Math.round(100 * kbl.p_up) + "%";
         document.getElementById("ring-close").textContent =
-          fmtTime(kbl.close_ts) + " PST";
+          fmtTime(kbl.close_ts) + " PT";
         document.getElementById("ring-left").textContent =
           left > 0 ? Math.ceil(left * 15) + " min left" : "settling…";
         const up = kbl.p_up >= 0.5;
@@ -1020,7 +968,7 @@ async function poll() {
       const cons = status.consensus;
       if (cons) {
         document.getElementById("cons-when").textContent =
-          fmtTime(cons.target_ts) + " PST";
+          fmtTime(cons.target_ts) + " PT";
         document.getElementById("cons-pred").textContent =
           "$" + cons.pred.toLocaleString();
         document.getElementById("cons-votes").textContent =
@@ -1039,16 +987,18 @@ async function poll() {
       const pm = status.pm;
       if (pm) {
         document.getElementById("pm-close").textContent = pm.close_time
-          ? fmtTime(Date.parse(pm.close_time) / 1000) + " PST" : "–";
+          ? fmtTime(Date.parse(pm.close_time) / 1000) + " PT" : "–";
         document.getElementById("pm-strike").textContent = pm.strike
           ? "$" + pm.strike.toLocaleString() : "–";
         document.getElementById("pm-brti").textContent = pm.brti_now
           ? "$" + Math.round(pm.brti_now).toLocaleString() : "–";
-        const quotes = [pm.last_price, pm.yes_bid, pm.yes_ask]
-          .filter(v => v != null && v > 0);
+        // bid/ask mid when both sides are quoted (same convention as the
+        // Brier comparison: (yes_bid + yes_ask)/2 in cents), else last trade
+        const mkt = (pm.yes_bid > 0 && pm.yes_ask > 0)
+          ? (pm.yes_bid + pm.yes_ask) / 2
+          : (pm.last_price > 0 ? pm.last_price : null);
         document.getElementById("pm-mkt").textContent =
-          quotes.length ? Math.round(quotes.reduce((a, v) => a + v) / quotes.length) + "%"
-                        : "no quotes yet";
+          mkt != null ? Math.round(mkt) + "%" : "no quotes yet";
         document.getElementById("pm-us").textContent =
           pm.model_p_up != null ? (100 * pm.model_p_up).toFixed(0) + "%" : "–";
         document.getElementById("pm-tkr").textContent = pm.ticker || "–";
@@ -1113,9 +1063,9 @@ async function poll() {
       document.getElementById("fresh").textContent =
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
-        `3 horizons (+5/+15/+30), all predicting every 5 min · retrains every ` +
-        `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PST` +
-        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST` :
+        `4 horizons (+1/+5/+15/+30), all predicting every 5 min · retrains every ` +
+        `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PT` +
+        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PT` :
           " · first retrain at the top of the hour");
     } else {
       document.getElementById("foot").textContent =

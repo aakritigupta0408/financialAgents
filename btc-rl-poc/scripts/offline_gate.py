@@ -61,14 +61,22 @@ SPECS = {
 SIMPLER = {"t3": "t2", "t4": "t2", "t5": "t4", "t6": "t5"}
 
 
+def sigma_h(e):
+    return max(e.features["vol_30m"] * math.sqrt(e.horizon_min)
+               * e.features["price"], 5.0)
+
+
 def vol_delta(k, e):
-    sigma = max(e.features["vol_30m"] * math.sqrt(e.horizon_min)
-                * e.features["price"], 5.0)
-    return int(round(k * sigma))
+    return int(round(k * sigma_h(e)))
 
 
-def bandit_reward(pred, actual, price_now, delta):
-    r = reward(pred, actual, shaped=True)
+def hit_band(e):
+    # same vol-scaled hit band online uses
+    return max(config.HIT_BAND, config.HIT_BAND_VOL * sigma_h(e))
+
+
+def bandit_reward(pred, actual, price_now, delta, band=None):
+    r = reward(pred, actual, shaped=True, band=band)
     if delta and (delta > 0) == (actual > price_now) and actual != price_now:
         r += 0.1
     return r
@@ -92,7 +100,8 @@ def run_arm(name, spec, train, test):
                     a = agent.select(x)
                     d = vol_delta(config.K_FACTORS[a], e)
                     agent.update(x, a, bandit_reward(
-                        e.price_now + d, e.price_future, e.price_now, d))
+                        e.price_now + d, e.price_future, e.price_now, d,
+                        band=hit_band(e)))
         else:
             agent = LinUCBAgent(dim, alpha=0.3, n_arms=len(config.K_FACTORS))
             for e in tr:
@@ -100,7 +109,8 @@ def run_arm(name, spec, train, test):
                 a = agent.select(x)
                 d = vol_delta(config.K_FACTORS[a], e)
                 agent.update(x, a, bandit_reward(
-                    e.price_now + d, e.price_future, e.price_now, d))
+                    e.price_now + d, e.price_future, e.price_now, d,
+                    band=hit_band(e)))
         errs, pers, dir_ok, moved = [], [], 0, 0
         ch = []
         for e in te:

@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BTC 7PM Oracle</title>
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -23,6 +28,8 @@ svg .bar:hover { opacity: .8; }
 .reward { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
 .reward b { font-size: 17px; color: var(--ink); }
 </style>
+</head>
+<body>
 
 <main>
 <header>
@@ -108,7 +115,7 @@ svg .bar:hover { opacity: .8; }
   <div class="rung done"><span class="rung-id">L0</span><div><div class="rung-name">Persistence baseline</div><div class="muted">predict the current price — the bar to clear</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L1</span><div><div class="rung-name">Tabular Q-learning</div><div class="muted">81 states × 21 integer-delta actions, ε-greedy, sparse + shaped rewards</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L2</span><div><div class="rung-name">Linear function approximation</div><div class="muted">continuous features, SGD on Q(s,a) — live as t7</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L3</span><div><div class="rung-name">Small distributional DQN</div><div class="muted">predict the delta distribution, act on its mode — live as t8</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L4</span><div><div class="rung-name">LSTM sequence model</div><div class="muted">raw 1-minute return stream, distributional head — live as t9</div></div><span class="pill ok">✓ built</span></div><div class="rung live"><span class="rung-id">L5</span><div><div class="rung-name">Market & human signals</div><div class="muted">Kalshi prediction-market context (t10) · RLHF human feedback (t11) · kb binary calls on the Kalshi 15-min contract · calibrated-winner meta-arm (cal)</div></div><span class="pill ok">✓ live</span></div>
 </section>
 
-<footer>Generated 2026-08-20 15:59 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
+<footer>Generated 2026-08-20 16:22 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
 sentiment: alternative.me Fear &amp; Greed · chronological 80/20 split, no lookahead.</footer>
 </main>
 
@@ -125,3 +132,5 @@ document.querySelectorAll('[data-tip]').forEach(el => {
   el.addEventListener('mouseleave', () => tip.style.opacity = 0);
 });
 </script>
+</body>
+</html>

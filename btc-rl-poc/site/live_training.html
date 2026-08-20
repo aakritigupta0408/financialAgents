@@ -229,7 +229,7 @@ async function retrainLoop() {
             const g = (x.gate || {})[a];
             if (!g) { cells += '<span class="rt-cell"></span>'; continue; }
             const rev = Object.values(g).some(v => v.reverted);
-            cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${fmtHM(x.ts)} PST: ` +
+            cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${fmtHM(x.ts)} PT: ` +
               Object.entries(g).map(([h, v]) =>
                 `${h} $${v.val_mae_before.toFixed(0)}→$${v.val_mae_after.toFixed(0)}${v.reverted ? " reverted" : ""}`).join(" · ") + '"></span>';
           }
