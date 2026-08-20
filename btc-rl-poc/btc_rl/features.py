@@ -54,7 +54,11 @@ def compute_features(bars: list[dict], fng: int | None) -> dict:
     sign = lambda v: 1 if v > 0 else (-1 if v < 0 else 0)
     lo60, hi60 = min(closes[-60:]), max(closes[-60:])
     r5, r15, r60 = _ret(closes, 5), _ret(closes, 15), _ret(closes, 60)
+    ret_seq = [(closes[i] / closes[i - 1] - 1.0) * 1e4 / 10
+               for i in range(max(1, len(closes) - 60), len(closes))]
+    ret_seq = [0.0] * (60 - len(ret_seq)) + ret_seq
     return {
+        "ret_seq": ret_seq,
         "ret_240m": _ret(closes, 240),
         "trend_align": (sign(r5) + sign(r15) + sign(r60)) / 3.0,
         "range_pos": ((closes[-1] - lo60) / (hi60 - lo60) - 0.5

@@ -27,7 +27,7 @@ from pathlib import Path
 
 from . import config
 from .agents import (DistDQNAgent, LinearQAgent, LinUCBAgent,
-                     TabularQAgent)
+                     LSTMDistAgent, TabularQAgent)
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
@@ -75,6 +75,7 @@ VARIANTS: dict[str, dict] = {
               "trend": True},
     "t8-h1": {"predict_every": 300, "horizons": [1], "agent": "dqn",
               "trend": True},
+    "t9-h1": {"predict_every": 300, "horizons": [1], "agent": "seq"},
     "h5": {"predict_every": 300, "horizons": [5], "agent": "tabular"},
     "h15": {"predict_every": 300, "horizons": [15], "agent": "tabular"},
     "h30": {"predict_every": 300, "horizons": [30], "agent": "tabular"},
@@ -110,6 +111,11 @@ VARIANTS: dict[str, dict] = {
                "trend": True},
     "t8-h30": {"predict_every": 300, "horizons": [30], "agent": "dqn",
                "trend": True},
+    # TREATMENT 9 = the L4 rung: LSTM over the raw 1m return stream,
+    # distributional output, mode action (scripts/train_l4.py).
+    "t9-h5": {"predict_every": 300, "horizons": [5], "agent": "seq"},
+    "t9-h15": {"predict_every": 300, "horizons": [15], "agent": "seq"},
+    "t9-h30": {"predict_every": 300, "horizons": [30], "agent": "seq"},
     "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
               "live": True, "trend": True, "book": True, "llm": True,
               "ofi": True},
@@ -123,6 +129,8 @@ VARIANTS: dict[str, dict] = {
 
 
 def _ctx_dim(spec: dict) -> int:
+    if spec.get("agent") == "seq":
+        return 60  # raw 1m return sequence
     return (FEATURE_DIM + (TREND_DIM if spec.get("trend") else 0)
             + (LIVE_DIM if spec.get("live") else 0)
             + (BOOK_DIM if spec.get("book") else 0)
@@ -131,6 +139,8 @@ def _ctx_dim(spec: dict) -> int:
 
 
 def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
+    if spec.get("agent") == "seq":
+        return list(feat["ret_seq"])
     x = feature_vector(feat)
     if spec.get("trend"):
         x += trend_feature_vector(feat)
@@ -276,22 +286,25 @@ def _bandit_path(variant: str) -> Path:
     return RESULTS_DIR / f"linucb_{variant}.json"
 
 
-def _load_dqn(variant: str, horizons: list[int], dim: int):
+def _load_dqn(variant: str, horizons: list[int], dim: int,
+              kind: str = "dqn"):
+    cls = LSTMDistAgent if kind == "seq" else DistDQNAgent
+    prefix = "lstm" if kind == "seq" else "dqn"
     agents = {}
     for h in horizons:
-        own = RESULTS_DIR / f"dqn_{variant}.pt"
-        batch = RESULTS_DIR / f"dqn_h{h}.pt"
+        own = RESULTS_DIR / f"{prefix}_{variant}.pt"
+        batch = RESULTS_DIR / f"{prefix}_h{h}.pt"
         try:
             if own.exists():
-                agents[h] = DistDQNAgent.load(own)
+                agents[h] = cls.load(own)
             elif batch.exists():
-                agents[h] = DistDQNAgent.load(batch)
+                agents[h] = cls.load(batch)
             else:
-                agents[h] = DistDQNAgent(dim)
+                agents[h] = cls(dim)
         except Exception:
-            agents[h] = DistDQNAgent(dim)
+            agents[h] = cls(dim)
         if agents[h].dim != dim:
-            agents[h] = DistDQNAgent(dim)
+            agents[h] = cls(dim)
     return agents
 
 
@@ -363,7 +376,8 @@ def _load_agents(variant: str, horizons: list[int]) -> dict[int, TabularQAgent]:
 def _checkpoint(variant: str, agents: dict) -> None:
     if any(isinstance(a, DistDQNAgent) for a in agents.values()):
         for a in agents.values():
-            a.save(RESULTS_DIR / f"dqn_{variant}.pt")
+            prefix = "lstm" if isinstance(a, LSTMDistAgent) else "dqn"
+            a.save(RESULTS_DIR / f"{prefix}_{variant}.pt")
         return
     if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
         payload = {f"h{h}": a.to_dict() for h, a in agents.items()}
@@ -444,10 +458,27 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
                      if qs else 0)
         pred = int(feat["price"] + delta + adj)
-        band = (bands or {}).get((variant, horizon))
-        if band:
-            row_extra["lo"] = pred + band[0]
-            row_extra["hi"] = pred + band[1]
+        if isinstance(agent, DistDQNAgent):
+            # native 80% interval from the model's own predicted distribution
+            probs = agent.probs(x)
+            sig = _horizon_sigma(feat, horizon)
+            cum = 0.0
+            k10 = agent.bins[0]
+            k90 = agent.bins[-1]
+            for k, pb in zip(agent.bins, probs):
+                if cum < 0.10 <= cum + pb:
+                    k10 = k
+                if cum < 0.90 <= cum + pb:
+                    k90 = k
+                cum += pb
+            row_extra["lo"] = int(pred + k10 * sig)
+            row_extra["hi"] = int(pred + k90 * sig)
+            row_extra["band_src"] = "native"
+        else:
+            band = (bands or {}).get((variant, horizon))
+            if band:
+                row_extra["lo"] = pred + band[0]
+                row_extra["hi"] = pred + band[1]
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
@@ -568,15 +599,16 @@ def run(once: bool = False) -> None:
     arms = {v: (_load_bandits(v, spec["horizons"], _ctx_dim(spec),
                               kind=spec["agent"])
                 if spec.get("agent") in ("linucb", "linearq")
-                else _load_dqn(v, spec["horizons"], _ctx_dim(spec))
-                if spec.get("agent") == "dqn"
+                else _load_dqn(v, spec["horizons"], _ctx_dim(spec),
+                               kind=spec["agent"])
+                if spec.get("agent") in ("dqn", "seq")
                 else {} if spec.get("agent") == "replay"
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
     snaps = _load_snapshots()
     trades: dict[int, dict] = {}  # rolling taker-flow store (last ~20 min)
     cold_bandits = {v for v, spec in VARIANTS.items()
-                    if spec.get("agent") in ("linucb", "linearq", "dqn")
+                    if spec.get("agent") in ("linucb", "linearq", "dqn", "seq")
                     and all(a.total_pulls == 0 for a in arms[v].values())}
     ledger = _load_ledger()
     made = {(r.get("variant", "control"), r["made_ts"], r["horizon"])
@@ -703,27 +735,37 @@ def run(once: bool = False) -> None:
             #     committed, poll them (ctl-h5, t2-h5, persistence) and take
             #     the median as OUR final level for t+5. Scored like any
             #     predictor; never bets, never learns.
-            have_consensus = {r["made_ts"] for r in ledger
-                              if r["variant"] == "consensus"}
-            by_slot: dict[int, dict] = {}
+            CONS = {1: "consensus-h1", 5: "consensus",
+                    15: "consensus-h15", 30: "consensus-h30"}
+            have_consensus = {(r["variant"], r["made_ts"]) for r in ledger
+                              if r["variant"].startswith("consensus")}
+            by_slot: dict[tuple, dict] = {}
             for r in ledger:
-                if r["horizon"] == 5 \
-                        and r["variant"] in ("h5", "rp-h5", "t2-h5", "t6-h5", "t7-h5",
-                                             "t8-h5") \
-                        and r["made_ts"] not in have_consensus:
-                    by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
-            # skill-weighted poll: drop the voter with the worst trailing MAE
-            trail: dict[str, float] = {}
-            for v in ("h5", "rp-h5", "t2-h5", "t6-h5", "t7-h5", "t8-h5"):
-                errs = [r["abs_err"] for r in ledger
-                        if r["variant"] == v and r["actual"] is not None][-50:]
-                if len(errs) >= 20:
-                    trail[v] = sum(errs) / len(errs)
-            worst = max(trail, key=trail.get) if len(trail) >= 3 else None
-            for slot_ts, votes in sorted(by_slot.items()):
-                if "h5" not in votes or "t2-h5" not in votes:
+                ch = CONS.get(r["horizon"])
+                if ch is None or r.get("state") is None and not r["variant"].startswith(("h", "rp", "t")):
                     continue
-                base = votes["h5"]
+                fam = ("h" if r["variant"] == f"h{r['horizon']}"
+                       else r["variant"].split("-")[0])
+                if r["variant"] in (f"h{r['horizon']}", f"rp-h{r['horizon']}",
+                                    f"t2-h{r['horizon']}", f"t6-h{r['horizon']}",
+                                    f"t7-h{r['horizon']}", f"t8-h{r['horizon']}") \
+                        and (ch, r["made_ts"]) not in have_consensus:
+                    by_slot.setdefault((ch, r["made_ts"], r["horizon"]),
+                                       {})[fam] = r
+            # skill-weighted poll per horizon: drop the worst trailing voter
+            for (ch, slot_ts, hz), votes in sorted(by_slot.items()):
+                if "h" not in votes or "t2" not in votes:
+                    continue  # need at least control + one treatment
+                base_fam = "h"
+                trail: dict[str, float] = {}
+                for fam in votes:
+                    v = f"{fam}-h{hz}" if fam != "h" else f"h{hz}"
+                    errs = [r["abs_err"] for r in ledger
+                            if r["variant"] == v and r["actual"] is not None][-50:]
+                    if len(errs) >= 20:
+                        trail[fam] = sum(errs) / len(errs)
+                worst = max(trail, key=trail.get) if len(trail) >= 3 else None
+                base = votes[base_fam]
                 polled = sorted([v["pred"] for name, v in votes.items()
                                  if name != worst]
                                 + [int(base["price_now"])])
@@ -731,15 +773,15 @@ def run(once: bool = False) -> None:
                 final = (polled[mid] if len(polled) % 2
                          else (polled[mid - 1] + polled[mid]) // 2)
                 crow = {
-                    "variant": "consensus", "made_ts": slot_ts,
-                    "target_ts": slot_ts + 300, "horizon": 5,
+                    "variant": ch, "made_ts": slot_ts,
+                    "target_ts": slot_ts + hz * 60, "horizon": hz,
                     "price_now": base["price_now"],
-                    "pred": int(final),  # median of all voters
+                    "pred": int(final),  # median of the surviving voters
                     "delta": int(final) - int(base["price_now"]),
                     "votes": polled, "state": None,
                     "actual": None, "abs_err": None, "hit": None,
                 }
-                cband = bands.get(("consensus", 5))
+                cband = bands.get((ch, hz))
                 if cband:
                     crow["lo"] = crow["pred"] + cband[0]
                     crow["hi"] = crow["pred"] + cband[1]

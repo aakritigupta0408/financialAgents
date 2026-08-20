@@ -17,6 +17,7 @@ Built entirely on open, no-auth data streams.
 | t6 | LinUCB + live streams (perp basis, funding, exchange dispersion, order-book imbalance/spread, order-flow imbalance, CryptoBERT news sentiment) | market microstructure + text |
 | t7 | Linear function approximation, SGD on Q(s,a) | the L2 rung |
 | t8 | Small distributional network: predicts the delta **distribution**, acts on its mode | the L3 rung |
+| t9 | LSTM over the raw 60-step 1m return sequence, distributional output | the L4 rung (sequence memory) |
 | consensus | Skill-weighted median poll of all +5-min predictors | ensembling |
 
 All learners share one action space (**volatility-scaled**: each action is
@@ -70,6 +71,25 @@ model-implied P(up) beside the market's odds.
 | `site/experiment_review.html` | The experiment, reviewed: arm cards (architecture/features/reward/sampling), offline + online scoreboards, per-horizon comparisons |
 | `site/live_training.html` | Batch training curves, streamed live during training |
 | `site/index.html` | 120-day batch backtest report |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  A[Open streams\nCoinbase bars/book/trades · OKX · Deribit\nRSS→CryptoBERT · Kalshi] --> B[Features\n10 base + trend + live + book\n+ LLM + order-flow + 60-step sequence]
+  B --> C[RL arms\ncontrol tabular Q · LinUCB t2/t6\nlinear-Q t7 · dist-MLP t8 · LSTM t9\n+ persistence & chart-replay baselines]
+  C --> D[Prediction ledger\n80% intervals · scored at maturity\nper-horizon consensus · leakage guards]
+  D --> E[Dashboards\nlive · review DM tests · training · backtest]
+```
+
+## Reproducibility
+
+- Dependencies pinned in `requirements.txt`; unit tests in `tests/`
+  (`python3 tests/test_core.py`).
+- All learners use fixed seeds (7, or the horizon number for per-horizon
+  bandits); batch scripts are deterministic given the cached bar data.
+- Tick-level trades are being archived by `python -m btc_rl.ticks`
+  (results/ticks.jsonl) as the data foundation for future sub-minute models.
 
 ## Run it
 

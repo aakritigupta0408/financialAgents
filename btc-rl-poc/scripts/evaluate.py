@@ -102,6 +102,42 @@ for voter in ("h5", "t2-h5", "t3-h5"):
 
 print()
 print("=" * 100)
+print("ANGLE 5b — Diebold–Mariano test vs control (MAE loss differential, HAC)")
+print("  negative DM = arm beats control; |DM| > 1.96 => p < 0.05 (two-sided)")
+
+
+def dm_test(d, q):
+    """DM statistic with Newey–West HAC variance, truncation lag q."""
+    n = len(d)
+    if n < 20:
+        return None
+    mean = sum(d) / n
+    dev = [x - mean for x in d]
+    var = sum(x * x for x in dev) / n
+    for lag in range(1, q + 1):
+        w = 1 - lag / (q + 1)
+        cov = sum(dev[i] * dev[i - lag] for i in range(lag, n)) / n
+        var += 2 * w * cov
+    if var <= 0:
+        return None
+    return mean / math.sqrt(var / n)
+
+
+for h in (1, 5, 15, 30):
+    ctlv = "h" + str(h)
+    q = max(0, math.ceil(h / 5) - 1)
+    base = {r["made_ts"]: abs(r.get("err") or 0) for r in scored
+            if r["variant"] == ctlv}
+    line = f"  h{h:<3d}"
+    for arm in (f"rp-h{h}", f"t2-h{h}", f"t6-h{h}", f"t7-h{h}", f"t8-h{h}"):
+        d = [abs(r.get("err") or 0) - base[r["made_ts"]] for r in scored
+             if r["variant"] == arm and r["made_ts"] in base]
+        stat = dm_test(d, q)
+        line += f"  {arm.split('-')[0]}: " + (f"{stat:+5.2f}" if stat is not None else "  n/a")
+    print(line)
+
+print()
+print("=" * 100)
 print("ANGLE 5 — Policy behavior (chosen deltas per arm; convergence signal)")
 from collections import Counter
 for arm in ARMS[:-1]:

@@ -84,6 +84,7 @@ section { background: var(--surface); border: 1px solid var(--border);
 .arm-tag.t7 { color: var(--series-7); }
 .arm-tag.t8 { color: var(--series-4); }
 .arm-tag.rp { color: var(--faint); }
+.arm-tag.t9 { color: var(--series-3); }
 .legend, .range-bar { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
   color: var(--ink-2); margin: 10px 0 4px; align-items: center; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 4px;
@@ -240,7 +241,8 @@ footer { color: var(--faint); font-size: 12.5px; }
 <script>
 const H_COLOR = { 1: "var(--series-5)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [1, 5, 15, 30];
-const armOf = p => p.variant === "consensus" ? "agg"
+const armOf = p => (p.variant || "").startsWith("consensus") ? "agg"
+  : (p.variant || "").startsWith("t9") ? "t9"
   : (p.variant || "").startsWith("t8") ? "t8"
   : (p.variant || "").startsWith("rp") ? "rp"
   : (p.variant || "").startsWith("t7") ? "t7"
@@ -270,6 +272,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-6)"></span>t6 (+ order flow)</span>
     <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
     <span><span class="sw" style="background:var(--series-4)"></span>t8 (L3 dist-DQN)</span>
+    <span><span class="sw" style="background:var(--series-3)"></span>t9 (L4 LSTM)</span>
     <span><span class="sw" style="background:var(--muted)"></span>rp (chart replay)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
@@ -338,7 +341,7 @@ const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
                     t3: "var(--series-3)", t4: "var(--series-4)",
                     t5: "var(--series-5)", t6: "var(--series-6)",
                     t7: "var(--series-7)", t8: "var(--series-4)",
-                    rp: "var(--faint)" };
+                    t9: "var(--series-3)", rp: "var(--faint)" };
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -347,7 +350,7 @@ function chartHorizon(prices, preds, h) {
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
   // shaded ribbon: the trailing-MAE leader arm's 80% band
-  const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8"];
+  const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9"];
   let leader = null, bestMae = Infinity;
   for (const a of armsHere) {
     const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
@@ -371,7 +374,7 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "rp", "t2", "t6", "t7", "t8"]) {
+    for (const arm of ["ctl", "rp", "t2", "t6", "t7", "t8", "t9"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
@@ -383,7 +386,8 @@ function chartHorizon(prices, preds, h) {
         : arm === "t6" ? ' stroke-dasharray="12 3"'
         : arm === "t7" ? ' stroke-dasharray="3 3 8 3"'
         : arm === "t8" ? ' stroke-dasharray="8 6"'
-        : arm === "rp" ? ' stroke-dasharray="2 6"' : "";
+        : arm === "rp" ? ' stroke-dasharray="2 6"'
+        : arm === "t9" ? ' stroke-dasharray="6 2 2 2"' : "";
       if (scored.length) {
         g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
           `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
@@ -419,6 +423,7 @@ function ledgerRows(preds) {
       : arm === "t7" ? '<span class="arm-tag t7">t7</span>'
       : arm === "t8" ? '<span class="arm-tag t8">t8</span>'
       : arm === "rp" ? '<span class="arm-tag rp">rp</span>'
+      : arm === "t9" ? '<span class="arm-tag t9">t9</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     const band = p.lo == null ? "–"
@@ -443,7 +448,7 @@ function stats(preds) {
       : "";
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
   };
-  return [one("ctl"), one("rp"), one("t2"), one("t6"), one("t7"), one("t8")].join("   |   ");
+  return [one("ctl"), one("rp"), one("t2"), one("t6"), one("t7"), one("t8"), one("t9")].join("   |   ");
 }
 
 function draw() {

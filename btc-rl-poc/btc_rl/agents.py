@@ -238,6 +238,37 @@ class DistDQNAgent:
         return agent
 
 
+class LSTMDistAgent(DistDQNAgent):
+    """Level 4: sequence model — an LSTM over the raw 1m return stream,
+    predicting the same delta distribution and acting on its mode."""
+
+    name = "lstm-dist"
+
+    def __init__(self, dim: int = 60, n_arms: int | None = None,
+                 lr: float = 1e-3, seed: int = 7):
+        super().__init__(dim=dim, n_arms=n_arms, lr=lr, seed=seed)
+        import torch
+        from torch import nn
+
+        class _SeqNet(nn.Module):
+            def __init__(self, n_out):
+                super().__init__()
+                self.lstm = nn.LSTM(1, 32, batch_first=True)
+                self.head = nn.Linear(32, n_out)
+
+            def forward(self, x):
+                single = x.dim() == 1
+                if single:
+                    x = x.unsqueeze(0)
+                out, _ = self.lstm(x.unsqueeze(-1))
+                y = self.head(out[:, -1])
+                return y.squeeze(0) if single else y
+
+        torch.manual_seed(seed)
+        self.net = _SeqNet(self.n_arms)
+        self.opt = torch.optim.Adam(self.net.parameters(), lr=lr)
+
+
 class TabularQAgent:
     """Level 1: one-step Q-learning (a contextual bandit, so no bootstrapping).
 

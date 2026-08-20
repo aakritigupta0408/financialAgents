@@ -151,7 +151,7 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   <p class="sub">The horizon whose noise floor ($13.9) permits MAE &lt; $20</p>
   <div id="graph-h1"></div></div>
 <div class="panel"><h3>+5 minutes</h3>
-  <p class="sub">Lower is better · dashed rule = persistence on the same live slots</p>
+  <p class="sub">Lower is better · dashed rule = persistence on the same live slots · ▲/▼ = Diebold–Mariano significant vs control (HAC, p&lt;0.05)</p>
   <div id="graph-h5"></div></div>
 <div class="panel"><h3>+15 minutes</h3><div id="graph-h15"></div></div>
 <div class="panel"><h3>+30 minutes</h3><div id="graph-h30"></div></div>
@@ -167,6 +167,26 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
     <th class="num">Exact</th></tr></thead>
     <tbody id="scoreboard"></tbody>
   </table></div>
+</div>
+
+<div class="sect">System architecture</div>
+<div class="panel">
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;font-size:12.5px">
+    <div style="flex:1;min-width:150px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
+      <b style="color:#fff">Open streams</b><br><span class="muted">Coinbase 1m bars · L2 book · trades (ticks) · Kraken/Bitstamp/Gemini · OKX funding · Deribit basis · mempool · Fear&amp;Greed · RSS→CryptoBERT · Kalshi market</span></div>
+    <div style="align-self:center;color:#64748b">→</div>
+    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
+      <b style="color:#fff">Features</b><br><span class="muted">10 base · 3 trend · 5 live · 2 book · 3 LLM · 4 order-flow · 60-step sequence — 30s snapshots, point-in-time joins</span></div>
+    <div style="align-self:center;color:#64748b">→</div>
+    <div style="flex:1;min-width:150px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
+      <b style="color:#fff">Arms (RL)</b><br><span class="muted">control (tabular Q) · t2 LinUCB · t6 +live features · t7 linear-Q · t8 dist-MLP · t9 LSTM · baselines: persistence, chart-replay · vol-scaled actions, gated learning</span></div>
+    <div style="align-self:center;color:#64748b">→</div>
+    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
+      <b style="color:#fff">Ledger</b><br><span class="muted">every prediction + 80% interval, scored at maturity; consensus polls per horizon; leakage-guarded backfill</span></div>
+    <div style="align-self:center;color:#64748b">→</div>
+    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
+      <b style="color:#fff">Dashboards</b><br><span class="muted">live predictions · this review (DM tests, coverage) · training curves · backtest</span></div>
+  </div>
 </div>
 
 <div class="sect">The arms — architecture · features · reward · sampling</div>
@@ -218,7 +238,14 @@ const ARMS = [
     reward: "Cross-entropy vs the realized bin — a distributional one-step target rather than a scalar reward.",
     sampling: "Batch 60 days (~60k steps/horizon; test MAE $31.3/$50.4/$75.0 vs persistence $31.1/$50.4/$71.8). Online per-prediction updates + hourly gated replay.",
     offline: null },
-  { key: "agg", variants: ["consensus"], color: "#f8fafc",
+  { key: "t9", variants: ["t9-h1", "t9-h5", "t9-h15", "t9-h30"], color: "#f472b6",
+    title: "Treatment 9 — L4: LSTM sequence model",
+    architecture: "LSTM(1→32) over the raw 60-step 1m return sequence, head → distribution over the action bins (+ overflow target bins). Greedy = mode; exploration samples the predicted distribution. Completes the ladder: table → bandit → linear → MLP-distributional → sequence model.",
+    features: "The raw 1m return sequence itself (60 steps) — deliberately no engineered features, isolating what sequence memory adds.",
+    reward: "Cross-entropy vs the realized bin (distributional one-step target).",
+    sampling: "Batch 60 days chronological 80/20 (scripts/train_l4.py); online per-prediction updates + hourly gated replay.",
+    offline: null },
+  { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#f8fafc",
     title: "Consensus — median poll (our headline +5 min call)",
     architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2…t6, persistence). Robust to any single model's bad slot.",
     features: "Its voters.", reward: "Scored for accuracy only — never learns.",
@@ -261,12 +288,37 @@ function onlineStats(preds, variants) {
   return out;
 }
 
+function dmStat(preds, armVariants, h) {
+  // Diebold–Mariano vs control on identical slots, HAC lag = ceil(h/5)-1
+  const ctl = new Map(preds.filter(p => p.variant === HKEYS[h]
+    && p.actual != null).map(p => [p.made_ts, p.abs_err]));
+  const d = preds.filter(p => armVariants.includes(p.variant)
+    && p.horizon === h && p.actual != null && ctl.has(p.made_ts))
+    .sort((a, b) => a.made_ts - b.made_ts)
+    .map(p => p.abs_err - ctl.get(p.made_ts));
+  const n = d.length;
+  if (n < 20) return null;
+  const mean = d.reduce((a, x) => a + x, 0) / n;
+  const dev = d.map(x => x - mean);
+  let v = dev.reduce((a, x) => a + x * x, 0) / n;
+  const q = Math.max(0, Math.ceil(h / 5) - 1);
+  for (let lag = 1; lag <= q; lag++) {
+    let cov = 0;
+    for (let i = lag; i < n; i++) cov += dev[i] * dev[i - lag];
+    v += 2 * (1 - lag / (q + 1)) * (cov / n);
+  }
+  return v > 0 ? mean / Math.sqrt(v / n) : null;
+}
+
 function maeGraph(preds, h) {
   const rows = [];
   for (const arm of ARMS) {
     const s = onlineStats(preds, arm.variants).find(x => x.h === h);
-    if (s && s.mae != null && s.n)
-      rows.push({ key: arm.key, color: arm.color, mae: s.mae, n: s.n });
+    if (s && s.mae != null && s.n) {
+      const dm = arm.key === "ctl" || arm.key === "agg"
+        ? null : dmStat(preds, arm.variants, h);
+      rows.push({ key: arm.key, color: arm.color, mae: s.mae, n: s.n, dm });
+    }
   }
   if (!rows.length) return '<p class="sub">no scored predictions yet</p>';
   const base = preds.filter(p => p.horizon === h && p.actual != null
@@ -283,7 +335,11 @@ function maeGraph(preds, h) {
     const y = 6 + i * (barH + gap);
     g += `<rect x="${L}" y="${y}" width="${(X(r.mae) - L).toFixed(1)}" height="${barH}" rx="7" fill="${r.color}" fill-opacity="0.85"/>` +
       `<text x="${L - 8}" y="${y + barH - 6}" text-anchor="end" style="fill:#f8fafc;font-weight:600">${r.key}</text>` +
-      `<text x="${X(r.mae) + 10}" y="${y + barH - 6}" style="fill:#94a3b8">$${Math.round(r.mae)} · n=${r.n}</text>`;
+      `<text x="${X(r.mae) + 10}" y="${y + barH - 6}" style="fill:#94a3b8">$${Math.round(r.mae)} · n=${r.n}` +
+      (r.dm != null && Math.abs(r.dm) > 1.96
+        ? (r.dm < 0 ? ' <tspan style="fill:#6ee7b7">▲ sig vs ctl</tspan>'
+                    : ' <tspan style="fill:#f87171">▼ sig vs ctl</tspan>')
+        : "") + `</text>`;
   });
   if (persist != null)
     g += `<line x1="${X(persist)}" y1="0" x2="${X(persist)}" y2="${H - 26}" ` +
