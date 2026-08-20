@@ -153,7 +153,7 @@ footer { color: var(--faint); font-size: 12.5px; }
   <div class="eyebrow">✦ Live A/B experiment · reinforcement learning</div>
   <h1>BTC 7PM Oracle
     <span class="grad">Live predictions, minute by minute</span></h1>
-  <p class="sub">Six model arms predict Bitcoin's price at +5, +15 and +30 minutes,
+  <p class="sub">Four RL treatments, a frozen control, and two naive baselines predict Bitcoin's price at +5, +15 and +30 minutes,
   every five minutes, against the persistence and chart-replay baselines. Each
   prediction carries a calibrated 80% interval; models learn from every scored slot
   behind hold-out safety gates. All times US Pacific.</p>
@@ -179,9 +179,10 @@ footer { color: var(--faint); font-size: 12.5px; }
 
 <section>
   <h2>Our +5 min call <span class="arm-tag agg">consensus of all predictors</span></h2>
-  <p class="sub muted">At each 5-minute slot t, every model that predicts T=t+5 is polled —
-  control (tabular Q), treatment 2 (LinUCB), and persistence — and the <b>median</b> is
-  our final level, shown beside the live Coinbase and BRTI-style prices.</p>
+  <p class="sub muted">At each 5-minute slot t, every predictor of T=t+5 is polled —
+  control, chart-replay, t2, t6, t7, t8, and persistence — the worst trailing performer
+  is dropped, and the <b>median</b> of the rest is our call, shown beside the live
+  Coinbase and BRTI-style prices.</p>
   <div class="statusbar" style="margin-top:10px">
     <div class="stat"><div class="k">Prediction for <span id="cons-when">–</span></div>
       <div class="consensus-num" id="cons-pred">–</div>
@@ -262,7 +263,6 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw line"></span>actual</span>
     <span><span class="sw" style="background:var(--series-1)"></span>ctl (tabular Q)</span>
     <span><span class="sw" style="background:var(--series-2)"></span>t2 (LinUCB)</span>
-    <span><span class="sw" style="background:var(--series-4)"></span>t4 (+ trend/book/abstain)</span>
     <span><span class="sw" style="background:var(--series-6)"></span>t6 (+ order flow)</span>
     <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
     <span><span class="sw" style="background:var(--series-4)"></span>t8 (L3 dist-DQN)</span>
@@ -682,9 +682,11 @@ async function poll() {
           ? "$" + pm.strike.toLocaleString() : "–";
         document.getElementById("pm-brti").textContent = pm.brti_now
           ? "$" + Math.round(pm.brti_now).toLocaleString() : "–";
-        const mkt = pm.last_price ?? ((pm.yes_bid + pm.yes_ask) / 2);
+        const quotes = [pm.last_price, pm.yes_bid, pm.yes_ask]
+          .filter(v => v != null && v > 0);
         document.getElementById("pm-mkt").textContent =
-          mkt != null && !isNaN(mkt) ? mkt + "%" : "–";
+          quotes.length ? Math.round(quotes.reduce((a, v) => a + v) / quotes.length) + "%"
+                        : "no quotes yet";
         document.getElementById("pm-us").textContent =
           pm.model_p_up != null ? (100 * pm.model_p_up).toFixed(0) + "%" : "–";
         document.getElementById("pm-tkr").textContent = pm.ticker || "–";

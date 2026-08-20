@@ -126,7 +126,8 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   <div class="eyebrow">✦ Live experiment · Bitcoin price prediction</div>
   <h1>BTC 7PM Oracle
     <span class="grad">Treatment ladder — head to head</span></h1>
-  <p class="lede">Six reinforcement-learning arms predict Bitcoin's price every
+  <p class="lede">Four reinforcement-learning treatments, a frozen control, and two
+  naive baselines (persistence, chart-replay) predict Bitcoin's price every
   5 minutes at +5/+15/+30 min horizons, scored at integer level against the
   same market. The first model is the frozen control; treatments must pass the offline gate
   (scripts/offline_gate.py — MAE + duplicate checks) before deployment; t3/t4/t5
@@ -314,7 +315,7 @@ async function poll() {
     const scoredN = preds.filter(p => p.actual != null).length;
 
     document.getElementById("hero-pills").innerHTML = [
-      ["5 + control", "arms"],
+      ["4 + control", "treatments"],
       ["3", "horizons"],
       [preds.length.toLocaleString(), "predictions"],
       [scoredN.toLocaleString(), "scored"],
