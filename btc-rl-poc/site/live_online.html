@@ -308,9 +308,10 @@ details[open] > summary { margin-bottom: 6px; }
     window phase. Brier (squared probability error, lower is better) scores us against
     the crowd on identical windows. <b>Betting rule</b> (matches the broker): exactly one bet
     per window — at most one, at least one — entry only under 85&cent;, settled at close.
-    The arm picks its moment: it strikes early the first minute its called side shows
-    &ge;5&cent; of edge over the quote; with no edge by the final 3 minutes it takes a
-    forced entry (called side if under 85&cent;, otherwise the only legal side).</p>
+    The arm picks its moment: it strikes the first minute its called side shows
+    &ge;5&cent; of edge over the quote, or immediately if that side's price reaches
+    75&cent; (about to cross the legality cap); with neither by the final 3 minutes it
+    takes a forced entry (called side if under 85&cent;, otherwise the only legal side).</p>
     <div class="scroll" style="margin-top:8px"><table id="kb-tbl">
       <thead><tr><th>window close</th><th>strike</th><th>called with</th>
         <th>our P(up)</th><th>market P(up)</th><th>call</th><th>outcome</th><th>Brier</th></tr></thead>

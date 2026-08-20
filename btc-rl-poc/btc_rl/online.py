@@ -237,6 +237,9 @@ KB_BET_MAX_PRICE_C = 85        # broker rule: entries only below 85 cents
 KB_BET_EDGE_C = 5              # edge (cents) that triggers an EARLY strike
 KB_BET_FORCE_S = 180           # exactly-one-bet rule: if no edge appeared,
                                # forced entry in the last 3 min of the window
+KB_BET_DOOR_C = 75             # closing-door strike: if the called side's
+                               # price reaches 75c it is about to cross the
+                               # 85c legality cap — take it while it's legal
 HF_LOG_NAME = "human_feedback.jsonl"  # scripts/feedback.py appends here
 HF_WEIGHT = 0.15               # RLHF blend: comparable to DIR_BONUS so the
                                # human tilts learning but can't drown the
@@ -1155,9 +1158,10 @@ def run(once: bool = False) -> None:
                         if called[0] == "yes" else \
                         ("yes", yes_price, 100 * p_now - yes_price)
                     forced = k_close_ts - now_ts <= KB_BET_FORCE_S
+                    door = called[1] >= KB_BET_DOOR_C  # about to be priced out
                     best = None
                     if called[1] < KB_BET_MAX_PRICE_C \
-                            and (called[2] >= KB_BET_EDGE_C or forced):
+                            and (called[2] >= KB_BET_EDGE_C or forced or door):
                         best = called
                     elif forced and other[1] < KB_BET_MAX_PRICE_C:
                         best = other  # called side priced out (>=85c)
