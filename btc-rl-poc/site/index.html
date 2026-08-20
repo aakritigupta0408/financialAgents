@@ -1,0 +1,185 @@
+<title>BTC 7PM Oracle</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6; --series-2: #eb6834;
+  --good: #0ca30c; --critical: #d03b3b;
+  --good-text: #006300;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --good-text: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926;
+  --good-text: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  margin: 0; padding: 32px 20px 64px; }
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.09em; font-size: 12px;
+  color: var(--muted); font-weight: 600; }
+h1 { margin: 4px 0 2px; font-size: 30px; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { margin: 0 0 4px; font-size: 19px; }
+.sub { color: var(--ink-2); max-width: 68ch; }
+section { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 20px 22px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 14px 16px; }
+.tile-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--muted); font-weight: 600; }
+.tile-value { font-size: 26px; font-weight: 650; margin-top: 2px; }
+.tile-sub { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
+svg { width: 100%; height: auto; display: block; }
+svg text { font: 12px system-ui, sans-serif; fill: var(--ink-2); }
+svg .val { font-variant-numeric: tabular-nums; fill: var(--ink-2); }
+svg .lbl { fill: var(--ink); }
+svg .tick { fill: var(--muted); font-variant-numeric: tabular-nums; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+svg .bar:hover { opacity: 0.8; }
+.legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 6px 0 10px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px;
+  vertical-align: -1px; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
+th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 7px 10px 7px 0; }
+td.num { font-variant-numeric: tabular-nums; text-align: right; }
+th.num { text-align: right; }
+.muted { color: var(--ink-2); }
+.pill { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px;
+  white-space: nowrap; }
+.pill.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.pill.blocked { color: var(--critical); background: color-mix(in srgb, var(--critical) 12%, transparent); }
+.pill.todo { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
+.rung { display: flex; align-items: center; gap: 14px; padding: 10px 0;
+  border-bottom: 1px solid var(--grid); }
+.rung:last-child { border-bottom: none; }
+.rung > div { flex: 1; }
+.rung-id { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+.rung-name { font-weight: 600; }
+.reward-box { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.reward { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+  font-variant-numeric: tabular-nums; }
+.reward b { font-size: 17px; }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--page);
+  font-size: 12.5px; padding: 5px 9px; border-radius: 6px; opacity: 0; transition: opacity .1s;
+  z-index: 10; max-width: 260px; }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+
+<main>
+<header>
+  <div class="eyebrow">Reinforcement learning · proof of concept</div>
+  <h1>BTC 7PM Oracle</h1>
+  <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
+  (7:30 AM IST Fri next target), scored at <strong>integer level</strong> — 68000 and 68000.98
+  count as the same answer. Reward +1 on an exact match, −1 otherwise.
+  Built entirely on open, no-auth data streams.</p>
+</header>
+
+<div class="tiles"><div class="tile"><div class="tile-label">Training days</div><div class="tile-value">120</div><div class="tile-sub">2026-04-21 → 2026-08-18</div></div><div class="tile"><div class="tile-label">Episodes</div><div class="tile-value">49,900</div><div class="tile-sub">39,892 train · 10,008 held-out test</div></div><div class="tile"><div class="tile-label">15-min move σ</div><div class="tile-value">$91</div><div class="tile-sub">30-min: $129 — why exact hits are rare</div></div><div class="tile"><div class="tile-label">Best exact-int hit rate</div><div class="tile-value">0.75%</div><div class="tile-sub">persistence & shaped-Q, 15 min, test set</div></div><div class="tile"><div class="tile-label">Best MAE</div><div class="tile-value">$60</div><div class="tile-sub">15 min · 30 min: $85</div></div></div>
+
+<section>
+  <h2>Mean absolute error by agent</h2>
+  <p class="sub muted">Held-out test set (10,008 episodes, last 20% of days,
+  never trained on). Lower is better; persistence is the bar to clear.</p>
+  <div class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute horizon</span>
+  <span><span class="dot" style="background:var(--series-2)"></span>30-minute horizon</span></div>
+  <div class="scroll"><svg viewBox="0 0 720 182" role="img" aria-label="mae by agent and horizon" id="mae-chart"><rect class="bar" x="230" y="8" width="204.4" height="16" rx="4" fill="var(--series-1)" data-tip="Persistence (L0) · 15 min: $60"/><text x="442.4" y="20" class="val">$60</text><rect class="bar" x="230" y="28" width="292.4" height="16" rx="4" fill="var(--series-2)" data-tip="Persistence (L0) · 30 min: $85"/><text x="530.4" y="40" class="val">$85</text><text x="220" y="30.0" text-anchor="end" class="lbl">Persistence (L0)</text><rect class="bar" x="230" y="66" width="314.1" height="16" rx="4" fill="var(--series-1)" data-tip="Tabular Q · sparse ±1 (L1) · 15 min: $92"/><text x="552.1" y="78" class="val">$92</text><rect class="bar" x="230" y="86" width="365.2" height="16" rx="4" fill="var(--series-2)" data-tip="Tabular Q · sparse ±1 (L1) · 30 min: $107"/><text x="603.2" y="98" class="val">$107</text><text x="220" y="88.0" text-anchor="end" class="lbl">Tabular Q · sparse ±1 (L1)</text><rect class="bar" x="230" y="124" width="210.3" height="16" rx="4" fill="var(--series-1)" data-tip="Tabular Q · shaped (L1) · 15 min: $61"/><text x="448.3" y="136" class="val">$61</text><rect class="bar" x="230" y="144" width="297.7" height="16" rx="4" fill="var(--series-2)" data-tip="Tabular Q · shaped (L1) · 30 min: $87"/><text x="535.7" y="156" class="val">$87</text><text x="220" y="146.0" text-anchor="end" class="lbl">Tabular Q · shaped (L1)</text><line x1="230" y1="0" x2="230" y2="172" class="axis"/></svg></div>
+</section>
+
+<section>
+  <h2>Exact-integer hit rate</h2>
+  <p class="sub muted">The spec's reward event: int(prediction) == int(actual). With a
+  15-minute move σ of $91, even a perfect-mean predictor
+  hits ~0.4% of the time — which is why the sparse ±1 reward alone can't teach the agent.</p>
+  <div class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute horizon</span>
+  <span><span class="dot" style="background:var(--series-2)"></span>30-minute horizon</span></div>
+  <div class="scroll"><svg viewBox="0 0 720 182" role="img" aria-label="exact_int_hit_rate by agent and horizon" id="hit-chart"><rect class="bar" x="230" y="8" width="365.2" height="16" rx="4" fill="var(--series-1)" data-tip="Persistence (L0) · 15 min: 0.75%"/><text x="603.2" y="20" class="val">0.75%</text><rect class="bar" x="230" y="28" width="231.5" height="16" rx="4" fill="var(--series-2)" data-tip="Persistence (L0) · 30 min: 0.48%"/><text x="469.5" y="40" class="val">0.48%</text><text x="220" y="30.0" text-anchor="end" class="lbl">Persistence (L0)</text><rect class="bar" x="230" y="66" width="177.9" height="16" rx="4" fill="var(--series-1)" data-tip="Tabular Q · sparse ±1 (L1) · 15 min: 0.37%"/><text x="415.9" y="78" class="val">0.37%</text><rect class="bar" x="230" y="86" width="151.0" height="16" rx="4" fill="var(--series-2)" data-tip="Tabular Q · sparse ±1 (L1) · 30 min: 0.31%"/><text x="389.0" y="98" class="val">0.31%</text><text x="220" y="88.0" text-anchor="end" class="lbl">Tabular Q · sparse ±1 (L1)</text><rect class="bar" x="230" y="124" width="365.2" height="16" rx="4" fill="var(--series-1)" data-tip="Tabular Q · shaped (L1) · 15 min: 0.75%"/><text x="603.2" y="136" class="val">0.75%</text><rect class="bar" x="230" y="144" width="211.3" height="16" rx="4" fill="var(--series-2)" data-tip="Tabular Q · shaped (L1) · 30 min: 0.44%"/><text x="449.3" y="156" class="val">0.44%</text><text x="220" y="146.0" text-anchor="end" class="lbl">Tabular Q · shaped (L1)</text><line x1="230" y1="0" x2="230" y2="172" class="axis"/></svg></div>
+</section>
+
+<section>
+  <h2>Where the price actually goes</h2>
+  <p class="sub muted">Distribution of dollar moves on the test set ($25 bins, tails past
+  ±$450 clipped). The mass at 0 is why "predict no change" is so hard to beat.</p>
+  <p class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute move</span></p>
+  <svg viewBox="0 0 720 180" role="img" aria-label="15-minute delta histogram"><rect class="bar" x="10.0" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[-450, -425): 6 episodes"/><rect class="bar" x="28.9" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[-425, -400): 4 episodes"/><rect class="bar" x="47.8" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[-400, -375): 4 episodes"/><text x="47.8" y="172" class="tick">-400</text><rect class="bar" x="66.8" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[-375, -350): 7 episodes"/><rect class="bar" x="85.7" y="152.7" width="16.9" height="1.3" rx="2" fill="var(--series-1)" data-tip="[-350, -325): 9 episodes"/><rect class="bar" x="104.6" y="152.9" width="16.9" height="1.1" rx="2" fill="var(--series-1)" data-tip="[-325, -300): 8 episodes"/><rect class="bar" x="123.5" y="152.0" width="16.9" height="2.0" rx="2" fill="var(--series-1)" data-tip="[-300, -275): 14 episodes"/><rect class="bar" x="142.4" y="152.7" width="16.9" height="1.3" rx="2" fill="var(--series-1)" data-tip="[-275, -250): 9 episodes"/><rect class="bar" x="161.4" y="152.3" width="16.9" height="1.7" rx="2" fill="var(--series-1)" data-tip="[-250, -225): 12 episodes"/><rect class="bar" x="180.3" y="151.3" width="16.9" height="2.7" rx="2" fill="var(--series-1)" data-tip="[-225, -200): 19 episodes"/><rect class="bar" x="199.2" y="148.4" width="16.9" height="5.6" rx="2" fill="var(--series-1)" data-tip="[-200, -175): 39 episodes"/><text x="199.2" y="172" class="tick">-200</text><rect class="bar" x="218.1" y="145.8" width="16.9" height="8.2" rx="2" fill="var(--series-1)" data-tip="[-175, -150): 57 episodes"/><rect class="bar" x="237.0" y="139.6" width="16.9" height="14.4" rx="2" fill="var(--series-1)" data-tip="[-150, -125): 100 episodes"/><rect class="bar" x="255.9" y="130.0" width="16.9" height="24.0" rx="2" fill="var(--series-1)" data-tip="[-125, -100): 167 episodes"/><rect class="bar" x="274.9" y="113.8" width="16.9" height="40.2" rx="2" fill="var(--series-1)" data-tip="[-100, -75): 280 episodes"/><rect class="bar" x="293.8" y="101.5" width="16.9" height="52.5" rx="2" fill="var(--series-1)" data-tip="[-75, -50): 365 episodes"/><rect class="bar" x="312.7" y="66.0" width="16.9" height="88.0" rx="2" fill="var(--series-1)" data-tip="[-50, -25): 612 episodes"/><rect class="bar" x="331.6" y="12.0" width="16.9" height="142.0" rx="2" fill="var(--series-1)" data-tip="[-25, 0): 988 episodes"/><rect class="bar" x="350.5" y="20.6" width="16.9" height="133.4" rx="2" fill="var(--series-1)" data-tip="[0, 25): 928 episodes"/><text x="350.5" y="172" class="tick">+0</text><rect class="bar" x="369.5" y="76.5" width="16.9" height="77.5" rx="2" fill="var(--series-1)" data-tip="[25, 50): 539 episodes"/><rect class="bar" x="388.4" y="105.4" width="16.9" height="48.6" rx="2" fill="var(--series-1)" data-tip="[50, 75): 338 episodes"/><rect class="bar" x="407.3" y="121.7" width="16.9" height="32.3" rx="2" fill="var(--series-1)" data-tip="[75, 100): 225 episodes"/><rect class="bar" x="426.2" y="134.5" width="16.9" height="19.5" rx="2" fill="var(--series-1)" data-tip="[100, 125): 136 episodes"/><rect class="bar" x="445.1" y="140.8" width="16.9" height="13.2" rx="2" fill="var(--series-1)" data-tip="[125, 150): 92 episodes"/><rect class="bar" x="464.1" y="145.4" width="16.9" height="8.6" rx="2" fill="var(--series-1)" data-tip="[150, 175): 60 episodes"/><rect class="bar" x="483.0" y="148.0" width="16.9" height="6.0" rx="2" fill="var(--series-1)" data-tip="[175, 200): 42 episodes"/><rect class="bar" x="501.9" y="149.0" width="16.9" height="5.0" rx="2" fill="var(--series-1)" data-tip="[200, 225): 35 episodes"/><text x="501.9" y="172" class="tick">+200</text><rect class="bar" x="520.8" y="151.1" width="16.9" height="2.9" rx="2" fill="var(--series-1)" data-tip="[225, 250): 20 episodes"/><rect class="bar" x="539.7" y="151.4" width="16.9" height="2.6" rx="2" fill="var(--series-1)" data-tip="[250, 275): 18 episodes"/><rect class="bar" x="558.6" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[275, 300): 5 episodes"/><rect class="bar" x="577.6" y="152.7" width="16.9" height="1.3" rx="2" fill="var(--series-1)" data-tip="[300, 325): 9 episodes"/><rect class="bar" x="596.5" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[325, 350): 1 episodes"/><rect class="bar" x="615.4" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[350, 375): 7 episodes"/><rect class="bar" x="634.3" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[375, 400): 3 episodes"/><rect class="bar" x="653.2" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[400, 425): 3 episodes"/><text x="653.2" y="172" class="tick">+400</text><rect class="bar" x="672.2" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[425, 450): 1 episodes"/><rect class="bar" x="691.1" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-1)" data-tip="[450, 475): 5 episodes"/><line x1="350.5" y1="6" x2="350.5" y2="154" class="zero"/><line x1="10" y1="154" x2="710" y2="154" class="axis"/></svg>
+  <p class="legend"><span><span class="dot" style="background:var(--series-2)"></span>30-minute move</span></p>
+  <svg viewBox="0 0 720 180" role="img" aria-label="30-minute delta histogram"><rect class="bar" x="10.0" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-2)" data-tip="[-450, -425): 4 episodes"/><rect class="bar" x="28.9" y="152.2" width="16.9" height="1.8" rx="2" fill="var(--series-2)" data-tip="[-425, -400): 8 episodes"/><rect class="bar" x="47.8" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-2)" data-tip="[-400, -375): 4 episodes"/><text x="47.8" y="172" class="tick">-400</text><rect class="bar" x="66.8" y="150.1" width="16.9" height="3.9" rx="2" fill="var(--series-2)" data-tip="[-375, -350): 18 episodes"/><rect class="bar" x="85.7" y="150.7" width="16.9" height="3.3" rx="2" fill="var(--series-2)" data-tip="[-350, -325): 15 episodes"/><rect class="bar" x="104.6" y="149.8" width="16.9" height="4.2" rx="2" fill="var(--series-2)" data-tip="[-325, -300): 19 episodes"/><rect class="bar" x="123.5" y="150.7" width="16.9" height="3.3" rx="2" fill="var(--series-2)" data-tip="[-300, -275): 15 episodes"/><rect class="bar" x="142.4" y="148.5" width="16.9" height="5.5" rx="2" fill="var(--series-2)" data-tip="[-275, -250): 25 episodes"/><rect class="bar" x="161.4" y="149.8" width="16.9" height="4.2" rx="2" fill="var(--series-2)" data-tip="[-250, -225): 19 episodes"/><rect class="bar" x="180.3" y="145.0" width="16.9" height="9.0" rx="2" fill="var(--series-2)" data-tip="[-225, -200): 41 episodes"/><rect class="bar" x="199.2" y="142.6" width="16.9" height="11.4" rx="2" fill="var(--series-2)" data-tip="[-200, -175): 52 episodes"/><text x="199.2" y="172" class="tick">-200</text><rect class="bar" x="218.1" y="132.3" width="16.9" height="21.7" rx="2" fill="var(--series-2)" data-tip="[-175, -150): 99 episodes"/><rect class="bar" x="237.0" y="117.8" width="16.9" height="36.2" rx="2" fill="var(--series-2)" data-tip="[-150, -125): 165 episodes"/><rect class="bar" x="255.9" y="108.9" width="16.9" height="45.1" rx="2" fill="var(--series-2)" data-tip="[-125, -100): 206 episodes"/><rect class="bar" x="274.9" y="91.1" width="16.9" height="62.9" rx="2" fill="var(--series-2)" data-tip="[-100, -75): 287 episodes"/><rect class="bar" x="293.8" y="75.1" width="16.9" height="78.9" rx="2" fill="var(--series-2)" data-tip="[-75, -50): 360 episodes"/><rect class="bar" x="312.7" y="46.2" width="16.9" height="107.8" rx="2" fill="var(--series-2)" data-tip="[-50, -25): 492 episodes"/><rect class="bar" x="331.6" y="12.0" width="16.9" height="142.0" rx="2" fill="var(--series-2)" data-tip="[-25, 0): 648 episodes"/><rect class="bar" x="350.5" y="14.4" width="16.9" height="139.6" rx="2" fill="var(--series-2)" data-tip="[0, 25): 637 episodes"/><text x="350.5" y="172" class="tick">+0</text><rect class="bar" x="369.5" y="56.0" width="16.9" height="98.0" rx="2" fill="var(--series-2)" data-tip="[25, 50): 447 episodes"/><rect class="bar" x="388.4" y="80.2" width="16.9" height="73.8" rx="2" fill="var(--series-2)" data-tip="[50, 75): 337 episodes"/><rect class="bar" x="407.3" y="99.2" width="16.9" height="54.8" rx="2" fill="var(--series-2)" data-tip="[75, 100): 250 episodes"/><rect class="bar" x="426.2" y="125.1" width="16.9" height="28.9" rx="2" fill="var(--series-2)" data-tip="[100, 125): 132 episodes"/><rect class="bar" x="445.1" y="132.5" width="16.9" height="21.5" rx="2" fill="var(--series-2)" data-tip="[125, 150): 98 episodes"/><rect class="bar" x="464.1" y="133.2" width="16.9" height="20.8" rx="2" fill="var(--series-2)" data-tip="[150, 175): 95 episodes"/><rect class="bar" x="483.0" y="138.4" width="16.9" height="15.6" rx="2" fill="var(--series-2)" data-tip="[175, 200): 71 episodes"/><rect class="bar" x="501.9" y="144.6" width="16.9" height="9.4" rx="2" fill="var(--series-2)" data-tip="[200, 225): 43 episodes"/><text x="501.9" y="172" class="tick">+200</text><rect class="bar" x="520.8" y="145.9" width="16.9" height="8.1" rx="2" fill="var(--series-2)" data-tip="[225, 250): 37 episodes"/><rect class="bar" x="539.7" y="145.9" width="16.9" height="8.1" rx="2" fill="var(--series-2)" data-tip="[250, 275): 37 episodes"/><rect class="bar" x="558.6" y="147.2" width="16.9" height="6.8" rx="2" fill="var(--series-2)" data-tip="[275, 300): 31 episodes"/><rect class="bar" x="577.6" y="150.9" width="16.9" height="3.1" rx="2" fill="var(--series-2)" data-tip="[300, 325): 14 episodes"/><rect class="bar" x="596.5" y="150.1" width="16.9" height="3.9" rx="2" fill="var(--series-2)" data-tip="[325, 350): 18 episodes"/><rect class="bar" x="615.4" y="149.2" width="16.9" height="4.8" rx="2" fill="var(--series-2)" data-tip="[350, 375): 22 episodes"/><rect class="bar" x="634.3" y="152.2" width="16.9" height="1.8" rx="2" fill="var(--series-2)" data-tip="[375, 400): 8 episodes"/><rect class="bar" x="653.2" y="153.0" width="16.9" height="1.0" rx="2" fill="var(--series-2)" data-tip="[400, 425): 4 episodes"/><text x="653.2" y="172" class="tick">+400</text><rect class="bar" x="672.2" y="152.7" width="16.9" height="1.3" rx="2" fill="var(--series-2)" data-tip="[425, 450): 6 episodes"/><rect class="bar" x="691.1" y="152.0" width="16.9" height="2.0" rx="2" fill="var(--series-2)" data-tip="[450, 475): 9 episodes"/><line x1="350.5" y1="6" x2="350.5" y2="154" class="zero"/><line x1="10" y1="154" x2="710" y2="154" class="axis"/></svg>
+</section>
+
+<section>
+  <h2>Scoreboard — all test episodes</h2>
+  <div class="scroll"><table>
+  <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
+  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">5,184</td><td class="num">0.75%</td><td class="num">$60</td><td class="num">16.8%</td><td class="num">59.2%</td><td class="num">-0.985</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">4,824</td><td class="num">0.48%</td><td class="num">$85</td><td class="num">11.3%</td><td class="num">46.1%</td><td class="num">-0.990</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">5,184</td><td class="num">0.37%</td><td class="num">$92</td><td class="num">7.3%</td><td class="num">30.6%</td><td class="num">-0.993</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">4,824</td><td class="num">0.31%</td><td class="num">$107</td><td class="num">7.0%</td><td class="num">30.9%</td><td class="num">-0.994</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">5,184</td><td class="num">0.75%</td><td class="num">$61</td><td class="num">15.4%</td><td class="num">57.1%</td><td class="num">-0.985</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">4,824</td><td class="num">0.44%</td><td class="num">$87</td><td class="num">11.1%</td><td class="num">45.8%</td><td class="num">-0.991</td></tr></tbody></table></div>
+  <h2 style="margin-top:22px">Scoreboard — 7:00 / 7:15 PM slots only</h2>
+  <p class="sub muted">The actual deliverable: 48 held-out evenings per horizon.</p>
+  <div class="scroll"><table>
+  <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
+  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$66</td><td class="num">16.7%</td><td class="num">58.3%</td><td class="num">-1.000</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$116</td><td class="num">4.2%</td><td class="num">35.4%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">48</td><td class="num">2.08%</td><td class="num">$99</td><td class="num">12.5%</td><td class="num">35.4%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$143</td><td class="num">2.1%</td><td class="num">22.9%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$70</td><td class="num">10.4%</td><td class="num">54.2%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$118</td><td class="num">8.3%</td><td class="num">37.5%</td><td class="num">-1.000</td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2>Reward design</h2>
+  <p class="sub muted">The spec reward is honest but nearly silent — it fires on ~0.5% of
+  episodes. The shaped variant keeps the same objective while making the gradient audible.</p>
+  <div class="reward-box">
+    <div class="reward"><b>+1</b> &nbsp;int(pred) == int(actual)</div>
+    <div class="reward"><b>−1</b> &nbsp;any other outcome (spec)</div>
+    <div class="reward"><b>−|error| / 100</b> &nbsp;shaped variant on a miss</div>
+  </div>
+</section>
+
+<section>
+  <h2>Open data streams (verified 2026-08-19)</h2>
+  <div class="scroll"><table>
+  <thead><tr><th>Stream</th><th>What it provides</th><th>Status</th></tr></thead>
+  <tbody><tr><td>Coinbase Exchange</td><td class="muted">1m OHLCV candles + WebSocket feed (primary)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Kraken</td><td class="muted">1m OHLCV, spreads (cross-check)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Bitstamp</td><td class="muted">1m OHLCV (fallback)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>OKX</td><td class="muted">funding rate + open interest</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Deribit</td><td class="muted">perpetual / options tickers</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>alternative.me</td><td class="muted">Fear &amp; Greed sentiment index</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>mempool.space</td><td class="muted">fees, mempool congestion</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>blockchain.info</td><td class="muted">hash rate, tx count</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>CoinGecko</td><td class="muted">spot price, market cap</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Binance spot + futures</td><td class="muted">geo-blocked from build machine</td><td><span class="pill blocked">✕ blocked</span></td></tr><tr><td>Bybit</td><td class="muted">geo-blocked from build machine</td><td><span class="pill blocked">✕ blocked</span></td></tr></tbody></table></div>
+</section>
+
+<section>
+  <h2>Agent ladder — simple to complex</h2>
+  <div class="rung done"><span class="rung-id">L0</span><div><div class="rung-name">Persistence baseline</div><div class="muted">predict the current price — the bar to clear</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L1</span><div><div class="rung-name">Tabular Q-learning</div><div class="muted">81 states × 21 integer-delta actions, ε-greedy, sparse + shaped rewards</div></div><span class="pill ok">✓ built</span></div><div class="rung next"><span class="rung-id">L2</span><div><div class="rung-name">Linear function approximation</div><div class="muted">continuous features, SGD on Q(s,a)</div></div><span class="pill todo">→ next</span></div><div class="rung later"><span class="rung-id">L3</span><div><div class="rung-name">Small DQN / distributional RL</div><div class="muted">predict the delta distribution, act on its mode</div></div><span class="pill todo">later</span></div>
+</section>
+
+<footer>Generated 2026-08-19 20:49 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
+sentiment: alternative.me Fear &amp; Greed · chronological 80/20 split, no lookahead.</footer>
+</main>
+
+<div id="tip"></div>
+<script>
+const tip = document.getElementById('tip');
+document.querySelectorAll('[data-tip]').forEach(el => {
+  el.addEventListener('mousemove', e => {
+    tip.textContent = el.dataset.tip;
+    tip.style.opacity = 1;
+    tip.style.left = Math.min(e.clientX + 12, innerWidth - 270) + 'px';
+    tip.style.top = (e.clientY + 14) + 'px';
+  });
+  el.addEventListener('mouseleave', () => tip.style.opacity = 0);
+});
+</script>

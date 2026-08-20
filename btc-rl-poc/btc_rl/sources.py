@@ -1,0 +1,110 @@
+"""Open, no-auth data streams for BTC (verified reachable 2026-08-19).
+
+Primary: Coinbase Exchange (1m OHLCV). Sentiment: alternative.me Fear & Greed.
+Derivatives context: OKX funding rate. Others cataloged in the README.
+"""
+from __future__ import annotations
+
+import json
+import time
+from datetime import datetime, timedelta
+from pathlib import Path
+
+import requests
+
+from . import config
+
+CACHE_DIR = Path(__file__).resolve().parent.parent / "data_cache"
+CACHE_DIR.mkdir(exist_ok=True)
+
+_session = requests.Session()
+_session.headers["User-Agent"] = "btc-rl-poc/0.1"
+
+
+def fetch_coinbase_candles(start: datetime, end: datetime) -> list[dict]:
+    """Fetch 1m BTC-USD candles [start, end) from Coinbase Exchange (max 300/req).
+
+    Returns bars sorted by time: {"ts", "open", "high", "low", "close", "volume"}.
+    """
+    url = f"{config.COINBASE_BASE}/products/BTC-USD/candles"
+    params = {
+        "granularity": 60,
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+    }
+    for attempt in range(4):
+        resp = _session.get(url, params=params, timeout=15)
+        if resp.status_code == 429:
+            time.sleep(1.5 * (attempt + 1))
+            continue
+        resp.raise_for_status()
+        rows = resp.json()
+        bars = [
+            {"ts": r[0], "low": r[1], "high": r[2], "open": r[3],
+             "close": r[4], "volume": r[5]}
+            for r in rows
+        ]
+        return sorted(bars, key=lambda b: b["ts"])
+    raise RuntimeError("Coinbase rate limit persisted after retries")
+
+
+def fetch_day_window(day_pacific: datetime) -> list[dict]:
+    """Fetch (and disk-cache) the configured Pacific-time window for one day."""
+    cache = CACHE_DIR / f"bars_{day_pacific:%Y-%m-%d}.json"
+    if cache.exists():
+        return json.loads(cache.read_text())
+    start = day_pacific.replace(hour=config.DAY_WINDOW_START_HHMM[0],
+                                minute=config.DAY_WINDOW_START_HHMM[1],
+                                second=0, microsecond=0)
+    end = day_pacific.replace(hour=config.DAY_WINDOW_END_HHMM[0],
+                              minute=config.DAY_WINDOW_END_HHMM[1],
+                              second=0, microsecond=0)
+    bars = fetch_coinbase_candles(start, end)
+    # Only cache completed days so partial data never poisons the cache.
+    now_pacific = datetime.now(tz=config.PACIFIC)
+    if end < now_pacific:
+        cache.write_text(json.dumps(bars))
+    time.sleep(0.15)  # stay far below Coinbase's 10 req/s public limit
+    return bars
+
+
+def fetch_fear_greed(limit: int = 200) -> dict[str, int]:
+    """Daily Fear & Greed index keyed by ISO date (UTC)."""
+    cache = CACHE_DIR / "fng.json"
+    if cache.exists() and time.time() - cache.stat().st_mtime < 6 * 3600:
+        return json.loads(cache.read_text())
+    resp = _session.get(config.FNG_URL, params={"limit": limit}, timeout=15)
+    resp.raise_for_status()
+    out = {}
+    for row in resp.json()["data"]:
+        day = datetime.utcfromtimestamp(int(row["timestamp"])).date().isoformat()
+        out[day] = int(row["value"])
+    cache.write_text(json.dumps(out))
+    return out
+
+
+def fetch_okx_funding_rate() -> float | None:
+    """Current BTC perp funding rate from OKX (live-mode feature)."""
+    try:
+        resp = _session.get(config.OKX_FUNDING_URL, timeout=10)
+        resp.raise_for_status()
+        return float(resp.json()["data"][0]["fundingRate"])
+    except Exception:
+        return None
+
+
+def fetch_history(days: int) -> dict[str, list[dict]]:
+    """Fetch the daily windows for the last `days` completed days."""
+    today = datetime.now(tz=config.PACIFIC).replace(hour=0, minute=0, second=0,
+                                                    microsecond=0)
+    out: dict[str, list[dict]] = {}
+    for i in range(days, 0, -1):
+        day = today - timedelta(days=i)
+        try:
+            bars = fetch_day_window(day)
+        except Exception as exc:  # one bad day shouldn't sink the run
+            print(f"  skip {day:%Y-%m-%d}: {exc}")
+            continue
+        if bars:
+            out[f"{day:%Y-%m-%d}"] = bars
+    return out
