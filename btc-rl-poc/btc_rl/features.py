@@ -51,7 +51,14 @@ def compute_features(bars: list[dict], fng: int | None) -> dict:
     vol_30m = math.sqrt(sum((r - mean) ** 2 for r in rets_1m) / len(rets_1m))
     avg_vol_60 = sum(vols[-60:]) / min(60, len(vols))
     avg_vol_5 = sum(vols[-5:]) / min(5, len(vols))
+    sign = lambda v: 1 if v > 0 else (-1 if v < 0 else 0)
+    lo60, hi60 = min(closes[-60:]), max(closes[-60:])
+    r5, r15, r60 = _ret(closes, 5), _ret(closes, 15), _ret(closes, 60)
     return {
+        "ret_240m": _ret(closes, 240),
+        "trend_align": (sign(r5) + sign(r15) + sign(r60)) / 3.0,
+        "range_pos": ((closes[-1] - lo60) / (hi60 - lo60) - 0.5
+                      if hi60 > lo60 else 0.0),
         "price": closes[-1],
         "ret_1m": _ret(closes, 1),
         "ret_5m": _ret(closes, 5),
@@ -88,6 +95,27 @@ def feature_vector(feat: dict) -> list[float]:
 
 
 LIVE_DIM = 5
+TREND_DIM = 3
+BOOK_DIM = 2
+
+
+def trend_feature_vector(feat: dict) -> list[float]:
+    """Trend context (t4): 4h momentum, multi-scale alignment, range position."""
+    return [
+        feat.get("ret_240m", 0.0) * 1e4 / 120,
+        feat.get("trend_align", 0.0),
+        feat.get("range_pos", 0.0) * 2,
+    ]
+
+
+def book_feature_vector(snap: dict | None) -> list[float]:
+    """Order-book context (t4): bid/ask imbalance and spread, neutral-at-0."""
+    if not snap:
+        return [0.0] * BOOK_DIM
+    return [
+        snap.get("imb") or 0.0,
+        (snap.get("spread_bp") or 0.0) / 5,
+    ]
 
 
 def live_feature_vector(snap: dict | None) -> list[float]:

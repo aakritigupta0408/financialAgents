@@ -38,12 +38,17 @@ class LinUCBAgent:
 
     name = "linucb"
 
-    def __init__(self, dim: int, alpha: float = 1.0, lam: float = 1.0):
+    def __init__(self, dim: int, alpha: float = 1.0, lam: float = 1.0,
+                 n_arms: int | None = None):
         import numpy as np
         self.np = np
         self.dim = dim
         self.alpha = alpha
-        self.n_arms = len(config.ACTION_DELTAS)
+        # n_arms beyond the delta count adds an ABSTAIN arm (bet nothing,
+        # reward always 0) — the bandit learns when not to play.
+        self.n_arms = n_arms or len(config.ACTION_DELTAS)
+        self.abstain_idx = (self.n_arms - 1
+                            if self.n_arms > len(config.ACTION_DELTAS) else None)
         self.A = [np.eye(dim) * lam for _ in range(self.n_arms)]
         self.b = [np.zeros(dim) for _ in range(self.n_arms)]
         self.pulls = [0] * self.n_arms
@@ -71,13 +76,14 @@ class LinUCBAgent:
         return sum(self.pulls)
 
     def to_dict(self) -> dict:
-        return {"dim": self.dim, "alpha": self.alpha,
+        return {"dim": self.dim, "alpha": self.alpha, "n_arms": self.n_arms,
                 "A": [a.tolist() for a in self.A],
                 "b": [b.tolist() for b in self.b], "pulls": self.pulls}
 
     @classmethod
     def from_dict(cls, d: dict) -> "LinUCBAgent":
-        agent = cls(dim=d["dim"], alpha=d.get("alpha", 1.0))
+        agent = cls(dim=d["dim"], alpha=d.get("alpha", 1.0),
+                    n_arms=d.get("n_arms"))
         agent.A = [agent.np.asarray(a) for a in d["A"]]
         agent.b = [agent.np.asarray(b) for b in d["b"]]
         agent.pulls = d.get("pulls", [0] * agent.n_arms)

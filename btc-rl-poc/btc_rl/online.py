@@ -28,10 +28,11 @@ from pathlib import Path
 from . import config
 from .agents import LinUCBAgent, TabularQAgent
 from .env import build_episodes, reward
-from .features import (LIVE_DIM, compute_features, discretize, feature_vector,
-                       live_feature_vector)
-from .sources import (fetch_brti_composite, fetch_deribit_mark,
-                      fetch_fear_greed, fetch_mempool_fee,
+from .features import (BOOK_DIM, LIVE_DIM, TREND_DIM, book_feature_vector,
+                       compute_features, discretize, feature_vector,
+                       live_feature_vector, trend_feature_vector)
+from .sources import (fetch_book_stats, fetch_brti_composite,
+                      fetch_deribit_mark, fetch_fear_greed, fetch_mempool_fee,
                       fetch_okx_funding_rate, fetch_range)
 
 FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
@@ -63,7 +64,33 @@ VARIANTS: dict[str, dict] = {
     "t3-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb", "live": True},
     "t3-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb", "live": True},
     "t3-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb", "live": True},
+    # TREATMENT 4 = t3 + what the evaluation said was missing: trend features
+    # (4h momentum, alignment, range position), order-book features (imbalance,
+    # spread), and an ABSTAIN arm so it can decline -EV bets. t3/t2/ctl frozen.
+    "t4-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
+              "live": True, "trend": True, "book": True, "abstain": True},
+    "t4-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "abstain": True},
+    "t4-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "abstain": True},
 }
+
+
+def _ctx_dim(spec: dict) -> int:
+    return (FEATURE_DIM + (TREND_DIM if spec.get("trend") else 0)
+            + (LIVE_DIM if spec.get("live") else 0)
+            + (BOOK_DIM if spec.get("book") else 0))
+
+
+def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
+    x = feature_vector(feat)
+    if spec.get("trend"):
+        x += trend_feature_vector(feat)
+    if spec.get("live"):
+        x += live_feature_vector(snap)
+    if spec.get("book"):
+        x += book_feature_vector(snap)
+    return x
 
 # Betting rules: each committed prediction stakes $10 from a shared $1,000
 # bankroll; |predicted - actual| <= $10 pays $50 (net +$40), a miss loses the
@@ -92,8 +119,8 @@ def _bandit_path(variant: str) -> Path:
     return RESULTS_DIR / f"linucb_{variant}.json"
 
 
-def _load_bandits(variant: str, horizons: list[int],
-                  dim: int) -> dict[int, LinUCBAgent]:
+def _load_bandits(variant: str, horizons: list[int], dim: int,
+                  n_arms: int | None = None) -> dict[int, LinUCBAgent]:
     path = _bandit_path(variant)
     if path.exists():
         raw = json.loads(path.read_text())
@@ -101,7 +128,7 @@ def _load_bandits(variant: str, horizons: list[int],
                   if f"h{h}" in raw and raw[f"h{h}"]["dim"] == dim}
         if loaded:
             return loaded
-    return {h: LinUCBAgent(dim) for h in horizons}
+    return {h: LinUCBAgent(dim, n_arms=n_arms) for h in horizons}
 
 
 def _load_snapshots() -> list[dict]:
@@ -179,18 +206,26 @@ def _save_ledger(rows: list[dict]) -> None:
 def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 bars_upto: list[dict], fng, slot_ts: int,
                 horizons: list[int], bet_start_ts: float,
-                live_x: list[float] | None = None) -> list[dict]:
+                spec: dict | None = None,
+                snap: dict | None = None) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts."""
     feat = compute_features(bars_upto, fng)
     state = discretize(feat)
+    spec = spec or {}
     rows = []
     for horizon in horizons:
         agent = agents[horizon]
         row_extra: dict = {}
+        abstained = False
         if isinstance(agent, LinUCBAgent):
-            x = feature_vector(feat) + (live_x or [])
-            delta = config.ACTION_DELTAS[agent.select(x)]
+            x = _context(spec, feat, snap)
+            arm = agent.select(x)
+            abstained = arm == agent.abstain_idx
+            delta = 0 if abstained else config.ACTION_DELTAS[arm]
             row_extra["x"] = [round(v, 5) for v in x]
+            row_extra["arm"] = arm
+            if abstained:
+                row_extra["abstained"] = True
         else:
             qs = agent.q.get(state)
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
@@ -201,7 +236,8 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             "horizon": horizon, "price_now": feat["price"],
             "pred": int(feat["price"] + delta), "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
-            "bet": BET_STAKE if slot_ts >= bet_start_ts else 0,
+            "bet": (0 if abstained
+                    else BET_STAKE if slot_ts >= bet_start_ts else 0),
             **row_extra,
         })
     return rows
@@ -263,8 +299,9 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
 
 def run(once: bool = False) -> None:
     RESULTS_DIR.mkdir(exist_ok=True)
-    arms = {v: (_load_bandits(v, spec["horizons"],
-                              FEATURE_DIM + (LIVE_DIM if spec.get("live") else 0))
+    arms = {v: (_load_bandits(v, spec["horizons"], _ctx_dim(spec),
+                              n_arms=(len(config.ACTION_DELTAS) + 1
+                                      if spec.get("abstain") else None))
                 if spec.get("agent") == "linucb"
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
@@ -305,6 +342,7 @@ def run(once: bool = False) -> None:
             brti = fetch_brti_composite()
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
+            book = fetch_book_stats()
             snap = {
                 "ts": now_ts,
                 "funding": fetch_okx_funding_rate(),
@@ -312,6 +350,8 @@ def run(once: bool = False) -> None:
                              if mark and spot else None),
                 "disp_bp": None, "gap_bp": None,
                 "fee": fetch_mempool_fee(),
+                "imb": book["imb"] if book else None,
+                "spread_bp": book["spread_bp"] if book else None,
             }
             if brti and spot:
                 cons_prices = list(brti["constituents"].values())
@@ -329,18 +369,19 @@ def run(once: bool = False) -> None:
             if cold_bandits:
                 warm_eps = build_episodes({"warm": bars}, {"warm": None})
                 for v in sorted(cold_bandits):
-                    is_live = VARIANTS[v].get("live")
+                    vspec = VARIANTS[v]
                     for h, agent in arms[v].items():
                         for e in (e for e in warm_eps if e.horizon_min == h):
-                            x = feature_vector(e.features)
-                            if is_live:
-                                x = x + live_feature_vector(
-                                    _nearest_snap(snaps, e.minute_ts))
+                            x = _context(vspec, e.features,
+                                         _nearest_snap(snaps, e.minute_ts))
                             a = agent.select(x)
-                            pred = e.price_now + config.ACTION_DELTAS[a]
-                            r = (BET_PAYOUT - BET_STAKE
-                                 if abs(pred - e.price_future) <= BET_TOLERANCE
-                                 else -BET_STAKE)
+                            if a == agent.abstain_idx:
+                                r = 0.0
+                            else:
+                                pred = e.price_now + config.ACTION_DELTAS[a]
+                                r = (BET_PAYOUT - BET_STAKE
+                                     if abs(pred - e.price_future) <= BET_TOLERANCE
+                                     else -BET_STAKE)
                             agent.update(x, a, r)
                     _checkpoint(v, arms[v])
                     print(f"warmed up {v} on {len(warm_eps)} recent episodes")
@@ -359,11 +400,10 @@ def run(once: bool = False) -> None:
                     upto = [b for b in bars if b["ts"] <= slot_ts]
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
-                    live_x = (live_feature_vector(_nearest_snap(snaps, slot_ts))
-                              if spec.get("live") else None)
                     rows = _predict_at(variant, arms[variant], upto, fng,
                                        slot_ts, spec["horizons"], bet_start_ts,
-                                       live_x=live_x)
+                                       spec=spec,
+                                       snap=_nearest_snap(snaps, slot_ts))
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
@@ -377,7 +417,8 @@ def run(once: bool = False) -> None:
                               if r["variant"] == "consensus"}
             by_slot: dict[int, dict] = {}
             for r in ledger:
-                if r["horizon"] == 5 and r["variant"] in ("h5", "t2-h5", "t3-h5") \
+                if r["horizon"] == 5 \
+                        and r["variant"] in ("h5", "t2-h5", "t3-h5", "t4-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             for slot_ts, votes in sorted(by_slot.items()):
@@ -423,10 +464,14 @@ def run(once: bool = False) -> None:
                 if agent is None or row["delta"] not in config.ACTION_DELTAS:
                     continue
                 if isinstance(agent, LinUCBAgent) and row.get("x"):
-                    r = (BET_PAYOUT - BET_STAKE
-                         if row["abs_err"] <= BET_TOLERANCE else -BET_STAKE)
-                    agent.update(row["x"],
-                                 config.ACTION_DELTAS.index(row["delta"]), r)
+                    arm_idx = row.get("arm",
+                                      config.ACTION_DELTAS.index(row["delta"]))
+                    if row.get("abstained"):
+                        r = 0.0  # declined to bet — the safe arm earns nothing
+                    else:
+                        r = (BET_PAYOUT - BET_STAKE
+                             if row["abs_err"] <= BET_TOLERANCE else -BET_STAKE)
+                    agent.update(row["x"], arm_idx, r)
                     online_updates += 1
                 elif isinstance(agent, TabularQAgent) and row.get("state"):
                     r = reward(row["pred"], row["actual"], shaped=True)

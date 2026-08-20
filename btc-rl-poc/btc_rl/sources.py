@@ -128,6 +128,25 @@ def fetch_mempool_fee() -> float | None:
         return None
 
 
+def fetch_book_stats(depth: int = 20) -> dict | None:
+    """Coinbase L2 order-book snapshot → bid/ask imbalance and spread (bp)."""
+    try:
+        resp = _session.get(f"{config.COINBASE_BASE}/products/BTC-USD/book"
+                            "?level=2", timeout=8)
+        resp.raise_for_status()
+        j = resp.json()
+        bid_sz = sum(float(b[1]) for b in j["bids"][:depth])
+        ask_sz = sum(float(a[1]) for a in j["asks"][:depth])
+        best_bid = float(j["bids"][0][0])
+        best_ask = float(j["asks"][0][0])
+        mid = (best_bid + best_ask) / 2
+        return {"imb": (bid_sz - ask_sz) / (bid_sz + ask_sz)
+                if bid_sz + ask_sz else 0.0,
+                "spread_bp": (best_ask - best_bid) / mid * 1e4}
+    except Exception:
+        return None
+
+
 def fetch_brti_composite() -> dict | None:
     """BRTI-style live BTC price: volume-weighted across CME CF BRTI
     constituent exchanges that expose open, no-auth tickers.
