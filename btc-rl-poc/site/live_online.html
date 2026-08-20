@@ -558,7 +558,7 @@ function tipText(p) {
   return `${fmtTime(p.target_ts)} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}` +
     (p.actual != null
       ? `, actual $${Math.round(p.actual).toLocaleString()}, error ${fmtErr(p)}` +
-        (p.hit ? " — HIT (within $5)" : "")
+        (p.hit ? ` — HIT (±$${p.hit_band ?? 5})` : "")
       : ", awaiting the minute");
 }
 

@@ -38,9 +38,15 @@ K_FACTORS = sorted({0.0, 0.1, -0.1, 0.2, -0.2, 0.35, -0.35, 0.5, -0.5,
 
 # Rewards (user spec): +1 when int(pred) == int(actual), else penalty.
 REWARD_HIT = 1.0
-HIT_BAND = 5.0                    # a prediction within ±$5 of actual is a hit
+HIT_BAND = 5.0                    # floor of the hit band in dollars
+HIT_BAND_VOL = 0.10               # vol-scaled hit band: within
+                                  # max(HIT_BAND, HIT_BAND_VOL * sigma_h) is a
+                                  # hit — ~$5/+1m, ~$12/+5m, ~$20/+15m,
+                                  # ~$26/+30m at current vol, so the precision
+                                  # bar (and firing rate ~8-10%) is uniform
+                                  # across horizons instead of flat-$5
                                   # (exact-integer hits fired <1% — too sparse
-                                  # to teach; ±$5 fires 2-8% by horizon)
+                                  # to teach anything)
 REWARD_MISS = -1.0
 SHAPED_SCALE = 100.0              # shaped mode: reward = -|error| / SHAPED_SCALE
 

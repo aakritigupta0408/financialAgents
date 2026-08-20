@@ -262,10 +262,17 @@ def _vol_delta(k: float, feat: dict, horizon: int) -> int:
     return int(round(k * _horizon_sigma(feat, horizon)))
 
 
+def _hit_band(sigma: float | None) -> float:
+    """Vol-scaled hit tolerance: max($5 floor, 10% of the horizon sigma)."""
+    if not sigma:
+        return config.HIT_BAND
+    return max(config.HIT_BAND, config.HIT_BAND_VOL * sigma)
+
+
 def _bandit_reward(pred: float, actual: float, price_now: float,
-                   delta: int) -> float:
+                   delta: int, band: float | None = None) -> float:
     """Prediction reward + direction credit for correct-sign deviations."""
-    r = reward(pred, actual, shaped=True)
+    r = reward(pred, actual, shaped=True, band=band)
     if delta and (delta > 0) == (actual > price_now) and actual != price_now:
         r += DIR_BONUS
     return r
@@ -643,7 +650,9 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     spec = spec or {}
     rows = []
     for horizon in horizons:
-        row_extra: dict = {}
+        # every row carries its commit-time sigma_h: the vol-scaled hit
+        # band and DQN z-scores both need it at scoring time
+        row_extra: dict = {"sigma": round(_horizon_sigma(feat, horizon), 2)}
         adj = 0
         if spec.get("agent") == "replay":
             # copy the past chart segment forward, verbatim
@@ -666,8 +675,6 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             adj = int(max(-cap, min(cap, 0.5 * raw_adj)))
             row_extra["x"] = [round(v, 5) for v in x]
             row_extra["arm"] = arm
-            if isinstance(agent, DistDQNAgent):
-                row_extra["sigma"] = round(_horizon_sigma(feat, horizon), 2)
             if adj:
                 row_extra["bias_adj"] = adj
         elif agent is not None:
@@ -768,7 +775,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                     a = agent.select(x)
                     d = _vol_delta(config.K_FACTORS[a], e.features, h)
                     agent.update(x, a, _bandit_reward(
-                        e.price_now + d, e.price_future, e.price_now, d))
+                        e.price_now + d, e.price_future, e.price_now, d,
+                        band=_hit_band(_horizon_sigma(e.features, h))))
                 after_mae = _bandit_val_mae(agent, spec, veps, snaps)
                 reverted = after_mae > before_mae
                 if reverted:
@@ -798,7 +806,9 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 agent = agents[e.horizon_min]
                 a = agent.act(e.state, e.price_now, explore=True)
                 pred = e.price_now + agent.delta_for(a)
-                agent.learn(e.state, a, reward(pred, e.price_future, shaped=True))
+                agent.learn(e.state, a, reward(
+                    pred, e.price_future, shaped=True,
+                    band=_hit_band(_horizon_sigma(e.features, e.horizon_min))))
         gate = {}
         for h in horizons:
             after_mae = _greedy_mae(agents[h],
@@ -941,7 +951,8 @@ def run(once: bool = False) -> None:
                             d = _vol_delta(config.K_FACTORS[a], e.features, h)
                             agent.update(x, a, _bandit_reward(
                                 e.price_now + d, e.price_future,
-                                e.price_now, d))
+                                e.price_now, d,
+                                band=_hit_band(_horizon_sigma(e.features, h))))
                     _checkpoint(v, arms[v])
                     print(f"warmed up {v} on {len(warm_eps)} recent episodes")
                 cold_bandits.clear()
@@ -1209,7 +1220,9 @@ def run(once: bool = False) -> None:
                 row["actual"] = bar["close"]
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
-                row["hit"] = abs(row["pred"] - bar["close"]) <= config.HIT_BAND
+                band = _hit_band(row.get("sigma"))
+                row["hit"] = row["abs_err"] <= band
+                row["hit_band"] = round(band, 1)
                 if row.get("lo") is not None:
                     row["in_band"] = row["lo"] <= bar["close"] <= row["hi"]
                 scored += 1
@@ -1227,14 +1240,16 @@ def run(once: bool = False) -> None:
                         and row.get("arm") is not None:
                     if row["arm"] < agent.n_arms and len(row["x"]) == agent.dim:
                         r = _bandit_reward(row["pred"], row["actual"],
-                                           row["price_now"], row["delta"])
+                                           row["price_now"], row["delta"],
+                                           band=band)
                         if row["variant"].startswith("t11"):
                             r += _hf_bonus(hf_rows, row)
                         agent.update(row["x"], row["arm"], r)
                         online_updates += 1
                 elif isinstance(agent, TabularQAgent) and row.get("state") \
                         and row["delta"] in config.ACTION_DELTAS:
-                    r = reward(row["pred"], row["actual"], shaped=True)
+                    r = reward(row["pred"], row["actual"], shaped=True,
+                               band=band)
                     agent.learn(tuple(row["state"]),
                                 config.ACTION_DELTAS.index(row["delta"]), r)
                     online_updates += 1

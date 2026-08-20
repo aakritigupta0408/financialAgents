@@ -24,14 +24,19 @@ class Episode:
     is_target_slot: bool      # True when the future bar is 7:00 or 7:15 PM PT
 
 
-def reward(pred_price: float, actual_price: float, shaped: bool) -> float:
-    """Within ±HIT_BAND dollars of the actual => full hit reward.
+def reward(pred_price: float, actual_price: float, shaped: bool,
+           band: float | None = None) -> float:
+    """Within ±band dollars of the actual => full hit reward.
 
-    (Originally exact-integer match, which fired on <1% of predictions —
-    far too sparse to shape learning.) Shaped mode otherwise pays
-    -|error|/scale so the gradient toward the right neighborhood is visible.
+    Callers with volatility context pass band = max(HIT_BAND,
+    HIT_BAND_VOL * sigma_h) so the precision bar scales with the horizon;
+    without one the flat HIT_BAND floor applies. (Originally exact-integer
+    match, which fired on <1% of predictions — far too sparse to shape
+    learning.) Shaped mode otherwise pays -|error|/scale so the gradient
+    toward the right neighborhood is visible.
     """
-    if abs(pred_price - actual_price) <= config.HIT_BAND:
+    if abs(pred_price - actual_price) <= (config.HIT_BAND if band is None
+                                          else band):
         return config.REWARD_HIT
     if shaped:
         return -abs(pred_price - actual_price) / config.SHAPED_SCALE
