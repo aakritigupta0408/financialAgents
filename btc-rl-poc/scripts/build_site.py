@@ -18,8 +18,10 @@ AGENT_LABELS = {
     "tabular-q-sparse": "Tabular Q · sparse ±1 (L1)",
     "tabular-q-shaped": "Tabular Q · shaped (L1)",
 }
-H_COLOR = {"h15": "var(--series-1)", "h30": "var(--series-2)"}
-H_LABEL = {"h15": "15 min", "h30": "30 min"}
+HKEYS = ("h1", "h5", "h15", "h30")
+H_COLOR = {"h1": "var(--series-1)", "h5": "var(--series-2)",
+           "h15": "var(--series-3)", "h30": "var(--series-4)"}
+H_LABEL = {"h1": "1 min", "h5": "5 min", "h15": "15 min", "h30": "30 min"}
 
 STREAMS = [
     ("Coinbase Exchange", "1m OHLCV candles + WebSocket feed (primary)", True),
@@ -46,7 +48,7 @@ LADDER = [
 def bar_group_svg(rows: list[tuple[str, dict]], key: str, fmt, unit: str,
                   chart_id: str) -> str:
     """Horizontal grouped bars: one group per agent, one bar per horizon."""
-    vals = [ev[h][key] for _, ev in rows for h in ("h15", "h30")]
+    vals = [ev[h][key] for _, ev in rows for h in HKEYS]
     vmax = max(vals) * 1.15
     bar_h, gap, group_gap, left = 16, 4, 18, 230
     width = 720
@@ -54,7 +56,7 @@ def bar_group_svg(rows: list[tuple[str, dict]], key: str, fmt, unit: str,
     parts = []
     for label, ev in rows:
         group_top = y
-        for h in ("h15", "h30"):
+        for h in HKEYS:
             v = ev[h][key]
             w = max(2, v / vmax * (width - left - 70))
             parts.append(
@@ -100,9 +102,9 @@ def main() -> None:
     m = json.loads((ROOT / "results" / "metrics.json").read_text())
     d = m["data"]
     agents = m["agents"]
-    rows = [(AGENT_LABELS[n], {h: ev[h]["all"] for h in ("h15", "h30")})
+    rows = [(AGENT_LABELS[n], {h: ev[h]["all"] for h in HKEYS})
             for n, ev in agents.items()]
-    tslots = [(AGENT_LABELS[n], {h: ev[h]["target_slots"] for h in ("h15", "h30")})
+    tslots = [(AGENT_LABELS[n], {h: ev[h]["target_slots"] for h in HKEYS})
               for n, ev in agents.items()]
 
     pac = ZoneInfo("America/Los_Angeles")
@@ -114,6 +116,10 @@ def main() -> None:
     base = agents["persistence-baseline"]
     fmt_pct = lambda v: f"{v:.2%}"
     fmt_usd = lambda v: f"${v:,.0f}"
+
+    horizon_legend = "".join(
+        f'<span><span class="dot" style="background:{H_COLOR[h]}"></span>{H_LABEL[h]} horizon</span>'
+        for h in HKEYS)
 
     stat_tiles = "".join(
         f'<div class="tile"><div class="tile-label">{label}</div>'
@@ -145,7 +151,7 @@ def main() -> None:
     def slot_table(rows_):
         body = ""
         for label, ev in rows_:
-            for h in ("h15", "h30"):
+            for h in HKEYS:
                 s = ev[h]
                 body += (f'<tr><td>{html.escape(label)}</td>'
                          f'<td><span class="dot" style="background:{H_COLOR[h]}"></span>{H_LABEL[h]}</td>'
@@ -157,6 +163,13 @@ def main() -> None:
                          f'<td class="num">{s["mean_sparse_reward"]:+.3f}</td></tr>')
         return body
 
+    histograms = "".join(
+        f'<p class="legend"><span><span class="dot" style="background:{H_COLOR[h]}"></span>'
+        f'{H_LABEL[h]} move</span></p>'
+        + hist_svg(d[f"delta_stats_{h}"]["hist_25"], H_COLOR[h],
+                   f"{H_LABEL[h]} delta histogram")
+        for h in HKEYS)
+
     generated = datetime.now(tz=pac).strftime("%Y-%m-%d %H:%M %Z")
 
     page = f"""<title>BTC 7PM Oracle</title>
@@ -167,6 +180,7 @@ def main() -> None:
   --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
+  --series-3: #1baf7a; --series-4: #eda100;
   --good: #0ca30c; --critical: #d03b3b;
   --good-text: #006300;
 }}
@@ -177,6 +191,7 @@ def main() -> None:
     --muted: #898781; --grid: #2c2c2a; --axis: #383835;
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
+    --series-3: #199e70; --series-4: #c98500;
     --good-text: #0ca30c;
   }}
 }}
@@ -186,6 +201,7 @@ def main() -> None:
   --muted: #898781; --grid: #2c2c2a; --axis: #383835;
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
+  --series-3: #199e70; --series-4: #c98500;
   --good-text: #0ca30c;
 }}
 * {{ box-sizing: border-box; }}
@@ -263,8 +279,7 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <h2>Mean absolute error by agent</h2>
   <p class="sub muted">Held-out test set ({d["test_episodes"]:,} episodes, last 20% of days,
   never trained on). Lower is better; persistence is the bar to clear.</p>
-  <div class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute horizon</span>
-  <span><span class="dot" style="background:var(--series-2)"></span>30-minute horizon</span></div>
+  <div class="legend">{horizon_legend}</div>
   <div class="scroll">{bar_group_svg(rows, "mae", fmt_usd, "$", "mae-chart")}</div>
 </section>
 
@@ -273,8 +288,7 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <p class="sub muted">The spec's reward event: int(prediction) == int(actual). With a
   15-minute move σ of ${d["delta_stats_h15"]["std"]:.0f}, even a perfect-mean predictor
   hits ~0.4% of the time — which is why the sparse ±1 reward alone can't teach the agent.</p>
-  <div class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute horizon</span>
-  <span><span class="dot" style="background:var(--series-2)"></span>30-minute horizon</span></div>
+  <div class="legend">{horizon_legend}</div>
   <div class="scroll">{bar_group_svg(rows, "exact_int_hit_rate", fmt_pct, "%", "hit-chart")}</div>
 </section>
 
@@ -282,10 +296,7 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <h2>Where the price actually goes</h2>
   <p class="sub muted">Distribution of dollar moves on the test set ($25 bins, tails past
   ±$450 clipped). The mass at 0 is why "predict no change" is so hard to beat.</p>
-  <p class="legend"><span><span class="dot" style="background:var(--series-1)"></span>15-minute move</span></p>
-  {hist_svg(d["delta_stats_h15"]["hist_25"], "var(--series-1)", "15-minute delta histogram")}
-  <p class="legend"><span><span class="dot" style="background:var(--series-2)"></span>30-minute move</span></p>
-  {hist_svg(d["delta_stats_h30"]["hist_25"], "var(--series-2)", "30-minute delta histogram")}
+  {histograms}
 </section>
 
 <section>

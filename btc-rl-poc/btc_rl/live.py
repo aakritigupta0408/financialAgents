@@ -44,7 +44,7 @@ def predict_now() -> None:
     q_tables = _load_q_tables()
 
     records = []
-    for (hh, mm), horizon in zip(config.TARGETS_HHMM, config.HORIZONS_MIN):
+    for (hh, mm), horizon in config.TARGET_SLOTS:
         target = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
         if target < now:
             target += timedelta(days=1)

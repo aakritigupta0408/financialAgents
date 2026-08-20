@@ -11,6 +11,7 @@
   --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
+  --series-3: #1baf7a; --series-4: #eda100;
   --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
 }
 @media (prefers-color-scheme: dark) {
@@ -20,6 +21,7 @@
     --muted: #898781; --grid: #2c2c2a; --axis: #383835;
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
+    --series-3: #199e70; --series-4: #c98500;
     --good-text: #0ca30c;
   }
 }
@@ -29,6 +31,7 @@
   --muted: #898781; --grid: #2c2c2a; --axis: #383835;
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
+  --series-3: #199e70; --series-4: #c98500;
   --good-text: #0ca30c;
 }
 * { box-sizing: border-box; }
@@ -40,6 +43,10 @@ main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; 
   color: var(--muted); font-weight: 600; }
 h1 { margin: 4px 0 2px; font-size: 26px; letter-spacing: -0.01em; }
 h2 { margin: 0 0 2px; font-size: 17px; }
+.arm-tag { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .08em; padding: 2px 9px; border-radius: 99px; vertical-align: 2px; }
+.arm-tag.control { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
+.arm-tag.treatment { color: var(--good-text); background: color-mix(in srgb, var(--good) 13%, transparent); }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
 section { background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 18px 20px; }
@@ -52,12 +59,12 @@ section { background: var(--surface); border: 1px solid var(--border);
 .stat .k { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em;
   color: var(--muted); font-weight: 600; }
 .bignum { font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px;
-  color: var(--ink-2); margin: 8px 0 6px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
+  color: var(--ink-2); margin: 8px 0 6px; align-items: center; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
   margin-right: 6px; vertical-align: -1px; }
 .sw.line { width: 18px; height: 0; border-top: 2.5px solid var(--ink-2);
-  border-radius: 2px; vertical-align: 3px; }
+  border-radius: 2px; vertical-align: 3px; background: none; }
 .sw.ring { background: transparent; border: 2px solid var(--muted); }
 svg { width: 100%; height: auto; display: block; }
 svg text { font: 11.5px system-ui, sans-serif; fill: var(--muted);
@@ -66,17 +73,23 @@ svg .gridline { stroke: var(--grid); stroke-width: 1; }
 svg .axis { stroke: var(--axis); stroke-width: 1; }
 svg .actual { fill: none; stroke: var(--ink-2); stroke-width: 2;
   stroke-linejoin: round; }
+svg .predline { fill: none; stroke-width: 2; stroke-linejoin: round;
+  stroke-linecap: round; }
 svg .stem { stroke: var(--muted); stroke-width: 1.5; opacity: .7; }
 svg .pt { stroke: var(--surface); stroke-width: 1.5; }
 svg .pt-pending { fill: var(--surface); stroke-width: 2; }
+svg .hover-pt { fill: transparent; stroke: none; }
+svg .hover-pt:hover { fill: var(--ink); fill-opacity: .35; }
+.mini { font-size: 13px; color: var(--ink-2); margin: 6px 0 10px;
+  font-variant-numeric: tabular-nums; }
 .scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 620px; }
-th { text-align: left; font-size: 11.5px; text-transform: uppercase;
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 520px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--grid);
-  padding: 6px 10px 6px 0; }
-td { border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0; }
+  padding: 5px 10px 5px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; }
 td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
-.pill { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
 .pill.hit { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
 .pill.miss { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
 .pill.pending { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 12%, transparent); }
@@ -95,11 +108,11 @@ footer { color: var(--muted); font-size: 12.5px; }
 <body>
 <main>
 <header>
-  <div class="eyebrow">Reinforcement learning · online mode</div>
-  <h1>Predicted vs actual, minute by minute</h1>
-  <p class="sub">The model commits an integer prediction every <b>15 minutes</b>
-  (for +15 and +30 min targets) and retrains every <b>1 hour</b> on the freshest
-  data — guarded by a hold-out gate so it never overfits live noise.</p>
+  <div class="eyebrow">Reinforcement learning · online experiment</div>
+  <h1>Control vs treatment, minute by minute</h1>
+  <p class="sub">The first model is frozen as the <b>control</b> arm; every addition is a
+  <b>treatment</b> arm with its own Q-tables — separate models, separate graphs, separate
+  ledgers, same market. Both retrain hourly behind a hold-out gate. All times PST.</p>
 </header>
 
 <section class="statusbar">
@@ -107,56 +120,51 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="stat"><div class="k">BTC (Coinbase 1m)</div><div class="bignum" id="price">–</div></div>
   <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
-  <div class="stat"><div class="k">Exact hits</div><div class="bignum" id="hits">–</div></div>
   <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
   <div class="stat"><div class="k">Overfit gate</div><div class="bignum" id="gate">–</div></div>
   <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
 </section>
 
 <section>
-  <h2>Actual price at HH:MM vs predicted price at HH:MM (all times PST)</h2>
-  <p class="sub muted">Grey line = actual 1m close. Dots = the price the model predicted
-  for that exact minute, committed 15/30 minutes earlier. The stem is the miss distance.
-  Hollow dots ahead of the line are commitments awaiting their minute.</p>
+  <h2>Control <span class="arm-tag control">original model · 15-min cadence · +15/+30</span></h2>
+  <p class="sub muted">Dots are committed predictions at their target minute; stems show
+  the miss distance; hollow dots await their minute.</p>
   <div class="legend">
     <span><span class="sw line"></span>actual price</span>
-    <span><span class="sw" style="background:var(--series-1)"></span>predicted · 15 min ahead</span>
-    <span><span class="sw" style="background:var(--series-2)"></span>predicted · 30 min ahead</span>
-    <span><span class="sw ring"></span>pending target</span>
+    <span><span class="sw" style="background:var(--series-3)"></span>+15 min</span>
+    <span><span class="sw" style="background:var(--series-4)"></span>+30 min</span>
+    <span><span class="sw ring"></span>pending</span>
   </div>
-  <div id="chart"></div>
-</section>
-
-<section>
-  <h2>Prediction ledger</h2>
+  <div id="chart-control"></div>
+  <p class="mini" id="mini-control"></p>
   <div class="scroll"><table>
-    <thead><tr><th>Committed (PST)</th><th>Target (PST)</th><th>Horizon</th>
-    <th class="num">Predicted</th><th class="num">Actual</th>
-    <th class="num">Error</th><th>Integer match</th></tr></thead>
-    <tbody id="ledger"></tbody>
+    <thead><tr><th>Target T=t (PST)</th><th>Horizon</th><th class="num">Predicted @ t</th>
+    <th class="num">Actual @ t</th><th class="num">Error</th><th>Match</th></tr></thead>
+    <tbody id="ledger-control"></tbody>
   </table></div>
 </section>
+
+<div id="horizon-sections"></div>
 
 <section>
   <h2>Model card</h2>
   <dl class="card">
+    <dt>Experiment</dt><dd><b>control</b> = the original model, untouched: 15-min cadence,
+      +15/+30 horizons. <b>t1-1min-multi</b> = 1-min cadence, +1/+5/+15/+30, one graph and
+      one ledger per horizon below. Each arm owns its Q-tables; arms never share updates.</dd>
     <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
-      81 discrete states × 21 actions = 1,701 Q-values per horizon. Two independent
-      tables: +15 min and +30 min.</dd>
+      81 discrete states × 21 actions = 1,701 Q-values per horizon per arm.</dd>
     <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
       RSI(14) bucket (each 3-way). Continuous inputs behind them: 1m/5m/15m/60m returns,
       EMA(30) distance, volume ratio, Fear &amp; Greed index.</dd>
     <dt>Action</dt><dd>Integer dollar delta from the current price:
       0, ±1, ±2, ±3, ±5, ±8, ±13, ±21, ±34, ±55, ±89.</dd>
-    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual) — 68000 and 68000.98 are the
-      same answer; otherwise <b>−1</b> (spec) or <b>−|error|/100</b> (shaped, used for
-      learning because the sparse reward fires on ~0.5% of episodes).</dd>
-    <dt>Update rule</dt><dd>Q(s,a) ← Q(s,a) + 0.1 · (r − Q(s,a)); ε-greedy with ε = 0.05
-      kept online forever.</dd>
+    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual); otherwise <b>−1</b> (spec) or
+      <b>−|error|/100</b> (shaped, used for learning — the sparse reward fires too rarely
+      to learn from).</dd>
     <dt>Anti-overfit</dt><dd>Hourly retrain replays the last 24h <b>except the newest 3h</b>,
-      which validate it — if validation MAE worsens, the new table is <b>reverted</b>.
-      Tiny capacity (1,701 values), small α, chronological splits, test set never touched
-      during training.</dd>
+      which validate it — any horizon whose validation MAE worsens is <b>reverted</b>.
+      Committed predictions are always greedy (no exploration leaks into the ledger).</dd>
   </dl>
 </section>
 
@@ -165,24 +173,46 @@ footer { color: var(--muted); font-size: 12.5px; }
 <div id="tip"></div>
 
 <script>
-const H_COLOR = { 15: "var(--series-1)", 30: "var(--series-2)" };
+const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
+const T1_HORIZONS = [1, 5, 15, 30];
+let latest = null;
+
 // All times on this page are US Pacific (PST/PDT).
 const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
   { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
     hour12: false });
 
-function chart(prices, preds) {
-  if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
-  const W = 920, H = 320, L = 62, R = 16, T = 12, B = 28;
+// Build the four treatment blocks: one graph + one ledger per horizon.
+document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
+<section style="margin-top:22px">
+  <h2>Treatment 1 · +${h} minute${h > 1 ? "s" : ""}
+    <span class="arm-tag treatment">1-min cadence</span></h2>
+  <p class="sub muted">Predicted price for minute t (committed ${h} min earlier, colored
+  line) vs the actual price at minute t (grey line). Hollow dots are pending targets.</p>
+  <div class="legend">
+    <span><span class="sw line"></span>actual @ t</span>
+    <span><span class="sw line" style="border-top-color:${H_COLOR[h]}"></span>predicted @ t</span>
+    <span><span class="sw ring"></span>pending</span>
+  </div>
+  <div id="chart-h${h}"></div>
+  <p class="mini" id="mini-h${h}"></p>
+  <div class="scroll"><table>
+    <thead><tr><th>Target T=t (PST)</th><th class="num">Predicted @ t</th>
+    <th class="num">Actual @ t</th><th class="num">Error</th><th>Match</th></tr></thead>
+    <tbody id="ledger-h${h}"></tbody>
+  </table></div>
+</section>`).join("");
+
+function frame(prices, preds) {
+  const W = 920, H = 280, L = 62, R = 16, T = 12, B = 28;
   const t0 = prices[0].ts;
-  const t1 = Math.max(prices[prices.length - 1].ts,
-    ...preds.map(p => p.target_ts));
+  const t1 = Math.max(prices[prices.length - 1].ts, ...preds.map(p => p.target_ts), t0 + 1);
   let ymin = Infinity, ymax = -Infinity;
   for (const p of prices) { ymin = Math.min(ymin, p.c); ymax = Math.max(ymax, p.c); }
   for (const p of preds) { ymin = Math.min(ymin, p.pred); ymax = Math.max(ymax, p.pred); }
   const pad = (ymax - ymin) * 0.08 || 20;
   ymin -= pad; ymax += pad;
-  const X = ts => L + (ts - t0) / Math.max(1, t1 - t0) * (W - L - R);
+  const X = ts => L + (ts - t0) / (t1 - t0) * (W - L - R);
   const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
   let g = "";
   for (let i = 0; i <= 4; i++) {
@@ -196,22 +226,88 @@ function chart(prices, preds) {
   g += `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`;
   g += `<path class="actual" d="${prices.map((p, i) =>
     `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("")}"/>`;
-  const priceAt = new Map(prices.map(p => [p.ts, p.c]));
+  return { W, H, X, Y, g };
+}
+
+function tipText(p) {
+  return `${fmtTime(p.target_ts)} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}` +
+    (p.actual != null
+      ? `, actual $${Math.round(p.actual).toLocaleString()}, off by $${p.abs_err}` +
+        (p.hit ? " — EXACT INTEGER HIT" : "")
+      : ", awaiting the minute");
+}
+
+function chartControl(prices, preds) {
+  if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
+  const f = frame(prices, preds);
+  let g = f.g;
   for (const p of preds) {
-    const x = X(p.target_ts), y = Y(p.pred);
-    const tp = fmtTime(p.target_ts);
+    const x = f.X(p.target_ts), y = f.Y(p.pred);
     if (p.actual != null) {
-      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${Y(p.actual)}"/>`;
-      g += `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${H_COLOR[p.horizon]}" ` +
-        `data-tip="${tp} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}, ` +
-        `actual $${Math.round(p.actual).toLocaleString()}, off by $${p.abs_err}` +
-        `${p.hit ? " — EXACT INTEGER HIT" : ""}"/>`;
+      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${f.Y(p.actual)}"/>` +
+        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${H_COLOR[p.horizon]}" data-tip="${tipText(p)}"/>`;
     } else {
-      g += `<circle class="pt-pending" cx="${x}" cy="${y}" r="4.5" stroke="${H_COLOR[p.horizon]}" ` +
-        `data-tip="${tp} PST (+${p.horizon}m) — committed $${p.pred.toLocaleString()}, awaiting the minute"/>`;
+      g += `<circle class="pt-pending" cx="${x}" cy="${y}" r="4.5" stroke="${H_COLOR[p.horizon]}" data-tip="${tipText(p)}"/>`;
     }
   }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="predicted vs actual price">${g}</svg>`;
+  return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="control arm predicted vs actual">${g}</svg>`;
+}
+
+function chartHorizon(prices, preds, h) {
+  if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
+  const f = frame(prices, preds);
+  let g = f.g;
+  const scored = preds.filter(p => p.actual != null)
+    .sort((a, b) => a.target_ts - b.target_ts);
+  const color = H_COLOR[h];
+  if (scored.length) {
+    g += `<path class="predline" stroke="${color}" d="${scored.map((p, i) =>
+      `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
+    for (let i = 0; i < scored.length; i += 5)  // sparse hover targets
+      g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="7" data-tip="${tipText(scored[i])}"/>`;
+  }
+  for (const p of preds.filter(p => p.actual == null))
+    g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" stroke="${color}" data-tip="${tipText(p)}"/>`;
+  return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="+${h} min predicted vs actual">${g}</svg>`;
+}
+
+function ledgerRows(preds, withHorizon) {
+  return preds.slice(-8).reverse().map(p => {
+    const state = p.actual == null ? '<span class="pill pending">pending</span>'
+      : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
+    const hz = withHorizon
+      ? `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` : "";
+    return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
+      `<td class="num">$${p.pred.toLocaleString()}</td>` +
+      `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
+      `<td class="num">${p.abs_err == null ? "–" : "$" + p.abs_err}</td><td>${state}</td></tr>`;
+  }).join("");
+}
+
+function stats(preds) {
+  const sc = preds.filter(p => p.actual != null);
+  if (!sc.length) return "no scored predictions yet";
+  const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+  const hits = sc.filter(p => p.hit).length;
+  return `scored ${sc.length} · MAE $${Math.round(mae)} · exact hits ${hits}` +
+    ` (${(100 * hits / sc.length).toFixed(2)}%)`;
+}
+
+function draw() {
+  const { prices, preds } = latest;
+  const t0 = prices.length ? prices[0].ts : 0;
+  const ctl = preds.filter(p => (p.variant || "control") === "control" && p.target_ts >= t0);
+  document.getElementById("chart-control").innerHTML = chartControl(prices, ctl);
+  document.getElementById("mini-control").textContent = stats(ctl);
+  document.getElementById("ledger-control").innerHTML = ledgerRows(ctl, true);
+  for (const h of T1_HORIZONS) {
+    const hp = preds.filter(p => p.variant === "t1-1min-multi"
+      && p.horizon === h && p.target_ts >= t0);
+    document.getElementById(`chart-h${h}`).innerHTML = chartHorizon(prices, hp, h);
+    document.getElementById(`mini-h${h}`).textContent = stats(hp);
+    document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
+  }
+  attachTips();
 }
 
 async function poll() {
@@ -228,24 +324,9 @@ async function poll() {
       try { preds.push(JSON.parse(line)); } catch {}
     }
     const status = sRes.ok ? await sRes.json() : null;
-    const t0 = prices.length ? prices[0].ts : 0;
-    const visible = preds.filter(p => p.target_ts >= t0);
-    document.getElementById("chart").innerHTML = chart(prices, visible);
-
-    const scored = preds.filter(p => p.actual != null);
+    latest = { prices, preds };
+    draw();
     document.getElementById("npred").textContent = preds.length.toLocaleString();
-    document.getElementById("hits").textContent =
-      scored.filter(p => p.hit).length + " / " + scored.length;
-    document.getElementById("ledger").innerHTML = preds.slice(-14).reverse().map(p => {
-      const state = p.actual == null ? '<span class="pill pending">pending</span>'
-        : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
-      return `<tr><td>${fmtTime(p.made_ts)}</td>` +
-        `<td>${fmtTime(p.target_ts)}</td>` +
-        `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` +
-        `<td class="num">$${p.pred.toLocaleString()}</td>` +
-        `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
-        `<td class="num">${p.abs_err == null ? "–" : "$" + p.abs_err}</td><td>${state}</td></tr>`;
-    }).join("");
 
     if (status) {
       const ageS = Date.now() / 1000 - status.alive_at;
@@ -260,34 +341,37 @@ async function poll() {
           " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
       } else { brtiEl.textContent = "–"; }
       document.getElementById("retrains").textContent = status.retrains_this_session;
-      const gate = status.last_retrain?.gate;
-      document.getElementById("gate").textContent = !gate ? "–" :
-        Object.values(gate).some(g => g.reverted) ? "reverted" : "passed";
+      const armsGate = status.last_retrain?.arms;
+      document.getElementById("gate").textContent = !armsGate ? "–" :
+        Object.values(armsGate).some(g => Object.values(g).some(x => x.reverted))
+          ? "reverted" : "passed";
       document.getElementById("fresh").textContent =
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
-        `predicts every ${status.predict_every_min}m · retrains every ${status.retrain_every_min}m · ` +
-        `daemon up since ${fmtTime(status.started_at)} PST` +
-        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST ` +
-          `(${status.last_retrain.train_episodes} replay episodes, ` +
-          `${status.last_retrain.val_episodes} held out)` : " · first retrain at the top of the hour");
+        `arms: control (15m cadence) + t1 (1m cadence, 4 horizons) · retrains every ` +
+        `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PST` +
+        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST` :
+          " · first retrain at the top of the hour");
     } else {
       document.getElementById("foot").textContent =
         "daemon not running — start it with: python -m btc_rl.online";
     }
-    const tip = document.getElementById("tip");
-    document.querySelectorAll("[data-tip]").forEach(el => {
-      el.addEventListener("mousemove", e => {
-        tip.textContent = el.dataset.tip; tip.style.opacity = 1;
-        tip.style.left = Math.min(e.clientX + 12, innerWidth - 290) + "px";
-        tip.style.top = (e.clientY + 14) + "px";
-      });
-      el.addEventListener("mouseleave", () => tip.style.opacity = 0);
-    });
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for daemon… (" + e.message + ")";
   }
   setTimeout(poll, 5000);
+}
+
+function attachTips() {
+  const tip = document.getElementById("tip");
+  document.querySelectorAll("[data-tip]").forEach(el => {
+    el.addEventListener("mousemove", e => {
+      tip.textContent = el.dataset.tip; tip.style.opacity = 1;
+      tip.style.left = Math.min(e.clientX + 12, innerWidth - 290) + "px";
+      tip.style.top = (e.clientY + 14) + "px";
+    });
+    el.addEventListener("mouseleave", () => tip.style.opacity = 0);
+  });
 }
 poll();
 </script>

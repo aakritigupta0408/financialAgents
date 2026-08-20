@@ -6,8 +6,11 @@ PACIFIC = ZoneInfo("America/Los_Angeles")
 
 # Decision + target times (Pacific wall clock).
 DECISION_HHMM = (18, 45)          # agent observes state and commits predictions
-TARGETS_HHMM = [(19, 0), (19, 15)]  # 7:00 PM and 7:15 PM
-HORIZONS_MIN = [15, 30]           # minutes ahead of the decision time
+HORIZONS_MIN = [1, 5, 15, 30]     # prediction horizons, minutes ahead
+
+# Headline evaluation slots: which wall-clock target is scored via which horizon.
+TARGET_SLOTS = [((19, 0), 15), ((19, 15), 30)]   # 7:00 PM via 15m, 7:15 via 30m
+TARGETS_HHMM = [hhmm for hhmm, _ in TARGET_SLOTS]
 
 # Data window fetched per day (Pacific): lookback for features + targets.
 DAY_WINDOW_START_HHMM = (14, 30)

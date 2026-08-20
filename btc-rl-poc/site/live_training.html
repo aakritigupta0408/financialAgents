@@ -11,6 +11,7 @@
   --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
+  --series-3: #1baf7a; --series-4: #eda100;
   --good-text: #006300;
 }
 @media (prefers-color-scheme: dark) {
@@ -20,6 +21,7 @@
     --muted: #898781; --grid: #2c2c2a; --axis: #383835;
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
+    --series-3: #199e70; --series-4: #c98500;
     --good-text: #0ca30c;
   }
 }
@@ -29,6 +31,7 @@
   --muted: #898781; --grid: #2c2c2a; --axis: #383835;
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
+  --series-3: #199e70; --series-4: #c98500;
   --good-text: #0ca30c;
 }
 * { box-sizing: border-box; }
@@ -117,12 +120,12 @@ footer { color: var(--muted); font-size: 12.5px; }
 <div id="tip"></div>
 
 <script>
-const SERIES = [
-  { key: "tabular-q-sparse|15",  label: "sparse · 15 min",  color: "var(--series-1)", dash: "5 5" },
-  { key: "tabular-q-shaped|15",  label: "shaped · 15 min",  color: "var(--series-1)", dash: "" },
-  { key: "tabular-q-sparse|30",  label: "sparse · 30 min",  color: "var(--series-2)", dash: "5 5" },
-  { key: "tabular-q-shaped|30",  label: "shaped · 30 min",  color: "var(--series-2)", dash: "" },
-];
+const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
+const SERIES = [];
+for (const h of [1, 5, 15, 30]) {
+  SERIES.push({ key: `tabular-q-sparse|${h}`, label: `sparse · ${h} min`, color: H_COLOR[h], dash: "5 5" });
+  SERIES.push({ key: `tabular-q-shaped|${h}`, label: `shaped · ${h} min`, color: H_COLOR[h], dash: "" });
+}
 
 // TODO(human): smoothSeries() — the raw per-epoch curves can be jittery.
 // Implement smoothing here (2–10 lines). `values` is an array of numbers in
@@ -203,7 +206,8 @@ async function poll() {
       } catch {} // ignore a partially-written trailing line
     }
     const baselines = status?.baselines
-      ? { "15m": status.baselines.h15.val_mae, "30m": status.baselines.h30.val_mae } : null;
+      ? Object.fromEntries(Object.entries(status.baselines)
+          .map(([k, v]) => [k.replace("h", "") + "m", v.val_mae])) : null;
     document.getElementById("chart-mae").innerHTML =
       lineChart(rowsByKey, "val_mae", { fmt: v => "$" + v.toFixed(0), baselines });
     document.getElementById("chart-reward").innerHTML =
