@@ -174,7 +174,9 @@ ONLINE_ALPHA = 0.3             # LinUCB bonus — reward gaps are ~0.1, so a big
 DIR_BONUS = 0.1                # reward credit for a correct-sign deviation —
                                # cashes the measured 60%+ direction skill
 SIGMA_FLOOR = 5.0              # $ floor for the per-horizon vol estimate
-BIAS_WINDOW = 50               # trailing scored rows for online bias correction
+BIAS_WINDOW = 30               # trailing scored rows for online bias correction
+                               # (~2.5h at 5-min cadence — reacts to trends
+                               # the 50-row window lagged badly)
 
 
 def _horizon_sigma(feat: dict, horizon: int) -> float:
@@ -332,7 +334,10 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
         adj = 0
         if isinstance(agent, BANDIT_TYPES):
             x = _context(spec, feat, snap)
-            arm = agent.select(x)
+            # commitments are GREEDY — exploration (UCB bonus / epsilon)
+            # belongs in warm-up and hourly replay, never in the published
+            # forecast (it was leaking ±3-sigma probes into predictions)
+            arm = agent.select(x, greedy=True)
             delta = _vol_delta(config.K_FACTORS[arm], feat, horizon)
             adj = (bias or {}).get((variant, horizon), 0)
             row_extra["x"] = [round(v, 5) for v in x]
