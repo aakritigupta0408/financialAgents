@@ -5,146 +5,89 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="cache-control" content="no-store">
 <title>BTC 7PM Oracle — Experiment Review</title>
+<link rel="stylesheet" href="theme.css">
 <style>
-/* Single-theme dark design, matching theaakritigupta.com/ai-playground */
-* { box-sizing: border-box; margin: 0; }
-body {
-  min-height: 100vh; overflow-x: hidden;
-  background: #0b0a1a; color: #f8fafc;
-  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-}
-.bg-fx { position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background:
-    radial-gradient(circle at top left, rgba(167,139,250,.18), transparent 26%),
-    radial-gradient(circle at 85% 15%, rgba(244,114,182,.16), transparent 26%),
-    radial-gradient(circle at 50% 100%, rgba(251,191,36,.10), transparent 30%);
-}
-.bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .3;
-  background-image:
-    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-  background-size: 72px 72px;
-}
-main { position: relative; z-index: 1; max-width: 72rem; margin: 0 auto;
-  padding: 48px 20px 96px; }
-
-.hero { border-radius: 2rem; border: 1px solid rgba(255,255,255,.10);
-  background: linear-gradient(140deg, rgba(20,18,40,.88), rgba(11,10,26,.72));
-  box-shadow: 0 30px 90px rgba(4,12,19,.42); backdrop-filter: blur(24px);
-  padding: 36px; margin-bottom: 40px; }
-.eyebrow { display: inline-flex; align-items: center; gap: 8px;
-  border-radius: 999px; border: 1px solid rgba(167,139,250,.30);
-  background: rgba(167,139,250,.10); padding: 8px 16px;
-  font-size: 12px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: .22em; color: #ede9fe; }
-h1 { margin-top: 20px; font-size: clamp(2.2rem, 5vw, 3.6rem);
-  font-weight: 900; line-height: 1.1; color: #fff; }
-h1 .grad { display: block;
-  background: linear-gradient(90deg, #c4b5fd, #fbcfe8, #fde68a);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-.lede { margin-top: 16px; max-width: 44rem; color: #cbd5e1; line-height: 1.75; }
-.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+/* page-specific: hero, metric cards, panels, arm cards */
+.hero { border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface); padding: 26px 28px; }
+.lede { margin-top: 12px; max-width: 62rem; color: var(--ink-2);
+  line-height: 1.7; font-size: 14px; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .pill { display: inline-flex; align-items: center; gap: 8px;
-  border-radius: 999px; border: 1px solid rgba(167,139,250,.20);
-  background: rgba(167,139,250,.05); padding: 8px 16px; font-size: 14px;
-  color: #ede9fe; }
-.pill b { font-weight: 700; }
-.pill span { font-size: 12px; opacity: .75; }
-.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
-  border-radius: 999px; border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.05); padding: 8px 16px; font-size: 14px;
-  color: #cbd5e1; text-decoration: none; }
-.btn:hover { background: rgba(255,255,255,.10); }
-.btn.primary { border-color: rgba(167,139,250,.30);
-  background: rgba(167,139,250,.10); color: #ede9fe; font-weight: 600; }
-
-.sect { margin: 40px 0 16px; font-size: 13px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .2em; color: #64748b; }
-.cards-grid { display: grid; gap: 16px;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.mcard { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04); padding: 20px; backdrop-filter: blur(6px);
-  transition: border-color .2s; }
-.mcard:hover { border-color: rgba(255,255,255,.20); }
-.mcard.winner { border-color: rgba(252,211,77,.30);
-  background: rgba(252,211,77,.05);
-  box-shadow: 0 18px 60px rgba(251,191,36,.16); }
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface-2); padding: 7px 14px; font-size: 13.5px;
+  color: var(--ink-2); }
+.pill b { font-weight: 700; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.pill span { font-size: 12px; opacity: .8; }
+.btn.primary { border-color: rgba(43,217,126,.35);
+  background: rgba(43,217,126,.08); color: var(--good-text); }
+.sect { margin: 22px 0 -6px; font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .18em; color: var(--muted); }
+.cards-grid { display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.mcard { border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); padding: 16px 18px; }
+.mcard.winner { border-color: rgba(43,217,126,.4); }
 .mcard .name { display: flex; align-items: center; gap: 8px;
-  font-size: 13px; font-weight: 600; color: #94a3b8; }
-.mcard .big { margin-top: 8px; font-size: 30px; font-weight: 800; color: #fff;
+  font-size: 12.5px; font-weight: 600; color: var(--muted); }
+.mcard .big { margin-top: 6px; font-size: 26px; font-weight: 650;
+  color: var(--ink); font-variant-numeric: tabular-nums; }
+.mcard .small { margin-top: 2px; font-size: 12.5px; color: var(--muted);
   font-variant-numeric: tabular-nums; }
-.mcard .small { margin-top: 2px; font-size: 12.5px; color: #94a3b8;
-  font-variant-numeric: tabular-nums; }
-.winner-tag { font-size: 10px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: #fde68a; }
-
-.panel { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04); padding: 24px; backdrop-filter: blur(6px);
-  margin-bottom: 18px; }
-.panel h3 { font-size: 16px; font-weight: 700; color: #fff; }
-.panel .sub { margin-top: 4px; font-size: 13px; color: #94a3b8; }
+.winner-tag { font-size: 10px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--good-text); }
+.panel { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px; }
+.panel h3 { font: 500 16px var(--display); color: var(--ink); }
+.panel .sub { margin-top: 4px; font-size: 13px; color: var(--muted); }
 .dot { display: inline-block; width: 10px; height: 10px; border-radius: 4px;
   margin-right: 8px; vertical-align: -1px; }
-svg { width: 100%; height: auto; display: block; margin-top: 14px; }
-svg text { font: 12px ui-sans-serif, system-ui; fill: #94a3b8;
-  font-variant-numeric: tabular-nums; }
-
-.scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 13.5px;
-  min-width: 620px; margin-top: 12px; }
-th { text-align: left; font-size: 11px; text-transform: uppercase;
-  letter-spacing: .12em; color: #64748b;
-  border-bottom: 1px solid rgba(255,255,255,.10); padding: 8px 12px 8px 0; }
-td { border-bottom: 1px solid rgba(255,255,255,.06); padding: 8px 12px 8px 0;
-  color: #cbd5e1; }
-td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
-
-.arm-card { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04); padding: 24px; margin-bottom: 18px;
-  backdrop-filter: blur(6px); }
-.arm-card h3 { display: flex; align-items: center; font-size: 17px;
-  font-weight: 700; color: #fff; }
+.arm-card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px; margin-bottom: 14px; }
+.arm-card h3 { display: flex; align-items: center;
+  font: 500 17px var(--display); color: var(--ink); }
 .card-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px 18px;
-  font-size: 13.5px; margin-top: 16px; }
-.card-grid dt { color: #64748b; font-size: 11px; text-transform: uppercase;
-  letter-spacing: .12em; font-weight: 600; padding-top: 3px; }
-.card-grid dd { color: #cbd5e1; line-height: 1.65; }
-.card-grid dd b { color: #fff; }
-.muted { color: #94a3b8; }
-footer { color: #64748b; font-size: 13px; margin-top: 40px; }
-@media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; gap: 2px; }
-  .card-grid dd { margin-bottom: 10px; } }
+  font-size: 13.5px; margin-top: 14px; }
+.card-grid dt { color: var(--faint); font-size: 11px;
+  text-transform: uppercase; letter-spacing: .12em; font-weight: 600;
+  padding-top: 3px; }
+.card-grid dd { color: var(--ink-2); line-height: 1.65; margin: 0; }
+.card-grid dd b { color: var(--ink); }
+.rt-row { display: flex; gap: 3px; align-items: center; margin: 3px 0;
+  font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.rt-cell { width: 14px; height: 14px; border-radius: 4px;
+  background: var(--surface-2); }
+.rt-cell.kept { background: rgba(43,217,126,.55); }
+.rt-cell.rev { background: rgba(255,93,93,.5); }
+@media (max-width: 760px) { .card-grid { grid-template-columns: 1fr; }
+  .bin-cols { grid-template-columns: 1fr !important; } }
 </style>
 </head>
 <body>
-<div class="bg-fx"></div>
-<div class="bg-grid"></div>
 <main>
 
-<div class="hero">
-  <div class="eyebrow">✦ Live experiment · Bitcoin price prediction</div>
-  <h1>BTC 7PM Oracle
-    <span class="grad">Treatment ladder — head to head</span></h1>
-  <p class="lede">Seven reinforcement-learning treatments, a frozen control, and two
-  naive baselines (persistence, chart-replay) predict Bitcoin's price every
-  5 minutes at +1/+5/+15/+30 min horizons, scored at integer level against the
-  same market. Treatments must pass the offline gate
-  (scripts/offline_gate.py — MAE + duplicate checks) before deployment where a
-  historical feed exists; t3/t4/t5 were retired as offline-proven duplicates.
-  Each survivor adds exactly one capability — continuous features, live streams,
-  trend &amp; order book, a Bitcoin-trained LLM, order-flow imbalance, the Kalshi
-  prediction market (t10), human feedback / RLHF (t11) — so every metric gap is
-  attributable. Two meta-arms round it out: <b>cal</b> re-centers the current
-  +15m leader's predictions, and <b>kb</b> calls the Kalshi 15-minute binary
-  every minute. All numbers refresh live from the prediction ledger.</p>
+<header class="hero">
+  <div class="eyebrow"><span class="live-dot"></span> Live experiment · BTC price prediction ·
+    <span style="font:italic 500 15px var(--display);text-transform:none;letter-spacing:.02em;color:var(--ink-2)">BTC 7PM Oracle</span></div>
+  <h1>Treatment ladder — head to head</h1>
+  <p class="lede">Eight learning treatments, a frozen control and two naive baselines
+  predict Bitcoin every 5 minutes at +1/+5/+15/+30 min horizons, scored against the
+  same market with vol-scaled hit bands and 80% intervals. Each arm adds exactly one
+  capability over the last — continuous features, live streams, order flow, a
+  Bitcoin-trained LLM, the Kalshi prediction market (t10), RLHF human feedback (t11) —
+  so every metric gap is attributable. Meta-arms: <b>cal</b> re-centers the trailing
+  +15m leader; <b>kb</b> calls the Kalshi 15-minute binary every minute and places
+  exactly one fee-adjusted paper bet per window. Level accuracy is measured against
+  the persistence floor (MASE), direction against Pesaran–Timmermann chance bounds,
+  probabilities against the market itself. All numbers refresh live.</p>
   <div class="pills" id="hero-pills"></div>
   <div class="btns">
     <a class="btn primary" href="live_online.html">▶ Live predictions</a>
     <a class="btn" href="live_training.html">Training curves</a>
     <a class="btn" href="index.html">Batch backtest</a>
   </div>
-</div>
+</header>
 
 <div class="sect">Headline — online MAE, +5 minute horizon</div>
 <div class="cards-grid" id="headline"></div>
@@ -165,10 +108,10 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   <p class="sub" id="score-note">loading…</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
-    <th class="num">MAE</th><th class="num">RMSE</th><th class="num">±$10</th>
+    <th class="num">MAE</th><th class="num">RMSE</th><th class="num">MASE</th><th class="num">±$10</th>
     <th class="num">Direction</th><th class="num">Replay</th>
     <th class="num">Coverage</th><th class="num">Width</th>
-    <th class="num">Exact</th></tr></thead>
+    <th class="num">Pinball</th><th class="num">Hit%</th></tr></thead>
     <tbody id="scoreboard"></tbody>
   </table></div>
 </div>
@@ -187,6 +130,52 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   (100% = pure chart copy — persistence by construction). Lower = more genuine prediction;
   rp sits near 0% because it copies the <i>move</i>, not the price.</p>
   <div id="q-replay"></div></div>
+
+<div class="sect">Across retrains — does consolidation help?</div>
+<div class="panel">
+  <p class="sub">Every hourly retrain appends its hold-out gate outcome and a
+  trailing-6h metric snapshot to <b>metrics_history.jsonl</b>, so before/after
+  comparisons survive restarts. Green = the replay update improved hold-out MAE
+  and was kept; red = the no-regression gate reverted it. History accumulates
+  from deployment of this page.</p>
+  <div id="rt-strip" style="margin-top:12px"><p class="mini">no retrain history yet — first row lands at the top of the hour</p></div>
+  <p class="mini" id="rt-note"></p>
+</div>
+
+<div class="sect">The binary game — model vs market vs bets</div>
+<div class="panel">
+  <div class="cards-grid" id="bin-tiles"><p class="mini">collecting…</p></div>
+  <div class="bin-cols" style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px">
+    <div><h3>Reliability — forecast P(up) vs observed</h3>
+      <p class="sub">Points on the diagonal are perfectly calibrated; size = calls in bin.</p>
+      <div id="bin-cal"></div></div>
+    <div><h3>One-bet ledger — net of Kalshi fees</h3>
+      <p class="sub">Exactly one bet per 15-min window, entry under 85¢; net subtracts the 7%·P·(1−P) fee.</p>
+      <div class="cards-grid" id="bets-tiles" style="margin-top:10px"><p class="mini">collecting…</p></div></div>
+  </div>
+</div>
+
+<div class="sect">Problem formulation — vs industry standard</div>
+<div class="panel"><details><summary>How this experiment measures up to standard evaluation practice</summary>
+  <div class="scroll"><table>
+    <thead><tr><th>Category</th><th>Industry standard</th><th>Here</th></tr></thead>
+    <tbody>
+      <tr><td>Point forecast</td><td>MAE, RMSE, MASE vs naive; Diebold–Mariano significance</td><td>All present — MASE scales to the persistence floor on identical slots; DM with HAC lags vs control</td></tr>
+      <tr><td>Direction</td><td>Directional accuracy + Pesaran–Timmermann test</td><td>Both — † marks PT-significant skill (p&lt;0.05)</td></tr>
+      <tr><td>Intervals</td><td>PICP coverage + sharpness + pinball loss</td><td>All three per arm×horizon in the scoreboard</td></tr>
+      <tr><td>Binary probability</td><td>Brier + skill scores vs market/climatology, reliability diagram</td><td>All present in the binary panel; the market itself is the benchmark</td></tr>
+      <tr><td>Trading</td><td>P&amp;L after transaction costs, drawdown, hit rate</td><td>One-bet ledger net of the Kalshi fee schedule, max drawdown tracked</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:10px"><b>Formulation verdict:</b> minute-scale
+  crypto is near-martingale — published models rarely beat the random walk on
+  level at these horizons, so MASE ≈ 1 is the honest ceiling for the level task
+  and this scoreboard measures distance to that floor rather than pretending to
+  beat it. The economically meaningful contests — direction skill, interval
+  calibration, and out-predicting the market's own probabilities — each carry a
+  significance test or a market benchmark here. This matches or exceeds standard
+  published evaluation practice for the task.</p>
+</details></div>
 
 <div class="sect">System architecture</div>
 <div class="panel">
@@ -292,75 +281,75 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
 <script>
 // ── The registry: add one entry per new treatment ──────────────────────────
 const ARMS = [
-  { key: "ctl", variants: ["h1", "h5", "h15", "h30"], color: "#94a3b8",
+  { key: "ctl", variants: ["h1", "h5", "h15", "h30"], color: "#aeb6c2",
     title: "Control — Tabular Q-learning",
     architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
     features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
     reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1.",
     sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
     offline: "tabular-q-shaped" },
-  { key: "t2", variants: ["t2-h1", "t2-h5", "t2-h15", "t2-h30"], color: "#a78bfa",
+  { key: "t2", variants: ["t2-h1", "t2-h5", "t2-h15", "t2-h30"], color: "#3987e5",
     title: "Treatment 2 — LinUCB contextual bandit",
     architecture: "LinUCB (α=0.3) over 21 VOLATILITY-SCALED action arms — each arm is k × live σ_h, k ∈ 0…±3, so the action range tracks the regime instead of capping at ±$89 (which sat below the average 15/30-min move). Per-arm ridge model, optimistic selection.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
     reward: "+1 exact integer match, else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control keeps the pure shaped reward.",
     sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated 24h replay; adaptive bias intercept (trailing median residual per arm × horizon).",
     offline: null },
-  { key: "t6", variants: ["t6-h1", "t6-h5", "t6-h15", "t6-h30"], color: "#38bdf8",
+  { key: "t6", variants: ["t6-h1", "t6-h5", "t6-h15", "t6-h30"], color: "#d95926",
     title: "Treatment 6 — + order-flow imbalance (research-backed)",
     architecture: "Same LinUCB machinery, 27-dim context.",
     features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
     reward: "Same prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
     offline: null },
-  { key: "t7", variants: ["t7-h1", "t7-h5", "t7-h15", "t7-h30"], color: "#fb7185",
+  { key: "t7", variants: ["t7-h1", "t7-h5", "t7-h15", "t7-h30"], color: "#199e70",
     title: "Treatment 7 — L2 linear function approximation (SGD on Q)",
     architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x with one weight vector per volatility-scaled action arm; plain SGD w += lr(r−Q)x, lr 0.01. ε-greedy in batch training, greedy online.",
     features: "13 bar-derived dims (base 10 + trend 3) — snapshot-free, so batch training and live inference see identical inputs.",
     reward: "Same prediction reward + direction credit as the bandit treatments.",
     sampling: "Batch: 60 days through yesterday (~217k SGD updates per horizon, chronological 80/20; test MAE within 1–4% of persistence). Online: per-prediction SGD, hourly gated replay, adaptive bias intercept.",
     offline: null },
-  { key: "rp", variants: ["rp-h1", "rp-h5", "rp-h15", "rp-h30"], color: "#64748b",
+  { key: "rp", variants: ["rp-h1", "rp-h5", "rp-h15", "rp-h30"], color: "#5d5a51",
     title: "Chart-replay baseline — the past graph copied forward",
     architecture: "No model: pred(t+h) = price(t) + (price(t) − price(t−h)). The explicit time-shift-copy every arm must beat.",
     features: "The last h-minute move.", reward: "Scored only; never learns.",
     sampling: "None.", offline: null },
-  { key: "t8", variants: ["t8-h1", "t8-h5", "t8-h15", "t8-h30"], color: "#fbbf24",
+  { key: "t8", variants: ["t8-h1", "t8-h5", "t8-h15", "t8-h30"], color: "#c98500",
     title: "Treatment 8 — L3: small distributional DQN (act on the mode)",
     architecture: "MLP 13→64→64→23 over vol-normalized delta bins (action bins ±1.5σ + overflow tail bins as targets only — without them the mode degenerates to a permanent ±1.5σ bet). Greedy = mode; exploration = sample the predicted distribution.",
     features: "13 bar-derived dims (base + trend).",
     reward: "Cross-entropy vs the realized bin — a distributional one-step target rather than a scalar reward.",
     sampling: "Batch 60 days (~60k steps/horizon; test MAE $31.3/$50.4/$75.0 vs persistence $31.1/$50.4/$71.8). Online per-prediction updates + hourly gated replay.",
     offline: null },
-  { key: "t9", variants: ["t9-h1", "t9-h5", "t9-h15", "t9-h30"], color: "#f472b6",
+  { key: "t9", variants: ["t9-h1", "t9-h5", "t9-h15", "t9-h30"], color: "#d55181",
     title: "Treatment 9 — L4: LSTM sequence model",
     architecture: "LSTM(1→32) over the raw 60-step 1m return sequence, head → distribution over the action bins (+ overflow target bins). Greedy = mode; exploration samples the predicted distribution. Completes the ladder: table → bandit → linear → MLP-distributional → sequence model.",
     features: "The raw 1m return sequence itself (60 steps) — deliberately no engineered features, isolating what sequence memory adds.",
     reward: "Cross-entropy vs the realized bin (distributional one-step target).",
     sampling: "Batch 60 days chronological 80/20 (scripts/train_l4.py); online per-prediction updates + hourly gated replay.",
     offline: null },
-  { key: "t10", variants: ["t10-h1", "t10-h5", "t10-h15", "t10-h30"], color: "#a3e635",
+  { key: "t10", variants: ["t10-h1", "t10-h5", "t10-h15", "t10-h30"], color: "#008300",
     title: "Treatment 10 — t2 + Kalshi 15-min prediction market",
     architecture: "Same LinUCB contextual bandit as t2, plus 4 live dims from the Kalshi KXBTC15M market (settles on BRTI 60s averages): market-implied P(up), spot-vs-strike gap, time left in the 15-min window, and the yes bid/ask spread. Any gap vs t2 isolates what the crowd's own forecast adds.",
     features: "10 base dims + 4 Kalshi market dims (neutral zeros when the market is closed).",
     reward: "Prediction reward + direction credit, like every bandit arm.",
     sampling: "Live-only signal — no historical Kalshi feed, so no batch pre-train; cold-started on recent episodes, then online + hourly gated replay.",
     offline: null },
-  { key: "t11", variants: ["t11-h1", "t11-h5", "t11-h15", "t11-h30"], color: "#fda4af",
+  { key: "t11", variants: ["t11-h1", "t11-h5", "t11-h15", "t11-h30"], color: "#9085e9",
     title: "Treatment 11 — RLHF: human feedback shapes the reward",
     architecture: "Same LinUCB bandit and base features as t2, but the online reward blends in human feedback: a directional view recorded via scripts/feedback.py (up/down) earns ±0.15 agreement credit on predictions committed within the next 30 minutes. The realized-price reward always dominates; the human only tilts which actions get credit faster.",
     features: "10 base dims — identical to t2 by design.",
     reward: "Prediction reward + direction credit + human-agreement bonus (expires after 30 min; zero with no feedback).",
     sampling: "No feedback ⇒ exactly t2, so the t11-vs-t2 gap is the measured value of the human in the loop. Cold-started on recent episodes, then online + hourly gated replay.",
     offline: null },
-  { key: "cal", variants: ["cal-h15"], color: "#5eead4",
+  { key: "cal", variants: ["cal-h15"], color: "#e66767",
     title: "Calibrated winner — trailing-MAE leader, re-centered (+15 min)",
     architecture: "No model of its own: each slot it shadows whichever arm currently leads on trailing +15m MAE (last 50 scored rows) and adds a calibration correction fit on that arm's last 30 scored residuals — the full-strength A/B against the shrunk bias intercept treatments already get.",
     features: "The winner's committed prediction + its residual history.",
     reward: "Scored for accuracy only — never learns.",
     sampling: "Emitted live only (no backfill — the residual window is built from the ledger as of now); scored like any predictor.",
     offline: null },
-  { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#f8fafc",
+  { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#f2efe6",
     title: "Consensus — median poll (our headline +5 min call)",
     architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2…t6, persistence). Robust to any single model's bad slot.",
     features: "Its voters.", reward: "Scored for accuracy only — never learns.",
@@ -398,6 +387,22 @@ function onlineStats(preds, variants) {
       width: (() => { const b = sc.filter(p => p.lo != null);
         return b.length ? b.reduce((a, p) => a + (p.hi - p.lo), 0) / b.length : null; })(),
       hits: sc.filter(p => p.hit).length,
+      hitr: sc.length ? sc.filter(p => p.hit).length / sc.length : null,
+      mase: meanMove ? (sc.reduce((a, p) => a + p.abs_err, 0) / sc.length) / meanMove : null,
+      pinball: (() => { const b = sc.filter(p => p.lo != null);
+        if (!b.length) return null;
+        const pb = (a2, q, pr) => a2 >= pr ? q * (a2 - pr) : (1 - q) * (pr - a2);
+        return b.reduce((a, p) => a + (pb(p.actual, .1, p.lo) + pb(p.actual, .9, p.hi)) / 2, 0) / b.length; })(),
+      ptz: (() => { if (moved.length < 20) return null;
+        const py = moved.filter(p => p.pred > p.price_now).length / moved.length;
+        const pa = moved.filter(p => p.actual > p.price_now).length / moved.length;
+        const ph = dirHit / moved.length, n2 = moved.length;
+        const ps = py * pa + (1 - py) * (1 - pa);
+        const vh = ps * (1 - ps) / n2;
+        const vs = (2 * pa - 1) ** 2 * py * (1 - py) / n2
+          + (2 * py - 1) ** 2 * pa * (1 - pa) / n2
+          + 4 * pa * py * (1 - pa) * (1 - py) / n2 ** 2;
+        return vh - vs > 0 ? (ph - ps) / Math.sqrt(vh - vs) : null; })(),
     });
   }
   return out;
@@ -542,12 +547,105 @@ function pctChart(preds, metric, refs) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
 
+function retrainPanel(rows) {
+  if (!rows.length) return;
+  const last = rows.slice(-24);
+  const arms = [...new Set(last.flatMap(r => Object.keys(r.gate || {})))].sort();
+  let out = "";
+  for (const a of arms) {
+    let cells = "";
+    for (const r of last) {
+      const g = (r.gate || {})[a];
+      if (!g) { cells += '<span class="rt-cell"></span>'; continue; }
+      const rev = Object.values(g).some(x => x.reverted);
+      const t = new Date(r.ts * 1000).toLocaleTimeString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", hour12: false });
+      cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${t} PST: ` +
+        Object.entries(g).map(([h, x]) =>
+          `${h} $${x.val_mae_before.toFixed(0)}→$${x.val_mae_after.toFixed(0)}${x.reverted ? " reverted" : ""}`).join(" · ") + '"></span>';
+    }
+    out += `<div class="rt-row"><span style="width:64px">${a}</span>${cells}</div>`;
+  }
+  document.getElementById("rt-strip").innerHTML = out;
+  const total = last.length;
+  const keptN = last.reduce((acc, r) => acc + Object.values(r.gate || {})
+    .filter(g => !Object.values(g).some(x => x.reverted)).length, 0);
+  const allN = last.reduce((acc, r) => acc + Object.keys(r.gate || {}).length, 0);
+  document.getElementById("rt-note").textContent =
+    `last ${total} retrains · ${keptN}/${allN} arm-gates kept their replay update · hover a cell for before→after hold-out MAE`;
+}
+
+function binaryPanel(kb, bets) {
+  const done = kb.filter(r => r.actual != null);
+  if (done.length) {
+    const brier = done.reduce((a, r) => a + r.brier, 0) / done.length;
+    const mk = done.filter(r => r.mkt_brier != null);
+    const mBrier = mk.length ? mk.reduce((a, r) => a + r.mkt_brier, 0) / mk.length : null;
+    const tiles = [
+      [`${(100 * done.reduce((a, r) => a + r.hit, 0) / done.length).toFixed(0)}%`, `hit rate (n=${done.length})`],
+      [brier.toFixed(3), "our Brier"],
+      [mBrier == null ? "–" : mBrier.toFixed(3), "market Brier"],
+      [mBrier == null ? "–" : (1 - brier / mBrier).toFixed(2), "skill vs market (BSS)"],
+      [(1 - brier / 0.25).toFixed(2), "skill vs coin flip"],
+    ];
+    document.getElementById("bin-tiles").innerHTML = tiles.map(([v, l]) =>
+      `<div class="mcard"><div class="big">${v}</div><div class="small">${l}</div></div>`).join("");
+    // reliability diagram
+    const bins = [];
+    for (let i = 0; i < 10; i++) {
+      const sel = done.filter(r => r.p_up >= i / 10 && (r.p_up < (i + 1) / 10 || (i === 9 && r.p_up === 1)));
+      if (sel.length) bins.push({
+        p: sel.reduce((a, r) => a + r.p_up, 0) / sel.length,
+        y: sel.reduce((a, r) => a + r.actual, 0) / sel.length, n: sel.length });
+    }
+    const W = 420, H = 300, L = 44, R = 10, T = 10, B = 30;
+    const X = v => L + v * (W - L - R), Y = v => T + (1 - v) * (H - T - B);
+    let g = `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="rgba(255,255,255,.3)" stroke-dasharray="4 4"/>`;
+    for (const v of [0, .5, 1]) {
+      g += `<text x="${X(v)}" y="${H - 8}" text-anchor="middle">${v}</text>` +
+        `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
+    }
+    for (const b of bins)
+      g += `<circle cx="${X(b.p).toFixed(1)}" cy="${Y(b.y).toFixed(1)}" r="${Math.min(12, 3 + Math.sqrt(b.n))}" fill="#3987e5" fill-opacity=".75"><title>P(up)≈${b.p.toFixed(2)} → observed ${(100 * b.y).toFixed(0)}% (n=${b.n})</title></circle>`;
+    document.getElementById("bin-cal").innerHTML =
+      `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="reliability diagram">${g}</svg>`;
+  }
+  const bd = bets.filter(b => b.actual != null);
+  if (bd.length) {
+    const fee = p => Math.ceil(7 * (p / 100) * (1 - p / 100) * 100) / 100;
+    const net = bd.map(b => b.pnl_c - fee(b.price_c));
+    let s = 0, peak = -1e9, dd = 0;
+    const netSum = net.reduce((a, x) => a + x, 0);
+    for (const x of net) { s += x; peak = Math.max(peak, s); dd = Math.max(dd, peak - s); }
+    const wins = bd.filter(b => b.win).length;
+    document.getElementById("bets-tiles").innerHTML = [
+      [`${wins}–${bd.length - wins}`, "record"],
+      [`${netSum >= 0 ? "+" : "−"}${Math.abs(netSum).toFixed(0)}¢`, "net P&L (after fees)"],
+      [`${dd.toFixed(0)}¢`, "max drawdown"],
+      [`${(bd.reduce((a, b) => a + b.price_c, 0) / bd.length).toFixed(0)}¢`, "avg entry"],
+    ].map(([v, l]) =>
+      `<div class="mcard"><div class="big">${v}</div><div class="small">${l}</div></div>`).join("");
+  }
+}
+
 async function poll() {
   try {
-    const [mRes, pRes] = await Promise.all([
+    const [mRes, pRes, hRes, kRes, bRes] = await Promise.all([
       fetch("../results/metrics.json", { cache: "no-store" }),
       fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
+      fetch("../results/metrics_history.jsonl", { cache: "no-store" }),
+      fetch("../results/kalshi_binary_log.jsonl", { cache: "no-store" }),
+      fetch("../results/kb_bets.jsonl", { cache: "no-store" }),
     ]);
+    const jsonl = async r => { const out = [];
+      if (r && r.ok) for (const line of (await r.text()).split("\n")) {
+        if (!line.trim()) continue;
+        try { out.push(JSON.parse(line)); } catch {} }
+      return out; };
+    const hist = await jsonl(hRes), kbRows = await jsonl(kRes),
+      bets = await jsonl(bRes);
+    try { retrainPanel(hist.filter(r => r.kind === "retrain")); } catch {}
+    try { binaryPanel(kbRows, bets); } catch {}
     const metrics = mRes.ok ? await mRes.json() : null;
     const preds = [];
     if (pRes.ok) for (const line of (await pRes.text()).split("\n")) {
@@ -557,8 +655,8 @@ async function poll() {
     const scoredN = preds.filter(p => p.actual != null).length;
 
     document.getElementById("hero-pills").innerHTML = [
-      ["4 + control", "treatments"],
-      ["3", "horizons"],
+      ["8 + control + 2 baselines", "arms"],
+      ["4", "horizons"],
       [preds.length.toLocaleString(), "predictions"],
       [scoredN.toLocaleString(), "scored"],
     ].map(([v, l]) => `<div class="pill"><b>${v}</b><span>${l}</span></div>`).join("");
@@ -596,12 +694,14 @@ async function poll() {
           `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
           `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
           `<td class="num">${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}</td>` +
+          `<td class="num">${s.mase == null ? "–" : s.mase.toFixed(2)}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
-          `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.dirSig ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
+          `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.ptz != null && s.ptz > 1.96 ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
           `<td class="num">${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.cov == null ? "–" : (100 * s.cov).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.width == null ? "–" : "$" + Math.round(s.width)}</td>` +
-          `<td class="num">${s.hits}</td></tr>`;
+          `<td class="num">${s.pinball == null ? "–" : "$" + s.pinball.toFixed(1)}</td>` +
+          `<td class="num">${s.hitr == null ? "–" : (100 * s.hitr).toFixed(1) + "%"}</td></tr>`;
       }
     }
     document.getElementById("scoreboard").innerHTML = sb;
