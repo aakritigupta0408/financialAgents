@@ -29,24 +29,26 @@ def q(vals, p):
 
 print("=" * 100)
 print("ANGLE 1 — Accuracy, bias, distribution, betting (all scored rows)")
-print(f'{"arm":12s} {"n":>4s} {"MAE":>6s} {"RMSE":>6s} {"med|e|":>7s} '
-      f'{"bias":>7s} {"p90|e|":>7s} {"<=$10":>6s} {"hits":>5s} '
-      f'{"bets":>5s} {"won":>4s} {"P&L":>6s}')
+print(f'{"arm":12s} {"n":>4s} {"MAE":>6s} {"MSE":>7s} {"med|e|":>7s} '
+      f'{"bias":>7s} {"<=$10":>6s} {"dir":>5s} {"replay":>7s} {"hits":>5s}')
 for arm in ARMS:
     a = [r for r in scored if r["variant"] == arm]
     if not a:
         continue
     errs = [r["err"] if r.get("err") is not None else 0 for r in a]
     abse = [abs(e) for e in errs]
-    bets = [r for r in a if r.get("bet")]
-    pnl = sum(r.get("pnl", 0) or 0 for r in bets)
-    won = sum(1 for r in bets if (r.get("pnl") or 0) > 0)
+    moved = [r for r in a if r.get("delta")]
+    dir_hit = sum(1 for r in moved
+                  if (r["pred"] - r["price_now"]) * (r["actual"] - r["price_now"]) > 0)
+    mean_dev = sum(abs(r["pred"] - r["price_now"]) for r in a) / len(a)
+    mean_move = sum(abs(r["actual"] - r["price_now"]) for r in a) / len(a)
+    replay = max(0.0, 1 - mean_dev / mean_move) if mean_move else 0.0
     print(f'{arm:12s} {len(a):4d} {sum(abse)/len(a):6.1f} '
-          f'{math.sqrt(sum(e*e for e in errs)/len(a)):6.1f} '
-          f'{q(abse, .5):7.1f} {sum(errs)/len(a):+7.1f} {q(abse, .9):7.1f} '
+          f'{sum(e*e for e in errs)/len(a)/1000:6.1f}k '
+          f'{q(abse, .5):7.1f} {sum(errs)/len(a):+7.1f} '
           f'{sum(e <= 10 for e in abse)/len(a):6.1%} '
-          f'{sum(bool(r["hit"]) for r in a):5d} '
-          f'{len(bets):5d} {won:4d} {pnl:+6.0f}')
+          f'{(dir_hit/len(moved) if moved else 0):5.0%} {replay:7.0%} '
+          f'{sum(bool(r["hit"]) for r in a):5d}')
 
 print()
 print("=" * 100)
