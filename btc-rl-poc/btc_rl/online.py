@@ -1140,11 +1140,15 @@ def run(once: bool = False) -> None:
                 p_now = next((r["p_up"] for r in reversed(kb)
                               if r["ticker"] == pm_mkt["ticker"]), None)
                 if p_now is not None and yb and ya:
+                    # bet only the side the model actually calls — value-
+                    # betting the other side degenerates into buying
+                    # longshots (calibration shrinks p toward 0.5, so our
+                    # p is systematically less extreme than a late market)
                     cands = []
-                    if ya < KB_BET_MAX_PRICE_C:
+                    if p_now >= 0.5 and ya < KB_BET_MAX_PRICE_C:
                         cands.append(("yes", ya, 100 * p_now - ya))
                     no_price = 100 - yb
-                    if no_price < KB_BET_MAX_PRICE_C:
+                    if p_now < 0.5 and no_price < KB_BET_MAX_PRICE_C:
                         cands.append(("no", no_price,
                                       100 * (1 - p_now) - no_price))
                     best = max(cands, key=lambda c: c[2], default=None)
