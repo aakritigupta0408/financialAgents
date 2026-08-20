@@ -966,15 +966,16 @@ def run(once: bool = False) -> None:
             # 1d. kalshi-binary arm (kb): our YES/NO call on the live
             #     KXBTC15M contract itself — P(close >= strike) from
             #     t8-h15's distribution, sigma scaled to the remaining
-            #     window. One call per 5-min slot per contract, market's
-            #     implied P logged beside ours, settled at window close
-            #     against the bar closing there (honest proxy for the
-            #     official BRTI 60s-average settle). Never bets, never
-            #     learns; lives in its own log (binary schema).
+            #     window. One call per MINUTE per contract (the probability
+            #     path across the whole window), market's implied P logged
+            #     beside ours, settled at the quarter-hour window close
+            #     (9:00, 9:15, ...) against the bar closing there (honest
+            #     proxy for the official BRTI 60s-average settle). Never
+            #     bets, never learns; lives in its own log (binary schema).
             kb_changed = False
-            slot5 = now_ts // 300 * 300
+            slot1 = now_ts // 60 * 60
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
-                    and (pm_mkt["ticker"], slot5) not in kb_made
+                    and (pm_mkt["ticker"], slot1) not in kb_made
                     and k_close_ts - now_ts >= 60):
                 kfeat = compute_features(bars, fng)
                 base = (brti["price"] if brti else None) or kfeat["price"]
@@ -984,7 +985,7 @@ def run(once: bool = False) -> None:
                 if p is not None:
                     kb.append({
                         "variant": "kb", "ticker": pm_mkt["ticker"],
-                        "made_ts": slot5, "close_ts": k_close_ts,
+                        "made_ts": slot1, "close_ts": k_close_ts,
                         "strike": pm_mkt["strike"],
                         "base": round(base, 2),
                         "mins_left": round(mins_left, 1),
@@ -992,7 +993,7 @@ def run(once: bool = False) -> None:
                         "mkt_p_up": k_pup,
                         "actual": None, "hit": None,
                     })
-                    kb_made.add((pm_mkt["ticker"], slot5))
+                    kb_made.add((pm_mkt["ticker"], slot1))
                     kb_changed = True
             for r in kb:
                 if r["actual"] is not None or now_ts < r["close_ts"]:

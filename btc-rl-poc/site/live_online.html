@@ -213,11 +213,12 @@ footer { color: var(--faint); font-size: 12.5px; }
     <div class="stat"><div class="k">Our model P(up)</div><div class="bignum" id="pm-us">–</div></div>
     <div class="stat"><div class="k">Ticker</div><div class="bignum" id="pm-tkr" style="font-size:14px">–</div></div>
   </div>
-  <p class="sub muted" style="margin-top:16px">The <b>kb arm</b> plays this contract: each
-  5-minute slot it commits P(close &ge; strike) from t8's predicted distribution, sigma
-  scaled to the time left in the window, with the market's odds logged beside it. Settled
-  at window close; <b>Brier</b> is the squared error of the probability (lower is better)
-  — the head-to-head score of us vs the crowd on identical windows.</p>
+  <p class="sub muted" style="margin-top:16px">The <b>kb arm</b> plays this contract:
+  <b>every minute</b> it commits P(close &ge; strike) from t8's predicted distribution,
+  sigma scaled to the time left in the window, with the market's odds logged beside it —
+  the full probability path of each window. All calls settle together at the quarter-hour
+  close (9:00, 9:15, 9:30&hellip;); <b>Brier</b> is the squared error of the probability
+  (lower is better) — the head-to-head score of us vs the crowd on identical windows.</p>
   <div class="statusbar" style="margin-top:10px">
     <div class="stat"><div class="k">Latest call</div><div class="bignum" id="kb-call">–</div></div>
     <div class="stat"><div class="k">Settled calls</div><div class="bignum" id="kb-n">–</div></div>
@@ -811,7 +812,7 @@ async function poll() {
           kbS?.mkt_brier != null ? kbS.mkt_brier.toFixed(3) : "no quotes yet";
         if (kbRows.length) {
           document.querySelector("#kb-tbl tbody").innerHTML =
-            kbRows.slice(-12).reverse().map(r => {
+            kbRows.slice(-16).reverse().map(r => {
               const oc = r.actual == null ? "…" : (r.actual ? "UP" : "DOWN");
               const ocCol = r.hit == null ? ""
                 : (r.hit ? ' style="color:#4ade80"' : ' style="color:#f87171"');
