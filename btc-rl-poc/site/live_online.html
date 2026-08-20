@@ -109,11 +109,11 @@ footer { color: var(--muted); font-size: 12.5px; }
 <main>
 <header>
   <div class="eyebrow">Reinforcement learning · online experiment</div>
-  <h1>Three streams, three models</h1>
-  <p class="sub">Each horizon predicts at its own natural cadence — +5 min fires every
-  five minutes, +15 every fifteen, +30 every thirty — with its own Q-table,
-  graph, and ledger. The 15/30-min tables carry the original (control) model forward.
-  All retrain hourly behind a hold-out gate. All times PST.</p>
+  <h1>Three horizons, one graph</h1>
+  <p class="sub">All three arms — +5, +15, +30 min — commit a prediction every
+  5 minutes (9:00, 9:05, 9:10…), each with its own Q-table. The agent improves with
+  every prediction: the moment one is scored, its (state, action, reward) does an
+  immediate Q-update; hourly replay consolidates behind a hold-out gate. All times PST.</p>
 </header>
 
 <section class="statusbar">
@@ -121,6 +121,7 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="stat"><div class="k">BTC (Coinbase 1m)</div><div class="bignum" id="price">–</div></div>
   <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
+  <div class="stat"><div class="k">Q-updates (live)</div><div class="bignum" id="qupd">–</div></div>
   <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
   <div class="stat"><div class="k">Overfit gate</div><div class="bignum" id="gate">–</div></div>
   <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
@@ -165,6 +166,10 @@ footer { color: var(--muted); font-size: 12.5px; }
     <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual); otherwise <b>−1</b> (spec) or
       <b>−|error|/100</b> (shaped, used for learning — the sparse reward fires too rarely
       to learn from).</dd>
+    <dt>Learning loop</dt><dd>Two speeds. <b>Per prediction:</b> when a prediction is
+      scored, its (state, action) Q-value moves by Q ← Q + 0.1·(reward − Q) — one honest
+      lesson per evaluated prediction. <b>Per hour:</b> experience replay over the last
+      24h consolidates those lessons across all states.</dd>
     <dt>Anti-overfit</dt><dd>Hourly retrain replays the last 24h <b>except the newest 3h</b>,
       which validate it — any horizon whose validation MAE worsens is <b>reverted</b>.
       Committed predictions are always greedy (no exploration leaks into the ledger).</dd>
@@ -185,21 +190,24 @@ const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
   { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
     hour12: false });
 
-// One block per horizon: its own graph + its own ledger, at its own cadence.
-const CADENCE_EG = { 5: "9:00, 9:05, 9:10…",
-                     15: "9:00, 9:15, 9:30…", 30: "9:00, 9:30, 10:00…" };
-document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
+// One shared graph for all three horizons, then one ledger block per horizon.
+document.getElementById("horizon-sections").innerHTML = `
 <section style="margin-top:22px">
-  <h2>+${h} minute${h > 1 ? "s" : ""}
-    <span class="arm-tag treatment">predicts every ${h} min (${CADENCE_EG[h]})</span></h2>
-  <p class="sub muted">Predicted price for minute t (committed ${h} min earlier) vs the
-  actual price at minute t (grey line). Hollow dots are pending targets.</p>
+  <h2>Predicted vs actual — all horizons, every 5 minutes</h2>
+  <p class="sub muted">Grey line = actual price at minute t. Each colored line = the
+  price that horizon predicted for minute t, committed 5/15/30 minutes earlier.
+  Hollow dots are pending targets.</p>
   <div class="legend">
     <span><span class="sw line"></span>actual @ t</span>
-    <span><span class="sw" style="background:${H_COLOR[h]}"></span>predicted @ t</span>
+    ${T1_HORIZONS.map(h =>
+      `<span><span class="sw" style="background:${H_COLOR[h]}"></span>+${h} min</span>`).join("")}
     <span><span class="sw ring"></span>pending</span>
   </div>
-  <div id="chart-h${h}"></div>
+  <div id="chart-all"></div>
+</section>` + T1_HORIZONS.map(h => `
+<section style="margin-top:22px">
+  <h2>+${h} min ledger
+    <span class="arm-tag treatment">predicts every 5 min</span></h2>
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th class="num">Predicted @ t</th>
@@ -246,32 +254,27 @@ function tipText(p) {
       : ", awaiting the minute");
 }
 
-function chartHorizon(prices, preds, h) {
+function chartCombined(prices, preds) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
   const f = frame(prices, preds);
   let g = f.g;
-  const scored = preds.filter(p => p.actual != null)
-    .sort((a, b) => a.target_ts - b.target_ts);
-  const color = H_COLOR[h];
   // NB: colors go in style="", not presentation attributes — var() is
   // invalid in SVG attributes and silently renders stroke:none / black.
-  if (scored.length > 80) {
-    // dense stream (1-min): a line reads, dots don't
-    g += `<path class="predline" style="stroke:${color}" d="${scored.map((p, i) =>
-      `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
-    for (let i = 0; i < scored.length; i += 5)  // sparse hover targets
-      g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="7" data-tip="${tipText(scored[i])}"/>`;
-  } else {
-    // sparse stream: dots at their exact target minutes, stems = miss distance
-    for (const p of scored) {
-      const x = f.X(p.target_ts), y = f.Y(p.pred);
-      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${f.Y(p.actual)}"/>` +
-        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" style="fill:${color}" data-tip="${tipText(p)}"/>`;
+  for (const h of T1_HORIZONS) {
+    const color = H_COLOR[h];
+    const hp = preds.filter(p => p.horizon === h);
+    const scored = hp.filter(p => p.actual != null)
+      .sort((a, b) => a.target_ts - b.target_ts);
+    if (scored.length) {
+      g += `<path class="predline" style="stroke:${color}" d="${scored.map((p, i) =>
+        `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
+      for (let i = 0; i < scored.length; i += 2)  // sparse hover targets
+        g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="6" data-tip="${tipText(scored[i])}"/>`;
     }
+    for (const p of hp.filter(p => p.actual == null))
+      g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" style="stroke:${color}" data-tip="${tipText(p)}"/>`;
   }
-  for (const p of preds.filter(p => p.actual == null))
-    g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" style="stroke:${color}" data-tip="${tipText(p)}"/>`;
-  return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="+${h} min predicted vs actual">${g}</svg>`;
+  return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="predicted vs actual, all horizons">${g}</svg>`;
 }
 
 function ledgerRows(preds, withHorizon) {
@@ -308,13 +311,19 @@ function stats(preds) {
 function draw() {
   const { prices, preds } = latest;
   const t0 = prices.length ? prices[0].ts : 0;
+  try {
+    const visible = preds.filter(p => p.target_ts >= t0);
+    document.getElementById("chart-all").innerHTML = chartCombined(prices, visible);
+  } catch (e) {
+    document.getElementById("chart-all").innerHTML =
+      '<p class="muted">render error: ' + e.message + "</p>";
+  }
   for (const h of T1_HORIZONS) {
     try {
       const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
-      document.getElementById(`chart-h${h}`).innerHTML = chartHorizon(prices, hp, h);
       document.getElementById(`mini-h${h}`).textContent = stats(hp);
       document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
-    } catch (e) {  // one bad section must not blank the other three
+    } catch (e) {  // one bad section must not blank the others
       document.getElementById(`mini-h${h}`).textContent = "render error: " + e.message;
     }
   }
@@ -352,6 +361,8 @@ async function poll() {
           " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
       } else { brtiEl.textContent = "–"; }
       document.getElementById("retrains").textContent = status.retrains_this_session;
+      document.getElementById("qupd").textContent =
+        (status.online_updates_session ?? 0).toLocaleString();
       const bk = status.betting;
       if (bk) {
         const money = v => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString();
@@ -387,7 +398,7 @@ async function poll() {
       document.getElementById("fresh").textContent =
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
-        `3 streams (cadence = horizon: 5/15/30 min) · retrains every ` +
+        `3 horizons (+5/+15/+30), all predicting every 5 min · retrains every ` +
         `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PST` +
         (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST` :
           " · first retrain at the top of the hour");

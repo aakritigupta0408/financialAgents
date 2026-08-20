@@ -3,12 +3,15 @@
 Each horizon predicts at its own natural cadence (cadence == horizon) with
 its own Q-table, so streams never contaminate each other:
 
-  h5    every  5 min  (9:00, 9:05, 9:10…)
-  h15   every 15 min  (9:00, 9:15, 9:30…)   warm-started from the control model
-  h30   every 30 min  (9:00, 9:30, 10:00…)  warm-started from the control model
+  h5 / h15 / h30 all predict every 5 minutes (9:00, 9:05, 9:10…), each with
+  its own Q-table; h15/h30 warm-started from the original control model.
 
-Shared clocks: every 30s score matured predictions; every 1 hour retrain each
-arm's own tables via experience replay with a hold-out no-regression gate.
+Learning happens at two speeds:
+  per prediction  the moment a prediction is scored, its (state, action,
+                  reward) does an immediate Q-update — the agent improves
+                  with every single evaluated prediction
+  per hour        experience replay over the last 24h consolidates, guarded
+                  by a hold-out no-regression gate (bad updates revert)
 
 Usage:  python -m btc_rl.online            # run forever
         python -m btc_rl.online --once     # backfill + one pass, then exit
@@ -37,10 +40,12 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # cadence (cadence == horizon), each with its own Q-table file. The h15/h30
 # tables warm-start from the original (control) model's batch tables; add new
 # dicts here for future treatments.
+# All arms predict every 5 minutes (9:00, 9:05, 9:10…), one line each on the
+# shared graph; they differ only in how far ahead they predict.
 VARIANTS: dict[str, dict] = {
-    "h5": {"predict_every": 300, "horizons": [5]},     # 9:00, 9:05, 9:10…
-    "h15": {"predict_every": 900, "horizons": [15]},   # 9:00, 9:15, 9:30…
-    "h30": {"predict_every": 1800, "horizons": [30]},  # 9:00, 9:30, 10:00…
+    "h5": {"predict_every": 300, "horizons": [5]},
+    "h15": {"predict_every": 300, "horizons": [15]},
+    "h30": {"predict_every": 300, "horizons": [30]},
 }
 
 # Betting rules: each committed prediction stakes $10 from a shared $1,000
@@ -193,6 +198,7 @@ def run(once: bool = False) -> None:
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
+    online_updates = 0
     started = time.time()
 
     # Betting starts at first-ever deployment and survives restarts.
@@ -235,7 +241,8 @@ def run(once: bool = False) -> None:
                                 for r in rows)
                     new_preds += len(rows)
 
-            # 2. score matured predictions (all arms alike)
+            # 2. score matured predictions (all arms alike) and LEARN from
+            #    each one: an immediate Q-update on the committed (s, a)
             scored = 0
             for row in ledger:
                 if row["actual"] is not None:
@@ -252,6 +259,17 @@ def run(once: bool = False) -> None:
                     row["payout"] = BET_PAYOUT if win else 0
                     row["pnl"] = row["payout"] - row["bet"]
                 scored += 1
+                agents = arms.get(row["variant"])
+                if (agents and row["horizon"] in agents and row.get("state")
+                        and row["delta"] in config.ACTION_DELTAS):
+                    r = reward(row["pred"], row["actual"], shaped=True)
+                    agents[row["horizon"]].learn(
+                        tuple(row["state"]),
+                        config.ACTION_DELTAS.index(row["delta"]), r)
+                    online_updates += 1
+            if scored:  # persist what was just learned
+                for variant, agents in arms.items():
+                    _checkpoint(variant, agents)
             if new_preds or scored:
                 ledger = ledger[-LEDGER_MAX_ROWS:]
                 _save_ledger(ledger)
@@ -300,6 +318,7 @@ def run(once: bool = False) -> None:
                                                   for h, a in arms[v].items()}}
                              for v, s in VARIANTS.items()},
                 "betting": book,
+                "online_updates_session": online_updates,
                 "retrain_every_min": RETRAIN_EVERY // 60,
                 "retrains_this_session": retrains,
                 "last_retrain": retrain_info or None,
