@@ -15,7 +15,8 @@
   --border: rgba(255,255,255,.10);
   --series-1: #94a3b8; --series-2: #a78bfa; --series-3: #f472b6;
   --series-4: #fbbf24; --series-5: #34d399; --series-6: #38bdf8;
-  --series-7: #fb7185;
+  --series-7: #fb7185; --series-8: #a3e635; --series-9: #e879f9;
+  --series-10: #5eead4;
   --good: #34d399; --good-text: #6ee7b7; --critical: #f87171;
 }
 body { min-height: 100vh; overflow-x: hidden; background: var(--page);
@@ -85,6 +86,9 @@ section { background: var(--surface); border: 1px solid var(--border);
 .arm-tag.t8 { color: var(--series-4); }
 .arm-tag.rp { color: var(--faint); }
 .arm-tag.t9 { color: var(--series-3); }
+.arm-tag.t10 { color: var(--series-8); }
+.arm-tag.t11 { color: var(--series-9); }
+.arm-tag.cal { color: var(--series-10); }
 .legend, .range-bar { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px;
   color: var(--ink-2); margin: 10px 0 4px; align-items: center; }
 .sw { display: inline-block; width: 10px; height: 10px; border-radius: 4px;
@@ -258,6 +262,7 @@ footer { color: var(--faint); font-size: 12.5px; }
     <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-4)">L3 · t8</b><br><span class="muted">distributional MLP, mode action</span></div>
     <div style="align-self:center;color:var(--faint)">→</div>
     <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-3)">L4 · t9</b><br><span class="muted">LSTM over raw return sequence</span></div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-8)">L5 · t10/t11</b><br><span class="muted">Kalshi market context (t10) · RLHF human feedback (t11) · cal + kb meta-arms</span></div>
   </div>
 
   <p class="mini" style="margin-top:16px">Offline — held-out test MAE (chronological splits; 60-day runs except control 120-day):</p>
@@ -272,6 +277,9 @@ footer { color: var(--faint); font-size: 12.5px; }
       <tr><td><span class="sw" style="background:var(--series-7)"></span>t7</td><td>linear Q</td><td class="num">13</td><td class="num">$14.1</td><td class="num">$32.0</td><td class="num">$50.7</td><td class="num">$77.3</td></tr>
       <tr><td><span class="sw" style="background:var(--series-4)"></span>t8</td><td>dist. MLP</td><td class="num">13</td><td class="num">$14.1</td><td class="num">$32.9</td><td class="num">$53.6</td><td class="num">$82.0</td></tr>
       <tr><td><span class="sw" style="background:var(--series-3)"></span>t9</td><td>LSTM</td><td class="num">60-seq</td><td class="num">$13.9</td><td class="num">$33.2</td><td class="num">$53.6</td><td class="num">$78.4</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-8)"></span>t10</td><td>LinUCB + Kalshi market</td><td class="num">14</td><td class="num" colspan="4">online-only (no historical Kalshi feed)</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-9)"></span>t11</td><td>LinUCB + RLHF reward</td><td class="num">10</td><td class="num" colspan="4">online-only (human feedback blends into reward)</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-10)"></span>cal</td><td>re-centered trailing winner</td><td class="num">meta</td><td class="num" colspan="4">online-only (+15m; no model of its own)</td></tr>
     </tbody>
   </table></div>
 
@@ -309,14 +317,14 @@ footer { color: var(--faint); font-size: 12.5px; }
 const H_COLOR = { 1: "var(--series-5)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [1, 5, 15, 30];
 const armOf = p => (p.variant || "").startsWith("consensus") ? "agg"
+  : (p.variant || "").startsWith("cal") ? "cal"
+  : (p.variant || "").startsWith("t11") ? "t11"
+  : (p.variant || "").startsWith("t10") ? "t10"
   : (p.variant || "").startsWith("t9") ? "t9"
   : (p.variant || "").startsWith("t8") ? "t8"
   : (p.variant || "").startsWith("rp") ? "rp"
   : (p.variant || "").startsWith("t7") ? "t7"
   : (p.variant || "").startsWith("t6") ? "t6"
-  : (p.variant || "").startsWith("t5") ? "t5"
-  : (p.variant || "").startsWith("t4") ? "t4"
-  : (p.variant || "").startsWith("t3") ? "t3"
   : (p.variant || "").startsWith("t2") ? "t2" : "ctl";
 let latest = null;
 
@@ -340,6 +348,9 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
     <span><span class="sw" style="background:var(--series-4)"></span>t8 (L3 dist-DQN)</span>
     <span><span class="sw" style="background:var(--series-3)"></span>t9 (L4 LSTM)</span>
+    <span><span class="sw" style="background:var(--series-8)"></span>t10 (+Kalshi mkt)</span>
+    <span><span class="sw" style="background:var(--series-9)"></span>t11 (RLHF)</span>
+    <span><span class="sw" style="background:var(--series-10)"></span>cal (winner recal · +15m)</span>
     <span><span class="sw" style="background:var(--muted)"></span>rp (chart replay)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
@@ -405,10 +416,10 @@ function tipText(p) {
 }
 
 const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
-                    t3: "var(--series-3)", t4: "var(--series-4)",
-                    t5: "var(--series-5)", t6: "var(--series-6)",
-                    t7: "var(--series-7)", t8: "var(--series-4)",
-                    t9: "var(--series-3)", rp: "var(--faint)" };
+                    t6: "var(--series-6)", t7: "var(--series-7)",
+                    t8: "var(--series-4)", t9: "var(--series-3)",
+                    t10: "var(--series-8)", t11: "var(--series-9)",
+                    cal: "var(--series-10)", rp: "var(--faint)" };
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -417,7 +428,7 @@ function chartHorizon(prices, preds, h) {
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
   // shaded ribbon: the trailing-MAE leader arm's 80% band
-  const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9"];
+  const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"];
   let leader = null, bestMae = Infinity;
   for (const a of armsHere) {
     const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
@@ -441,20 +452,20 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "rp", "t2", "t6", "t7", "t8", "t9"]) {
+    for (const arm of ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
         .sort((a, b) => a.target_ts - b.target_ts);
       const dash = arm === "t2" ? ' stroke-dasharray="6 5"'
-        : arm === "t3" ? ' stroke-dasharray="2 4"'
-        : arm === "t4" ? ' stroke-dasharray="10 3 2 3"'
-        : arm === "t5" ? ' stroke-dasharray="1 3"'
         : arm === "t6" ? ' stroke-dasharray="12 3"'
         : arm === "t7" ? ' stroke-dasharray="3 3 8 3"'
         : arm === "t8" ? ' stroke-dasharray="8 6"'
         : arm === "rp" ? ' stroke-dasharray="2 6"'
-        : arm === "t9" ? ' stroke-dasharray="6 2 2 2"' : "";
+        : arm === "t9" ? ' stroke-dasharray="6 2 2 2"'
+        : arm === "t10" ? ' stroke-dasharray="10 3"'
+        : arm === "t11" ? ' stroke-dasharray="2 3"'
+        : arm === "cal" ? ' stroke-dasharray="14 4 2 4"' : "";
       if (scored.length) {
         g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
           `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
@@ -468,7 +479,8 @@ function chartHorizon(prices, preds, h) {
   return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="+${h} min predicted vs actual, all arms">${g}</svg>`;
 }
 
-const ARM_ORDER = { agg: 0, ctl: 1, rp: 2, t2: 3, t6: 4, t7: 5, t8: 6 };
+const ARM_ORDER = { agg: 0, ctl: 1, rp: 2, t2: 3, t6: 4, t7: 5, t8: 6,
+                    t9: 7, t10: 8, t11: 9, cal: 10 };
 function ledgerRows(preds) {
   // Newest COMPLETE slots only — a slot's arms are never split across the
   // cut, and the table scrolls instead of truncating.
@@ -483,14 +495,14 @@ function ledgerRows(preds) {
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
     const arm = armOf(p);
     const hz = `<td>${arm === "t2" ? '<span class="arm-tag treatment">t2</span>'
-      : arm === "t3" ? '<span class="arm-tag t3">t3</span>'
-      : arm === "t4" ? '<span class="arm-tag t4">t4</span>'
-      : arm === "t5" ? '<span class="arm-tag t5">t5</span>'
       : arm === "t6" ? '<span class="arm-tag t6">t6</span>'
       : arm === "t7" ? '<span class="arm-tag t7">t7</span>'
       : arm === "t8" ? '<span class="arm-tag t8">t8</span>'
       : arm === "rp" ? '<span class="arm-tag rp">rp</span>'
       : arm === "t9" ? '<span class="arm-tag t9">t9</span>'
+      : arm === "t10" ? '<span class="arm-tag t10">t10</span>'
+      : arm === "t11" ? '<span class="arm-tag t11">t11</span>'
+      : arm === "cal" ? '<span class="arm-tag cal">cal</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     const band = p.lo == null ? "–"
@@ -573,7 +585,7 @@ const ARM_INFO = [
   { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"],
     title: "Treatment 6 — + order-flow imbalance",
     architecture: "Same vol-scaled LinUCB, 27-dim context.",
-    features: "t5 + signed taker-volume imbalance over 1/5/15 min and trade intensity (Coinbase trades stream).",
+    features: "base + trend + live streams + book + news sentiment, plus signed taker-volume imbalance over 1/5/15 min and trade intensity (Coinbase trades stream).",
     reward: "Same as t2.", sampling: "Same as t2; rolling 20-min trades store.",
     offline: null },
 ];
