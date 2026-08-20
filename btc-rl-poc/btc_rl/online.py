@@ -694,6 +694,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 if isinstance(agent, DistDQNAgent):
                     import copy as _copy
                     before = _copy.deepcopy(agent.net.state_dict())
+                elif isinstance(agent, LinearQAgent):
+                    before = ([w.copy() for w in agent.w], list(agent.pulls))
                 else:
                     before = ([a.copy() for a in agent.A],
                               [b.copy() for b in agent.b], list(agent.pulls))
@@ -714,6 +716,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 if reverted:
                     if isinstance(agent, DistDQNAgent):
                         agent.net.load_state_dict(before)
+                    elif isinstance(agent, LinearQAgent):
+                        agent.w, agent.pulls = before
                     else:
                         agent.A, agent.b, agent.pulls = before
                 gate[f"h{h}"] = {"val_mae_before": round(before_mae, 2),

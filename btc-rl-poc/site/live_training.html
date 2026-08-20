@@ -85,9 +85,13 @@ footer { color: var(--muted); font-size: 12.5px; }
 <header>
   <div class="eyebrow">Reinforcement learning · live run</div>
   <h1>Watching the Q-agents learn</h1>
-  <p class="sub">Four training runs stream in sequence — sparse then shaped reward, at the
-  15- and 30-minute horizons. Curves are greedy-policy scores on a validation slice
-  (last 15% of training days) the agent never trains on. Dotted line = persistence baseline.</p>
+  <p class="sub">The ladder's first rung, batch-trained: eight tabular-Q runs — sparse then
+  shaped reward at the +1/+5/+15/+30 min horizons. Curves are greedy-policy scores on a
+  validation slice (last 15% of training days) the agent never trains on. Dotted line =
+  persistence baseline. Later rungs (t7 linear-Q, t8 distributional DQN, t9 LSTM) batch-train
+  via scripts/train_l2–l4.py; their held-out numbers and the full head-to-head live in
+  <a href="experiment_review.html">experiment review</a>, and the arms' online learning in
+  <a href="live_online.html">live predictions</a>.</p>
 </header>
 
 <section class="statusbar">
@@ -127,13 +131,17 @@ for (const h of [1, 5, 15, 30]) {
   SERIES.push({ key: `tabular-q-shaped|${h}`, label: `shaped · ${h} min`, color: H_COLOR[h], dash: "" });
 }
 
-// TODO(human): smoothSeries() — the raw per-epoch curves can be jittery.
-// Implement smoothing here (2–10 lines). `values` is an array of numbers in
-// epoch order; return an equal-length array. Options: return values (raw),
-// an EMA (v' = a*v + (1-a)*prev), or a centered moving average. Your choice
-// shapes how "learning" visually reads on screen.
+// Light EMA (α=0.45): enough to read the learning trend through per-epoch
+// jitter, weak enough that plateaus and regressions stay visible instead of
+// being averaged away.
 function smoothSeries(values) {
-  return values;
+  const out = [];
+  let prev = null;
+  for (const v of values) {
+    prev = prev == null ? v : 0.45 * v + 0.55 * prev;
+    out.push(prev);
+  }
+  return out;
 }
 
 function legend(el) {

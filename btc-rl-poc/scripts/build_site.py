@@ -40,8 +40,11 @@ STREAMS = [
 LADDER = [
     ("L0", "Persistence baseline", "predict the current price — the bar to clear", "done"),
     ("L1", "Tabular Q-learning", "81 states × 21 integer-delta actions, ε-greedy, sparse + shaped rewards", "done"),
-    ("L2", "Linear function approximation", "continuous features, SGD on Q(s,a)", "next"),
-    ("L3", "Small DQN / distributional RL", "predict the delta distribution, act on its mode", "later"),
+    ("L2", "Linear function approximation", "continuous features, SGD on Q(s,a) — live as t7", "done"),
+    ("L3", "Small distributional DQN", "predict the delta distribution, act on its mode — live as t8", "done"),
+    ("L4", "LSTM sequence model", "raw 1-minute return stream, distributional head — live as t9", "done"),
+    ("L5", "Market & human signals", "Kalshi prediction-market context (t10) · RLHF human feedback (t11) · "
+     "kb binary calls on the Kalshi 15-min contract · calibrated-winner meta-arm (cal)", "live"),
 ]
 
 
@@ -144,8 +147,8 @@ def main() -> None:
     ladder_rows = "".join(
         f'<div class="rung {status}"><span class="rung-id">{lid}</span>'
         f'<div><div class="rung-name">{name}</div><div class="muted">{desc}</div></div>'
-        f'<span class="pill {"ok" if status == "done" else "todo"}">'
-        f'{"✓ built" if status == "done" else ("→ next" if status == "next" else "later")}</span></div>'
+        f'<span class="pill {"ok" if status in ("done", "live") else "todo"}">'
+        f'{"✓ built" if status == "done" else "✓ live" if status == "live" else ("→ next" if status == "next" else "later")}</span></div>'
         for lid, name, desc, status in LADDER)
 
     def slot_table(rows_):
