@@ -60,7 +60,7 @@ def main():
         errs, pers = [], []
         for e in te:
             a = agent.select(ctx(e), greedy=True)
-            d = int(round(config.K_FACTORS[a] * sigma_of(e)))
+            d = int(round(agent.bins[a] * sigma_of(e)))
             errs.append(abs(e.price_now + d - e.price_future))
             pers.append(abs(e.price_future - e.price_now))
         print(f"h{h}: L3 mode-action test MAE ${sum(errs)/len(errs):.1f} "

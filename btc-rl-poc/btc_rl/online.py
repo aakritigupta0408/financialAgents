@@ -1,10 +1,8 @@
-"""Always-on experiment runner: one prediction stream per horizon.
+"""Always-on experiment runner: control + treatments predicting BTC price.
 
-Each horizon predicts at its own natural cadence (cadence == horizon) with
-its own Q-table, so streams never contaminate each other:
-
-  All arms predict every 5 minutes (9:00, 9:05, 9:10…), each with its own
-  model; the objective is pure price prediction (no betting layer).
+Every arm commits integer price predictions each 5 minutes for the +5/+15/
++30-min targets; the objective is pure prediction quality. Arms never share
+model state, so metric gaps are attributable (see README for the ladder).
 
 Learning happens at two speeds:
   per prediction  the moment a prediction is scored, its (state, action,

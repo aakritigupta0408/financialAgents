@@ -1,26 +1,26 @@
 {
   "h1": {
-    "test_mae": 14.23,
+    "test_mae": 14.08,
     "persistence_mae": 13.9,
     "test_episodes": 2760,
-    "updates": 220760
+    "updates": 441520
   },
   "h5": {
-    "test_mae": 31.31,
+    "test_mae": 32.03,
     "persistence_mae": 31.06,
     "test_episodes": 2712,
-    "updates": 216920
+    "updates": 433840
   },
   "h15": {
-    "test_mae": 51.77,
+    "test_mae": 50.65,
     "persistence_mae": 50.38,
     "test_episodes": 2592,
-    "updates": 207320
+    "updates": 414640
   },
   "h30": {
-    "test_mae": 77.09,
+    "test_mae": 77.3,
     "persistence_mae": 71.8,
     "test_episodes": 2412,
-    "updates": 192920
+    "updates": 385840
   }
 }

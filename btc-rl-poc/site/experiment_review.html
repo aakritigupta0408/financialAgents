@@ -157,7 +157,7 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   <p class="sub" id="score-note">loading…</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
-    <th class="num">MAE</th><th class="num">MSE</th><th class="num">±$10</th>
+    <th class="num">MAE</th><th class="num">RMSE</th><th class="num">±$10</th>
     <th class="num">Direction</th><th class="num">Replay</th>
     <th class="num">Coverage</th><th class="num">Width</th>
     <th class="num">Exact</th></tr></thead>
@@ -239,7 +239,7 @@ function onlineStats(preds, variants) {
     out.push({
       h, n: sc.length,
       mae: sc.length ? sc.reduce((a, p) => a + p.abs_err, 0) / sc.length : null,
-      mse: sc.length ? sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length : null,
+      rmse: sc.length ? Math.sqrt(sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length) : null,
       w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
       w50: sc.length ? sc.filter(p => p.abs_err <= 50).length / sc.length : null,
       dir: moved.length ? dirHit / moved.length : null,
@@ -342,7 +342,7 @@ async function poll() {
         sb += `<tr><td><span class="dot" style="background:${arm.color}"></span>${arm.key}</td>` +
           `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
           `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
-          `<td class="num">${s.mse == null ? "–" : (s.mse / 1000).toFixed(1) + "k"}</td>` +
+          `<td class="num">${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.dirSig ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
           `<td class="num">${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"}</td>` +
@@ -353,7 +353,7 @@ async function poll() {
     }
     document.getElementById("scoreboard").innerHTML = sb;
     document.getElementById("score-note").textContent =
-      `MSE in $² (thousands) · Direction = sign accuracy among slots where the arm ` +
+      `RMSE in $ · Direction = sign accuracy among slots where the arm ` +
       `predicted a move (coverage in parentheses) · Replay = how much of the prediction ` +
       `is the last price carried forward — 100% = pure time-shift copy of the past ` +
       `chart (persistence scores 100% by construction); real prediction pushes this ` +
@@ -371,7 +371,7 @@ async function poll() {
     <dt>Data sampling</dt><dd>${arm.sampling}</dd>
     <dt>Offline metrics</dt><dd>${offlineBlock(metrics, arm.offline)}</dd>
     <dt>Online metrics</dt><dd>${onlineStats(preds, arm.variants).map(s =>
-      `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · MSE ${s.mse == null ? "–" : (s.mse / 1000).toFixed(1) + "k"}` +
+      `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · RMSE ${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}` +
       ` · ±$10 ${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"} · dir ${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%"}` +
       ` · replay ${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"} · exact ${s.hits}`
     ).join("<br>") || "no scored predictions yet"}</dd>
