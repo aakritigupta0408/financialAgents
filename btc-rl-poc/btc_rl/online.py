@@ -3,7 +3,6 @@
 Each horizon predicts at its own natural cadence (cadence == horizon) with
 its own Q-table, so streams never contaminate each other:
 
-  h1    every  1 min  (9:01, 9:02, 9:03…)
   h5    every  5 min  (9:00, 9:05, 9:10…)
   h15   every 15 min  (9:00, 9:15, 9:30…)   warm-started from the control model
   h30   every 30 min  (9:00, 9:30, 10:00…)  warm-started from the control model
@@ -39,7 +38,6 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # tables warm-start from the original (control) model's batch tables; add new
 # dicts here for future treatments.
 VARIANTS: dict[str, dict] = {
-    "h1": {"predict_every": 60, "horizons": [1]},      # 9:01, 9:02, 9:03…
     "h5": {"predict_every": 300, "horizons": [5]},     # 9:00, 9:05, 9:10…
     "h15": {"predict_every": 900, "horizons": [15]},   # 9:00, 9:15, 9:30…
     "h30": {"predict_every": 1800, "horizons": [30]},  # 9:00, 9:30, 10:00…
@@ -225,7 +223,8 @@ def run(once: bool = False) -> None:
                 if bar is None:
                     continue
                 row["actual"] = bar["close"]
-                row["abs_err"] = round(abs(row["pred"] - bar["close"]), 2)
+                row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
+                row["abs_err"] = abs(row["err"])
                 row["hit"] = int(row["pred"]) == int(bar["close"])
                 scored += 1
             if new_preds or scored:

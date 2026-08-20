@@ -109,9 +109,9 @@ footer { color: var(--muted); font-size: 12.5px; }
 <main>
 <header>
   <div class="eyebrow">Reinforcement learning · online experiment</div>
-  <h1>Four streams, four models</h1>
-  <p class="sub">Each horizon predicts at its own natural cadence — +1 min fires every
-  minute, +5 every five, +15 every fifteen, +30 every thirty — with its own Q-table,
+  <h1>Three streams, three models</h1>
+  <p class="sub">Each horizon predicts at its own natural cadence — +5 min fires every
+  five minutes, +15 every fifteen, +30 every thirty — with its own Q-table,
   graph, and ledger. The 15/30-min tables carry the original (control) model forward.
   All retrain hourly behind a hold-out gate. All times PST.</p>
 </header>
@@ -156,7 +156,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 
 <script>
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
-const T1_HORIZONS = [1, 5, 15, 30];
+const T1_HORIZONS = [5, 15, 30];
 let latest = null;
 
 // All times on this page are US Pacific (PST/PDT).
@@ -165,7 +165,7 @@ const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
     hour12: false });
 
 // One block per horizon: its own graph + its own ledger, at its own cadence.
-const CADENCE_EG = { 1: "9:01, 9:02, 9:03…", 5: "9:00, 9:05, 9:10…",
+const CADENCE_EG = { 5: "9:00, 9:05, 9:10…",
                      15: "9:00, 9:15, 9:30…", 30: "9:00, 9:30, 10:00…" };
 document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
 <section style="margin-top:22px">
@@ -182,7 +182,7 @@ document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th class="num">Predicted @ t</th>
-    <th class="num">Actual @ t</th><th class="num">Error</th><th>Match</th></tr></thead>
+    <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
 </section>`).join("");
@@ -213,10 +213,13 @@ function frame(prices, preds) {
   return { W, H, X, Y, g };
 }
 
+const fmtErr = p => p.err == null ? (p.abs_err == null ? "–" : "$" + p.abs_err)
+  : (p.err >= 0 ? "+$" : "−$") + Math.abs(p.err);
+
 function tipText(p) {
   return `${fmtTime(p.target_ts)} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}` +
     (p.actual != null
-      ? `, actual $${Math.round(p.actual).toLocaleString()}, off by $${p.abs_err}` +
+      ? `, actual $${Math.round(p.actual).toLocaleString()}, error ${fmtErr(p)}` +
         (p.hit ? " — EXACT INTEGER HIT" : "")
       : ", awaiting the minute");
 }
@@ -258,7 +261,7 @@ function ledgerRows(preds, withHorizon) {
     return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
       `<td class="num">$${p.pred.toLocaleString()}</td>` +
       `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
-      `<td class="num">${p.abs_err == null ? "–" : "$" + p.abs_err}</td><td>${state}</td></tr>`;
+      `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td></tr>`;
   }).join("");
 }
 
@@ -325,7 +328,7 @@ async function poll() {
       document.getElementById("fresh").textContent =
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
-        `4 streams (cadence = horizon: 1/5/15/30 min) · retrains every ` +
+        `3 streams (cadence = horizon: 5/15/30 min) · retrains every ` +
         `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PST` +
         (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST` :
           " · first retrain at the top of the hour");
