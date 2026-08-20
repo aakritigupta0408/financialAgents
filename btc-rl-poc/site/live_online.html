@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
 <title>BTC 7PM Oracle — Always Training</title>
 <style>
 :root {
@@ -286,8 +287,12 @@ function chartCombined(prices, preds) {
   return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="predicted vs actual, all horizons">${g}</svg>`;
 }
 
-function ledgerRows(preds, withHorizon) {
-  return preds.slice(-8).reverse().map(p => {
+function ledgerRows(preds) {
+  // Newest slots first, both arms adjacent per slot — never let one arm's
+  // batch-append order monopolize the table.
+  const sorted = [...preds].sort((a, b) =>
+    b.target_ts - a.target_ts || (armOf(a) < armOf(b) ? -1 : 1));
+  return sorted.slice(0, 12).map(p => {
     const state = p.actual == null ? '<span class="pill pending">pending</span>'
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
     const hz = `<td>${armOf(p) === "t2"
@@ -333,7 +338,7 @@ function draw() {
     try {
       const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
       document.getElementById(`mini-h${h}`).textContent = stats(hp);
-      document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
+      document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp);
     } catch (e) {  // one bad section must not blank the others
       document.getElementById(`mini-h${h}`).textContent = "render error: " + e.message;
     }
