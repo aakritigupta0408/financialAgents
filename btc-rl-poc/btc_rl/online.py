@@ -215,6 +215,9 @@ CAL_VARIANT = "cal-h15"        # calibrated-winner meta-arm (+15m only)
 CAL_WINDOW = 30                # trailing scored residuals the calibrator sees
 CAL_MIN = 10                   # need this many residuals before correcting
 CAL_TRAIL = 50                 # scored rows per arm used to pick the winner
+KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
+                               # probability row doesn't fit the ledger schema
+KB_MAX_ROWS = 20_000
 
 
 def _horizon_sigma(feat: dict, horizon: int) -> float:
@@ -282,6 +285,54 @@ def _pm_view(arms: dict, feat: dict, snap: dict | None,
                 pb for k, pb in zip(agent.bins, probs) if k >= z0), 3)
     except Exception:
         pass
+    return out
+
+
+def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
+             base_price: float, mins_left: float) -> float | None:
+    """Our P(window close >= strike): t8-h15's delta distribution above the
+    strike, with sigma scaled to the time REMAINING in the window (the
+    pm-panel version uses the full 15-min sigma, which drags P toward 0.5
+    mid-window)."""
+    agents = arms.get("t8-h15")
+    agent = agents.get(15) if agents else None
+    if agent is None or not strike or not base_price:
+        return None
+    try:
+        z0 = ((strike - base_price)
+              / _horizon_sigma(feat, max(mins_left, 1.0)))
+        probs = agent.probs(_context(VARIANTS["t8-h15"], feat, snap))
+        return round(sum(pb for k, pb in zip(agent.bins, probs) if k >= z0), 4)
+    except Exception:
+        return None
+
+
+def _load_kb() -> list[dict]:
+    path = RESULTS_DIR / KB_LOG_NAME
+    if not path.exists():
+        return []
+    rows = []
+    for line in path.read_text().splitlines():
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows
+
+
+def _kb_summary(kb: list[dict]) -> dict | None:
+    """Status-page view: last call + trailing accuracy/Brier, ours vs the
+    market's own implied probability on the same settled windows."""
+    if not kb:
+        return None
+    sc = [r for r in kb if r["actual"] is not None][-100:]
+    out = {"last": kb[-1], "scored": len(sc)}
+    if sc:
+        out["acc"] = round(sum(r["hit"] for r in sc) / len(sc), 3)
+        out["brier"] = round(sum(r["brier"] for r in sc) / len(sc), 4)
+        mk = [r["mkt_brier"] for r in sc if r.get("mkt_brier") is not None]
+        if mk:
+            out["mkt_brier"] = round(sum(mk) / len(mk), 4)
     return out
 
 
@@ -673,6 +724,8 @@ def run(once: bool = False) -> None:
     ledger = _load_ledger()
     made = {(r.get("variant", "control"), r["made_ts"], r["horizon"])
             for r in ledger}
+    kb = _load_kb()
+    kb_made = {(r["ticker"], r["made_ts"]) for r in kb}
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -697,7 +750,7 @@ def run(once: bool = False) -> None:
             # Kalshi BTC-15-min market: fetched once per poll, feeds both
             # the t10 context features and the status page's pm panel
             pm_mkt = fetch_kalshi_btc15()
-            k_pup = k_spread = k_tleft = k_dist_bp = None
+            k_pup = k_spread = k_tleft = k_dist_bp = k_close_ts = None
             if pm_mkt:
                 yb, ya = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
                 if yb and ya:
@@ -710,10 +763,10 @@ def run(once: bool = False) -> None:
                                  / pm_mkt["strike"] * 1e4)
                 if pm_mkt.get("close_time"):
                     try:
-                        close_ts = datetime.fromisoformat(
+                        k_close_ts = int(datetime.fromisoformat(
                             pm_mkt["close_time"].replace("Z", "+00:00")
-                        ).timestamp()
-                        k_tleft = max(0.0, min(1.0, (close_ts - now_ts) / 900))
+                        ).timestamp())
+                        k_tleft = max(0.0, min(1.0, (k_close_ts - now_ts) / 900))
                     except ValueError:
                         pass
             snap = {
@@ -910,6 +963,56 @@ def run(once: bool = False) -> None:
                     ledger.append(crow)
                     new_preds += 1
 
+            # 1d. kalshi-binary arm (kb): our YES/NO call on the live
+            #     KXBTC15M contract itself — P(close >= strike) from
+            #     t8-h15's distribution, sigma scaled to the remaining
+            #     window. One call per 5-min slot per contract, market's
+            #     implied P logged beside ours, settled at window close
+            #     against the bar closing there (honest proxy for the
+            #     official BRTI 60s-average settle). Never bets, never
+            #     learns; lives in its own log (binary schema).
+            kb_changed = False
+            slot5 = now_ts // 300 * 300
+            if (pm_mkt and pm_mkt.get("strike") and k_close_ts
+                    and (pm_mkt["ticker"], slot5) not in kb_made
+                    and k_close_ts - now_ts >= 60):
+                kfeat = compute_features(bars, fng)
+                base = (brti["price"] if brti else None) or kfeat["price"]
+                mins_left = (k_close_ts - now_ts) / 60
+                p = _kb_p_up(arms, kfeat, snap,
+                             pm_mkt["strike"], base, mins_left)
+                if p is not None:
+                    kb.append({
+                        "variant": "kb", "ticker": pm_mkt["ticker"],
+                        "made_ts": slot5, "close_ts": k_close_ts,
+                        "strike": pm_mkt["strike"],
+                        "base": round(base, 2),
+                        "mins_left": round(mins_left, 1),
+                        "p_up": p, "call": int(p >= 0.5),
+                        "mkt_p_up": k_pup,
+                        "actual": None, "hit": None,
+                    })
+                    kb_made.add((pm_mkt["ticker"], slot5))
+                    kb_changed = True
+            for r in kb:
+                if r["actual"] is not None or now_ts < r["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(r["close_ts"])
+                if settle_bar is None:
+                    continue
+                outcome = int(settle_bar["close"] >= r["strike"])
+                r["actual"] = outcome
+                r["hit"] = int(r["call"] == outcome)
+                r["brier"] = round((r["p_up"] - outcome) ** 2, 4)
+                if r.get("mkt_p_up") is not None:
+                    r["mkt_brier"] = round((r["mkt_p_up"] - outcome) ** 2, 4)
+                kb_changed = True
+            if kb_changed:
+                kb = kb[-KB_MAX_ROWS:]
+                tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
+                tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
+                tmp.replace(RESULTS_DIR / KB_LOG_NAME)
+
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
             scored = 0
@@ -975,6 +1078,7 @@ def run(once: bool = False) -> None:
                 "price_now": feat["price"],
                 "brti": brti,
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
+                "kalshi_binary": _kb_summary(kb),
                 "live_features": snap,
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],
