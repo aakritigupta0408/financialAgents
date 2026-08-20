@@ -93,6 +93,57 @@ class LinUCBAgent:
         return agent
 
 
+class LinearQAgent:
+    """Level 2: linear function approximation — Q(s,a) = w_a · x, SGD updates.
+
+    The roadmap's L2 rung: continuous features, one weight vector per
+    (vol-scaled) action arm, epsilon-greedy while training, plain SGD
+    w_a += lr * (r - Q) * x. Duck-types LinUCBAgent's select/update API.
+    """
+
+    name = "linear-q"
+
+    def __init__(self, dim: int, lr: float = 0.01, epsilon: float = 0.05,
+                 n_arms: int | None = None, seed: int = 7):
+        import numpy as np
+        self.np = np
+        self.dim = dim
+        self.lr = lr
+        self.epsilon = epsilon
+        self.n_arms = n_arms or len(config.K_FACTORS)
+        self.w = [np.zeros(dim) for _ in range(self.n_arms)]
+        self.pulls = [0] * self.n_arms
+        self.rng = __import__("random").Random(seed)
+
+    def select(self, x, greedy: bool = False) -> int:
+        if not greedy and self.rng.random() < self.epsilon:
+            return self.rng.randrange(self.n_arms)
+        xv = self.np.asarray(x)
+        qs = [float(w @ xv) for w in self.w]
+        return max(range(self.n_arms), key=lambda i: qs[i])
+
+    def update(self, x, arm: int, r: float) -> None:
+        xv = self.np.asarray(x)
+        q = float(self.w[arm] @ xv)
+        self.w[arm] = self.w[arm] + self.lr * (r - q) * xv
+        self.pulls[arm] += 1
+
+    @property
+    def total_pulls(self) -> int:
+        return sum(self.pulls)
+
+    def to_dict(self) -> dict:
+        return {"dim": self.dim, "lr": self.lr, "n_arms": self.n_arms,
+                "w": [w.tolist() for w in self.w], "pulls": self.pulls}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "LinearQAgent":
+        agent = cls(dim=d["dim"], lr=d.get("lr", 0.01), n_arms=d.get("n_arms"))
+        agent.w = [agent.np.asarray(w) for w in d["w"]]
+        agent.pulls = d.get("pulls", [0] * agent.n_arms)
+        return agent
+
+
 class TabularQAgent:
     """Level 1: one-step Q-learning (a contextual bandit, so no bootstrapping).
 

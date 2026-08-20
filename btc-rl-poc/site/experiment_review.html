@@ -180,10 +180,10 @@ const ARMS = [
     offline: "tabular-q-shaped" },
   { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "#a78bfa",
     title: "Treatment 2 — LinUCB contextual bandit",
-    architecture: "LinUCB over the same 21 delta arms: per-arm ridge model A=λI+Σxxᵀ, b=Σrx; optimistic selection θ·x + α√(xᵀA⁻¹x), α=0.3. Exploration is uncertainty-driven and self-extinguishing.",
+    architecture: "LinUCB (α=0.3) over 21 VOLATILITY-SCALED action arms — each arm is k × live σ_h, k ∈ 0…±3, so the action range tracks the regime instead of capping at ±$89 (which sat below the average 15/30-min move). Per-arm ridge model, optimistic selection.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
-    reward: "Prediction quality: +1 on exact integer match, else −|error|/100 — identical for every arm.",
-    sampling: "Cold-start warm-up on ~1,400 recent episodes, one update per scored prediction, plus hourly gated 24h replay.",
+    reward: "+1 exact integer match, else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control keeps the pure shaped reward.",
+    sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated 24h replay; adaptive bias intercept (trailing median residual per arm × horizon).",
     offline: null },
   { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "#f472b6",
     title: "Treatment 3 — + live-streamed microstructure",
@@ -212,6 +212,13 @@ const ARMS = [
     features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
     reward: "Same prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
+    offline: null },
+  { key: "t7", variants: ["t7-h5", "t7-h15", "t7-h30"], color: "#fb7185",
+    title: "Treatment 7 — L2 linear function approximation (SGD on Q)",
+    architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x with one weight vector per volatility-scaled action arm; plain SGD w += lr(r−Q)x, lr 0.01. ε-greedy in batch training, greedy online.",
+    features: "13 bar-derived dims (base 10 + trend 3) — snapshot-free, so batch training and live inference see identical inputs.",
+    reward: "Same prediction reward + direction credit as the bandit treatments.",
+    sampling: "Batch: 60 days through yesterday (~217k SGD updates per horizon, chronological 80/20; test MAE within 1–4% of persistence). Online: per-prediction SGD, hourly gated replay, adaptive bias intercept.",
     offline: null },
   { key: "agg", variants: ["consensus"], color: "#f8fafc",
     title: "Consensus — median poll (our headline +5 min call)",
@@ -242,6 +249,8 @@ function onlineStats(preds, variants) {
       w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
       w50: sc.length ? sc.filter(p => p.abs_err <= 50).length / sc.length : null,
       dir: moved.length ? dirHit / moved.length : null,
+      dirSig: moved.length >= 20
+        ? (dirHit - moved.length / 2) / Math.sqrt(moved.length / 4) > 1.64 : false,
       dirCov: sc.length ? moved.length / sc.length : null,
       replay: meanMove ? Math.max(0, 1 - meanDev / meanMove) : null,
       hits: sc.filter(p => p.hit).length,
@@ -337,7 +346,7 @@ async function poll() {
           `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
           `<td class="num">${s.mse == null ? "–" : (s.mse / 1000).toFixed(1) + "k"}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
-          `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "% (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
+          `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.dirSig ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
           `<td class="num">${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.hits}</td></tr>`;
       }
@@ -348,7 +357,8 @@ async function poll() {
       `predicted a move (coverage in parentheses) · Replay = how much of the prediction ` +
       `is the last price carried forward — 100% = pure time-shift copy of the past ` +
       `chart (persistence scores 100% by construction); real prediction pushes this ` +
-      `down while keeping Direction above 50%`;
+      `down while keeping Direction above 50% · † = direction significantly above ` +
+      `chance (p<0.05, one-sided)`;
 
     document.getElementById("cards").innerHTML = ARMS.map(arm => `
 <div class="arm-card">

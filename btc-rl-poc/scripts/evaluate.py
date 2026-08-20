@@ -19,6 +19,7 @@ scored = [r for r in rows if r["actual"] is not None]
 ARMS = ["h5", "h15", "h30", "t2-h5", "t2-h15", "t2-h30",
         "t3-h5", "t3-h15", "t3-h30", "t4-h5", "t4-h15", "t4-h30",
         "t5-h5", "t5-h15", "t5-h30", "t6-h5", "t6-h15", "t6-h30",
+        "t7-h5", "t7-h15", "t7-h30",
         "consensus"]
 
 

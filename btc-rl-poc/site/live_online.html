@@ -13,7 +13,7 @@
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
   --series-3: #1baf7a; --series-4: #eda100;
-  --series-5: #4a3aa7; --series-6: #e34948;
+  --series-5: #4a3aa7; --series-6: #e34948; --series-7: #be123c;
   --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
 }
 @media (prefers-color-scheme: dark) {
@@ -24,7 +24,7 @@
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
     --series-3: #199e70; --series-4: #c98500;
-    --series-5: #9085e9; --series-6: #e66767;
+    --series-5: #9085e9; --series-6: #e66767; --series-7: #fb7185; --series-7: #fb7185;
     --good-text: #0ca30c;
   }
 }
@@ -35,7 +35,7 @@
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
   --series-3: #199e70; --series-4: #c98500;
-  --series-5: #9085e9; --series-6: #e66767;
+  --series-5: #9085e9; --series-6: #e66767; --series-7: #fb7185;
   --good-text: #0ca30c;
 }
 * { box-sizing: border-box; }
@@ -56,6 +56,7 @@ h2 { margin: 0 0 2px; font-size: 17px; }
 .arm-tag.t4 { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 13%, transparent); }
 .arm-tag.t5 { color: var(--series-5); background: color-mix(in srgb, var(--series-5) 13%, transparent); }
 .arm-tag.t6 { color: var(--series-6); background: color-mix(in srgb, var(--series-6) 13%, transparent); }
+.arm-tag.t7 { color: var(--series-7); background: color-mix(in srgb, var(--series-7) 13%, transparent); }
 .consensus-num { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
 section { background: var(--surface); border: 1px solid var(--border);
@@ -155,45 +156,10 @@ footer { color: var(--muted); font-size: 12.5px; }
 <div id="horizon-sections"></div>
 
 <section>
-  <h2>Model card</h2>
-  <dl class="card">
-    <dt>Experiment</dt><dd><b>Control</b> (solid lines): tabular Q-learning, one table per
-      horizon, untouched. <b>Treatment 2</b> (dashed): LinUCB contextual bandit over the
-      same 21 integer-delta arms — each arm keeps a ridge reward model over the continuous
-      features; selection is optimistic (θ·x + α·uncertainty); reward = prediction quality
-      (+1 exact integer match, else −|error|/100) — pure price prediction, no betting.
-      <b>Treatment 3</b> (dotted): same LinUCB machinery + <b>5 live-streamed features</b>
-      snapshotted every 30s — Deribit perp basis, OKX funding rate, cross-exchange
-      dispersion, BRTI-composite gap vs Coinbase, mempool fee. Arms never share updates;
-      all bet under identical rules on identical slots. The +5 consensus polls
-      ctl, t2, t3, t4, and persistence.
-      <b>Treatment 4</b> (dash-dot): t3's context <b>plus</b> trend features (4h momentum,
-      multi-scale alignment, range position), order-book features (top-20 bid/ask
-      imbalance, spread),. <b>Treatment 5</b>: t4's context plus a frozen open-source fintech LLM
-      trained on Bitcoin text — <b>CryptoBERT</b> scores live CoinDesk/Cointelegraph/
-      Decrypt headlines into sentiment, 1h sentiment momentum, and news intensity;
-      the RL policy still makes every decision (FinRL-contest pattern: LLM perceives,
-      RL decides). <b>Treatment 6</b>: t5's context plus <b>order-flow imbalance</b> —
-      the research-backed short-horizon signal: signed taker-volume imbalance over
-      1/5/15 min and trade intensity, live from the Coinbase trades stream (maker-side
-      field inverted to taker side).</dd>
-    <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
-      81 discrete states × 21 actions = 1,701 Q-values per horizon per arm.</dd>
-    <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
-      RSI(14) bucket (each 3-way). Continuous inputs behind them: 1m/5m/15m/60m returns,
-      EMA(30) distance, volume ratio, Fear &amp; Greed index.</dd>
-    <dt>Action</dt><dd>Integer dollar delta from the current price:
-      0, ±1, ±2, ±3, ±5, ±8, ±13, ±21, ±34, ±55, ±89.</dd>
-    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual); otherwise <b>−|error|/100</b>
-      (shaped) for learning, <b>−1</b> for spec reporting. Same function for every arm.</dd>
-    <dt>Learning loop</dt><dd>Two speeds. <b>Per prediction:</b> when a prediction is
-      scored, its (state, action) Q-value moves by Q ← Q + 0.1·(reward − Q) — one honest
-      lesson per evaluated prediction. <b>Per hour:</b> experience replay over the last
-      24h consolidates those lessons across all states.</dd>
-    <dt>Anti-overfit</dt><dd>Hourly retrain replays the last 24h <b>except the newest 3h</b>,
-      which validate it — any horizon whose validation MAE worsens is <b>reverted</b>.
-      Committed predictions are always greedy (no exploration leaks into the ledger).</dd>
-  </dl>
+  <h2>The arms — architecture · features · metrics</h2>
+  <p class="sub muted">Offline = 120-day batch backtest (control only; treatments are
+  online-only). Online = live ledger since deployment. Refreshes with the page.</p>
+  <div id="arm-cards"></div>
 </section>
 
 <footer id="foot">Polling every 5s…</footer>
@@ -204,6 +170,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [5, 15, 30];
 const armOf = p => p.variant === "consensus" ? "agg"
+  : (p.variant || "").startsWith("t7") ? "t7"
   : (p.variant || "").startsWith("t6") ? "t6"
   : (p.variant || "").startsWith("t5") ? "t5"
   : (p.variant || "").startsWith("t4") ? "t4"
@@ -231,6 +198,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-4)"></span>t4 (+ trend/book/abstain)</span>
     <span><span class="sw" style="background:var(--series-5)"></span>t5 (+ CryptoBERT news)</span>
     <span><span class="sw" style="background:var(--series-6)"></span>t6 (+ order flow)</span>
+    <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-h${h}"></div>
@@ -281,7 +249,8 @@ function tipText(p) {
 
 const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
                     t3: "var(--series-3)", t4: "var(--series-4)",
-                    t5: "var(--series-5)", t6: "var(--series-6)" };
+                    t5: "var(--series-5)", t6: "var(--series-6)",
+                    t7: "var(--series-7)" };
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -291,7 +260,7 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "t2", "t3", "t4", "t5", "t6"]) {
+    for (const arm of ["ctl", "t2", "t3", "t4", "t5", "t6", "t7"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
@@ -300,7 +269,8 @@ function chartHorizon(prices, preds, h) {
         : arm === "t3" ? ' stroke-dasharray="2 4"'
         : arm === "t4" ? ' stroke-dasharray="10 3 2 3"'
         : arm === "t5" ? ' stroke-dasharray="1 3"'
-        : arm === "t6" ? ' stroke-dasharray="12 3"' : "";
+        : arm === "t6" ? ' stroke-dasharray="12 3"'
+        : arm === "t7" ? ' stroke-dasharray="3 3 8 3"' : "";
       if (scored.length) {
         g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
           `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
@@ -328,6 +298,7 @@ function ledgerRows(preds) {
       : arm === "t4" ? '<span class="arm-tag t4">t4</span>'
       : arm === "t5" ? '<span class="arm-tag t5">t5</span>'
       : arm === "t6" ? '<span class="arm-tag t6">t6</span>'
+      : arm === "t7" ? '<span class="arm-tag t7">t7</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
@@ -345,7 +316,7 @@ function stats(preds) {
     const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)} · ±$10 ${(100 * w10).toFixed(0)}%`;
   };
-  return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5"), one("t6")].join("   |   ");
+  return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5"), one("t6"), one("t7")].join("   |   ");
 }
 
 function draw() {
@@ -365,6 +336,91 @@ function draw() {
   attachTips();
 }
 
+
+const ARM_INFO = [
+  { key: "ctl", variants: ["h5", "h15", "h30"],
+    title: "Control — Tabular Q-learning",
+    architecture: "One-step Q-learning: 81 discrete states × 21 fixed integer-delta actions (±$89 max). Frozen baseline — untouched since the experiment began.",
+    features: "4 discretized buckets: 5m/15m returns, 30m volatility, RSI(14).",
+    reward: "+1 exact integer match, else −|error|/100 (shaped); spec ±1 for reporting.",
+    sampling: "120-day batch (chronological 80/20) + per-prediction updates + hourly gated 24h replay.",
+    offline: "tabular-q-shaped" },
+  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"],
+    title: "Treatment 2 — LinUCB contextual bandit",
+    architecture: "LinUCB (α=0.3) over 21 volatility-scaled action arms: each arm is k × live σ_h (k ∈ 0…±3), so the action range adapts to the regime instead of capping at ±$89.",
+    features: "10 continuous dims: returns 1/5/15/60m, vol, RSI, EMA distance, volume ratio, Fear & Greed.",
+    reward: "+1 exact / −|error|/100, plus +0.1 direction credit for a correct-sign deviation.",
+    sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated replay; adaptive bias intercept (trailing median residual).",
+    offline: null },
+  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"],
+    title: "Treatment 3 — + live-streamed microstructure",
+    architecture: "Same vol-scaled LinUCB, 15-dim context.",
+    features: "t2 + perp basis, funding rate, exchange dispersion, BRTI gap, mempool fee (30s snapshots).",
+    reward: "Same as t2.", sampling: "Same as t2; snapshots joined by timestamp.",
+    offline: null },
+  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"],
+    title: "Treatment 4 — + trend & order-book state",
+    architecture: "Same vol-scaled LinUCB, 20-dim context.",
+    features: "t3 + 4h momentum, trend alignment, range position, book imbalance, spread.",
+    reward: "Same as t2.", sampling: "Same as t2.", offline: null },
+  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"],
+    title: "Treatment 5 — + frozen Bitcoin-trained LLM",
+    architecture: "Same vol-scaled LinUCB, 23-dim context; CryptoBERT (frozen) perceives, RL decides.",
+    features: "t4 + live headline sentiment, 1h sentiment momentum, news intensity.",
+    reward: "Same as t2.", sampling: "Same as t2; headlines scored once, cached.",
+    offline: null },
+  { key: "t7", variants: ["t7-h5", "t7-h15", "t7-h30"],
+    title: "Treatment 7 — L2 linear function approximation",
+    architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x, one weight vector per vol-scaled action arm, plain SGD updates (lr 0.01). No exploration bonus — ε-greedy in batch, greedy online.",
+    features: "13 bar-derived dims (base 10 + trend 3) — deliberately snapshot-free so batch and live are identical.",
+    reward: "Same as t2 (+1 exact / −|error|/100 + direction credit).",
+    sampling: "Batch: 60 days through yesterday, 200k+ SGD updates per horizon, chronological 80/20 (test MAE within 1–4% of persistence). Online: per-prediction SGD + hourly gated replay + bias intercept.",
+    offline: null },
+  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"],
+    title: "Treatment 6 — + order-flow imbalance",
+    architecture: "Same vol-scaled LinUCB, 27-dim context.",
+    features: "t5 + signed taker-volume imbalance over 1/5/15 min and trade intensity (Coinbase trades stream).",
+    reward: "Same as t2.", sampling: "Same as t2; rolling 20-min trades store.",
+    offline: null },
+];
+
+function armOnline(preds, variants) {
+  const out = [];
+  for (const h of [5, 15, 30]) {
+    const sc = preds.filter(p => variants.includes(p.variant)
+      && p.horizon === h && p.actual != null);
+    if (!sc.length) continue;
+    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+    const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
+    out.push(`+${h}m: n=${sc.length} · MAE $${Math.round(mae)} · ±$10 ${(100 * w10).toFixed(0)}% · exact ${sc.filter(p => p.hit).length}`);
+  }
+  return out.join("<br>") || "no scored predictions yet";
+}
+
+function armOffline(metrics, key) {
+  if (!metrics) return "metrics.json unavailable";
+  const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
+    const st = metrics.agents[name]?.[hk]?.all;
+    return st ? `${hk.slice(1)}m: MAE $${st.mae.toFixed(0)} · ±$10 ${(100 * st["within_$10"]).toFixed(0)}%` : null;
+  }).filter(Boolean).join(" · ");
+  if (!key) return `online-only — persistence ref: ${rowsOf("persistence-baseline")}`;
+  return `${rowsOf(key)} (120-day test) · persistence ref: ${rowsOf("persistence-baseline")}`;
+}
+
+let batchMetrics = null;
+function renderArmCards(preds) {
+  document.getElementById("arm-cards").innerHTML = ARM_INFO.map(a => `
+  <dl class="card" style="margin-top:16px;border-top:1px solid var(--grid);padding-top:12px">
+    <dt>Arm</dt><dd><b><span class="sw" style="background:${ARM_COLOR[a.key]}"></span>${a.title}</b></dd>
+    <dt>Architecture</dt><dd>${a.architecture}</dd>
+    <dt>Features</dt><dd>${a.features}</dd>
+    <dt>Reward</dt><dd>${a.reward}</dd>
+    <dt>Sampling</dt><dd>${a.sampling}</dd>
+    <dt>Offline</dt><dd>${armOffline(batchMetrics, a.offline)}</dd>
+    <dt>Online</dt><dd>${armOnline(preds, a.variants)}</dd>
+  </dl>`).join("");
+}
+
 async function poll() {
   try {
     const [pxRes, plRes, sRes] = await Promise.all([
@@ -381,6 +437,13 @@ async function poll() {
     const status = sRes.ok ? await sRes.json() : null;
     latest = { prices, preds };
     draw();
+    if (!batchMetrics) {
+      try {
+        const r = await fetch("../results/metrics.json", { cache: "no-store" });
+        if (r.ok) batchMetrics = await r.json();
+      } catch {}
+    }
+    renderArmCards(preds);
     document.getElementById("npred").textContent = preds.length.toLocaleString();
 
     if (status) {

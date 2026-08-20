@@ -21,8 +21,17 @@ LOOKBACK_MIN = 60                 # minutes of bars required to build features
 TRAIN_FRACTION = 0.8              # chronological split by day
 
 # Action space: predicted integer dollar delta from the current price.
+# Control (tabular) keeps this fixed grid — it is the frozen baseline.
 ACTION_DELTAS = sorted({0, 1, -1, 2, -2, 3, -3, 5, -5, 8, -8, 13, -13,
                         21, -21, 34, -34, 55, -55, 89, -89})
+
+# Treatment bandits act in VOLATILITY-SCALED units instead: each arm is a
+# multiple k of the horizon's live sigma, so the same 21 arms span $30 moves
+# on calm days and $400 moves on wild ones. The fixed ±$89 grid capped every
+# treatment below the AVERAGE 15/30-min move (~$160/$276 on recent tape).
+K_FACTORS = sorted({0.0, 0.1, -0.1, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75,
+                    1.0, -1.0, 1.25, -1.25, 1.5, -1.5, 2.0, -2.0,
+                    2.5, -2.5, 3.0, -3.0})
 
 # Rewards (user spec): +1 when int(pred) == int(actual), else penalty.
 REWARD_HIT = 1.0

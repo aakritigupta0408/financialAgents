@@ -1,0 +1,26 @@
+{
+  "h1": {
+    "test_mae": 14.11,
+    "persistence_mae": 13.9,
+    "test_episodes": 2760,
+    "updates": 220760
+  },
+  "h5": {
+    "test_mae": 31.17,
+    "persistence_mae": 31.06,
+    "test_episodes": 2712,
+    "updates": 216920
+  },
+  "h15": {
+    "test_mae": 52.01,
+    "persistence_mae": 50.38,
+    "test_episodes": 2592,
+    "updates": 207320
+  },
+  "h30": {
+    "test_mae": 73.64,
+    "persistence_mae": 71.8,
+    "test_episodes": 2412,
+    "updates": 192920
+  }
+}
