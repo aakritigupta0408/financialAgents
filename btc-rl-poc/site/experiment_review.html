@@ -147,6 +147,9 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
 <div class="cards-grid" id="headline"></div>
 
 <div class="sect">Per-horizon comparison</div>
+<div class="panel"><h3>+1 minute</h3>
+  <p class="sub">The horizon whose noise floor ($13.9) permits MAE &lt; $20</p>
+  <div id="graph-h1"></div></div>
 <div class="panel"><h3>+5 minutes</h3>
   <p class="sub">Lower is better · dashed rule = persistence on the same live slots</p>
   <div id="graph-h5"></div></div>
@@ -175,40 +178,40 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
 <script>
 // ── The registry: add one entry per new treatment ──────────────────────────
 const ARMS = [
-  { key: "ctl", variants: ["h5", "h15", "h30"], color: "#94a3b8",
+  { key: "ctl", variants: ["h1", "h5", "h15", "h30"], color: "#94a3b8",
     title: "Control — Tabular Q-learning",
     architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
     features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
     reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1.",
     sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
     offline: "tabular-q-shaped" },
-  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "#a78bfa",
+  { key: "t2", variants: ["t2-h1", "t2-h5", "t2-h15", "t2-h30"], color: "#a78bfa",
     title: "Treatment 2 — LinUCB contextual bandit",
     architecture: "LinUCB (α=0.3) over 21 VOLATILITY-SCALED action arms — each arm is k × live σ_h, k ∈ 0…±3, so the action range tracks the regime instead of capping at ±$89 (which sat below the average 15/30-min move). Per-arm ridge model, optimistic selection.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
     reward: "+1 exact integer match, else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control keeps the pure shaped reward.",
     sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated 24h replay; adaptive bias intercept (trailing median residual per arm × horizon).",
     offline: null },
-  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"], color: "#38bdf8",
+  { key: "t6", variants: ["t6-h1", "t6-h5", "t6-h15", "t6-h30"], color: "#38bdf8",
     title: "Treatment 6 — + order-flow imbalance (research-backed)",
     architecture: "Same LinUCB machinery, 27-dim context.",
     features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
     reward: "Same prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
     offline: null },
-  { key: "t7", variants: ["t7-h5", "t7-h15", "t7-h30"], color: "#fb7185",
+  { key: "t7", variants: ["t7-h1", "t7-h5", "t7-h15", "t7-h30"], color: "#fb7185",
     title: "Treatment 7 — L2 linear function approximation (SGD on Q)",
     architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x with one weight vector per volatility-scaled action arm; plain SGD w += lr(r−Q)x, lr 0.01. ε-greedy in batch training, greedy online.",
     features: "13 bar-derived dims (base 10 + trend 3) — snapshot-free, so batch training and live inference see identical inputs.",
     reward: "Same prediction reward + direction credit as the bandit treatments.",
     sampling: "Batch: 60 days through yesterday (~217k SGD updates per horizon, chronological 80/20; test MAE within 1–4% of persistence). Online: per-prediction SGD, hourly gated replay, adaptive bias intercept.",
     offline: null },
-  { key: "rp", variants: ["rp-h5", "rp-h15", "rp-h30"], color: "#64748b",
+  { key: "rp", variants: ["rp-h1", "rp-h5", "rp-h15", "rp-h30"], color: "#64748b",
     title: "Chart-replay baseline — the past graph copied forward",
     architecture: "No model: pred(t+h) = price(t) + (price(t) − price(t−h)). The explicit time-shift-copy every arm must beat.",
     features: "The last h-minute move.", reward: "Scored only; never learns.",
     sampling: "None.", offline: null },
-  { key: "t8", variants: ["t8-h5", "t8-h15", "t8-h30"], color: "#fbbf24",
+  { key: "t8", variants: ["t8-h1", "t8-h5", "t8-h15", "t8-h30"], color: "#fbbf24",
     title: "Treatment 8 — L3: small distributional DQN (act on the mode)",
     architecture: "MLP 13→64→64→23 over vol-normalized delta bins (action bins ±1.5σ + overflow tail bins as targets only — without them the mode degenerates to a permanent ±1.5σ bet). Greedy = mode; exploration = sample the predicted distribution.",
     features: "13 bar-derived dims (base + trend).",
@@ -222,11 +225,11 @@ const ARMS = [
     sampling: "Emitted once per slot when ctl+t2 have committed; scored like any predictor.",
     offline: null },
 ];
-const HKEYS = { 5: "h5", 15: "h15", 30: "h30" };
+const HKEYS = { 1: "h1", 5: "h5", 15: "h15", 30: "h30" };
 
 function onlineStats(preds, variants) {
   const out = [];
-  for (const h of [5, 15, 30]) {
+  for (const h of [1, 5, 15, 30]) {
     const rows = preds.filter(p => variants.includes(p.variant) && p.horizon === h);
     const sc = rows.filter(p => p.actual != null);
     if (!rows.length) continue;
@@ -334,7 +337,7 @@ async function poll() {
         <div class="small">MAE · ±$10 ${(100 * s.w10).toFixed(0)}% · n=${s.n}</div>
       </div>`).join("");
 
-    for (const h of [5, 15, 30])
+    for (const h of [1, 5, 15, 30])
       document.getElementById(`graph-h${h}`).innerHTML = maeGraph(preds, h);
 
     let sb = "";

@@ -41,10 +41,10 @@ def main():
     history = fetch_history(args.days)
     fng = fetch_fear_greed(limit=args.days + 10)
     episodes = [e for e in build_episodes(history, fng)
-                if e.horizon_min in (5, 15, 30)]
+                if e.horizon_min in (1, 5, 15, 30)]
     days = sorted({e.day for e in episodes})
     cut = set(days[:int(len(days) * 0.8)])
-    for h in (5, 15, 30):
+    for h in (1, 5, 15, 30):
         tr = [e for e in episodes if e.day in cut and e.horizon_min == h]
         te = [e for e in episodes if e.day not in cut and e.horizon_min == h]
         agent = DistDQNAgent(DIM)

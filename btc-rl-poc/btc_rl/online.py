@@ -63,6 +63,18 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # contextual bandit over the same 21 integer-delta arms; every learner uses
 # the prediction reward: +1 exact integer match, else -|error|/100.
 VARIANTS: dict[str, dict] = {
+    # +1-minute horizon: the one where the noise floor ($13.9 over 60 days)
+    # permits MAE < $20 — every arm family runs there too.
+    "h1": {"predict_every": 300, "horizons": [1], "agent": "tabular"},
+    "rp-h1": {"predict_every": 300, "horizons": [1], "agent": "replay"},
+    "t2-h1": {"predict_every": 300, "horizons": [1], "agent": "linucb"},
+    "t6-h1": {"predict_every": 300, "horizons": [1], "agent": "linucb",
+              "live": True, "trend": True, "book": True, "llm": True,
+              "ofi": True},
+    "t7-h1": {"predict_every": 300, "horizons": [1], "agent": "linearq",
+              "trend": True},
+    "t8-h1": {"predict_every": 300, "horizons": [1], "agent": "dqn",
+              "trend": True},
     "h5": {"predict_every": 300, "horizons": [5], "agent": "tabular"},
     "h15": {"predict_every": 300, "horizons": [15], "agent": "tabular"},
     "h30": {"predict_every": 300, "horizons": [30], "agent": "tabular"},

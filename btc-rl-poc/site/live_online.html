@@ -238,8 +238,8 @@ footer { color: var(--faint); font-size: 12.5px; }
 <div id="tip"></div>
 
 <script>
-const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
-const T1_HORIZONS = [5, 15, 30];
+const H_COLOR = { 1: "var(--series-5)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
+const T1_HORIZONS = [1, 5, 15, 30];
 const armOf = p => p.variant === "consensus" ? "agg"
   : (p.variant || "").startsWith("t8") ? "t8"
   : (p.variant || "").startsWith("rp") ? "rp"
