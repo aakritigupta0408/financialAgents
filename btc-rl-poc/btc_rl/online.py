@@ -1,11 +1,12 @@
-"""Always-on experiment runner: control vs treatment arms, trained separately.
+"""Always-on experiment runner: one prediction stream per horizon.
 
-The original system is frozen as the CONTROL arm (predict every 15 min at
-+15/+30). Every addition from here on is a TREATMENT arm with its own
-Q-tables and its own ledger rows, so arms never contaminate each other:
+Each horizon predicts at its own natural cadence (cadence == horizon) with
+its own Q-table, so streams never contaminate each other:
 
-  control        predict every 15 min, horizons +15/+30   (the first model)
-  t1-1min-multi  predict every  1 min, horizons +1/+5/+15/+30
+  h1    every  1 min  (9:01, 9:02, 9:03…)
+  h5    every  5 min  (9:00, 9:05, 9:10…)
+  h15   every 15 min  (9:00, 9:15, 9:30…)   warm-started from the control model
+  h30   every 30 min  (9:00, 9:30, 10:00…)  warm-started from the control model
 
 Shared clocks: every 30s score matured predictions; every 1 hour retrain each
 arm's own tables via experience replay with a hold-out no-regression gate.
@@ -33,11 +34,15 @@ PRED_LOG = RESULTS_DIR / "prediction_log.jsonl"
 STATUS = RESULTS_DIR / "online_status.json"
 BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 
-# Experiment arms. "control" is the original model — do not modify it;
-# add new dicts here for each new treatment.
+# Experiment arms: one stream per horizon, each predicting at its own natural
+# cadence (cadence == horizon), each with its own Q-table file. The h15/h30
+# tables warm-start from the original (control) model's batch tables; add new
+# dicts here for future treatments.
 VARIANTS: dict[str, dict] = {
-    "control": {"predict_every": 900, "horizons": [15, 30]},
-    "t1-1min-multi": {"predict_every": 60, "horizons": [1, 5, 15, 30]},
+    "h1": {"predict_every": 60, "horizons": [1]},      # 9:01, 9:02, 9:03…
+    "h5": {"predict_every": 300, "horizons": [5]},     # 9:00, 9:05, 9:10…
+    "h15": {"predict_every": 900, "horizons": [15]},   # 9:00, 9:15, 9:30…
+    "h30": {"predict_every": 1800, "horizons": [30]},  # 9:00, 9:30, 10:00…
 }
 
 RETRAIN_EVERY = 3600           # 1 hour

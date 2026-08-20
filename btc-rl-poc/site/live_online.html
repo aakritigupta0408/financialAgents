@@ -109,10 +109,11 @@ footer { color: var(--muted); font-size: 12.5px; }
 <main>
 <header>
   <div class="eyebrow">Reinforcement learning · online experiment</div>
-  <h1>Control vs treatment, minute by minute</h1>
-  <p class="sub">The first model is frozen as the <b>control</b> arm; every addition is a
-  <b>treatment</b> arm with its own Q-tables — separate models, separate graphs, separate
-  ledgers, same market. Both retrain hourly behind a hold-out gate. All times PST.</p>
+  <h1>Four streams, four models</h1>
+  <p class="sub">Each horizon predicts at its own natural cadence — +1 min fires every
+  minute, +5 every five, +15 every fifteen, +30 every thirty — with its own Q-table,
+  graph, and ledger. The 15/30-min tables carry the original (control) model forward.
+  All retrain hourly behind a hold-out gate. All times PST.</p>
 </header>
 
 <section class="statusbar">
@@ -125,33 +126,14 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
 </section>
 
-<section>
-  <h2>Control <span class="arm-tag control">original model · 15-min cadence · +15/+30</span></h2>
-  <p class="sub muted">Dots are committed predictions at their target minute; stems show
-  the miss distance; hollow dots await their minute.</p>
-  <div class="legend">
-    <span><span class="sw line"></span>actual price</span>
-    <span><span class="sw" style="background:var(--series-3)"></span>+15 min</span>
-    <span><span class="sw" style="background:var(--series-4)"></span>+30 min</span>
-    <span><span class="sw ring"></span>pending</span>
-  </div>
-  <div id="chart-control"></div>
-  <p class="mini" id="mini-control"></p>
-  <div class="scroll"><table>
-    <thead><tr><th>Target T=t (PST)</th><th>Horizon</th><th class="num">Predicted @ t</th>
-    <th class="num">Actual @ t</th><th class="num">Error</th><th>Match</th></tr></thead>
-    <tbody id="ledger-control"></tbody>
-  </table></div>
-</section>
-
 <div id="horizon-sections"></div>
 
 <section>
   <h2>Model card</h2>
   <dl class="card">
-    <dt>Experiment</dt><dd><b>control</b> = the original model, untouched: 15-min cadence,
-      +15/+30 horizons. <b>t1-1min-multi</b> = 1-min cadence, +1/+5/+15/+30, one graph and
-      one ledger per horizon below. Each arm owns its Q-tables; arms never share updates.</dd>
+    <dt>Experiment</dt><dd>One stream per horizon, each predicting at its own cadence
+      (cadence = horizon) with its own Q-table — streams never share updates. The +15/+30
+      tables warm-started from the original (control) model; +1/+5 are new treatments.</dd>
     <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
       81 discrete states × 21 actions = 1,701 Q-values per horizon per arm.</dd>
     <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
@@ -182,16 +164,18 @@ const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
   { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
     hour12: false });
 
-// Build the four treatment blocks: one graph + one ledger per horizon.
+// One block per horizon: its own graph + its own ledger, at its own cadence.
+const CADENCE_EG = { 1: "9:01, 9:02, 9:03…", 5: "9:00, 9:05, 9:10…",
+                     15: "9:00, 9:15, 9:30…", 30: "9:00, 9:30, 10:00…" };
 document.getElementById("horizon-sections").innerHTML = T1_HORIZONS.map(h => `
 <section style="margin-top:22px">
-  <h2>Treatment 1 · +${h} minute${h > 1 ? "s" : ""}
-    <span class="arm-tag treatment">1-min cadence</span></h2>
-  <p class="sub muted">Predicted price for minute t (committed ${h} min earlier, colored
-  line) vs the actual price at minute t (grey line). Hollow dots are pending targets.</p>
+  <h2>+${h} minute${h > 1 ? "s" : ""}
+    <span class="arm-tag treatment">predicts every ${h} min (${CADENCE_EG[h]})</span></h2>
+  <p class="sub muted">Predicted price for minute t (committed ${h} min earlier) vs the
+  actual price at minute t (grey line). Hollow dots are pending targets.</p>
   <div class="legend">
     <span><span class="sw line"></span>actual @ t</span>
-    <span><span class="sw line" style="border-top-color:${H_COLOR[h]}"></span>predicted @ t</span>
+    <span><span class="sw" style="background:${H_COLOR[h]}"></span>predicted @ t</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-h${h}"></div>
@@ -237,22 +221,6 @@ function tipText(p) {
       : ", awaiting the minute");
 }
 
-function chartControl(prices, preds) {
-  if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
-  const f = frame(prices, preds);
-  let g = f.g;
-  for (const p of preds) {
-    const x = f.X(p.target_ts), y = f.Y(p.pred);
-    if (p.actual != null) {
-      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${f.Y(p.actual)}"/>` +
-        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${H_COLOR[p.horizon]}" data-tip="${tipText(p)}"/>`;
-    } else {
-      g += `<circle class="pt-pending" cx="${x}" cy="${y}" r="4.5" stroke="${H_COLOR[p.horizon]}" data-tip="${tipText(p)}"/>`;
-    }
-  }
-  return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="control arm predicted vs actual">${g}</svg>`;
-}
-
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
   const f = frame(prices, preds);
@@ -260,11 +228,19 @@ function chartHorizon(prices, preds, h) {
   const scored = preds.filter(p => p.actual != null)
     .sort((a, b) => a.target_ts - b.target_ts);
   const color = H_COLOR[h];
-  if (scored.length) {
+  if (scored.length > 80) {
+    // dense stream (1-min): a line reads, dots don't
     g += `<path class="predline" stroke="${color}" d="${scored.map((p, i) =>
       `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
     for (let i = 0; i < scored.length; i += 5)  // sparse hover targets
       g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="7" data-tip="${tipText(scored[i])}"/>`;
+  } else {
+    // sparse stream: dots at their exact target minutes, stems = miss distance
+    for (const p of scored) {
+      const x = f.X(p.target_ts), y = f.Y(p.pred);
+      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${f.Y(p.actual)}"/>` +
+        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${color}" data-tip="${tipText(p)}"/>`;
+    }
   }
   for (const p of preds.filter(p => p.actual == null))
     g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" stroke="${color}" data-tip="${tipText(p)}"/>`;
@@ -296,13 +272,8 @@ function stats(preds) {
 function draw() {
   const { prices, preds } = latest;
   const t0 = prices.length ? prices[0].ts : 0;
-  const ctl = preds.filter(p => (p.variant || "control") === "control" && p.target_ts >= t0);
-  document.getElementById("chart-control").innerHTML = chartControl(prices, ctl);
-  document.getElementById("mini-control").textContent = stats(ctl);
-  document.getElementById("ledger-control").innerHTML = ledgerRows(ctl, true);
   for (const h of T1_HORIZONS) {
-    const hp = preds.filter(p => p.variant === "t1-1min-multi"
-      && p.horizon === h && p.target_ts >= t0);
+    const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
     document.getElementById(`chart-h${h}`).innerHTML = chartHorizon(prices, hp, h);
     document.getElementById(`mini-h${h}`).textContent = stats(hp);
     document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
@@ -348,7 +319,7 @@ async function poll() {
       document.getElementById("fresh").textContent =
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
-        `arms: control (15m cadence) + t1 (1m cadence, 4 horizons) · retrains every ` +
+        `4 streams (cadence = horizon: 1/5/15/30 min) · retrains every ` +
         `${status.retrain_every_min}m · daemon up since ${fmtTime(status.started_at)} PST` +
         (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST` :
           " · first retrain at the top of the hour");
