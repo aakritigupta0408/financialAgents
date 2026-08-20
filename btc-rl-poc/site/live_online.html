@@ -384,6 +384,17 @@ details[open] > summary { margin-bottom: 6px; }
     <span class="muted">scroll to zoom · drag to pan</span>
   </div>
   <div id="horizon-sections"></div>
+  <details style="margin-top:14px"><summary>Prediction ledger — every commit, every arm</summary>
+    <div class="range-bar" style="margin-top:10px">
+      <span class="htabs">
+        <button class="chip ltab" data-h="1">+1 min</button>
+        <button class="chip ltab on" data-h="5">+5 min</button>
+        <button class="chip ltab" data-h="15">+15 min</button>
+        <button class="chip ltab" data-h="30">+30 min</button>
+      </span>
+    </div>
+    <div id="ledger-sections"></div>
+  </details>
 </section>
 
 <section>
@@ -442,20 +453,29 @@ document.getElementById("horizon-sections").innerHTML = `
   </div>
   <div id="chart-h${h}"></div>
   <div class="scorechips" id="mini-h${h}"></div>
-  <details style="margin-top:10px"><summary>Prediction ledger (+${h} min)</summary>
+</div>`).join("");
+
+// the ledger gets its own horizon tabs, independent of the chart tabs
+document.getElementById("ledger-sections").innerHTML = T1_HORIZONS.map(h => `
+<div class="lsec" data-lsec="${h}"${h === 5 ? "" : " hidden"}>
   <div class="scroll ledger-scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
     <th class="num">80% band</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
-  </details>
 </div>`).join("");
 
 document.querySelectorAll(".htab").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll(".htab").forEach(x => x.classList.toggle("on", x === b));
   document.querySelectorAll(".hsec").forEach(d => {
     d.hidden = d.dataset.hsec !== b.dataset.h;
+  });
+}));
+document.querySelectorAll(".ltab").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".ltab").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".lsec").forEach(d => {
+    d.hidden = d.dataset.lsec !== b.dataset.h;
   });
 }));
 
