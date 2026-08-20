@@ -234,8 +234,9 @@ KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
 KB_MAX_ROWS = 20_000
 KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
 KB_BET_MAX_PRICE_C = 85        # broker rule: entries only below 85 cents
-KB_BET_EDGE_C = 5              # min model-vs-market edge (cents) to spend
-                               # the window's single allowed bet
+KB_BET_EDGE_C = 5              # edge (cents) that triggers an EARLY strike
+KB_BET_FORCE_S = 180           # exactly-one-bet rule: if no edge appeared,
+                               # forced entry in the last 3 min of the window
 HF_LOG_NAME = "human_feedback.jsonl"  # scripts/feedback.py appends here
 HF_WEIGHT = 0.15               # RLHF blend: comparable to DIR_BONUS so the
                                # human tilts learning but can't drown the
@@ -1128,10 +1129,12 @@ def run(once: bool = False) -> None:
                 tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
                 tmp.replace(RESULTS_DIR / KB_LOG_NAME)
 
-            # 1e. the ONE paper bet per window the broker allows: entry only
-            #     under 85c, settled at close. The first minute where the
-            #     calibrated model sees >= KB_BET_EDGE_C cents of edge over
-            #     the quoted price spends the window's single bet.
+            # 1e. EXACTLY one paper bet per window (at most one, at least
+            #     one), entry only under 85c, settled at close. The arm
+            #     picks its moment: strike early the first minute the
+            #     called side shows >= KB_BET_EDGE_C cents of edge; if no
+            #     edge ever appears, forced entry in the final 3 minutes —
+            #     called side if it's under 85c, else the only legal side.
             bets_changed = False
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
                     and pm_mkt["ticker"] not in kb_bet_tickers
@@ -1140,25 +1143,32 @@ def run(once: bool = False) -> None:
                 p_now = next((r["p_up"] for r in reversed(kb)
                               if r["ticker"] == pm_mkt["ticker"]), None)
                 if p_now is not None and yb and ya:
-                    # bet only the side the model actually calls — value-
-                    # betting the other side degenerates into buying
-                    # longshots (calibration shrinks p toward 0.5, so our
-                    # p is systematically less extreme than a late market)
-                    cands = []
-                    if p_now >= 0.5 and ya < KB_BET_MAX_PRICE_C:
-                        cands.append(("yes", ya, 100 * p_now - ya))
-                    no_price = 100 - yb
-                    if p_now < 0.5 and no_price < KB_BET_MAX_PRICE_C:
-                        cands.append(("no", no_price,
-                                      100 * (1 - p_now) - no_price))
-                    best = max(cands, key=lambda c: c[2], default=None)
-                    if best and best[2] >= KB_BET_EDGE_C:
+                    # bet the side the model calls — value-betting the other
+                    # side degenerates into buying longshots (calibration
+                    # shrinks p toward 0.5, so our p is systematically less
+                    # extreme than a late market)
+                    yes_price, no_price = ya, 100 - yb
+                    called = ("yes", yes_price, 100 * p_now - yes_price) \
+                        if p_now >= 0.5 else \
+                        ("no", no_price, 100 * (1 - p_now) - no_price)
+                    other = ("no", no_price, 100 * (1 - p_now) - no_price) \
+                        if called[0] == "yes" else \
+                        ("yes", yes_price, 100 * p_now - yes_price)
+                    forced = k_close_ts - now_ts <= KB_BET_FORCE_S
+                    best = None
+                    if called[1] < KB_BET_MAX_PRICE_C \
+                            and (called[2] >= KB_BET_EDGE_C or forced):
+                        best = called
+                    elif forced and other[1] < KB_BET_MAX_PRICE_C:
+                        best = other  # called side priced out (>=85c)
+                    if best:
                         kb_bets.append({
                             "ticker": pm_mkt["ticker"], "made_ts": now_ts,
                             "close_ts": k_close_ts,
                             "strike": pm_mkt["strike"],
                             "side": best[0], "price_c": round(best[1], 1),
                             "edge_c": round(best[2], 1),
+                            "forced": forced and best[2] < KB_BET_EDGE_C,
                             "p_model": p_now,
                             "mins_left": round((k_close_ts - now_ts) / 60, 1),
                             "actual": None, "win": None, "pnl_c": None,

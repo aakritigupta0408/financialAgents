@@ -306,9 +306,11 @@ details[open] > summary { margin-bottom: 6px; }
     60-second BRTI average at window close beats the window open. The kb arm calls it
     every minute — P(close &ge; strike) from t8's predicted distribution, calibrated per
     window phase. Brier (squared probability error, lower is better) scores us against
-    the crowd on identical windows. <b>Betting rule</b> (matches the broker): one bet
-    per window, entry only under 85&cent;, settled at close — the simulator spends it
-    the first minute the model sees &ge;5&cent; of edge over the quoted price.</p>
+    the crowd on identical windows. <b>Betting rule</b> (matches the broker): exactly one bet
+    per window — at most one, at least one — entry only under 85&cent;, settled at close.
+    The arm picks its moment: it strikes early the first minute its called side shows
+    &ge;5&cent; of edge over the quote; with no edge by the final 3 minutes it takes a
+    forced entry (called side if under 85&cent;, otherwise the only legal side).</p>
     <div class="scroll" style="margin-top:8px"><table id="kb-tbl">
       <thead><tr><th>window close</th><th>strike</th><th>called with</th>
         <th>our P(up)</th><th>market P(up)</th><th>call</th><th>outcome</th><th>Brier</th></tr></thead>
@@ -1003,8 +1005,9 @@ async function poll() {
         const lastBet = bS?.last;
         document.getElementById("kb-bet").textContent =
           lastBet && lastBet.actual == null && lastBet.ticker === status.pm?.ticker
-            ? `${lastBet.side.toUpperCase()} @ ${Math.round(lastBet.price_c)}¢`
-            : "no edge yet";
+            ? `${lastBet.side.toUpperCase()} @ ${Math.round(lastBet.price_c)}¢` +
+              (lastBet.forced ? " (forced)" : "")
+            : "waiting to strike";
         document.getElementById("kb-bet-pnl").textContent = bS?.settled
           ? `${bS.wins}–${bS.settled - bS.wins} · ` +
             `${bS.pnl_c >= 0 ? "+" : "−"}${Math.abs(bS.pnl_c).toFixed(0)}¢`
