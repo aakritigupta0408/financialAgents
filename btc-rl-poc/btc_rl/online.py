@@ -113,6 +113,8 @@ RETRAIN_EPOCHS = 3
 POLL_SECONDS = 30
 BACKFILL_HOURS = 6             # seed the charts with recent history on first run
 ONLINE_EPSILON = 0.05          # exploration during learning only
+ONLINE_ALPHA = 0.3             # LinUCB bonus — reward gaps are ~0.1, so a big
+                               # alpha buys exploration long past its value
 LEDGER_MAX_ROWS = 60_000       # ~2 weeks of both arms; keeps rewrites cheap
 
 
@@ -127,13 +129,16 @@ def _bandit_path(variant: str) -> Path:
 def _load_bandits(variant: str, horizons: list[int], dim: int,
                   n_arms: int | None = None) -> dict[int, LinUCBAgent]:
     path = _bandit_path(variant)
+    agents = {h: LinUCBAgent(dim, n_arms=n_arms) for h in horizons}
     if path.exists():
         raw = json.loads(path.read_text())
         loaded = {h: LinUCBAgent.from_dict(raw[f"h{h}"]) for h in horizons
                   if f"h{h}" in raw and raw[f"h{h}"]["dim"] == dim}
         if loaded:
-            return loaded
-    return {h: LinUCBAgent(dim, n_arms=n_arms) for h in horizons}
+            agents = loaded
+    for a in agents.values():
+        a.alpha = ONLINE_ALPHA
+    return agents
 
 
 def _load_snapshots() -> list[dict]:
@@ -248,9 +253,21 @@ def _greedy_mae(agent: TabularQAgent, episodes: list) -> float:
     return sum(errs) / len(errs) if errs else 0.0
 
 
-def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
+def _bandit_val_mae(agent: LinUCBAgent, spec: dict, episodes: list,
+                    snaps: list[dict]) -> float:
+    errs = []
+    for e in episodes:
+        x = _context(spec, e.features, _nearest_snap(snaps, e.minute_ts))
+        a = agent.select(x, greedy=True)
+        errs.append(abs(e.price_now + config.ACTION_DELTAS[a] - e.price_future))
+    return sum(errs) / len(errs) if errs else 0.0
+
+
+def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
+                snaps: list[dict]) -> dict:
     """Hourly retrain of every arm's OWN tables on the same replay window,
-    each guarded by the hold-out no-regression gate."""
+    each guarded by the hold-out no-regression gate. Bandits replay too —
+    12 live updates/hour is a starvation diet next to control's replay."""
     now = datetime.now(tz=config.PACIFIC)
     bars = fetch_range(now - timedelta(hours=RETRAIN_WINDOW_H), now)
     cut_ts = int((now - timedelta(hours=VAL_HOLDOUT_H)).timestamp())
@@ -263,7 +280,30 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
                   "arms": {}}
     for variant, agents in arms.items():
         if any(isinstance(a, LinUCBAgent) for a in agents.values()):
-            continue  # t2 bandits learn purely online — no batch retrain
+            spec = VARIANTS[variant]
+            gate = {}
+            for h, agent in agents.items():
+                eps = [e for e in train_eps if e.horizon_min == h]
+                veps = [e for e in val_eps if e.horizon_min == h]
+                before = ([a.copy() for a in agent.A],
+                          [b.copy() for b in agent.b], list(agent.pulls))
+                before_mae = _bandit_val_mae(agent, spec, veps, snaps)
+                for e in eps:
+                    x = _context(spec, e.features,
+                                 _nearest_snap(snaps, e.minute_ts))
+                    a = agent.select(x)
+                    pred = e.price_now + config.ACTION_DELTAS[a]
+                    agent.update(x, a, reward(pred, e.price_future, shaped=True))
+                after_mae = _bandit_val_mae(agent, spec, veps, snaps)
+                reverted = after_mae > before_mae
+                if reverted:
+                    agent.A, agent.b, agent.pulls = before
+                gate[f"h{h}"] = {"val_mae_before": round(before_mae, 2),
+                                 "val_mae_after": round(after_mae, 2),
+                                 "reverted": reverted}
+            _checkpoint(variant, agents)
+            info["arms"][variant] = gate
+            continue
         horizons = list(agents)
         eps = [e for e in train_eps if e.horizon_min in horizons]
         before = {h: {s: list(qs) for s, qs in agents[h].q.items()}
@@ -475,7 +515,7 @@ def run(once: bool = False) -> None:
             hour_slot = now_ts // RETRAIN_EVERY
             if hour_slot > last_retrain_slot:
                 print(f"{now:%H:%M:%S} hourly retrain (all arms)...")
-                retrain_info = retrain_all(arms)
+                retrain_info = retrain_all(arms, snaps)
                 retrains += 1
                 last_retrain_slot = hour_slot
 

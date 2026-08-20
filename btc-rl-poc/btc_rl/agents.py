@@ -53,14 +53,17 @@ class LinUCBAgent:
         self.b = [np.zeros(dim) for _ in range(self.n_arms)]
         self.pulls = [0] * self.n_arms
 
-    def select(self, x: list[float]) -> int:
+    def select(self, x: list[float], greedy: bool = False) -> int:
+        """UCB selection; greedy=True drops the exploration bonus (for eval)."""
         np = self.np
         xv = np.asarray(x)
         best, best_p = 0, -np.inf
         for a in range(self.n_arms):
             A_inv = np.linalg.inv(self.A[a])
             theta = A_inv @ self.b[a]
-            p = float(theta @ xv + self.alpha * np.sqrt(xv @ A_inv @ xv))
+            p = float(theta @ xv)
+            if not greedy:
+                p += self.alpha * float(np.sqrt(xv @ A_inv @ xv))
             if p > best_p:
                 best, best_p = a, p
         return best
