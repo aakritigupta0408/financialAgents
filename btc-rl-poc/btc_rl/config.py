@@ -29,9 +29,12 @@ ACTION_DELTAS = sorted({0, 1, -1, 2, -2, 3, -3, 5, -5, 8, -8, 13, -13,
 # multiple k of the horizon's live sigma, so the same 21 arms span $30 moves
 # on calm days and $400 moves on wild ones. The fixed ±$89 grid capped every
 # treatment below the AVERAGE 15/30-min move (~$160/$276 on recent tape).
-K_FACTORS = sorted({0.0, 0.1, -0.1, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75,
-                    1.0, -1.0, 1.25, -1.25, 1.5, -1.5, 2.0, -2.0,
-                    2.5, -2.5, 3.0, -3.0})
+# Capped at ±1.5 sigma: an MAE-scored point prediction is a conditional
+# MEDIAN, which almost never sits beyond ~1.5 sigma — the old ±2-3 sigma
+# arms were rally-taught tail bets that wrecked MAE after regime turns.
+K_FACTORS = sorted({0.0, 0.1, -0.1, 0.2, -0.2, 0.35, -0.35, 0.5, -0.5,
+                    0.65, -0.65, 0.8, -0.8, 1.0, -1.0, 1.25, -1.25,
+                    1.5, -1.5})
 
 # Rewards (user spec): +1 when int(pred) == int(actual), else penalty.
 REWARD_HIT = 1.0

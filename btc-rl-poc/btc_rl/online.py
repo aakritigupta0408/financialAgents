@@ -224,16 +224,18 @@ def _load_bandits(variant: str, horizons: list[int], dim: int,
     cls = LinearQAgent if kind == "linearq" else LinUCBAgent
     path = _bandit_path(variant)
     agents = {h: cls(dim, n_arms=n_arms) for h in horizons}
+    want_arms = n_arms or len(config.K_FACTORS)
+    ok = lambda d: d["dim"] == dim and d.get("n_arms", want_arms) == want_arms
     if path.exists():
         raw = json.loads(path.read_text())
         loaded = {h: cls.from_dict(raw[f"h{h}"]) for h in horizons
-                  if f"h{h}" in raw and raw[f"h{h}"]["dim"] == dim}
+                  if f"h{h}" in raw and ok(raw[f"h{h}"])}
         if loaded:
             agents = loaded
     elif kind == "linearq" and (RESULTS_DIR / "linear_q.json").exists():
         raw = json.loads((RESULTS_DIR / "linear_q.json").read_text())
         for h in horizons:  # warm-start from the 60-day batch weights
-            if f"h{h}" in raw and raw[f"h{h}"]["dim"] == dim:
+            if f"h{h}" in raw and ok(raw[f"h{h}"]):
                 agents[h] = cls.from_dict(raw[f"h{h}"])
     for a in agents.values():
         if isinstance(a, LinUCBAgent):
@@ -339,7 +341,11 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             # forecast (it was leaking ±3-sigma probes into predictions)
             arm = agent.select(x, greedy=True)
             delta = _vol_delta(config.K_FACTORS[arm], feat, horizon)
-            adj = (bias or {}).get((variant, horizon), 0)
+            # shrink (x0.5) and cap (±0.5 sigma_h) the bias intercept — the
+            # uncapped version chased rallies and doubled the miss at turns
+            raw_adj = (bias or {}).get((variant, horizon), 0)
+            cap = 0.5 * _horizon_sigma(feat, horizon)
+            adj = int(max(-cap, min(cap, 0.5 * raw_adj)))
             row_extra["x"] = [round(v, 5) for v in x]
             row_extra["arm"] = arm
             if adj:
