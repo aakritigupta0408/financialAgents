@@ -31,11 +31,11 @@ from .agents import (DistDQNAgent, LinearQAgent, LinUCBAgent,
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
-from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, OFI_DIM, TREND_DIM,
-                       book_feature_vector, compute_features, discretize,
-                       feature_vector, live_feature_vector,
-                       llm_feature_vector, ofi_feature_vector,
-                       trend_feature_vector)
+from .features import (BOOK_DIM, KALSHI_DIM, LIVE_DIM, LLM_DIM, OFI_DIM,
+                       TREND_DIM, book_feature_vector, compute_features,
+                       discretize, feature_vector, kalshi_feature_vector,
+                       live_feature_vector, llm_feature_vector,
+                       ofi_feature_vector, trend_feature_vector)
 from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_kalshi_btc15,
@@ -116,6 +116,20 @@ VARIANTS: dict[str, dict] = {
     "t9-h5": {"predict_every": 300, "horizons": [5], "agent": "seq"},
     "t9-h15": {"predict_every": 300, "horizons": [15], "agent": "seq"},
     "t9-h30": {"predict_every": 300, "horizons": [30], "agent": "seq"},
+    # TREATMENT 10 = t2 + the KALSHI BTC-15-MIN PREDICTION MARKET — the
+    # crowd's own P(up), strike gap, window clock, and quote spread as
+    # context (see kalshi_feature_vector). Same bandit/base features as t2,
+    # so any metric gap isolates what the prediction market adds. Live-only
+    # signal — offline_gate is not runnable (no historical Kalshi feed),
+    # same standing as the other snapshot-fed features.
+    "t10-h1": {"predict_every": 300, "horizons": [1], "agent": "linucb",
+               "kalshi": True},
+    "t10-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
+               "kalshi": True},
+    "t10-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
+                "kalshi": True},
+    "t10-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
+                "kalshi": True},
     "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
               "live": True, "trend": True, "book": True, "llm": True,
               "ofi": True},
@@ -135,7 +149,8 @@ def _ctx_dim(spec: dict) -> int:
             + (LIVE_DIM if spec.get("live") else 0)
             + (BOOK_DIM if spec.get("book") else 0)
             + (LLM_DIM if spec.get("llm") else 0)
-            + (OFI_DIM if spec.get("ofi") else 0))
+            + (OFI_DIM if spec.get("ofi") else 0)
+            + (KALSHI_DIM if spec.get("kalshi") else 0))
 
 
 def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
@@ -152,6 +167,8 @@ def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
         x += llm_feature_vector(snap)
     if spec.get("ofi"):
         x += ofi_feature_vector(snap)
+    if spec.get("kalshi"):
+        x += kalshi_feature_vector(snap)
     return x
 
 
@@ -243,13 +260,13 @@ def _band_map(ledger: list[dict]) -> dict:
 
 
 def _pm_view(arms: dict, feat: dict, snap: dict | None,
-             brti: dict | None) -> dict | None:
+             brti: dict | None, m: dict | None = None) -> dict | None:
     """The Robinhood/Kalshi BTC-15-min market + our model's P(up) beside it.
 
     Their contract: BRTI 60s-avg at window close >= at window open. Our
     estimate: t8-h15's predicted delta distribution, thresholded at the
     strike (approximate — full-15-min sigma vs the remaining window)."""
-    m = fetch_kalshi_btc15()
+    m = m or fetch_kalshi_btc15()
     if not m:
         return None
     out = dict(m)
@@ -677,6 +694,28 @@ def run(once: bool = False) -> None:
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
             book = fetch_book_stats()
+            # Kalshi BTC-15-min market: fetched once per poll, feeds both
+            # the t10 context features and the status page's pm panel
+            pm_mkt = fetch_kalshi_btc15()
+            k_pup = k_spread = k_tleft = k_dist_bp = None
+            if pm_mkt:
+                yb, ya = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
+                if yb and ya:
+                    k_pup = (yb + ya) / 200
+                    k_spread = (ya - yb) / 100
+                elif pm_mkt.get("last_price"):
+                    k_pup = pm_mkt["last_price"] / 100
+                if pm_mkt.get("strike") and spot:
+                    k_dist_bp = ((spot - pm_mkt["strike"])
+                                 / pm_mkt["strike"] * 1e4)
+                if pm_mkt.get("close_time"):
+                    try:
+                        close_ts = datetime.fromisoformat(
+                            pm_mkt["close_time"].replace("Z", "+00:00")
+                        ).timestamp()
+                        k_tleft = max(0.0, min(1.0, (close_ts - now_ts) / 900))
+                    except ValueError:
+                        pass
             snap = {
                 "ts": now_ts,
                 "funding": fetch_okx_funding_rate(),
@@ -686,6 +725,8 @@ def run(once: bool = False) -> None:
                 "fee": fetch_mempool_fee(),
                 "imb": book["imb"] if book else None,
                 "spread_bp": book["spread_bp"] if book else None,
+                "k_pup": k_pup, "k_dist_bp": k_dist_bp,
+                "k_tleft": k_tleft, "k_spread": k_spread,
             }
             for t in fetch_recent_trades():   # order-flow store (t6)
                 trades[t["id"]] = t
@@ -933,7 +974,7 @@ def run(once: bool = False) -> None:
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"],
                 "brti": brti,
-                "pm": _pm_view(arms, feat, snap, brti),
+                "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "live_features": snap,
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],

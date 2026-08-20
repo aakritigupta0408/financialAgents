@@ -10,8 +10,8 @@ rows = [json.loads(l) for l in
         (ROOT / "results" / "prediction_log.jsonl").read_text().splitlines()]
 sc = [r for r in rows if r["actual"] is not None]
 ARMS = {"ctl": "h", "rp": "rp-h", "t2": "t2-h", "t6": "t6-h",
-        "t7": "t7-h", "t8": "t8-h", "t9": "t9-h", "cal": "cal-h",
-        "agg": None}
+        "t7": "t7-h", "t8": "t8-h", "t9": "t9-h", "t10": "t10-h",
+        "cal": "cal-h", "agg": None}
 
 
 def variant(a, h):

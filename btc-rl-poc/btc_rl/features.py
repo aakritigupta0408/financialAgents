@@ -103,6 +103,7 @@ TREND_DIM = 3
 BOOK_DIM = 2
 LLM_DIM = 3
 OFI_DIM = 4
+KALSHI_DIM = 4
 
 
 def ofi_feature_vector(snap: dict | None) -> list[float]:
@@ -119,6 +120,29 @@ def ofi_feature_vector(snap: dict | None) -> list[float]:
         snap.get("ofi_5m") or 0.0,
         snap.get("ofi_15m") or 0.0,
         snap.get("tr_int") or 0.0,
+    ]
+
+
+def kalshi_feature_vector(snap: dict | None) -> list[float]:
+    """Kalshi BTC-15-min market context (t10): the crowd's own forecast.
+
+    The KXBTC15M contract settles on whether BRTI's 60s average at window
+    close beats the strike (~BRTI at window open) — a live prediction
+    market for exactly our task. All neutral-at-0 when the market is
+    closed or the snapshot is missing:
+      market-implied P(up) centered to [-1, 1]; spot-vs-strike gap bp
+      (how far price already moved inside the window); time left in the
+      15-min window centered to [-1, 1]; yes bid/ask spread (uncertainty).
+    """
+    if not snap:
+        return [0.0] * KALSHI_DIM
+    return [
+        ((snap.get("k_pup") if snap.get("k_pup") is not None else 0.5)
+         - 0.5) * 2,
+        (snap.get("k_dist_bp") or 0.0) / 5,
+        ((snap.get("k_tleft") if snap.get("k_tleft") is not None else 0.5)
+         - 0.5) * 2,
+        (snap.get("k_spread") or 0.0) * 5,
     ]
 
 
