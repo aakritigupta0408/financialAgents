@@ -89,6 +89,20 @@ footer { color: var(--muted); font-size: 12.5px; }
   </table></div>
 </section>
 
+<section>
+  <h2>Online MAE by arm — +5 minutes</h2>
+  <p class="sub muted">Lower is better. Grey line = persistence on the same live slots.</p>
+  <div id="graph-h5"></div>
+</section>
+<section>
+  <h2>Online MAE by arm — +15 minutes</h2>
+  <div id="graph-h15"></div>
+</section>
+<section>
+  <h2>Online MAE by arm — +30 minutes</h2>
+  <div id="graph-h30"></div>
+</section>
+
 <div id="cards"></div>
 
 <footer id="foot">Polling metrics.json + prediction_log.jsonl every 10s…</footer>
@@ -175,6 +189,40 @@ function offlineBlock(metrics, agentKey) {
   return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
 }
 
+function maeGraph(preds, h) {
+  // one horizontal bar per arm: online MAE at this horizon, arm-colored;
+  // dashed rule = persistence |actual - price_now| on the same slots.
+  const rows = [];
+  for (const arm of ARMS) {
+    const s = onlineStats(preds, arm.variants).find(x => x.h === h);
+    if (s && s.mae != null && s.n)
+      rows.push({ key: arm.key, color: arm.color, mae: s.mae, n: s.n });
+  }
+  if (!rows.length) return '<p class="muted">no scored predictions yet</p>';
+  const base = preds.filter(p => p.horizon === h && p.actual != null
+    && p.variant === HKEYS[h]);
+  const persist = base.length
+    ? base.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0) / base.length
+    : null;
+  const W = 900, barH = 20, gap = 8, L = 60, R = 70;
+  const vmax = Math.max(...rows.map(r => r.mae), persist || 0) * 1.12;
+  const H = rows.length * (barH + gap) + 30;
+  const X = v => L + v / vmax * (W - L - R);
+  let g = "";
+  rows.forEach((r, i) => {
+    const y = 6 + i * (barH + gap);
+    g += `<rect x="${L}" y="${y}" width="${(X(r.mae) - L).toFixed(1)}" height="${barH}" rx="4" style="fill:${r.color}"/>` +
+      `<text x="${L - 8}" y="${y + barH - 5}" text-anchor="end" style="fill:var(--ink)">${r.key}</text>` +
+      `<text x="${X(r.mae) + 8}" y="${y + barH - 5}" style="fill:var(--ink-2);font-variant-numeric:tabular-nums">$${Math.round(r.mae)} (n=${r.n})</text>`;
+  });
+  if (persist != null)
+    g += `<line x1="${X(persist)}" y1="0" x2="${X(persist)}" y2="${H - 22}" ` +
+      `stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
+      `<text x="${X(persist)}" y="${H - 8}" text-anchor="middle" style="fill:var(--muted)">persistence $${Math.round(persist)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE by arm, +${h} min" ` +
+    `style="width:100%;height:auto;display:block;font:12px system-ui">${g}</svg>`;
+}
+
 async function poll() {
   try {
     const [mRes, pRes] = await Promise.all([
@@ -203,6 +251,8 @@ async function poll() {
       }
     }
     document.getElementById("scoreboard").innerHTML = sb;
+    for (const h of [5, 15, 30])
+      document.getElementById(`graph-h${h}`).innerHTML = maeGraph(preds, h);
     const scoredN = preds.filter(p => p.actual != null).length;
     document.getElementById("score-note").textContent =
       `${preds.length.toLocaleString()} predictions (${scoredN.toLocaleString()} scored) · ` +
