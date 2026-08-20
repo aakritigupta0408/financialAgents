@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>BTC 7PM Oracle — Experiment Review</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6; --series-2: #eb6834;
+  --series-3: #1baf7a; --series-4: #eda100; --series-5: #4a3aa7;
+  --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9;
+    --good-text: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926;
+  --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9;
+  --good-text: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); margin: 0;
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 28px 20px 60px; }
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: 12px;
+  color: var(--muted); font-weight: 600; }
+h1 { margin: 4px 0 2px; font-size: 26px; letter-spacing: -0.01em; }
+h2 { margin: 0 0 2px; font-size: 17px; }
+.sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
+section { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; }
+.arm-chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+  margin-right: 8px; vertical-align: -1px; }
+.card { display: grid; grid-template-columns: 140px 1fr; gap: 6px 14px;
+  font-size: 13.5px; margin-top: 10px; }
+.card dt { color: var(--muted); font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: .06em; font-weight: 600; padding-top: 2px; }
+.card dd { margin: 0; color: var(--ink-2); }
+.card dd b { color: var(--ink); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 640px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--grid);
+  padding: 5px 10px 5px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; }
+td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
+.muted { color: var(--ink-2); }
+.good { color: var(--good-text); }
+.bad { color: var(--critical); }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">Reinforcement learning · experiment review</div>
+  <h1>The treatment ladder, reviewed</h1>
+  <p class="sub">One card per arm — architecture, features, reward function, data
+  sampling — with offline (batch backtest) and online (live ledger) metrics that
+  refresh automatically. Adding a new treatment adds one card. All times PST.</p>
+</header>
+
+<section>
+  <h2>Scoreboard — online, all arms × horizons</h2>
+  <p class="sub muted" id="score-note">loading…</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
+    <th class="num">MAE</th><th class="num">±$10</th><th class="num">Exact</th>
+    <th class="num">Abstained</th><th class="num">Bets won</th><th class="num">P&amp;L</th></tr></thead>
+    <tbody id="scoreboard"></tbody>
+  </table></div>
+</section>
+
+<div id="cards"></div>
+
+<footer id="foot">Polling metrics.json + prediction_log.jsonl every 10s…</footer>
+</main>
+
+<script>
+// ── The registry: add one entry per new treatment ──────────────────────────
+const ARMS = [
+  { key: "ctl", variants: ["h5", "h15", "h30"], color: "var(--series-1)",
+    title: "Control — Tabular Q-learning",
+    architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
+    features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
+    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1. Betting settles separately at +$40 / −$10.",
+    sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
+    offline: "tabular-q-shaped" },
+  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "var(--series-2)",
+    title: "Treatment 2 — LinUCB contextual bandit",
+    architecture: "LinUCB over the same 21 delta arms: per-arm ridge model A=λI+Σxxᵀ, b=Σrx; optimistic selection θ·x + α√(xᵀA⁻¹x), α=1. Exploration is uncertainty-driven and self-extinguishing.",
+    features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
+    reward: "Betting P&L directly: +$40 if |error| ≤ $10, −$10 otherwise — the bandit maximizes the bankroll, not proxy error.",
+    sampling: "No batch training. Cold-start warm-up on ~1,400 recent episodes, then purely online: one update per scored prediction. Excluded from hourly replay by design (bandit-native learning).",
+    offline: null },
+  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "var(--series-3)",
+    title: "Treatment 3 — + live-streamed microstructure",
+    architecture: "Same LinUCB machinery as t2, 15-dim context.",
+    features: "t2's 10 + five live streams snapshotted every 30s: Deribit perp basis (bp), OKX funding rate, cross-exchange dispersion of BRTI constituents (bp), BRTI-composite vs Coinbase gap (bp), mempool fastest fee. Missing snapshot ⇒ neutral zeros.",
+    reward: "Same betting P&L (+$40 / −$10).",
+    sampling: "Same as t2; snapshots joined by nearest timestamp (≤10 min) from live_snapshots.jsonl, so history without snapshots degrades gracefully to t2-equivalent.",
+    offline: null },
+  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"], color: "var(--series-4)",
+    title: "Treatment 4 — + trend, order book, learned abstain",
+    architecture: "LinUCB, 20-dim context, 22 arms — the extra ABSTAIN arm places no bet and always earns 0, making the policy an expected-value gate: delta arms are chosen only when their optimistic P&L beats not playing.",
+    features: "t3's 15 + trend (4h momentum, multi-scale sign alignment, 60m range position) + order book (Coinbase L2 top-20 bid/ask imbalance, spread bp).",
+    reward: "Betting P&L; abstain = 0. Penalty for playing badly is the lost stake; penalty for abstaining is only opportunity cost.",
+    sampling: "Same warm-up + per-prediction updates. First live behavior: abstained ~86% of a 2×-volatility session — the EV gate matching the breakeven math (needs win-rate > 20%).",
+    offline: null },
+  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"], color: "var(--series-5)",
+    title: "Treatment 5 — + frozen Bitcoin-trained fintech LLM",
+    architecture: "FinRL-Contest pattern: LLM perceives, RL decides. CryptoBERT (BERTweet pre-trained on 3.2M crypto posts) is frozen; its outputs join the context of the same 22-arm LinUCB (23 dims). No LLM weight updates — reinforcement learning stays the sole decision layer.",
+    features: "t4's 20 + three LLM dims from live CoinDesk/Cointelegraph/Decrypt headlines: mean sentiment P(bull)−P(bear), 1h sentiment momentum, news intensity. Each headline scored once, cached.",
+    reward: "Betting P&L; abstain = 0.",
+    sampling: "Same warm-up + per-prediction updates; headlines fetched every poll (30s), scored on Apple-GPU locally.",
+    offline: null },
+  { key: "agg", variants: ["consensus"], color: "var(--ink-2)",
+    title: "Consensus — median poll (our headline +5 min call)",
+    architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2, t3, t4, t5, persistence). Robust to any single model's bad slot.",
+    features: "Its voters.", reward: "Scored for accuracy only — never bets, never learns.",
+    sampling: "Emitted once per slot when ctl+t2 have committed; scored like any predictor.",
+    offline: null },
+];
+const HKEYS = { 5: "h5", 15: "h15", 30: "h30" };
+
+const money = v => (v < 0 ? "−$" : "+$") + Math.abs(v).toLocaleString();
+
+function onlineStats(preds, variants) {
+  const out = [];
+  for (const h of [5, 15, 30]) {
+    const rows = preds.filter(p => variants.includes(p.variant) && p.horizon === h);
+    const sc = rows.filter(p => p.actual != null);
+    if (!rows.length) continue;
+    const bets = sc.filter(p => p.bet);
+    out.push({
+      h, n: sc.length,
+      mae: sc.length ? sc.reduce((a, p) => a + p.abs_err, 0) / sc.length : null,
+      w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
+      hits: sc.filter(p => p.hit).length,
+      abst: rows.filter(p => p.abstained).length / rows.length,
+      wins: bets.filter(p => (p.pnl || 0) > 0).length, betN: bets.length,
+      pnl: bets.reduce((a, p) => a + (p.pnl || 0), 0),
+    });
+  }
+  return out;
+}
+
+function offlineBlock(metrics, agentKey) {
+  if (!metrics) return "<i>metrics.json unavailable</i>";
+  const base = metrics.agents["persistence-baseline"];
+  const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
+    const s = metrics.agents[name]?.[hk]?.all;
+    return s ? `${hk.slice(1)}m: MAE $${s.mae.toFixed(0)} · ±$10 ${(100 * s["within_$10"]).toFixed(0)}% · exact ${(100 * s.exact_int_hit_rate).toFixed(2)}%` : null;
+  }).filter(Boolean).join("<br>");
+  const ref = `persistence reference — ${rowsOf("persistence-baseline")}`;
+  if (!agentKey) return `No batch backtest (online-only arm). ${ref}`;
+  return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
+}
+
+async function poll() {
+  try {
+    const [mRes, pRes] = await Promise.all([
+      fetch("../results/metrics.json", { cache: "no-store" }),
+      fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
+    ]);
+    const metrics = mRes.ok ? await mRes.json() : null;
+    const preds = [];
+    if (pRes.ok) for (const line of (await pRes.text()).split("\n")) {
+      if (!line.trim()) continue;
+      try { preds.push(JSON.parse(line)); } catch {}
+    }
+
+    // scoreboard
+    let sb = "";
+    for (const arm of ARMS) {
+      for (const s of onlineStats(preds, arm.variants)) {
+        sb += `<tr><td><span class="arm-chip" style="background:${arm.color}"></span>${arm.key}</td>` +
+          `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
+          `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
+          `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
+          `<td class="num">${s.hits}</td>` +
+          `<td class="num">${s.abst ? (100 * s.abst).toFixed(0) + "%" : "–"}</td>` +
+          `<td class="num">${s.betN ? s.wins + "/" + s.betN : "–"}</td>` +
+          `<td class="num ${s.pnl > 0 ? "good" : s.pnl < 0 ? "bad" : ""}">${s.betN ? money(s.pnl) : "–"}</td></tr>`;
+      }
+    }
+    document.getElementById("scoreboard").innerHTML = sb;
+    const scoredN = preds.filter(p => p.actual != null).length;
+    document.getElementById("score-note").textContent =
+      `${preds.length.toLocaleString()} predictions (${scoredN.toLocaleString()} scored) · ` +
+      `betting: $10 stake, ±$10 pays $50 (breakeven win-rate 20%)`;
+
+    // per-arm cards
+    document.getElementById("cards").innerHTML = ARMS.map(arm => `
+<section style="margin-top:22px">
+  <h2><span class="arm-chip" style="background:${arm.color}"></span>${arm.title}</h2>
+  <dl class="card">
+    <dt>Architecture</dt><dd>${arm.architecture}</dd>
+    <dt>Features</dt><dd>${arm.features}</dd>
+    <dt>Reward / penalty</dt><dd>${arm.reward}</dd>
+    <dt>Data sampling</dt><dd>${arm.sampling}</dd>
+    <dt>Offline metrics</dt><dd>${offlineBlock(metrics, arm.offline)}</dd>
+    <dt>Online metrics</dt><dd>${onlineStats(preds, arm.variants).map(s =>
+      `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · ±$10 ${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}` +
+      (s.betN ? ` · bets ${s.wins}/${s.betN} won (${money(s.pnl)})` : "") +
+      (s.abst ? ` · abstained ${(100 * s.abst).toFixed(0)}%` : "")
+    ).join("<br>") || "no scored predictions yet"}</dd>
+  </dl>
+</section>`).join("");
+
+    document.getElementById("foot").textContent =
+      `updated ${new Date().toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles" })} PST · ` +
+      `offline = 120-day batch backtest · online = live ledger since deployment`;
+  } catch (e) {
+    document.getElementById("foot").textContent = "waiting for data… (" + e.message + ")";
+  }
+  setTimeout(poll, 10000);
+}
+poll();
+</script>
+</body>
+</html>
