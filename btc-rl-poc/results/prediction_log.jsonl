@@ -43,6 +43,8 @@
 {"made_ts": 1787196600, "target_ts": 1787197500, "horizon": 15, "price_now": 68941.95, "pred": 68943, "delta": 2, "state": [1, 0, 1, 1], "actual": 69242.88, "abs_err": 299.88, "hit": false}
 {"made_ts": 1787196600, "target_ts": 1787198400, "horizon": 30, "price_now": 68941.95, "pred": 68852, "delta": -89, "state": [1, 0, 1, 1], "actual": 69133.74, "abs_err": 281.74, "hit": false}
 {"made_ts": 1787197500, "target_ts": 1787198400, "horizon": 15, "price_now": 69242.88, "pred": 69297, "delta": 55, "state": [2, 2, 1, 2], "actual": 69133.74, "abs_err": 163.26, "hit": false}
-{"made_ts": 1787197500, "target_ts": 1787199300, "horizon": 30, "price_now": 69242.88, "pred": 69263, "delta": 21, "state": [2, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
-{"made_ts": 1787198400, "target_ts": 1787199300, "horizon": 15, "price_now": 69133.74, "pred": 69135, "delta": 2, "state": [1, 0, 1, 1], "actual": null, "abs_err": null, "hit": null}
+{"made_ts": 1787197500, "target_ts": 1787199300, "horizon": 30, "price_now": 69242.88, "pred": 69263, "delta": 21, "state": [2, 2, 1, 2], "actual": 69313.13, "abs_err": 50.13, "hit": false}
+{"made_ts": 1787198400, "target_ts": 1787199300, "horizon": 15, "price_now": 69133.74, "pred": 69135, "delta": 2, "state": [1, 0, 1, 1], "actual": 69313.13, "abs_err": 178.13, "hit": false}
 {"made_ts": 1787198400, "target_ts": 1787200200, "horizon": 30, "price_now": 69133.74, "pred": 69044, "delta": -89, "state": [1, 0, 1, 1], "actual": null, "abs_err": null, "hit": null}
+{"made_ts": 1787199300, "target_ts": 1787200200, "horizon": 15, "price_now": 69313.13, "pred": 69279, "delta": -34, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"made_ts": 1787199300, "target_ts": 1787201100, "horizon": 30, "price_now": 69313.13, "pred": 69305, "delta": -8, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}

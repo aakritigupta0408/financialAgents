@@ -105,11 +105,11 @@ def main() -> None:
     tslots = [(AGENT_LABELS[n], {h: ev[h]["target_slots"] for h in ("h15", "h30")})
               for n, ev in agents.items()]
 
-    pac, ist = ZoneInfo("America/Los_Angeles"), ZoneInfo("Asia/Kolkata")
+    pac = ZoneInfo("America/Los_Angeles")
     target = datetime.now(tz=pac).replace(hour=19, minute=0, second=0, microsecond=0)
     if target < datetime.now(tz=pac):
         target += timedelta(days=1)
-    ist_str = target.astimezone(ist).strftime("%-I:%M %p IST %a")
+    next_target_str = target.strftime("%-I:%M %p %Z %a")
 
     base = agents["persistence-baseline"]
     fmt_pct = lambda v: f"{v:.2%}"
@@ -252,7 +252,7 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <div class="eyebrow">Reinforcement learning · proof of concept</div>
   <h1>BTC 7PM Oracle</h1>
   <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
-  ({ist_str} next target), scored at <strong>integer level</strong> — 68000 and 68000.98
+  (next target {next_target_str}), scored at <strong>integer level</strong> — 68000 and 68000.98
   count as the same answer. Reward +1 on an exact match, −1 otherwise.
   Built entirely on open, no-auth data streams.</p>
 </header>

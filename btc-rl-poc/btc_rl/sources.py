@@ -106,6 +106,41 @@ def fetch_okx_funding_rate() -> float | None:
         return None
 
 
+def fetch_brti_composite() -> dict | None:
+    """BRTI-style live BTC price: volume-weighted across CME CF BRTI
+    constituent exchanges that expose open, no-auth tickers.
+
+    The real BRTI (CF Benchmarks / CME) is licensed; this is an honest
+    open approximation from 4 of its 6 constituents (no itBit/LMAX).
+    """
+    tickers = {
+        "coinbase": ("https://api.exchange.coinbase.com/products/BTC-USD/ticker",
+                     lambda j: (float(j["price"]), float(j["volume"]))),
+        "kraken": ("https://api.kraken.com/0/public/Ticker?pair=XBTUSD",
+                   lambda j: (float(j["result"]["XXBTZUSD"]["c"][0]),
+                              float(j["result"]["XXBTZUSD"]["v"][1]))),
+        "bitstamp": ("https://www.bitstamp.net/api/v2/ticker/btcusd/",
+                     lambda j: (float(j["last"]), float(j["volume"]))),
+        "gemini": ("https://api.gemini.com/v1/pubticker/btcusd",
+                   lambda j: (float(j["last"]), float(j["volume"]["BTC"]))),
+    }
+    quotes: dict[str, tuple[float, float]] = {}
+    for name, (url, parse) in tickers.items():
+        try:
+            resp = _session.get(url, timeout=6)
+            resp.raise_for_status()
+            quotes[name] = parse(resp.json())
+        except Exception:
+            continue
+    if not quotes:
+        return None
+    total_vol = sum(v for _, v in quotes.values())
+    price = sum(p * v for p, v in quotes.values()) / total_vol
+    return {"price": round(price, 2),
+            "constituents": {n: p for n, (p, _) in quotes.items()},
+            "method": "volume-weighted composite of open CME CF BRTI constituents"}
+
+
 def fetch_history(days: int) -> dict[str, list[dict]]:
     """Fetch the daily windows for the last `days` completed days."""
     today = datetime.now(tz=config.PACIFIC).replace(hour=0, minute=0, second=0,

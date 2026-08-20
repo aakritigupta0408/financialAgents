@@ -104,7 +104,8 @@ footer { color: var(--muted); font-size: 12.5px; }
 
 <section class="statusbar">
   <div class="live-dot" id="dot"></div>
-  <div class="stat"><div class="k">BTC now</div><div class="bignum" id="price">–</div></div>
+  <div class="stat"><div class="k">BTC (Coinbase 1m)</div><div class="bignum" id="price">–</div></div>
+  <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
   <div class="stat"><div class="k">Exact hits</div><div class="bignum" id="hits">–</div></div>
   <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
@@ -113,7 +114,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 </section>
 
 <section>
-  <h2>Actual price at HH:MM vs predicted price at HH:MM</h2>
+  <h2>Actual price at HH:MM vs predicted price at HH:MM (all times PST)</h2>
   <p class="sub muted">Grey line = actual 1m close. Dots = the price the model predicted
   for that exact minute, committed 15/30 minutes earlier. The stem is the miss distance.
   Hollow dots ahead of the line are commitments awaiting their minute.</p>
@@ -129,7 +130,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 <section>
   <h2>Prediction ledger</h2>
   <div class="scroll"><table>
-    <thead><tr><th>Committed</th><th>Target (PT · IST)</th><th>Horizon</th>
+    <thead><tr><th>Committed (PST)</th><th>Target (PST)</th><th>Horizon</th>
     <th class="num">Predicted</th><th class="num">Actual</th>
     <th class="num">Error</th><th>Integer match</th></tr></thead>
     <tbody id="ledger"></tbody>
@@ -165,10 +166,10 @@ footer { color: var(--muted); font-size: 12.5px; }
 
 <script>
 const H_COLOR = { 15: "var(--series-1)", 30: "var(--series-2)" };
-const fmtTime = (ts, tz) => new Date(ts * 1000).toLocaleTimeString(
-  tz === "IST" ? "en-IN" : "en-US",
-  { timeZone: tz === "IST" ? "Asia/Kolkata" : "America/Los_Angeles",
-    hour: "2-digit", minute: "2-digit", hour12: false });
+// All times on this page are US Pacific (PST/PDT).
+const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+  { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
+    hour12: false });
 
 function chart(prices, preds) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -191,23 +192,23 @@ function chart(prices, preds) {
   }
   const hourStep = Math.max(1, Math.ceil((t1 - t0) / 3600 / 7));
   for (let ts = Math.ceil(t0 / 3600) * 3600; ts <= t1; ts += 3600 * hourStep)
-    g += `<text x="${X(ts)}" y="${H - 8}" text-anchor="middle">${fmtTime(ts, "PT")}</text>`;
+    g += `<text x="${X(ts)}" y="${H - 8}" text-anchor="middle">${fmtTime(ts)}</text>`;
   g += `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`;
   g += `<path class="actual" d="${prices.map((p, i) =>
     `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("")}"/>`;
   const priceAt = new Map(prices.map(p => [p.ts, p.c]));
   for (const p of preds) {
     const x = X(p.target_ts), y = Y(p.pred);
-    const tPT = fmtTime(p.target_ts, "PT"), tIST = fmtTime(p.target_ts, "IST");
+    const tp = fmtTime(p.target_ts);
     if (p.actual != null) {
       g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${Y(p.actual)}"/>`;
       g += `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${H_COLOR[p.horizon]}" ` +
-        `data-tip="${tPT} PT / ${tIST} IST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}, ` +
+        `data-tip="${tp} PST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}, ` +
         `actual $${Math.round(p.actual).toLocaleString()}, off by $${p.abs_err}` +
         `${p.hit ? " — EXACT INTEGER HIT" : ""}"/>`;
     } else {
       g += `<circle class="pt-pending" cx="${x}" cy="${y}" r="4.5" stroke="${H_COLOR[p.horizon]}" ` +
-        `data-tip="${tPT} PT / ${tIST} IST (+${p.horizon}m) — committed $${p.pred.toLocaleString()}, awaiting the minute"/>`;
+        `data-tip="${tp} PST (+${p.horizon}m) — committed $${p.pred.toLocaleString()}, awaiting the minute"/>`;
     }
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="predicted vs actual price">${g}</svg>`;
@@ -238,8 +239,8 @@ async function poll() {
     document.getElementById("ledger").innerHTML = preds.slice(-14).reverse().map(p => {
       const state = p.actual == null ? '<span class="pill pending">pending</span>'
         : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
-      return `<tr><td>${fmtTime(p.made_ts, "PT")}</td>` +
-        `<td>${fmtTime(p.target_ts, "PT")} · ${fmtTime(p.target_ts, "IST")}</td>` +
+      return `<tr><td>${fmtTime(p.made_ts)}</td>` +
+        `<td>${fmtTime(p.target_ts)}</td>` +
         `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` +
         `<td class="num">$${p.pred.toLocaleString()}</td>` +
         `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
@@ -251,6 +252,13 @@ async function poll() {
       document.getElementById("dot").className = "live-dot" + (ageS > 120 ? " stale" : "");
       document.getElementById("price").textContent =
         "$" + Math.round(status.price_now).toLocaleString();
+      const brtiEl = document.getElementById("brti");
+      if (status.brti) {
+        brtiEl.textContent = "$" + Math.round(status.brti.price).toLocaleString();
+        brtiEl.title = Object.entries(status.brti.constituents)
+          .map(([n, p]) => `${n}: $${Math.round(p).toLocaleString()}`).join(" · ") +
+          " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
+      } else { brtiEl.textContent = "–"; }
       document.getElementById("retrains").textContent = status.retrains_this_session;
       const gate = status.last_retrain?.gate;
       document.getElementById("gate").textContent = !gate ? "–" :
@@ -259,8 +267,8 @@ async function poll() {
         ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
       document.getElementById("foot").textContent =
         `predicts every ${status.predict_every_min}m · retrains every ${status.retrain_every_min}m · ` +
-        `daemon up since ${new Date(status.started_at * 1000).toLocaleTimeString()}` +
-        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PT ` +
+        `daemon up since ${fmtTime(status.started_at)} PST` +
+        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PST ` +
           `(${status.last_retrain.train_episodes} replay episodes, ` +
           `${status.last_retrain.val_episodes} held out)` : " · first retrain at the top of the hour");
     } else {

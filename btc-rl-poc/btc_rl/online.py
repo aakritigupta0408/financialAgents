@@ -25,7 +25,7 @@ from . import config
 from .agents import TabularQAgent
 from .env import build_episodes, reward
 from .features import compute_features, discretize
-from .sources import fetch_fear_greed, fetch_range
+from .sources import fetch_brti_composite, fetch_fear_greed, fetch_range
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 PRED_LOG = RESULTS_DIR / "prediction_log.jsonl"
@@ -225,6 +225,7 @@ def run(once: bool = False) -> None:
             STATUS.write_text(json.dumps({
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"], "state": list(state),
+                "brti": fetch_brti_composite(),
                 "predict_every_min": PREDICT_EVERY // 60,
                 "retrain_every_min": RETRAIN_EVERY // 60,
                 "retrains_this_session": retrains,
