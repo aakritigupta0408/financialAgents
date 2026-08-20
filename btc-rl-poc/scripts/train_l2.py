@@ -94,6 +94,10 @@ def main():
     RESULTS.mkdir(exist_ok=True)
     (RESULTS / "linear_q.json").write_text(json.dumps(out))
     (RESULTS / "linear_q_report.json").write_text(json.dumps(report, indent=2))
+    from btc_rl.history import append_history
+    append_history("batch", {"source": "train_l2", "agents": {"t7": {
+        h: v["test_mae"] for h, v in report.items()},
+        "persistence": {h: v["persistence_mae"] for h, v in report.items()}}})
     print("saved results/linear_q.json")
 
 

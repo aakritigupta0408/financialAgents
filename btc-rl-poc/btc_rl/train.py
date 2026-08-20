@@ -199,8 +199,15 @@ def main() -> None:
         status["current"] = None
         status_path.write_text(json.dumps(status))
 
+    import time as _time
+    metrics["generated_at"] = int(_time.time())
     (RESULTS_DIR / "metrics.json").write_text(json.dumps(metrics, indent=2))
     (RESULTS_DIR / "q_table.json").write_text(json.dumps(q_tables))
+    from .history import append_history
+    append_history("batch", {
+        "source": "train_l1",
+        "agents": {name: {h: hv["all"]["mae"] for h, hv in by_h.items()}
+                   for name, by_h in metrics["agents"].items()}})
     print(f"Wrote {RESULTS_DIR / 'metrics.json'}")
     _print_summary(metrics)
 

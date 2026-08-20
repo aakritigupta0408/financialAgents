@@ -44,6 +44,7 @@ def main():
                 if e.horizon_min in (1, 5, 15, 30)]
     days = sorted({e.day for e in episodes})
     cut = set(days[:int(len(days) * 0.8)])
+    report: dict = {}
     for h in (1, 5, 15, 30):
         tr = [e for e in episodes if e.day in cut and e.horizon_min == h]
         te = [e for e in episodes if e.day not in cut and e.horizon_min == h]
@@ -66,7 +67,14 @@ def main():
         print(f"h{h}: L3 mode-action test MAE ${sum(errs)/len(errs):.1f} "
               f"vs persistence ${sum(pers)/len(pers):.1f} "
               f"({len(te)} episodes, {agent.steps} train steps)")
+        report[f"h{h}"] = {"test_mae": round(sum(errs) / len(errs), 2),
+                           "persistence_mae": round(sum(pers) / len(pers), 2),
+                           "test_episodes": len(te)}
         agent.save(RESULTS / f"dqn_h{h}.pt")
+    from btc_rl.history import append_history
+    append_history("batch", {"source": "train_l3", "agents": {"t8": {
+        h: v["test_mae"] for h, v in report.items()},
+        "persistence": {h: v["persistence_mae"] for h, v in report.items()}}})
     print("saved results/dqn_h*.pt")
 
 

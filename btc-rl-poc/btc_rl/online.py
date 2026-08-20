@@ -26,6 +26,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
+from . import metrics as M
+from .history import append_history
 from .agents import (DistDQNAgent, LinearQAgent, LinUCBAgent,
                      LSTMDistAgent, TabularQAgent)
 
@@ -460,6 +462,72 @@ def _bias_map(ledger: list[dict]) -> dict:
             row["actual"] - row["pred"])
     return {k: int(statistics.median(v[-BIAS_WINDOW:]))
             for k, v in res.items() if len(v) >= 10}
+
+
+def _history_snapshot(ledger: list[dict], kb: list[dict],
+                      kb_bets: list[dict], now_ts: int) -> dict:
+    """Trailing-6h online metrics per arm x horizon + binary/bet summaries —
+    the payload appended to metrics_history.jsonl at every retrain."""
+    cut = now_ts - 6 * 3600
+    sc = [r for r in ledger if r["actual"] is not None and r["made_ts"] >= cut]
+    base = {(r["horizon"], r["made_ts"]): abs(r["actual"] - r["price_now"])
+            for r in sc}
+    arms_out: dict = {}
+    for r in sc:
+        arms_out.setdefault(r["variant"], {}).setdefault(
+            r["horizon"], []).append(r)
+    snap_arms = {}
+    for v, hs in arms_out.items():
+        snap_arms[v] = {}
+        for h, rows in hs.items():
+            if len(rows) < 10:
+                continue
+            naive = [base[(h, r["made_ts"])] for r in rows
+                     if (h, r["made_ts"]) in base]
+            moved = [r for r in rows if r["delta"]]
+            banded = [r for r in rows if r.get("in_band") is not None]
+            snap_arms[v][f"h{h}"] = {
+                "n": len(rows),
+                "mae": round(sum(r["abs_err"] for r in rows) / len(rows), 2),
+                "rmse": round(M.rmse([r["err"] for r in rows]) or 0, 2),
+                "mase": round(M.mase([r["abs_err"] for r in rows], naive)
+                              or 0, 3) if naive else None,
+                "dir": round(sum(
+                    1 for r in moved
+                    if (r["pred"] > r["price_now"]) == (r["actual"] > r["price_now"])
+                ) / len(moved), 3) if moved else None,
+                "cov": round(sum(r["in_band"] for r in banded) / len(banded), 3)
+                       if banded else None,
+                "sharp": round(M.sharpness(
+                    [r["lo"] for r in banded], [r["hi"] for r in banded])
+                    or 0, 1) if banded else None,
+            }
+    out = {"arms": snap_arms}
+    kb_done = [r for r in kb if r["actual"] is not None and r["made_ts"] >= cut]
+    if kb_done:
+        br = sum(r["brier"] for r in kb_done) / len(kb_done)
+        mk = [r["mkt_brier"] for r in kb_done if r.get("mkt_brier") is not None]
+        out["kb"] = {"n": len(kb_done),
+                     "acc": round(sum(r["hit"] for r in kb_done) / len(kb_done), 3),
+                     "brier": round(br, 4),
+                     "mkt_brier": round(sum(mk) / len(mk), 4) if mk else None,
+                     "bss_mkt": round(M.brier_skill(br, sum(mk) / len(mk)), 3)
+                                if mk else None,
+                     "bss_clim": round(M.brier_skill(br, 0.25), 3)}
+    bets_done = [b for b in kb_bets if b["actual"] is not None]
+    if bets_done:
+        net = [b["pnl_c"] - M.kalshi_fee_c(b["price_c"]) for b in bets_done]
+        cum = []
+        s = 0.0
+        for x in net:
+            s += x
+            cum.append(s)
+        out["bets"] = {"n": len(bets_done),
+                       "wins": sum(b["win"] for b in bets_done),
+                       "pnl_c": round(sum(b["pnl_c"] for b in bets_done), 1),
+                       "pnl_net_c": round(sum(net), 1),
+                       "max_dd_c": round(M.max_drawdown(cum), 1)}
+    return out
 
 
 def _winner_variant(ledger: list[dict], horizon: int) -> str | None:
@@ -1268,6 +1336,13 @@ def run(once: bool = False) -> None:
                 retrain_info = retrain_all(arms, snaps)
                 retrains += 1
                 last_retrain_slot = hour_slot
+                try:  # persist gate outcomes + trailing snapshot forever
+                    append_history("retrain", {
+                        "gate": retrain_info.get("arms", {}),
+                        "online": _history_snapshot(ledger, kb, kb_bets,
+                                                    now_ts)})
+                except Exception:
+                    pass
 
             # 4. status + actual-price series for the charts
             feat = compute_features(bars, fng)
