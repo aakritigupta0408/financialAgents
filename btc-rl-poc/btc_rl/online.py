@@ -3,8 +3,8 @@
 Each horizon predicts at its own natural cadence (cadence == horizon) with
 its own Q-table, so streams never contaminate each other:
 
-  h5 / h15 / h30 all predict every 5 minutes (9:00, 9:05, 9:10…), each with
-  its own Q-table; h15/h30 warm-started from the original control model.
+  All arms predict every 5 minutes (9:00, 9:05, 9:10…), each with its own
+  model; the objective is pure price prediction (no betting layer).
 
 Learning happens at two speeds:
   per prediction  the moment a prediction is scored, its (state, action,
@@ -52,8 +52,8 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # dicts here for future treatments.
 # All arms predict every 5 minutes (9:00, 9:05, 9:10…). CONTROL arms (h5/h15/
 # h30, tabular Q) are frozen — do not touch. TREATMENT 2 (t2-*) is a LinUCB
-# contextual bandit over the same 21 integer-delta arms: reward = betting P&L
-# (+$40 within ±$10, −$10 otherwise), context = the continuous feature vector.
+# contextual bandit over the same 21 integer-delta arms; every learner uses
+# the prediction reward: +1 exact integer match, else -|error|/100.
 VARIANTS: dict[str, dict] = {
     "h5": {"predict_every": 300, "horizons": [5], "agent": "tabular"},
     "h15": {"predict_every": 300, "horizons": [15], "agent": "tabular"},
@@ -66,29 +66,24 @@ VARIANTS: dict[str, dict] = {
     "t3-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb", "live": True},
     "t3-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb", "live": True},
     "t3-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb", "live": True},
-    # TREATMENT 4 = t3 + what the evaluation said was missing: trend features
-    # (4h momentum, alignment, range position), order-book features (imbalance,
-    # spread), and an ABSTAIN arm so it can decline -EV bets. t3/t2/ctl frozen.
+    # TREATMENT 4 = t3 + trend features (4h momentum, alignment, range
+    # position) and order-book features (imbalance, spread). t3/t2/ctl frozen.
     "t4-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
-              "live": True, "trend": True, "book": True, "abstain": True},
+              "live": True, "trend": True, "book": True},
     "t4-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "abstain": True},
+               "live": True, "trend": True, "book": True},
     "t4-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "abstain": True},
+               "live": True, "trend": True, "book": True},
     # TREATMENT 5 = t4 + a frozen open fintech LLM trained on Bitcoin text
     # (ElKulako/cryptobert) as the perception module: live headline sentiment,
-    # its momentum, and news intensity join the context. The RL policy (this
-    # LinUCB + abstain, betting-P&L reward) stays the decision maker — the
-    # FinRL-Contest "LLM-engineered signals + RL agent" pattern.
+    # its momentum, and news intensity join the context. The RL policy stays
+    # the decision maker — the FinRL-Contest "LLM signals + RL agent" pattern.
     "t5-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
-              "live": True, "trend": True, "book": True, "abstain": True,
-              "llm": True},
+              "live": True, "trend": True, "book": True, "llm": True},
     "t5-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "abstain": True,
-               "llm": True},
+               "live": True, "trend": True, "book": True, "llm": True},
     "t5-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "abstain": True,
-               "llm": True},
+               "live": True, "trend": True, "book": True, "llm": True},
 }
 
 
@@ -110,15 +105,6 @@ def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
     if spec.get("llm"):
         x += llm_feature_vector(snap)
     return x
-
-# Betting rules: each committed prediction stakes $10 from a shared $1,000
-# bankroll; |predicted - actual| <= $10 pays $50 (net +$40), a miss loses the
-# stake. Bets start at first deployment of this feature — history never bets.
-BET_STAKE = 10
-BET_PAYOUT = 50
-BET_TOLERANCE = 10
-BANKROLL_START = 1000
-BETTING_FILE_NAME = "betting.json"
 
 RETRAIN_EVERY = 3600           # 1 hour
 RETRAIN_WINDOW_H = 24          # replay the last day of bars
@@ -224,8 +210,7 @@ def _save_ledger(rows: list[dict]) -> None:
 
 def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 bars_upto: list[dict], fng, slot_ts: int,
-                horizons: list[int], bet_start_ts: float,
-                spec: dict | None = None,
+                horizons: list[int], spec: dict | None = None,
                 snap: dict | None = None) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts."""
     feat = compute_features(bars_upto, fng)
@@ -235,16 +220,12 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     for horizon in horizons:
         agent = agents[horizon]
         row_extra: dict = {}
-        abstained = False
         if isinstance(agent, LinUCBAgent):
             x = _context(spec, feat, snap)
             arm = agent.select(x)
-            abstained = arm == agent.abstain_idx
-            delta = 0 if abstained else config.ACTION_DELTAS[arm]
+            delta = config.ACTION_DELTAS[arm]
             row_extra["x"] = [round(v, 5) for v in x]
             row_extra["arm"] = arm
-            if abstained:
-                row_extra["abstained"] = True
         else:
             qs = agent.q.get(state)
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
@@ -255,8 +236,6 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             "horizon": horizon, "price_now": feat["price"],
             "pred": int(feat["price"] + delta), "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
-            "bet": (0 if abstained
-                    else BET_STAKE if slot_ts >= bet_start_ts else 0),
             **row_extra,
         })
     return rows
@@ -318,9 +297,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
 
 def run(once: bool = False) -> None:
     RESULTS_DIR.mkdir(exist_ok=True)
-    arms = {v: (_load_bandits(v, spec["horizons"], _ctx_dim(spec),
-                              n_arms=(len(config.ACTION_DELTAS) + 1
-                                      if spec.get("abstain") else None))
+    arms = {v: (_load_bandits(v, spec["horizons"], _ctx_dim(spec))
                 if spec.get("agent") == "linucb"
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
@@ -336,17 +313,6 @@ def run(once: bool = False) -> None:
     retrains = 0
     online_updates = 0
     started = time.time()
-
-    # Betting starts at first-ever deployment and survives restarts.
-    betting_file = RESULTS_DIR / BETTING_FILE_NAME
-    if betting_file.exists():
-        bet_start_ts = json.loads(betting_file.read_text())["start_ts"]
-    else:
-        bet_start_ts = time.time()
-        betting_file.write_text(json.dumps(
-            {"start_ts": bet_start_ts, "bankroll_start": BANKROLL_START,
-             "stake": BET_STAKE, "payout": BET_PAYOUT,
-             "tolerance": BET_TOLERANCE}))
     print(f"experiment runner up — arms: {', '.join(VARIANTS)}")
 
     while True:
@@ -406,14 +372,9 @@ def run(once: bool = False) -> None:
                             x = _context(vspec, e.features,
                                          _nearest_snap(snaps, e.minute_ts))
                             a = agent.select(x)
-                            if a == agent.abstain_idx:
-                                r = 0.0
-                            else:
-                                pred = e.price_now + config.ACTION_DELTAS[a]
-                                r = (BET_PAYOUT - BET_STAKE
-                                     if abs(pred - e.price_future) <= BET_TOLERANCE
-                                     else -BET_STAKE)
-                            agent.update(x, a, r)
+                            pred = e.price_now + config.ACTION_DELTAS[a]
+                            agent.update(x, a,
+                                         reward(pred, e.price_future, shaped=True))
                     _checkpoint(v, arms[v])
                     print(f"warmed up {v} on {len(warm_eps)} recent episodes")
                 cold_bandits.clear()
@@ -432,8 +393,7 @@ def run(once: bool = False) -> None:
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
                     rows = _predict_at(variant, arms[variant], upto, fng,
-                                       slot_ts, spec["horizons"], bet_start_ts,
-                                       spec=spec,
+                                       slot_ts, spec["horizons"], spec=spec,
                                        snap=_nearest_snap(snaps, slot_ts))
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
@@ -486,27 +446,21 @@ def run(once: bool = False) -> None:
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
                 row["hit"] = int(row["pred"]) == int(bar["close"])
-                if row.get("bet"):  # settle the wager on evaluation
-                    win = row["abs_err"] <= BET_TOLERANCE
-                    row["payout"] = BET_PAYOUT if win else 0
-                    row["pnl"] = row["payout"] - row["bet"]
                 scored += 1
                 agents = arms.get(row["variant"])
                 agent = agents.get(row["horizon"]) if agents else None
                 if agent is None or row["delta"] not in config.ACTION_DELTAS:
                     continue
+                # one reward for every learner: the prediction quality itself
+                # (+1 exact integer match, else -|error|/100)
+                r = reward(row["pred"], row["actual"], shaped=True)
                 if isinstance(agent, LinUCBAgent) and row.get("x"):
                     arm_idx = row.get("arm",
                                       config.ACTION_DELTAS.index(row["delta"]))
-                    if row.get("abstained"):
-                        r = 0.0  # declined to bet — the safe arm earns nothing
-                    else:
-                        r = (BET_PAYOUT - BET_STAKE
-                             if row["abs_err"] <= BET_TOLERANCE else -BET_STAKE)
-                    agent.update(row["x"], arm_idx, r)
-                    online_updates += 1
+                    if arm_idx < agent.n_arms and len(row["x"]) == agent.dim:
+                        agent.update(row["x"], arm_idx, r)
+                        online_updates += 1
                 elif isinstance(agent, TabularQAgent) and row.get("state"):
-                    r = reward(row["pred"], row["actual"], shaped=True)
                     agent.learn(tuple(row["state"]),
                                 config.ACTION_DELTAS.index(row["delta"]), r)
                     online_updates += 1
@@ -525,28 +479,7 @@ def run(once: bool = False) -> None:
                 retrains += 1
                 last_retrain_slot = hour_slot
 
-            # 4. betting book: settled P&L per stream + shared bankroll
-            book: dict = {"per_stream": {}, "start_ts": bet_start_ts,
-                          "stake": BET_STAKE, "payout": BET_PAYOUT,
-                          "tolerance": BET_TOLERANCE,
-                          "bankroll_start": BANKROLL_START}
-            pending_staked = settled_pnl = 0
-            for v in VARIANTS:
-                vb = [r for r in ledger if r["variant"] == v and r.get("bet")]
-                settled = [r for r in vb if r["actual"] is not None]
-                wins = [r for r in settled if r["payout"]]
-                pnl = sum(r["pnl"] for r in settled)
-                book["per_stream"][v] = {
-                    "bets": len(vb), "settled": len(settled),
-                    "wins": len(wins), "staked": len(vb) * BET_STAKE,
-                    "received": sum(r["payout"] for r in settled), "pnl": pnl}
-                settled_pnl += pnl
-                pending_staked += (len(vb) - len(settled)) * BET_STAKE
-            book["settled_pnl"] = settled_pnl
-            book["pending_staked"] = pending_staked
-            book["bankroll"] = BANKROLL_START + settled_pnl - pending_staked
-
-            # 5. status + actual-price series for the charts
+            # 4. status + actual-price series for the charts
             feat = compute_features(bars, fng)
             recent = [{"ts": b["ts"], "c": b["close"]}
                       for b in bars if b["ts"] >= now_ts - BACKFILL_HOURS * 3600]
@@ -564,7 +497,6 @@ def run(once: bool = False) -> None:
                                          else len(a.q))
                                      for h, a in arms[v].items()}}
                              for v, s in VARIANTS.items()},
-                "betting": book,
                 "consensus": next(
                     (dict(r) for r in reversed(ledger)
                      if r["variant"] == "consensus" and r["actual"] is None),

@@ -83,8 +83,8 @@ footer { color: var(--muted); font-size: 12.5px; }
   <p class="sub muted" id="score-note">loading…</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
-    <th class="num">MAE</th><th class="num">±$10</th><th class="num">Exact</th>
-    <th class="num">Abstained</th><th class="num">Bets won</th><th class="num">P&amp;L</th></tr></thead>
+    <th class="num">MAE</th><th class="num">±$10</th><th class="num">±$50</th>
+    <th class="num">Exact</th></tr></thead>
     <tbody id="scoreboard"></tbody>
   </table></div>
 </section>
@@ -115,41 +115,41 @@ const ARMS = [
     title: "Control — Tabular Q-learning",
     architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
     features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
-    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1. Betting settles separately at +$40 / −$10.",
+    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1. No betting layer.",
     sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
     offline: "tabular-q-shaped" },
   { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "var(--series-2)",
     title: "Treatment 2 — LinUCB contextual bandit",
     architecture: "LinUCB over the same 21 delta arms: per-arm ridge model A=λI+Σxxᵀ, b=Σrx; optimistic selection θ·x + α√(xᵀA⁻¹x), α=1. Exploration is uncertainty-driven and self-extinguishing.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
-    reward: "Betting P&L directly: +$40 if |error| ≤ $10, −$10 otherwise — the bandit maximizes the bankroll, not proxy error.",
+    reward: "Prediction quality: +1 on exact integer match, else −|error|/100 — identical for every arm.",
     sampling: "No batch training. Cold-start warm-up on ~1,400 recent episodes, then purely online: one update per scored prediction. Excluded from hourly replay by design (bandit-native learning).",
     offline: null },
   { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "var(--series-3)",
     title: "Treatment 3 — + live-streamed microstructure",
     architecture: "Same LinUCB machinery as t2, 15-dim context.",
     features: "t2's 10 + five live streams snapshotted every 30s: Deribit perp basis (bp), OKX funding rate, cross-exchange dispersion of BRTI constituents (bp), BRTI-composite vs Coinbase gap (bp), mempool fastest fee. Missing snapshot ⇒ neutral zeros.",
-    reward: "Same betting P&L (+$40 / −$10).",
+    reward: "Same prediction reward (+1 exact / −|error|/100).",
     sampling: "Same as t2; snapshots joined by nearest timestamp (≤10 min) from live_snapshots.jsonl, so history without snapshots degrades gracefully to t2-equivalent.",
     offline: null },
   { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"], color: "var(--series-4)",
     title: "Treatment 4 — + trend, order book, learned abstain",
-    architecture: "LinUCB, 20-dim context, 22 arms — the extra ABSTAIN arm places no bet and always earns 0, making the policy an expected-value gate: delta arms are chosen only when their optimistic P&L beats not playing.",
+    architecture: "LinUCB, 20-dim context over the 21 delta arms.",
     features: "t3's 15 + trend (4h momentum, multi-scale sign alignment, 60m range position) + order book (Coinbase L2 top-20 bid/ask imbalance, spread bp).",
-    reward: "Betting P&L; abstain = 0. Penalty for playing badly is the lost stake; penalty for abstaining is only opportunity cost.",
-    sampling: "Same warm-up + per-prediction updates. First live behavior: abstained ~86% of a 2×-volatility session — the EV gate matching the breakeven math (needs win-rate > 20%).",
+    reward: "Prediction reward (+1 exact / −|error|/100).",
+    sampling: "Same warm-up + per-prediction updates.",
     offline: null },
   { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"], color: "var(--series-5)",
     title: "Treatment 5 — + frozen Bitcoin-trained fintech LLM",
-    architecture: "FinRL-Contest pattern: LLM perceives, RL decides. CryptoBERT (BERTweet pre-trained on 3.2M crypto posts) is frozen; its outputs join the context of the same 22-arm LinUCB (23 dims). No LLM weight updates — reinforcement learning stays the sole decision layer.",
+    architecture: "FinRL-Contest pattern: LLM perceives, RL decides. CryptoBERT (BERTweet pre-trained on 3.2M crypto posts) is frozen; its outputs join the context of the same LinUCB (23 dims). No LLM weight updates — reinforcement learning stays the sole decision layer.",
     features: "t4's 20 + three LLM dims from live CoinDesk/Cointelegraph/Decrypt headlines: mean sentiment P(bull)−P(bear), 1h sentiment momentum, news intensity. Each headline scored once, cached.",
-    reward: "Betting P&L; abstain = 0.",
+    reward: "Prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates; headlines fetched every poll (30s), scored on Apple-GPU locally.",
     offline: null },
   { key: "agg", variants: ["consensus"], color: "var(--ink-2)",
     title: "Consensus — median poll (our headline +5 min call)",
     architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2, t3, t4, t5, persistence). Robust to any single model's bad slot.",
-    features: "Its voters.", reward: "Scored for accuracy only — never bets, never learns.",
+    features: "Its voters.", reward: "Scored for accuracy only — never learns.",
     sampling: "Emitted once per slot when ctl+t2 have committed; scored like any predictor.",
     offline: null },
 ];
@@ -163,15 +163,12 @@ function onlineStats(preds, variants) {
     const rows = preds.filter(p => variants.includes(p.variant) && p.horizon === h);
     const sc = rows.filter(p => p.actual != null);
     if (!rows.length) continue;
-    const bets = sc.filter(p => p.bet);
     out.push({
       h, n: sc.length,
       mae: sc.length ? sc.reduce((a, p) => a + p.abs_err, 0) / sc.length : null,
       w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
+      w50: sc.length ? sc.filter(p => p.abs_err <= 50).length / sc.length : null,
       hits: sc.filter(p => p.hit).length,
-      abst: rows.filter(p => p.abstained).length / rows.length,
-      wins: bets.filter(p => (p.pnl || 0) > 0).length, betN: bets.length,
-      pnl: bets.reduce((a, p) => a + (p.pnl || 0), 0),
     });
   }
   return out;
@@ -244,10 +241,8 @@ async function poll() {
           `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
           `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
-          `<td class="num">${s.hits}</td>` +
-          `<td class="num">${s.abst ? (100 * s.abst).toFixed(0) + "%" : "–"}</td>` +
-          `<td class="num">${s.betN ? s.wins + "/" + s.betN : "–"}</td>` +
-          `<td class="num ${s.pnl > 0 ? "good" : s.pnl < 0 ? "bad" : ""}">${s.betN ? money(s.pnl) : "–"}</td></tr>`;
+          `<td class="num">${s.w50 == null ? "–" : (100 * s.w50).toFixed(0) + "%"}</td>` +
+          `<td class="num">${s.hits}</td></tr>`;
       }
     }
     document.getElementById("scoreboard").innerHTML = sb;
@@ -256,7 +251,7 @@ async function poll() {
     const scoredN = preds.filter(p => p.actual != null).length;
     document.getElementById("score-note").textContent =
       `${preds.length.toLocaleString()} predictions (${scoredN.toLocaleString()} scored) · ` +
-      `betting: $10 stake, ±$10 pays $50 (breakeven win-rate 20%)`;
+      `objective: pure price prediction — reward +1 exact integer, else −|error|/100`;
 
     // per-arm cards
     document.getElementById("cards").innerHTML = ARMS.map(arm => `
@@ -270,8 +265,7 @@ async function poll() {
     <dt>Offline metrics</dt><dd>${offlineBlock(metrics, arm.offline)}</dd>
     <dt>Online metrics</dt><dd>${onlineStats(preds, arm.variants).map(s =>
       `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · ±$10 ${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}` +
-      (s.betN ? ` · bets ${s.wins}/${s.betN} won (${money(s.pnl)})` : "") +
-      (s.abst ? ` · abstained ${(100 * s.abst).toFixed(0)}%` : "")
+      ` · ±$50 ${s.w50 == null ? "–" : (100 * s.w50).toFixed(0) + "%"} · exact ${s.hits}`
     ).join("<br>") || "no scored predictions yet"}</dd>
   </dl>
 </section>`).join("");

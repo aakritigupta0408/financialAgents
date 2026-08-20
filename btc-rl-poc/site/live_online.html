@@ -151,27 +151,6 @@ footer { color: var(--muted); font-size: 12.5px; }
   </div>
 </section>
 
-<section>
-  <h2>Betting book <span class="arm-tag treatment">$10 per prediction · ±$10 pays $50</span></h2>
-  <p class="sub muted">Every committed prediction stakes $10 from a shared $1,000 bankroll;
-  a settled prediction within ±$10 of the actual price receives $50 (net +$40), a miss
-  loses the stake (net −$10). Bets settle the moment the target minute is scored.
-  History from before betting started never bets.</p>
-  <div class="statusbar" style="margin-top:10px">
-    <div class="stat"><div class="k">Bankroll</div><div class="bignum" id="bankroll">–</div></div>
-    <div class="stat"><div class="k">Settled P&amp;L</div><div class="bignum" id="bpnl">–</div></div>
-    <div class="stat"><div class="k">Bets settled</div><div class="bignum" id="bsettled">–</div></div>
-    <div class="stat"><div class="k">Wins (±$10)</div><div class="bignum" id="bwins">–</div></div>
-    <div class="stat"><div class="k">In play</div><div class="bignum" id="bpending">–</div></div>
-  </div>
-  <div class="scroll" style="margin-top:10px"><table>
-    <thead><tr><th>Stream</th><th class="num">Bets</th><th class="num">Settled</th>
-    <th class="num">Wins</th><th class="num">Win rate</th><th class="num">Staked</th>
-    <th class="num">Received</th><th class="num">P&amp;L</th></tr></thead>
-    <tbody id="book"></tbody>
-  </table></div>
-</section>
-
 <div id="horizon-sections"></div>
 
 <section>
@@ -180,8 +159,8 @@ footer { color: var(--muted); font-size: 12.5px; }
     <dt>Experiment</dt><dd><b>Control</b> (solid lines): tabular Q-learning, one table per
       horizon, untouched. <b>Treatment 2</b> (dashed): LinUCB contextual bandit over the
       same 21 integer-delta arms — each arm keeps a ridge reward model over the continuous
-      features; selection is optimistic (θ·x + α·uncertainty); <b>reward = betting P&amp;L</b>
-      (+$40 within ±$10, −$10 miss), so t2 directly maximizes the bankroll.
+      features; selection is optimistic (θ·x + α·uncertainty); reward = prediction quality
+      (+1 exact integer match, else −|error|/100) — pure price prediction, no betting.
       <b>Treatment 3</b> (dotted): same LinUCB machinery + <b>5 live-streamed features</b>
       snapshotted every 30s — Deribit perp basis, OKX funding rate, cross-exchange
       dispersion, BRTI-composite gap vs Coinbase, mempool fee. Arms never share updates;
@@ -189,9 +168,7 @@ footer { color: var(--muted); font-size: 12.5px; }
       ctl, t2, t3, t4, and persistence.
       <b>Treatment 4</b> (dash-dot): t3's context <b>plus</b> trend features (4h momentum,
       multi-scale alignment, range position), order-book features (top-20 bid/ask
-      imbalance, spread), and an <b>abstain arm</b> — reward 0 for not betting — so it
-      learns to decline negative-EV slots instead of bleeding $10 into high-volatility
-      noise. <b>Treatment 5</b>: t4's context plus a frozen open-source fintech LLM
+      imbalance, spread),. <b>Treatment 5</b>: t4's context plus a frozen open-source fintech LLM
       trained on Bitcoin text — <b>CryptoBERT</b> scores live CoinDesk/Cointelegraph/
       Decrypt headlines into sentiment, 1h sentiment momentum, and news intensity;
       the RL policy still makes every decision (FinRL-contest pattern: LLM perceives,
@@ -203,9 +180,8 @@ footer { color: var(--muted); font-size: 12.5px; }
       EMA(30) distance, volume ratio, Fear &amp; Greed index.</dd>
     <dt>Action</dt><dd>Integer dollar delta from the current price:
       0, ±1, ±2, ±3, ±5, ±8, ±13, ±21, ±34, ±55, ±89.</dd>
-    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual); otherwise <b>−1</b> (spec) or
-      <b>−|error|/100</b> (shaped, used for learning — the sparse reward fires too rarely
-      to learn from).</dd>
+    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual); otherwise <b>−|error|/100</b>
+      (shaped) for learning, <b>−1</b> for spec reporting. Same function for every arm.</dd>
     <dt>Learning loop</dt><dd>Two speeds. <b>Per prediction:</b> when a prediction is
       scored, its (state, action) Q-value moves by Q ← Q + 0.1·(reward − Q) — one honest
       lesson per evaluated prediction. <b>Per hour:</b> experience replay over the last
@@ -255,8 +231,7 @@ document.getElementById("horizon-sections").innerHTML = `
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
-    <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th>
-    <th class="num">Bet</th></tr></thead>
+    <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
 </section>`).join("");
@@ -347,16 +322,10 @@ function ledgerRows(preds) {
       : arm === "t5" ? '<span class="arm-tag t5">t5</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
-    const bet = p.abstained ? '<span class="pill miss">abstained</span>'
-      : !p.bet ? "no bet"
-      : p.pnl == null ? "$10 in play"
-      : p.pnl > 0 ? `<span class="pill hit">won +$${p.pnl}</span>`
-      : `<span class="pill miss">−$${-p.pnl}</span>`;
     return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
       `<td class="num">$${p.pred.toLocaleString()}</td>` +
       `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
-      `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td>` +
-      `<td class="num muted">${bet}</td></tr>`;
+      `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td></tr>`;
   }).join("");
 }
 
@@ -365,11 +334,8 @@ function stats(preds) {
     const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
     if (!sc.length) return `${arm}: no scored predictions yet`;
     const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-    const bets = sc.filter(p => p.bet);
-    const pnl = bets.reduce((a, p) => a + (p.pnl || 0), 0);
-    const wins = bets.filter(p => p.pnl > 0).length;
-    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}` +
-      (bets.length ? ` · bets ${wins}/${bets.length} won, P&L ${pnl >= 0 ? "+" : "−"}$${Math.abs(pnl)}` : "");
+    const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
+    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)} · ±$10 ${(100 * w10).toFixed(0)}%`;
   };
   return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5")].join("   |   ");
 }
@@ -443,34 +409,6 @@ async function poll() {
       document.getElementById("retrains").textContent = status.retrains_this_session;
       document.getElementById("qupd").textContent =
         (status.online_updates_session ?? 0).toLocaleString();
-      const bk = status.betting;
-      if (bk) {
-        const money = v => (v < 0 ? "−$" : "$") + Math.abs(v).toLocaleString();
-        const pnlFmt = v => (v >= 0 ? "+$" : "−$") + Math.abs(v).toLocaleString();
-        document.getElementById("bankroll").textContent = money(bk.bankroll);
-        document.getElementById("bpnl").textContent = pnlFmt(bk.settled_pnl);
-        const agg = Object.values(bk.per_stream);
-        const settled = agg.reduce((a, s) => a + s.settled, 0);
-        document.getElementById("bsettled").textContent = settled;
-        document.getElementById("bwins").textContent =
-          agg.reduce((a, s) => a + s.wins, 0);
-        document.getElementById("bpending").textContent = money(bk.pending_staked);
-        document.getElementById("book").innerHTML =
-          Object.entries(bk.per_stream).map(([v, s]) =>
-            `<tr><td>${/^t\d-/.test(v) ? v.slice(0, 2) + " +" + v.slice(4) : "ctl +" + v.slice(1)} min</td><td class="num">${s.bets}</td>` +
-            `<td class="num">${s.settled}</td><td class="num">${s.wins}</td>` +
-            `<td class="num">${s.settled ? (100 * s.wins / s.settled).toFixed(0) + "%" : "–"}</td>` +
-            `<td class="num">$${s.staked}</td><td class="num">$${s.received}</td>` +
-            `<td class="num">${pnlFmt(s.pnl)}</td></tr>`).join("") +
-          `<tr style="font-weight:650"><td>aggregate</td>` +
-          `<td class="num">${agg.reduce((a, s) => a + s.bets, 0)}</td>` +
-          `<td class="num">${settled}</td>` +
-          `<td class="num">${agg.reduce((a, s) => a + s.wins, 0)}</td>` +
-          `<td class="num">${settled ? (100 * agg.reduce((a, s) => a + s.wins, 0) / settled).toFixed(0) + "%" : "–"}</td>` +
-          `<td class="num">$${agg.reduce((a, s) => a + s.staked, 0)}</td>` +
-          `<td class="num">$${agg.reduce((a, s) => a + s.received, 0)}</td>` +
-          `<td class="num">${pnlFmt(bk.settled_pnl)}</td></tr>`;
-      }
       const armsGate = status.last_retrain?.arms;
       document.getElementById("gate").textContent = !armsGate ? "–" :
         Object.values(armsGate).some(g => Object.values(g).some(x => x.reverted))
