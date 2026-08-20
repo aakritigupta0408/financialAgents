@@ -6,103 +6,162 @@
 <meta http-equiv="cache-control" content="no-store">
 <title>BTC 7PM Oracle — Experiment Review</title>
 <style>
-:root {
-  color-scheme: light;
-  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
-  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
-  --border: rgba(11,11,11,0.10);
-  --series-1: #2a78d6; --series-2: #eb6834;
-  --series-3: #1baf7a; --series-4: #eda100; --series-5: #4a3aa7; --series-6: #e34948;
-  --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
+/* Single-theme dark design, matching theaakritigupta.com/ai-playground */
+* { box-sizing: border-box; margin: 0; }
+body {
+  min-height: 100vh; overflow-x: hidden;
+  background: #0b0a1a; color: #f8fafc;
+  font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-    --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5; --series-2: #d95926;
-    --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9; --series-6: #e66767; --series-6: #e66767;
-    --good-text: #0ca30c;
-  }
+.bg-fx { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(circle at top left, rgba(167,139,250,.18), transparent 26%),
+    radial-gradient(circle at 85% 15%, rgba(244,114,182,.16), transparent 26%),
+    radial-gradient(circle at 50% 100%, rgba(251,191,36,.10), transparent 30%);
 }
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-  --border: rgba(255,255,255,0.10);
-  --series-1: #3987e5; --series-2: #d95926;
-  --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9; --series-6: #e66767;
-  --good-text: #0ca30c;
+.bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .3;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size: 72px 72px;
 }
-* { box-sizing: border-box; }
-body { background: var(--page); color: var(--ink); margin: 0;
-  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 28px 20px 60px; }
-main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
-.eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: 12px;
-  color: var(--muted); font-weight: 600; }
-h1 { margin: 4px 0 2px; font-size: 26px; letter-spacing: -0.01em; }
-h2 { margin: 0 0 2px; font-size: 17px; }
-.sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
-section { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 18px 20px; }
-.arm-chip { display: inline-block; width: 10px; height: 10px; border-radius: 3px;
+main { position: relative; z-index: 1; max-width: 72rem; margin: 0 auto;
+  padding: 48px 20px 96px; }
+
+.hero { border-radius: 2rem; border: 1px solid rgba(255,255,255,.10);
+  background: linear-gradient(140deg, rgba(20,18,40,.88), rgba(11,10,26,.72));
+  box-shadow: 0 30px 90px rgba(4,12,19,.42); backdrop-filter: blur(24px);
+  padding: 36px; margin-bottom: 40px; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 999px; border: 1px solid rgba(167,139,250,.30);
+  background: rgba(167,139,250,.10); padding: 8px 16px;
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .22em; color: #ede9fe; }
+h1 { margin-top: 20px; font-size: clamp(2.2rem, 5vw, 3.6rem);
+  font-weight: 900; line-height: 1.1; color: #fff; }
+h1 .grad { display: block;
+  background: linear-gradient(90deg, #c4b5fd, #fbcfe8, #fde68a);
+  -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lede { margin-top: 16px; max-width: 44rem; color: #cbd5e1; line-height: 1.75; }
+.pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.pill { display: inline-flex; align-items: center; gap: 8px;
+  border-radius: 999px; border: 1px solid rgba(167,139,250,.20);
+  background: rgba(167,139,250,.05); padding: 8px 16px; font-size: 14px;
+  color: #ede9fe; }
+.pill b { font-weight: 700; }
+.pill span { font-size: 12px; opacity: .75; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  border-radius: 999px; border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.05); padding: 8px 16px; font-size: 14px;
+  color: #cbd5e1; text-decoration: none; }
+.btn:hover { background: rgba(255,255,255,.10); }
+.btn.primary { border-color: rgba(167,139,250,.30);
+  background: rgba(167,139,250,.10); color: #ede9fe; font-weight: 600; }
+
+.sect { margin: 40px 0 16px; font-size: 13px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .2em; color: #64748b; }
+.cards-grid { display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.mcard { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04); padding: 20px; backdrop-filter: blur(6px);
+  transition: border-color .2s; }
+.mcard:hover { border-color: rgba(255,255,255,.20); }
+.mcard.winner { border-color: rgba(252,211,77,.30);
+  background: rgba(252,211,77,.05);
+  box-shadow: 0 18px 60px rgba(251,191,36,.16); }
+.mcard .name { display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; color: #94a3b8; }
+.mcard .big { margin-top: 8px; font-size: 30px; font-weight: 800; color: #fff;
+  font-variant-numeric: tabular-nums; }
+.mcard .small { margin-top: 2px; font-size: 12.5px; color: #94a3b8;
+  font-variant-numeric: tabular-nums; }
+.winner-tag { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: #fde68a; }
+
+.panel { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04); padding: 24px; backdrop-filter: blur(6px);
+  margin-bottom: 18px; }
+.panel h3 { font-size: 16px; font-weight: 700; color: #fff; }
+.panel .sub { margin-top: 4px; font-size: 13px; color: #94a3b8; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 4px;
   margin-right: 8px; vertical-align: -1px; }
-.card { display: grid; grid-template-columns: 140px 1fr; gap: 6px 14px;
-  font-size: 13.5px; margin-top: 10px; }
-.card dt { color: var(--muted); font-size: 11.5px; text-transform: uppercase;
-  letter-spacing: .06em; font-weight: 600; padding-top: 2px; }
-.card dd { margin: 0; color: var(--ink-2); }
-.card dd b { color: var(--ink); }
+svg { width: 100%; height: auto; display: block; margin-top: 14px; }
+svg text { font: 12px ui-sans-serif, system-ui; fill: #94a3b8;
+  font-variant-numeric: tabular-nums; }
+
 .scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 13px; min-width: 640px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px;
+  min-width: 620px; margin-top: 12px; }
 th { text-align: left; font-size: 11px; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--grid);
-  padding: 5px 10px 5px 0; }
-td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; }
+  letter-spacing: .12em; color: #64748b;
+  border-bottom: 1px solid rgba(255,255,255,.10); padding: 8px 12px 8px 0; }
+td { border-bottom: 1px solid rgba(255,255,255,.06); padding: 8px 12px 8px 0;
+  color: #cbd5e1; }
 td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
-.muted { color: var(--ink-2); }
-.good { color: var(--good-text); }
-.bad { color: var(--critical); }
-footer { color: var(--muted); font-size: 12.5px; }
+
+.arm-card { border-radius: 1.6rem; border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04); padding: 24px; margin-bottom: 18px;
+  backdrop-filter: blur(6px); }
+.arm-card h3 { display: flex; align-items: center; font-size: 17px;
+  font-weight: 700; color: #fff; }
+.card-grid { display: grid; grid-template-columns: 150px 1fr; gap: 8px 18px;
+  font-size: 13.5px; margin-top: 16px; }
+.card-grid dt { color: #64748b; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .12em; font-weight: 600; padding-top: 3px; }
+.card-grid dd { color: #cbd5e1; line-height: 1.65; }
+.card-grid dd b { color: #fff; }
+.muted { color: #94a3b8; }
+footer { color: #64748b; font-size: 13px; margin-top: 40px; }
+@media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; gap: 2px; }
+  .card-grid dd { margin-bottom: 10px; } }
 </style>
 </head>
 <body>
+<div class="bg-fx"></div>
+<div class="bg-grid"></div>
 <main>
-<header>
-  <div class="eyebrow">Reinforcement learning · experiment review</div>
-  <h1>The treatment ladder, reviewed</h1>
-  <p class="sub">One card per arm — architecture, features, reward function, data
-  sampling — with offline (batch backtest) and online (live ledger) metrics that
-  refresh automatically. Adding a new treatment adds one card. All times PST.</p>
-</header>
 
-<section>
-  <h2>Scoreboard — online, all arms × horizons</h2>
-  <p class="sub muted" id="score-note">loading…</p>
+<div class="hero">
+  <div class="eyebrow">✦ Live experiment · Bitcoin price prediction</div>
+  <h1>BTC 7PM Oracle
+    <span class="grad">Treatment ladder — head to head</span></h1>
+  <p class="lede">Six reinforcement-learning arms predict Bitcoin's price every
+  5 minutes at +5/+15/+30 min horizons, scored at integer level against the
+  same market. The first model is the frozen control; each treatment adds
+  exactly one capability — continuous features, live streams, trend &amp;
+  order book, a Bitcoin-trained LLM, order-flow imbalance — so every metric
+  gap is attributable. All numbers refresh live from the prediction ledger.</p>
+  <div class="pills" id="hero-pills"></div>
+  <div class="btns">
+    <a class="btn primary" href="live_online.html">▶ Live predictions</a>
+    <a class="btn" href="live_training.html">Training curves</a>
+    <a class="btn" href="index.html">Batch backtest</a>
+  </div>
+</div>
+
+<div class="sect">Headline — online MAE, +5 minute horizon</div>
+<div class="cards-grid" id="headline"></div>
+
+<div class="sect">Per-horizon comparison</div>
+<div class="panel"><h3>+5 minutes</h3>
+  <p class="sub">Lower is better · dashed rule = persistence on the same live slots</p>
+  <div id="graph-h5"></div></div>
+<div class="panel"><h3>+15 minutes</h3><div id="graph-h15"></div></div>
+<div class="panel"><h3>+30 minutes</h3><div id="graph-h30"></div></div>
+
+<div class="sect">Scoreboard — all arms × horizons</div>
+<div class="panel">
+  <p class="sub" id="score-note">loading…</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
     <th class="num">MAE</th><th class="num">±$10</th><th class="num">±$50</th>
     <th class="num">Exact</th></tr></thead>
     <tbody id="scoreboard"></tbody>
   </table></div>
-</section>
+</div>
 
-<section>
-  <h2>Online MAE by arm — +5 minutes</h2>
-  <p class="sub muted">Lower is better. Grey line = persistence on the same live slots.</p>
-  <div id="graph-h5"></div>
-</section>
-<section>
-  <h2>Online MAE by arm — +15 minutes</h2>
-  <div id="graph-h15"></div>
-</section>
-<section>
-  <h2>Online MAE by arm — +30 minutes</h2>
-  <div id="graph-h30"></div>
-</section>
-
+<div class="sect">The arms — architecture · features · reward · sampling</div>
 <div id="cards"></div>
 
 <footer id="foot">Polling metrics.json + prediction_log.jsonl every 10s…</footer>
@@ -111,58 +170,56 @@ footer { color: var(--muted); font-size: 12.5px; }
 <script>
 // ── The registry: add one entry per new treatment ──────────────────────────
 const ARMS = [
-  { key: "ctl", variants: ["h5", "h15", "h30"], color: "var(--series-1)",
+  { key: "ctl", variants: ["h5", "h15", "h30"], color: "#94a3b8",
     title: "Control — Tabular Q-learning",
     architecture: "One-step Q-learning (contextual bandit): 81 discrete states × 21 integer-delta actions = 1,701 Q-values per horizon. ε-greedy during training, greedy commitments. Untouched since the experiment began.",
     features: "4 discretized buckets: 5m return, 15m return, 30m volatility, RSI(14) — each 3-way. Continuous information deliberately discarded (that is the treatment hypothesis).",
-    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1. No betting layer.",
+    reward: "Learning: shaped −|error|/100, +1 on exact-integer hit. Reporting: spec reward +1 / −1.",
     sampling: "Offline: 120 days Coinbase 1m bars, every afternoon minute an episode, chronological 80/20 split, 30 epochs. Online: immediate Q-update per scored prediction + hourly experience replay over last 24h (3 epochs) gated by a 3h hold-out (revert on regression).",
     offline: "tabular-q-shaped" },
-  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "var(--series-2)",
+  { key: "t2", variants: ["t2-h5", "t2-h15", "t2-h30"], color: "#a78bfa",
     title: "Treatment 2 — LinUCB contextual bandit",
-    architecture: "LinUCB over the same 21 delta arms: per-arm ridge model A=λI+Σxxᵀ, b=Σrx; optimistic selection θ·x + α√(xᵀA⁻¹x), α=1. Exploration is uncertainty-driven and self-extinguishing.",
+    architecture: "LinUCB over the same 21 delta arms: per-arm ridge model A=λI+Σxxᵀ, b=Σrx; optimistic selection θ·x + α√(xᵀA⁻¹x), α=0.3. Exploration is uncertainty-driven and self-extinguishing.",
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
     reward: "Prediction quality: +1 on exact integer match, else −|error|/100 — identical for every arm.",
-    sampling: "No batch training. Cold-start warm-up on ~1,400 recent episodes, then purely online: one update per scored prediction. Excluded from hourly replay by design (bandit-native learning).",
+    sampling: "Cold-start warm-up on ~1,400 recent episodes, one update per scored prediction, plus hourly gated 24h replay.",
     offline: null },
-  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "var(--series-3)",
+  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "#f472b6",
     title: "Treatment 3 — + live-streamed microstructure",
     architecture: "Same LinUCB machinery as t2, 15-dim context.",
     features: "t2's 10 + five live streams snapshotted every 30s: Deribit perp basis (bp), OKX funding rate, cross-exchange dispersion of BRTI constituents (bp), BRTI-composite vs Coinbase gap (bp), mempool fastest fee. Missing snapshot ⇒ neutral zeros.",
     reward: "Same prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same as t2; snapshots joined by nearest timestamp (≤10 min) from live_snapshots.jsonl, so history without snapshots degrades gracefully to t2-equivalent.",
+    sampling: "Same as t2; snapshots joined by nearest timestamp (≤10 min), so history without snapshots degrades gracefully to t2-equivalent.",
     offline: null },
-  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"], color: "var(--series-4)",
-    title: "Treatment 4 — + trend, order book, learned abstain",
+  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"], color: "#fbbf24",
+    title: "Treatment 4 — + trend & order-book state",
     architecture: "LinUCB, 20-dim context over the 21 delta arms.",
     features: "t3's 15 + trend (4h momentum, multi-scale sign alignment, 60m range position) + order book (Coinbase L2 top-20 bid/ask imbalance, spread bp).",
     reward: "Prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same warm-up + per-prediction updates.",
+    sampling: "Same warm-up + per-prediction updates + hourly gated replay.",
     offline: null },
-  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"], color: "var(--series-5)",
+  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"], color: "#34d399",
     title: "Treatment 5 — + frozen Bitcoin-trained fintech LLM",
     architecture: "FinRL-Contest pattern: LLM perceives, RL decides. CryptoBERT (BERTweet pre-trained on 3.2M crypto posts) is frozen; its outputs join the context of the same LinUCB (23 dims). No LLM weight updates — reinforcement learning stays the sole decision layer.",
     features: "t4's 20 + three LLM dims from live CoinDesk/Cointelegraph/Decrypt headlines: mean sentiment P(bull)−P(bear), 1h sentiment momentum, news intensity. Each headline scored once, cached.",
     reward: "Prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same warm-up + per-prediction updates; headlines fetched every poll (30s), scored on Apple-GPU locally.",
+    sampling: "Same warm-up + per-prediction updates + hourly gated replay; headlines fetched every poll (30s), scored on Apple-GPU locally.",
     offline: null },
-  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"], color: "var(--series-6)",
+  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"], color: "#38bdf8",
     title: "Treatment 6 — + order-flow imbalance (research-backed)",
     architecture: "Same LinUCB machinery, 27-dim context.",
     features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
-    reward: "Same prediction reward (+1 exact / \u2212|error|/100).",
+    reward: "Same prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
     offline: null },
-  { key: "agg", variants: ["consensus"], color: "var(--ink-2)",
+  { key: "agg", variants: ["consensus"], color: "#f8fafc",
     title: "Consensus — median poll (our headline +5 min call)",
-    architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2, t3, t4, t5, persistence). Robust to any single model's bad slot.",
+    architecture: "No learning: at each 5-min slot, the median of all +5 predictors (ctl, t2…t6, persistence). Robust to any single model's bad slot.",
     features: "Its voters.", reward: "Scored for accuracy only — never learns.",
     sampling: "Emitted once per slot when ctl+t2 have committed; scored like any predictor.",
     offline: null },
 ];
 const HKEYS = { 5: "h5", 15: "h15", 30: "h30" };
-
-const money = v => (v < 0 ? "−$" : "+$") + Math.abs(v).toLocaleString();
 
 function onlineStats(preds, variants) {
   const out = [];
@@ -181,50 +238,46 @@ function onlineStats(preds, variants) {
   return out;
 }
 
-function offlineBlock(metrics, agentKey) {
-  if (!metrics) return "<i>metrics.json unavailable</i>";
-  const base = metrics.agents["persistence-baseline"];
-  const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
-    const s = metrics.agents[name]?.[hk]?.all;
-    return s ? `${hk.slice(1)}m: MAE $${s.mae.toFixed(0)} · ±$10 ${(100 * s["within_$10"]).toFixed(0)}% · exact ${(100 * s.exact_int_hit_rate).toFixed(2)}%` : null;
-  }).filter(Boolean).join("<br>");
-  const ref = `persistence reference — ${rowsOf("persistence-baseline")}`;
-  if (!agentKey) return `No batch backtest (online-only arm). ${ref}`;
-  return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
-}
-
 function maeGraph(preds, h) {
-  // one horizontal bar per arm: online MAE at this horizon, arm-colored;
-  // dashed rule = persistence |actual - price_now| on the same slots.
   const rows = [];
   for (const arm of ARMS) {
     const s = onlineStats(preds, arm.variants).find(x => x.h === h);
     if (s && s.mae != null && s.n)
       rows.push({ key: arm.key, color: arm.color, mae: s.mae, n: s.n });
   }
-  if (!rows.length) return '<p class="muted">no scored predictions yet</p>';
+  if (!rows.length) return '<p class="sub">no scored predictions yet</p>';
   const base = preds.filter(p => p.horizon === h && p.actual != null
     && p.variant === HKEYS[h]);
   const persist = base.length
     ? base.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0) / base.length
     : null;
-  const W = 900, barH = 20, gap = 8, L = 60, R = 70;
+  const W = 900, barH = 22, gap = 10, L = 56, R = 92;
   const vmax = Math.max(...rows.map(r => r.mae), persist || 0) * 1.12;
-  const H = rows.length * (barH + gap) + 30;
+  const H = rows.length * (barH + gap) + 34;
   const X = v => L + v / vmax * (W - L - R);
   let g = "";
   rows.forEach((r, i) => {
     const y = 6 + i * (barH + gap);
-    g += `<rect x="${L}" y="${y}" width="${(X(r.mae) - L).toFixed(1)}" height="${barH}" rx="4" style="fill:${r.color}"/>` +
-      `<text x="${L - 8}" y="${y + barH - 5}" text-anchor="end" style="fill:var(--ink)">${r.key}</text>` +
-      `<text x="${X(r.mae) + 8}" y="${y + barH - 5}" style="fill:var(--ink-2);font-variant-numeric:tabular-nums">$${Math.round(r.mae)} (n=${r.n})</text>`;
+    g += `<rect x="${L}" y="${y}" width="${(X(r.mae) - L).toFixed(1)}" height="${barH}" rx="7" fill="${r.color}" fill-opacity="0.85"/>` +
+      `<text x="${L - 8}" y="${y + barH - 6}" text-anchor="end" style="fill:#f8fafc;font-weight:600">${r.key}</text>` +
+      `<text x="${X(r.mae) + 10}" y="${y + barH - 6}" style="fill:#94a3b8">$${Math.round(r.mae)} · n=${r.n}</text>`;
   });
   if (persist != null)
-    g += `<line x1="${X(persist)}" y1="0" x2="${X(persist)}" y2="${H - 22}" ` +
-      `stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 4"/>` +
-      `<text x="${X(persist)}" y="${H - 8}" text-anchor="middle" style="fill:var(--muted)">persistence $${Math.round(persist)}</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE by arm, +${h} min" ` +
-    `style="width:100%;height:auto;display:block;font:12px system-ui">${g}</svg>`;
+    g += `<line x1="${X(persist)}" y1="0" x2="${X(persist)}" y2="${H - 26}" ` +
+      `stroke="rgba(255,255,255,.4)" stroke-width="1.5" stroke-dasharray="5 5"/>` +
+      `<text x="${X(persist)}" y="${H - 10}" text-anchor="middle">persistence $${Math.round(persist)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE by arm, +${h} min">${g}</svg>`;
+}
+
+function offlineBlock(metrics, agentKey) {
+  if (!metrics) return "<i>metrics.json unavailable</i>";
+  const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
+    const s = metrics.agents[name]?.[hk]?.all;
+    return s ? `${hk.slice(1)}m: MAE $${s.mae.toFixed(0)} · ±$10 ${(100 * s["within_$10"]).toFixed(0)}% · exact ${(100 * s.exact_int_hit_rate).toFixed(2)}%` : null;
+  }).filter(Boolean).join("<br>");
+  const ref = `persistence reference — ${rowsOf("persistence-baseline")}`;
+  if (!agentKey) return `No batch backtest (online-only arm). <span class="muted">${ref}</span>`;
+  return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
 }
 
 async function poll() {
@@ -239,12 +292,35 @@ async function poll() {
       if (!line.trim()) continue;
       try { preds.push(JSON.parse(line)); } catch {}
     }
+    const scoredN = preds.filter(p => p.actual != null).length;
 
-    // scoreboard
+    document.getElementById("hero-pills").innerHTML = [
+      ["5 + control", "arms"],
+      ["3", "horizons"],
+      [preds.length.toLocaleString(), "predictions"],
+      [scoredN.toLocaleString(), "scored"],
+    ].map(([v, l]) => `<div class="pill"><b>${v}</b><span>${l}</span></div>`).join("");
+
+    const head = ARMS.map(arm => {
+      const s = onlineStats(preds, arm.variants).find(x => x.h === 5);
+      return s && s.mae != null ? { arm, s } : null;
+    }).filter(Boolean);
+    const best = Math.min(...head.map(x => x.s.mae));
+    document.getElementById("headline").innerHTML = head.map(({ arm, s }) => `
+      <div class="mcard${s.mae === best ? " winner" : ""}">
+        <div class="name"><span class="dot" style="background:${arm.color}"></span>${arm.key}
+          ${s.mae === best ? '<span class="winner-tag">· leader</span>' : ""}</div>
+        <div class="big">$${Math.round(s.mae)}</div>
+        <div class="small">MAE · ±$10 ${(100 * s.w10).toFixed(0)}% · n=${s.n}</div>
+      </div>`).join("");
+
+    for (const h of [5, 15, 30])
+      document.getElementById(`graph-h${h}`).innerHTML = maeGraph(preds, h);
+
     let sb = "";
     for (const arm of ARMS) {
       for (const s of onlineStats(preds, arm.variants)) {
-        sb += `<tr><td><span class="arm-chip" style="background:${arm.color}"></span>${arm.key}</td>` +
+        sb += `<tr><td><span class="dot" style="background:${arm.color}"></span>${arm.key}</td>` +
           `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
           `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
@@ -253,18 +329,13 @@ async function poll() {
       }
     }
     document.getElementById("scoreboard").innerHTML = sb;
-    for (const h of [5, 15, 30])
-      document.getElementById(`graph-h${h}`).innerHTML = maeGraph(preds, h);
-    const scoredN = preds.filter(p => p.actual != null).length;
     document.getElementById("score-note").textContent =
-      `${preds.length.toLocaleString()} predictions (${scoredN.toLocaleString()} scored) · ` +
       `objective: pure price prediction — reward +1 exact integer, else −|error|/100`;
 
-    // per-arm cards
     document.getElementById("cards").innerHTML = ARMS.map(arm => `
-<section style="margin-top:22px">
-  <h2><span class="arm-chip" style="background:${arm.color}"></span>${arm.title}</h2>
-  <dl class="card">
+<div class="arm-card">
+  <h3><span class="dot" style="background:${arm.color}"></span>${arm.title}</h3>
+  <dl class="card-grid">
     <dt>Architecture</dt><dd>${arm.architecture}</dd>
     <dt>Features</dt><dd>${arm.features}</dd>
     <dt>Reward / penalty</dt><dd>${arm.reward}</dd>
@@ -275,7 +346,7 @@ async function poll() {
       ` · ±$50 ${s.w50 == null ? "–" : (100 * s.w50).toFixed(0) + "%"} · exact ${s.hits}`
     ).join("<br>") || "no scored predictions yet"}</dd>
   </dl>
-</section>`).join("");
+</div>`).join("");
 
     document.getElementById("foot").textContent =
       `updated ${new Date().toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles" })} PST · ` +
