@@ -399,10 +399,15 @@ details[open] > summary { margin-bottom: 6px; }
 
 <section>
   <h2>Is it learning?</h2>
-  <p class="sub muted small">Every 5 minutes the model and a "do nothing" baseline
-  predict the same target; whoever lands closer wins the slot. The line accumulates
-  the <b>dollars of accuracy gained (or given up) vs doing nothing</b> — rising means
-  learning is converting into value. Ticks mark hourly retrains.</p>
+  <p class="sub muted small">Two metrics, same +5-minute consensus calls. <b>Level</b>
+  (solid blue): dollars of accuracy gained vs "predict no change" — a baseline that is
+  near-optimal for price level, so this line is expected to hug zero. <b>Direction</b>
+  (dashed teal): cumulative P&amp;L of betting $1-per-$-move on the called side each
+  slot — the metric where learned signal can actually pay. Ticks mark hourly retrains.</p>
+  <div class="legend">
+    <span><span class="sw" style="background:#3987e5"></span>level vs doing nothing</span>
+    <span><span class="sw" style="background:#199e70"></span>direction P&amp;L (dashed)</span>
+  </div>
   <div id="learn-skill"></div>
   <p class="mini" id="learn-verdict"></p>
 </section>
@@ -801,21 +806,28 @@ function drawLearning(preds, learnLog) {
       '<p class="mini">collecting scored predictions…</p>';
     return;
   }
-  let cum = 0, wins = 0;
+  let cum = 0, wins = 0, dcum = 0;
   const pts = [];
+  const dpts = [];
   const advs = [];
   for (const p2 of sc) {
     const adv = Math.abs(p2.actual - p2.price_now) - p2.abs_err;
     cum += adv; advs.push(adv);
     if (adv > 0) wins++;
     pts.push([p2.target_ts, cum]);
+    // direction P&L: $1-per-$-move bet on the called direction each slot
+    dcum += (p2.delta > 0 ? 1 : p2.delta < 0 ? -1 : 0)
+      * (p2.actual - p2.price_now);
+    dpts.push([p2.target_ts, dcum]);
   }
   const marks = [];
   for (let i = 1; i < learnLog.length; i++)
     if (learnLog[i].retrains > learnLog[i - 1].retrains)
       marks.push(learnLog[i].ts);
   let svg = miniLine(
-    [{ label: "cumulative $ gained vs doing nothing", color: "#3987e5", pts }],
+    [{ label: "level: $ gained vs doing nothing", color: "#3987e5", pts },
+     { label: "direction: cumulative P&L of betting the called side",
+       color: "#199e70", dash: true, pts: dpts }],
     { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(Math.round(v)).toLocaleString(),
       zero: true, h: 220 });
   if (marks.length && svg.startsWith("<svg")) {
@@ -841,7 +853,11 @@ function drawLearning(preds, learnLog) {
       : `<b style="color:#f87171">given up $${Math.abs(Math.round(cum)).toLocaleString()} of accuracy</b>`) +
     ` vs doing nothing · last 50 slots: won ${w50}/50 ` +
     `(${recent >= 0 ? "+" : "−"}$${Math.abs(Math.round(recent))}) · ` +
-    `${upd.toLocaleString()} model updates this session`;
+    `betting the called direction: ` +
+    (dcum >= 0
+      ? `<b style="color:#5fe8a0">+$${Math.round(dcum).toLocaleString()}</b>`
+      : `<b style="color:#ff5d5d">−$${Math.abs(Math.round(dcum)).toLocaleString()}</b>`) +
+    ` cumulative · ${upd.toLocaleString()} model updates this session`;
 }
 
 async function poll() {
