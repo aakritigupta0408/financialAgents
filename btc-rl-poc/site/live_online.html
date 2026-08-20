@@ -169,6 +169,22 @@ td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
   color: var(--page); font-size: 12.5px; padding: 6px 10px; border-radius: 8px;
   opacity: 0; transition: opacity .1s; z-index: 10; max-width: 300px; }
 footer { color: var(--faint); font-size: 12.5px; }
+/* layout: the "now" card pair + tabbed chart panels + collapsed reference */
+.now-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 18px; }
+@media (max-width: 860px) { .now-grid { grid-template-columns: 1fr; } }
+.small { font-size: 13px; }
+details > summary { cursor: pointer; font-size: 13.5px; font-weight: 600;
+  color: var(--ink-2); list-style-position: outside; }
+details > summary:hover { color: var(--ink); }
+details[open] > summary { margin-bottom: 6px; }
+.htabs { display: inline-flex; gap: 6px; }
+.scorechips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.scorechip { display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-variant-numeric: tabular-nums; color: var(--ink-2);
+  border: 1px solid var(--border); border-radius: 7px; padding: 3px 9px;
+  background: var(--surface-2); }
+.scorechip.lead { border-color: rgba(43,217,126,.45); color: var(--ink); }
+.scorechip i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
 /* mascot: bull when the live call is UP, bear when DOWN */
 .mascot { width: 64px; height: auto; margin: 0; }
 .mascot .hidden { display: none; }
@@ -248,76 +264,60 @@ footer { color: var(--faint); font-size: 12.5px; }
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
   <div class="stat"><div class="k">Direction (goal &gt;55%)</div><div class="bignum" id="t-dir">–</div></div>
   <div class="stat"><div class="k">80% band coverage (goal 80%)</div><div class="bignum" id="t-cov">–</div></div>
-  <div class="stat"><div class="k">Q-updates (live)</div><div class="bignum" id="qupd">–</div></div>
-  <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
-  <div class="stat"><div class="k">Overfit gate</div><div class="bignum" id="gate">–</div></div>
-  <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
 </section>
 
+<div class="now-grid">
 <section>
-  <h2>Our +5 min call <span class="arm-tag agg">consensus of all predictors</span></h2>
-  <p class="sub muted">At each 5-minute slot t, every predictor of T=t+5 is polled —
-  control, chart-replay, t2, t6, t7, t8, and persistence — the worst trailing performer
-  is dropped, and the <b>median</b> of the rest is our call, shown beside the live
-  Coinbase and BRTI-style prices.</p>
-  <div class="statusbar" style="margin-top:10px">
-    <div class="stat"><div class="k">Prediction for <span id="cons-when">–</span></div>
-      <div class="consensus-num" id="cons-pred">–</div>
-      <div class="sub muted" id="cons-votes"></div></div>
-    <div class="stat"><div class="k">Coinbase now</div><div class="bignum" id="cons-cb">–</div></div>
-    <div class="stat"><div class="k">BRTI composite now</div><div class="bignum" id="cons-brti">–</div></div>
-    <div class="stat"><div class="k">Consensus track record</div><div class="bignum" id="cons-acc">–</div></div>
+  <h2>Our +5 minute call</h2>
+  <p class="sub muted small">Median of every +5 predictor; the worst trailing voter sits out.</p>
+  <div class="statusbar" style="margin-top:12px">
+    <div class="stat"><div class="k">for <span id="cons-when">–</span></div>
+      <div class="consensus-num" id="cons-pred">–</div></div>
+    <div class="stat"><div class="k">Track record</div><div class="bignum" id="cons-acc">–</div></div>
   </div>
+  <p class="mini" id="cons-votes"></p>
+  <span hidden><span id="cons-cb"></span><span id="cons-brti"></span></span>
 </section>
 
 <section>
-  <h2>Prediction market — BTC 15-min up/down
-    <span class="arm-tag agg">Robinhood via Kalshi · settles on CF BRTI</span></h2>
-  <p class="sub muted">The live contract asks: will the 60-second BRTI average at window
-  close be at least the window-open average? Market odds beside our own P(up) from t8's
-  predicted delta distribution (thresholded at the strike; approximate). Our BRTI-style
-  composite tracks the settlement index.</p>
-  <div class="statusbar" style="margin-top:10px">
-    <div class="stat"><div class="k">Window closes</div><div class="bignum" id="pm-close">–</div></div>
-    <div class="stat"><div class="k">Strike (window open)</div><div class="bignum" id="pm-strike">–</div></div>
-    <div class="stat"><div class="k">BRTI-style now</div><div class="bignum" id="pm-brti">–</div></div>
+  <h2>Kalshi 15-minute market</h2>
+  <p class="sub muted small">Will BTC close this window above the strike? Our call vs the crowd's, settled every quarter-hour.</p>
+  <div class="statusbar" style="margin-top:12px">
+    <div class="stat"><div class="k">Our call</div><div class="bignum" id="kb-call">–</div></div>
     <div class="stat"><div class="k">Market P(up)</div><div class="bignum" id="pm-mkt">–</div></div>
-    <div class="stat"><div class="k">Our model P(up)</div><div class="bignum" id="pm-us">–</div></div>
-    <div class="stat"><div class="k">Ticker</div><div class="bignum" id="pm-tkr" style="font-size:14px">–</div></div>
+    <div class="stat"><div class="k">Strike</div><div class="bignum" id="pm-strike">–</div></div>
+    <div class="stat"><div class="k">Closes</div><div class="bignum" id="pm-close">–</div></div>
   </div>
-  <p class="sub muted" style="margin-top:16px">The <b>kb arm</b> plays this contract:
-  <b>every minute</b> it commits P(close &ge; strike) from t8's predicted distribution,
-  sigma scaled to the time left in the window, with the market's odds logged beside it —
-  the full probability path of each window. All calls settle together at the quarter-hour
-  close (9:00, 9:15, 9:30&hellip;); <b>Brier</b> is the squared error of the probability
-  (lower is better) — the head-to-head score of us vs the crowd on identical windows.</p>
-  <div class="statusbar" style="margin-top:10px">
-    <div class="stat"><div class="k">Latest call</div><div class="bignum" id="kb-call">–</div></div>
-    <div class="stat"><div class="k">Settled calls</div><div class="bignum" id="kb-n">–</div></div>
+  <div class="statusbar" style="margin-top:12px">
     <div class="stat"><div class="k">Hit rate</div><div class="bignum" id="kb-acc">–</div></div>
     <div class="stat"><div class="k">Our Brier</div><div class="bignum" id="kb-brier">–</div></div>
     <div class="stat"><div class="k">Market Brier</div><div class="bignum" id="kb-mkt">–</div></div>
   </div>
-  <div class="scroll" style="margin-top:10px"><table id="kb-tbl">
-    <thead><tr><th>window close</th><th>strike</th><th>called with</th>
-      <th>our P(up)</th><th>market P(up)</th><th>call</th><th>outcome</th><th>Brier</th></tr></thead>
-    <tbody><tr><td colspan="8" class="muted">collecting…</td></tr></tbody>
-  </table></div>
+  <details style="margin-top:12px"><summary>Call history &amp; contract detail</summary>
+    <div class="statusbar" style="margin-top:12px">
+      <div class="stat"><div class="k">Our model P(up)</div><div class="bignum" id="pm-us">–</div></div>
+      <div class="stat"><div class="k">BRTI-style now</div><div class="bignum" id="pm-brti">–</div></div>
+      <div class="stat"><div class="k">Settled calls</div><div class="bignum" id="kb-n">–</div></div>
+      <div class="stat"><div class="k">Ticker</div><div class="bignum" id="pm-tkr" style="font-size:13px">–</div></div>
+    </div>
+    <p class="sub muted small" style="margin-top:10px">The contract settles on whether the
+    60-second BRTI average at window close beats the window open. The kb arm calls it
+    every minute — P(close &ge; strike) from t8's predicted distribution, calibrated per
+    window phase. Brier (squared probability error, lower is better) scores us against
+    the crowd on identical windows.</p>
+    <div class="scroll" style="margin-top:8px"><table id="kb-tbl">
+      <thead><tr><th>window close</th><th>strike</th><th>called with</th>
+        <th>our P(up)</th><th>market P(up)</th><th>call</th><th>outcome</th><th>Brier</th></tr></thead>
+      <tbody><tr><td colspan="8" class="muted">collecting…</td></tr></tbody>
+    </table></div>
+  </details>
 </section>
+</div>
 
 <section>
-  <h2>Is it learning? <span class="arm-tag treatment">live · cumulative</span></h2>
-  <p class="sub muted">Every 5 minutes, both our model and a "do nothing" baseline
-  predict the same target; whoever lands closer wins that slot. The purple line adds
-  up the <b>dollars of accuracy the model has gained (or given up) vs doing nothing</b>
-  — a rising line means the model is converting learning into value right now; its
-  slope is the live learning payoff. Vertical ticks mark hourly retrains.</p>
-  <div id="learn-skill"></div>
-  <p class="mini" id="learn-verdict"></p>
-</section>
-
-<section>
-  <h2>The model ladder — at a glance</h2>
+  <details>
+  <summary><h2 style="display:inline">The model ladder &amp; scorecards</h2>
+    <span class="sub muted small" style="margin-left:8px">architectures · offline tests · live ledger</span></summary>
   <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-top:12px;font-size:12px">
     <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--faint)">L0 · baselines</b><br><span class="muted">persistence · chart-replay (rp)</span></div>
     <div style="align-self:center;color:var(--faint)">→</div>
@@ -359,25 +359,46 @@ footer { color: var(--faint); font-size: 12.5px; }
     <tbody id="arm-online-body"></tbody>
   </table></div>
   <p class="sub muted" style="margin-top:8px">Full architecture/feature/reward detail per arm
-  lives on the <a href="experiment_review.html" style="color:#c4b5fd">experiment review</a> page,
+  lives on the <a href="experiment_review.html" style="color:var(--series-2)">experiment review</a> page,
   with per-horizon comparison graphs and Diebold–Mariano significance tests.</p>
+  </details>
 </section>
 
-<div class="range-bar">
-  <span class="muted">window:</span>
-  <button class="chip" data-span="3600">1h</button>
-  <button class="chip on" data-span="10800">3h</button>
-  <button class="chip" data-span="21600">6h</button>
-  <button class="chip" data-span="0">all</button>
-  <button class="chip on" id="follow-btn">● live</button>
-  <span class="muted">scroll to zoom · drag to pan</span>
-</div>
+<section>
+  <h2>Predictions vs actual</h2>
+  <p class="sub muted small">Grey line is the actual price; colored lines are each
+  arm's committed prediction for that minute. Hollow dots are pending targets.</p>
+  <div class="range-bar" style="margin-top:12px">
+    <span class="htabs">
+      <button class="chip htab" data-h="1">+1 min</button>
+      <button class="chip htab on" data-h="5">+5 min</button>
+      <button class="chip htab" data-h="15">+15 min</button>
+      <button class="chip htab" data-h="30">+30 min</button>
+    </span>
+    <span class="muted">|</span>
+    <button class="chip" data-span="3600">1h</button>
+    <button class="chip on" data-span="10800">3h</button>
+    <button class="chip" data-span="21600">6h</button>
+    <button class="chip" data-span="0">all</button>
+    <button class="chip on" id="follow-btn">● live</button>
+    <span class="muted">scroll to zoom · drag to pan</span>
+  </div>
+  <div id="horizon-sections"></div>
+</section>
 
-<div id="horizon-sections"></div>
+<section>
+  <h2>Is it learning?</h2>
+  <p class="sub muted small">Every 5 minutes the model and a "do nothing" baseline
+  predict the same target; whoever lands closer wins the slot. The line accumulates
+  the <b>dollars of accuracy gained (or given up) vs doing nothing</b> — rising means
+  learning is converting into value. Ticks mark hourly retrains.</p>
+  <div id="learn-skill"></div>
+  <p class="mini" id="learn-verdict"></p>
+</section>
 
-
-
-<footer id="foot">Polling every 5s…</footer>
+<footer><span id="foot">Polling every 5s…</span><br>
+  <span class="mini">Q-updates <b id="qupd">–</b> · retrains <b id="retrains">–</b> ·
+    overfit gate <b id="gate">–</b> · data <b id="fresh">–</b></span></footer>
 </main>
 <div id="tip"></div>
 
@@ -401,13 +422,10 @@ const fmtTime = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
   { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
     hour12: false });
 
-// One shared graph for all three horizons, then one ledger block per horizon.
+// One tab panel per horizon; only the active horizon is shown.
 document.getElementById("horizon-sections").innerHTML = `
 ` + T1_HORIZONS.map(h => `
-<section style="margin-top:22px">
-  <h2>+${h} min <span class="arm-tag treatment">every 5 min · all arms</span></h2>
-  <p class="sub muted">Actual price at minute t (grey) vs each arm's prediction for
-  minute t, committed ${h} min earlier. Hollow dots are pending targets.</p>
+<div class="hsec" data-hsec="${h}"${h === 5 ? "" : " hidden"}>
   <div class="legend">
     <span><span class="sw line"></span>actual</span>
     <span><span class="sw" style="background:var(--series-1)"></span>ctl (tabular Q)</span>
@@ -423,14 +441,23 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-h${h}"></div>
-  <p class="mini" id="mini-h${h}"></p>
+  <div class="scorechips" id="mini-h${h}"></div>
+  <details style="margin-top:10px"><summary>Prediction ledger (+${h} min)</summary>
   <div class="scroll ledger-scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
     <th class="num">80% band</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
-</section>`).join("");
+  </details>
+</div>`).join("");
+
+document.querySelectorAll(".htab").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".htab").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll(".hsec").forEach(d => {
+    d.hidden = d.dataset.hsec !== b.dataset.h;
+  });
+}));
 
 // shared zoom/pan state across all three graphs
 const view = { span: 10800, end: null };   // end=null → follow latest
@@ -585,18 +612,23 @@ function ledgerRows(preds) {
 }
 
 function stats(preds) {
-  const one = arm => {
-    const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
-    if (!sc.length) return `${arm}: no scored predictions yet`;
-    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-    const banded = sc.filter(p => p.in_band != null);
-    const cov = banded.length
-      ? ` · band ${(100 * banded.filter(p => p.in_band).length / banded.length).toFixed(0)}%`
-      : "";
-    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
-  };
-  return ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"]
-    .map(one).join("   |   ");
+  // ranked scorecard chips: best trailing MAE first
+  const rows = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"]
+    .map(arm => {
+      const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
+      if (sc.length < 5) return null;
+      const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+      const banded = sc.filter(p => p.in_band != null);
+      const cov = banded.length
+        ? Math.round(100 * banded.filter(p => p.in_band).length / banded.length) + "%"
+        : "–";
+      return { arm, mae, cov, n: sc.length };
+    }).filter(Boolean).sort((a, b) => a.mae - b.mae);
+  return rows.map((r, i) =>
+    `<span class="scorechip${i === 0 ? " lead" : ""}" title="${r.arm}: ` +
+    `${r.n} scored · MAE $${Math.round(r.mae)} · 80% band coverage ${r.cov}">` +
+    `<i style="background:${ARM_COLOR[r.arm] || "var(--faint)"}"></i>` +
+    `${r.arm} $${Math.round(r.mae)} · ${r.cov}</span>`).join("");
 }
 
 function draw() {
@@ -607,7 +639,7 @@ function draw() {
       const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
       document.getElementById(`chart-h${h}`).innerHTML =
         chartHorizon(prices, hp.filter(p => armOf(p) !== "agg"), h);
-      document.getElementById(`mini-h${h}`).textContent = stats(hp);
+      document.getElementById(`mini-h${h}`).innerHTML = stats(hp);
       document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp);
     } catch (e) {  // one bad section must not blank the others
       document.getElementById(`mini-h${h}`).textContent = "render error: " + e.message;
