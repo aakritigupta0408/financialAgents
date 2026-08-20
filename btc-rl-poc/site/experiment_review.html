@@ -171,22 +171,89 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
 
 <div class="sect">System architecture</div>
 <div class="panel">
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:stretch;font-size:12.5px">
-    <div style="flex:1;min-width:150px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
-      <b style="color:#fff">Open streams</b><br><span class="muted">Coinbase 1m bars · L2 book · trades (ticks) · Kraken/Bitstamp/Gemini · OKX funding · Deribit basis · mempool · Fear&amp;Greed · RSS→CryptoBERT · Kalshi market</span></div>
-    <div style="align-self:center;color:#64748b">→</div>
-    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
-      <b style="color:#fff">Features</b><br><span class="muted">10 base · 3 trend · 5 live · 2 book · 3 LLM · 4 order-flow · 60-step sequence — 30s snapshots, point-in-time joins</span></div>
-    <div style="align-self:center;color:#64748b">→</div>
-    <div style="flex:1;min-width:150px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
-      <b style="color:#fff">Arms (RL)</b><br><span class="muted">control (tabular Q) · t2 LinUCB · t6 +live features · t7 linear-Q · t8 dist-MLP · t9 LSTM · baselines: persistence, chart-replay · vol-scaled actions, gated learning</span></div>
-    <div style="align-self:center;color:#64748b">→</div>
-    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
-      <b style="color:#fff">Ledger</b><br><span class="muted">every prediction + 80% interval, scored at maturity; consensus polls per horizon; leakage-guarded backfill</span></div>
-    <div style="align-self:center;color:#64748b">→</div>
-    <div style="flex:1;min-width:130px;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px">
-      <b style="color:#fff">Dashboards</b><br><span class="muted">live predictions · this review (DM tests, coverage) · training curves · backtest</span></div>
-  </div>
+<svg viewBox="0 0 940 470" role="img" aria-label="system architecture"
+     style="width:100%;height:auto;display:block;font:11.5px ui-sans-serif,system-ui">
+  <defs>
+    <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
+      markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#64748b"/></marker>
+  </defs>
+
+  <!-- Row 1: sources -->
+  <g>
+    <rect x="10" y="8" width="256" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="10" y="8" width="4" height="62" rx="2" fill="#38bdf8"/>
+    <text x="24" y="26" fill="#fff" font-weight="700">Market data</text>
+    <text x="24" y="42" fill="#94a3b8">Coinbase 1m bars · L2 book · trades/ticks</text>
+    <text x="24" y="57" fill="#94a3b8">Kraken · Bitstamp · Gemini (BRTI composite)</text>
+
+    <rect x="286" y="8" width="256" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="286" y="8" width="4" height="62" rx="2" fill="#fbbf24"/>
+    <text x="300" y="26" fill="#fff" font-weight="700">Derivatives &amp; on-chain</text>
+    <text x="300" y="42" fill="#94a3b8">OKX funding · Deribit perp basis</text>
+    <text x="300" y="57" fill="#94a3b8">mempool fees · hash rate</text>
+
+    <rect x="562" y="8" width="248" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="562" y="8" width="4" height="62" rx="2" fill="#a78bfa"/>
+    <text x="576" y="26" fill="#fff" font-weight="700">Text &amp; prediction markets</text>
+    <text x="576" y="42" fill="#94a3b8">RSS → CryptoBERT sentiment · Fear&amp;Greed</text>
+    <text x="576" y="57" fill="#94a3b8">Robinhood/Kalshi BTC-15m (CF BRTI)</text>
+  </g>
+  <line x1="138" y1="70" x2="138" y2="94" stroke="#64748b" marker-end="url(#arr)"/>
+  <line x1="414" y1="70" x2="414" y2="94" stroke="#64748b" marker-end="url(#arr)"/>
+  <line x1="686" y1="70" x2="686" y2="94" stroke="#64748b" marker-end="url(#arr)"/>
+
+  <!-- Row 2: features -->
+  <rect x="10" y="98" width="800" height="52" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="98" width="4" height="52" rx="2" fill="#f472b6"/>
+  <text x="24" y="117" fill="#fff" font-weight="700">Feature snapshots — every 30 s, point-in-time joins (no lookahead)</text>
+  <text x="24" y="136" fill="#94a3b8">10 base (returns · vol · RSI · EMA · volume · F&amp;G) + 3 trend + 5 live streams + 2 order book + 3 LLM + 4 order-flow + 60-step return sequence</text>
+  <line x1="410" y1="150" x2="410" y2="174" stroke="#64748b" marker-end="url(#arr)"/>
+
+  <!-- Row 3: arms -->
+  <rect x="10" y="178" width="800" height="92" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="178" width="4" height="92" rx="2" fill="#34d399"/>
+  <text x="24" y="197" fill="#fff" font-weight="700">RL arms — predict every 5 min at +1 / +5 / +15 / +30 · actions = k × live σ_h (|k| ≤ 1.5)</text>
+  <g font-weight="600">
+    <rect x="24" y="208" width="106" height="24" rx="8" fill="rgba(148,163,184,.12)"/>
+    <text x="32" y="224" fill="#94a3b8">baselines · rp</text>
+    <rect x="138" y="208" width="92" height="24" rx="8" fill="rgba(148,163,184,.14)"/>
+    <text x="146" y="224" fill="#e2e8f0">ctl tabular Q</text>
+    <rect x="238" y="208" width="86" height="24" rx="8" fill="rgba(167,139,250,.15)"/>
+    <text x="246" y="224" fill="#c4b5fd">t2 LinUCB</text>
+    <rect x="332" y="208" width="118" height="24" rx="8" fill="rgba(56,189,248,.15)"/>
+    <text x="340" y="224" fill="#7dd3fc">t6 +live features</text>
+    <rect x="458" y="208" width="94" height="24" rx="8" fill="rgba(251,113,133,.15)"/>
+    <text x="466" y="224" fill="#fda4af">t7 linear-Q</text>
+    <rect x="560" y="208" width="98" height="24" rx="8" fill="rgba(251,191,36,.15)"/>
+    <text x="568" y="224" fill="#fde68a">t8 dist-MLP</text>
+    <rect x="666" y="208" width="82" height="24" rx="8" fill="rgba(244,114,182,.15)"/>
+    <text x="674" y="224" fill="#f9a8d4">t9 LSTM</text>
+  </g>
+  <text x="24" y="256" fill="#64748b">offline gate before deployment · duplicates retired (t3/t4/t5) · adaptive bias intercept (capped ±0.5σ)</text>
+  <line x1="410" y1="270" x2="410" y2="294" stroke="#64748b" marker-end="url(#arr)"/>
+
+  <!-- Row 4: ledger -->
+  <rect x="10" y="298" width="800" height="56" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="298" width="4" height="56" rx="2" fill="#fb7185"/>
+  <text x="24" y="317" fill="#fff" font-weight="700">Prediction ledger</text>
+  <text x="24" y="336" fill="#94a3b8">every prediction + 80% interval → scored at maturity · skill-weighted consensus per horizon · leakage-guarded backfill · era-split debugging</text>
+  <line x1="410" y1="354" x2="410" y2="378" stroke="#64748b" marker-end="url(#arr)"/>
+
+  <!-- learning feedback loop -->
+  <path d="M 810 326 C 900 326, 900 224, 815 224" fill="none"
+        stroke="#34d399" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#arr)"/>
+  <text x="928" y="262" fill="#6ee7b7" text-anchor="end" transform="rotate(-90 928 262)"
+        font-weight="600">learning loop</text>
+  <text x="866" y="286" fill="#64748b" font-size="10.5">per-slot update</text>
+  <text x="866" y="300" fill="#64748b" font-size="10.5">hourly replay,</text>
+  <text x="866" y="314" fill="#64748b" font-size="10.5">gate + revert</text>
+
+  <!-- Row 5: dashboards -->
+  <rect x="10" y="382" width="800" height="56" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="382" width="4" height="56" rx="2" fill="#c4b5fd"/>
+  <text x="24" y="401" fill="#fff" font-weight="700">Dashboards</text>
+  <text x="24" y="420" fill="#94a3b8">live predictions (bands · learning staircase · Kalshi tracker) · experiment review (DM tests · coverage) · training curves · 120-day backtest</text>
+</svg>
 </div>
 
 <div class="sect">The arms — architecture · features · reward · sampling</div>
