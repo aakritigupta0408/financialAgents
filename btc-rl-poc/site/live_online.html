@@ -155,6 +155,8 @@ td { border-bottom: 1px solid var(--grid); padding: 7px 12px 7px 0;
 td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
 .pill { font-size: 11.5px; font-weight: 600; padding: 2px 9px;
   border-radius: 999px; }
+.pill.yes { color: var(--good-text); background: rgba(43,217,126,.10); }
+.pill.no { color: var(--down); background: rgba(255,93,93,.10); }
 .pill.hit { color: var(--good-text); background: rgba(43,217,126,.10); }
 .pill.miss { color: var(--muted); background: rgba(124,134,149,.12); }
 .pill.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
@@ -320,6 +322,24 @@ details[open] > summary { margin-bottom: 6px; }
   </details>
 </section>
 </div>
+
+<section>
+  <h2>One bet per window</h2>
+  <p class="sub muted small">Every 15-minute Kalshi window gets exactly one paper bet
+  (entry under 85&cent;, settled at close). The arm chooses its moment — striking on
+  edge, on a closing door, or forced in the final minutes.</p>
+  <div class="statusbar" style="margin-top:12px">
+    <div class="stat"><div class="k">Record</div><div class="bignum" id="bet-rec">–</div></div>
+    <div class="stat"><div class="k">P&amp;L</div><div class="bignum" id="bet-pnl">–</div></div>
+    <div class="stat"><div class="k">Avg entry</div><div class="bignum" id="bet-entry">–</div></div>
+    <div class="stat"><div class="k">Chosen · forced</div><div class="bignum" id="bet-mix">–</div></div>
+  </div>
+  <div class="scroll" style="margin-top:6px"><table id="bet-tbl">
+    <thead><tr><th>Window</th><th>Bet</th><th class="num">Entry</th>
+      <th>Struck</th><th class="num">Model P</th><th class="num">Result</th></tr></thead>
+    <tbody><tr><td colspan="6" class="muted">first window pending…</td></tr></tbody>
+  </table></div>
+</section>
 
 <section>
   <details>
@@ -805,6 +825,40 @@ function miniLine(seriesList, opts) {
   return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
 }
 
+function drawBets(bets) {
+  if (!bets.length) return;
+  const done = bets.filter(b => b.actual != null);
+  const wins = done.filter(b => b.win).length;
+  const pnl = done.reduce((a, b) => a + b.pnl_c, 0);
+  const forcedN = bets.filter(b => b.forced).length;
+  document.getElementById("bet-rec").textContent =
+    done.length ? `${wins}–${done.length - wins}` : "0–0";
+  const pnlEl = document.getElementById("bet-pnl");
+  pnlEl.textContent = `${pnl >= 0 ? "+" : "−"}${Math.abs(pnl).toFixed(0)}¢`;
+  pnlEl.style.color = pnl > 0 ? "var(--up)" : pnl < 0 ? "var(--down)" : "";
+  document.getElementById("bet-entry").textContent =
+    Math.round(bets.reduce((a, b) => a + b.price_c, 0) / bets.length) + "¢";
+  document.getElementById("bet-mix").textContent =
+    `${bets.length - forcedN} · ${forcedN}`;
+  const why = b => b.forced ? "forced"
+    : b.edge_c >= 5 ? `edge +${Math.round(b.edge_c)}¢`
+    : b.price_c >= 75 ? "door" : "edge";
+  document.querySelector("#bet-tbl tbody").innerHTML =
+    bets.slice(-12).reverse().map(b => {
+      const res = b.actual == null
+        ? '<span class="pill pending">pending</span>'
+        : b.win
+          ? `<b style="color:var(--up)">+${(100 - b.price_c).toFixed(0)}¢</b>`
+          : `<b style="color:var(--down)">−${b.price_c.toFixed(1)}¢</b>`;
+      return `<tr><td>${fmtTime(b.close_ts)}</td>` +
+        `<td><span class="pill ${b.side}">${b.side.toUpperCase()}</span></td>` +
+        `<td class="num">${b.price_c.toFixed(1)}¢</td>` +
+        `<td class="muted">${b.mins_left}m left · ${why(b)}</td>` +
+        `<td class="num">${Math.round(100 * b.p_model)}%</td>` +
+        `<td class="num">${res}</td></tr>`;
+    }).join("");
+}
+
 function drawLearning(preds, learnLog) {
   const sc = preds.filter(p => p.variant === "consensus" && p.horizon === 5
     && p.actual != null).sort((a, b) => a.target_ts - b.target_ts);
@@ -869,18 +923,25 @@ function drawLearning(preds, learnLog) {
 
 async function poll() {
   try {
-    const [pxRes, plRes, sRes, llRes, kbRes] = await Promise.all([
+    const [pxRes, plRes, sRes, llRes, kbRes, betRes] = await Promise.all([
       fetch("../results/recent_prices.json", { cache: "no-store" }),
       fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
       fetch("../results/online_status.json", { cache: "no-store" }),
       fetch("../results/learning_log.jsonl", { cache: "no-store" }),
       fetch("../results/kalshi_binary_log.jsonl", { cache: "no-store" }),
+      fetch("../results/kb_bets.jsonl", { cache: "no-store" }),
     ]);
     const kbRows = [];
     if (kbRes.ok) for (const line of (await kbRes.text()).split("\n")) {
       if (!line.trim()) continue;
       try { kbRows.push(JSON.parse(line)); } catch {}
     }
+    const betRows = [];
+    if (betRes.ok) for (const line of (await betRes.text()).split("\n")) {
+      if (!line.trim()) continue;
+      try { betRows.push(JSON.parse(line)); } catch {}
+    }
+    try { drawBets(betRows); } catch {}
     const learnLog = [];
     if (llRes.ok) for (const line of (await llRes.text()).split("\n")) {
       if (!line.trim()) continue;
