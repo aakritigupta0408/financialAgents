@@ -292,6 +292,8 @@ details[open] > summary { margin-bottom: 6px; }
     <div class="stat"><div class="k">Hit rate</div><div class="bignum" id="kb-acc">–</div></div>
     <div class="stat"><div class="k">Our Brier</div><div class="bignum" id="kb-brier">–</div></div>
     <div class="stat"><div class="k">Market Brier</div><div class="bignum" id="kb-mkt">–</div></div>
+    <div class="stat"><div class="k">This window's bet</div><div class="bignum" id="kb-bet">–</div></div>
+    <div class="stat"><div class="k">One-bet record · P&amp;L</div><div class="bignum" id="kb-bet-pnl">–</div></div>
   </div>
   <details style="margin-top:12px"><summary>Call history &amp; contract detail</summary>
     <div class="statusbar" style="margin-top:12px">
@@ -304,7 +306,9 @@ details[open] > summary { margin-bottom: 6px; }
     60-second BRTI average at window close beats the window open. The kb arm calls it
     every minute — P(close &ge; strike) from t8's predicted distribution, calibrated per
     window phase. Brier (squared probability error, lower is better) scores us against
-    the crowd on identical windows.</p>
+    the crowd on identical windows. <b>Betting rule</b> (matches the broker): one bet
+    per window, entry only under 85&cent;, settled at close — the simulator spends it
+    the first minute the model sees &ge;5&cent; of edge over the quoted price.</p>
     <div class="scroll" style="margin-top:8px"><table id="kb-tbl">
       <thead><tr><th>window close</th><th>strike</th><th>called with</th>
         <th>our P(up)</th><th>market P(up)</th><th>call</th><th>outcome</th><th>Brier</th></tr></thead>
@@ -995,6 +999,16 @@ async function poll() {
           kbS?.brier != null ? kbS.brier.toFixed(3) : "collecting…";
         document.getElementById("kb-mkt").textContent =
           kbS?.mkt_brier != null ? kbS.mkt_brier.toFixed(3) : "no quotes yet";
+        const bS = status.kb_bets;
+        const lastBet = bS?.last;
+        document.getElementById("kb-bet").textContent =
+          lastBet && lastBet.actual == null && lastBet.ticker === status.pm?.ticker
+            ? `${lastBet.side.toUpperCase()} @ ${Math.round(lastBet.price_c)}¢`
+            : "no edge yet";
+        document.getElementById("kb-bet-pnl").textContent = bS?.settled
+          ? `${bS.wins}–${bS.settled - bS.wins} · ` +
+            `${bS.pnl_c >= 0 ? "+" : "−"}${Math.abs(bS.pnl_c).toFixed(0)}¢`
+          : "collecting…";
         if (kbRows.length) {
           document.querySelector("#kb-tbl tbody").innerHTML =
             kbRows.slice(-16).reverse().map(r => {

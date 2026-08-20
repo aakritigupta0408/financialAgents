@@ -232,6 +232,10 @@ CAL_TRAIL = 50                 # scored rows per arm used to pick the winner
 KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
                                # probability row doesn't fit the ledger schema
 KB_MAX_ROWS = 20_000
+KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
+KB_BET_MAX_PRICE_C = 85        # broker rule: entries only below 85 cents
+KB_BET_EDGE_C = 5              # min model-vs-market edge (cents) to spend
+                               # the window's single allowed bet
 HF_LOG_NAME = "human_feedback.jsonl"  # scripts/feedback.py appends here
 HF_WEIGHT = 0.15               # RLHF blend: comparable to DIR_BONUS so the
                                # human tilts learning but can't drown the
@@ -392,6 +396,30 @@ def _load_kb() -> list[dict]:
         except json.JSONDecodeError:
             continue
     return rows
+
+
+def _load_kb_bets() -> list[dict]:
+    path = RESULTS_DIR / KB_BET_LOG_NAME
+    if not path.exists():
+        return []
+    rows = []
+    for line in path.read_text().splitlines():
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows
+
+
+def _kb_bets_summary(bets: list[dict]) -> dict | None:
+    if not bets:
+        return None
+    done = [b for b in bets if b["actual"] is not None]
+    out = {"n": len(bets), "settled": len(done), "last": bets[-1]}
+    if done:
+        out["wins"] = sum(b["win"] for b in done)
+        out["pnl_c"] = round(sum(b["pnl_c"] for b in done), 1)
+    return out
 
 
 def _kb_summary(kb: list[dict]) -> dict | None:
@@ -804,6 +832,8 @@ def run(once: bool = False) -> None:
             for r in ledger}
     kb = _load_kb()
     kb_made = {(r["ticker"], r["made_ts"]) for r in kb}
+    kb_bets = _load_kb_bets()
+    kb_bet_tickers = {b["ticker"] for b in kb_bets}
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -1098,6 +1128,56 @@ def run(once: bool = False) -> None:
                 tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
                 tmp.replace(RESULTS_DIR / KB_LOG_NAME)
 
+            # 1e. the ONE paper bet per window the broker allows: entry only
+            #     under 85c, settled at close. The first minute where the
+            #     calibrated model sees >= KB_BET_EDGE_C cents of edge over
+            #     the quoted price spends the window's single bet.
+            bets_changed = False
+            if (pm_mkt and pm_mkt.get("strike") and k_close_ts
+                    and pm_mkt["ticker"] not in kb_bet_tickers
+                    and k_close_ts - now_ts >= 60):
+                yb, ya = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
+                p_now = next((r["p_up"] for r in reversed(kb)
+                              if r["ticker"] == pm_mkt["ticker"]), None)
+                if p_now is not None and yb and ya:
+                    cands = []
+                    if ya < KB_BET_MAX_PRICE_C:
+                        cands.append(("yes", ya, 100 * p_now - ya))
+                    no_price = 100 - yb
+                    if no_price < KB_BET_MAX_PRICE_C:
+                        cands.append(("no", no_price,
+                                      100 * (1 - p_now) - no_price))
+                    best = max(cands, key=lambda c: c[2], default=None)
+                    if best and best[2] >= KB_BET_EDGE_C:
+                        kb_bets.append({
+                            "ticker": pm_mkt["ticker"], "made_ts": now_ts,
+                            "close_ts": k_close_ts,
+                            "strike": pm_mkt["strike"],
+                            "side": best[0], "price_c": round(best[1], 1),
+                            "edge_c": round(best[2], 1),
+                            "p_model": p_now,
+                            "mins_left": round((k_close_ts - now_ts) / 60, 1),
+                            "actual": None, "win": None, "pnl_c": None,
+                        })
+                        kb_bet_tickers.add(pm_mkt["ticker"])
+                        bets_changed = True
+            for b in kb_bets:
+                if b["actual"] is not None or now_ts < b["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(b["close_ts"] - 60)
+                if settle_bar is None:
+                    continue
+                outcome = int(settle_bar["close"] >= b["strike"])
+                b["actual"] = outcome
+                b["win"] = int((b["side"] == "yes") == bool(outcome))
+                b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
+                                   else -b["price_c"], 1)
+                bets_changed = True
+            if bets_changed:
+                tmp = (RESULTS_DIR / KB_BET_LOG_NAME).with_suffix(".tmp")
+                tmp.write_text("".join(json.dumps(b) + "\n" for b in kb_bets))
+                tmp.replace(RESULTS_DIR / KB_BET_LOG_NAME)
+
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
             hf_rows = _load_hf()  # human views for t11's blended reward
@@ -1167,6 +1247,7 @@ def run(once: bool = False) -> None:
                 "brti": brti,
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "kalshi_binary": _kb_summary(kb),
+                "kb_bets": _kb_bets_summary(kb_bets),
                 "human_feedback": {"n": len(hf_rows),
                                    "last": hf_rows[-1] if hf_rows else None},
                 "live_features": snap,
