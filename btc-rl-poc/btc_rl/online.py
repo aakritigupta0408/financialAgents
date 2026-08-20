@@ -585,6 +585,7 @@ def run(once: bool = False) -> None:
     retrain_info: dict = {}
     retrains = 0
     online_updates = 0
+    warmed_this_session: set[str] = set()
     started = time.time()
     print(f"experiment runner up — arms: {', '.join(VARIANTS)}")
 
@@ -642,6 +643,7 @@ def run(once: bool = False) -> None:
             # 0b. cold-start: warm a fresh bandit up on recent history so its
             #     first real bets aren't pure exploration
             if cold_bandits:
+                warmed_this_session.update(cold_bandits)
                 warm_eps = build_episodes({"warm": bars}, {"warm": None})
                 for v in sorted(cold_bandits):
                     vspec = VARIANTS[v]
@@ -671,6 +673,11 @@ def run(once: bool = False) -> None:
             for variant, spec in VARIANTS.items():
                 step = spec["predict_every"]
                 first = ((now_ts - BACKFILL_HOURS * 3600) // step + 1) * step
+                if variant in warmed_this_session:
+                    # LEAKAGE GUARD: this arm warm-trained on the recent
+                    # window — backfilling those same slots would be
+                    # train-on-test. Live slots only.
+                    first = max(first, (int(started) // step + 1) * step)
                 for slot_ts in range(first, now_ts + 1, step):
                     if ((variant, slot_ts, spec["horizons"][0]) in made
                             or slot_ts not in by_ts):
@@ -678,10 +685,15 @@ def run(once: bool = False) -> None:
                     upto = [b for b in bars if b["ts"] <= slot_ts]
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
+                    live_slot = slot_ts >= int(started)
                     rows = _predict_at(variant, arms[variant], upto, fng,
                                        slot_ts, spec["horizons"], spec=spec,
                                        snap=_nearest_snap(snaps, slot_ts),
-                                       bias=bias, bands=bands)
+                                       # LEAKAGE GUARD: bias/band maps are
+                                       # built from the ledger as of NOW, so
+                                       # they only apply to live commits
+                                       bias=bias if live_slot else None,
+                                       bands=bands if live_slot else None)
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
