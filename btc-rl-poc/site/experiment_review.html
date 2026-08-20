@@ -170,6 +170,21 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
   </table></div>
 </div>
 
+<div class="sect">Scoreboard, plotted</div>
+<div class="panel"><h3>Direction accuracy</h3>
+  <p class="sub">Sign accuracy among slots where the arm predicted a move.
+  Dashed 50% = coin flip · solid 55% = target.</p>
+  <div id="q-dir"></div></div>
+<div class="panel"><h3>80% band coverage</h3>
+  <p class="sub">Share of actuals inside each arm's 80% interval — well-calibrated ≈ the 80% line
+  (below = overconfident, far above = wastefully wide).</p>
+  <div id="q-cov"></div></div>
+<div class="panel"><h3>Replay index</h3>
+  <p class="sub">How much of the prediction is the last price carried forward
+  (100% = pure chart copy — persistence by construction). Lower = more genuine prediction;
+  rp sits near 0% because it copies the <i>move</i>, not the price.</p>
+  <div id="q-replay"></div></div>
+
 <div class="sect">System architecture</div>
 <div class="panel">
 <svg viewBox="0 0 940 470" role="img" aria-label="system architecture"
@@ -451,6 +466,50 @@ function offlineBlock(metrics, agentKey) {
   return `<b>${agentKey}</b> (120-day held-out test):<br>${rowsOf(agentKey)}<br><span class="muted">${ref}</span>`;
 }
 
+function pctChart(preds, metric, refs) {
+  const order = ["ctl", "t2", "t6", "t7", "t8", "t9", "agg", "rp"];
+  const groups = [];
+  for (const h of [1, 5, 15, 30]) {
+    const bars = [];
+    for (const key of order) {
+      const arm = ARMS.find(a => a.key === key);
+      if (!arm) continue;
+      const st = onlineStats(preds, arm.variants).find(x => x.h === h);
+      if (!st) continue;
+      const v = metric(st);
+      if (v == null) continue;
+      bars.push({ key, color: arm.color, v: 100 * v, n: st.n });
+    }
+    if (bars.length) groups.push({ h, bars });
+  }
+  if (!groups.length) return '<p class="sub">collecting…</p>';
+  const W = 900, H = 250, L = 50, R = 12, T = 12, B = 40;
+  const Y = v => T + (1 - v / 100) * (H - T - B);
+  const gw = (W - L - R) / groups.length;
+  let g = "";
+  for (let v = 0; v <= 100; v += 25)
+    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(255,255,255,.06)"/>` +
+      `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v}%</text>`;
+  for (const ref of refs)
+    g += `<line x1="${L}" y1="${Y(ref.v).toFixed(1)}" x2="${W - R}" y2="${Y(ref.v).toFixed(1)}" ` +
+      `stroke="${ref.color}" stroke-width="1.5"${ref.dash ? ' stroke-dasharray="5 4"' : ""}/>` +
+      `<text x="${W - R}" y="${(Y(ref.v) - 5).toFixed(1)}" text-anchor="end" style="fill:${ref.color};font-size:10.5px">${ref.label}</text>`;
+  groups.forEach((grp, gi) => {
+    const x0 = L + gi * gw + 10;
+    const bw = (gw - 20) / grp.bars.length;
+    grp.bars.forEach((b, bi) => {
+      const x = x0 + bi * bw, y = Y(b.v);
+      g += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}" ` +
+        `height="${(H - B - y).toFixed(1)}" rx="4" fill="${b.color}" fill-opacity="0.9">` +
+        `<title>${b.key} +${grp.h}m: ${b.v.toFixed(0)}% (n=${b.n})</title></rect>`;
+    });
+    g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 26}" ` +
+      `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
+  });
+  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(255,255,255,.22)"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+
 async function poll() {
   try {
     const [mRes, pRes] = await Promise.all([
@@ -490,6 +549,13 @@ async function poll() {
         `<span><span class="dot" style="background:${a.color}"></span>${a.key}</span>`
       ).join("");
     document.getElementById("graph-rel").innerHTML = groupedChart(preds);
+    document.getElementById("q-dir").innerHTML = pctChart(preds, st => st.dir,
+      [{ v: 50, color: "rgba(255,255,255,.5)", dash: true, label: "coin flip 50%" },
+       { v: 55, color: "#6ee7b7", label: "target 55%" }]);
+    document.getElementById("q-cov").innerHTML = pctChart(preds, st => st.cov,
+      [{ v: 80, color: "#6ee7b7", label: "well-calibrated 80%" }]);
+    document.getElementById("q-replay").innerHTML = pctChart(preds, st => st.replay,
+      [{ v: 100, color: "rgba(255,255,255,.5)", dash: true, label: "pure copy 100%" }]);
 
     let sb = "";
     for (const arm of ARMS) {
