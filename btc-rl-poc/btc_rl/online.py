@@ -355,6 +355,32 @@ def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
         return None
 
 
+def _kb_phase(mins_left: float) -> str:
+    return "early" if mins_left >= 10 else "mid" if mins_left >= 5 else "late"
+
+
+def _kb_cal_weights(kb: list[dict]) -> dict:
+    """Per-phase calibration of kb's P(up): shrink toward 0.5 by a weight
+    fit on the phase's own settled calls (least squares in centered coords,
+    w = cov(p-.5, y-.5) / var(p-.5), clamped to [0, 1.2]). Eval showed the
+    early window at Brier 0.32 — worse than always saying 50% — while late
+    calls were sharp; this learns exactly how much early confidence to keep.
+    w=1 (no change) until a phase has 20 settled calls; raw p is preserved
+    per row so refits always see uncalibrated inputs."""
+    out = {}
+    for ph in ("early", "mid", "late"):
+        rows = [r for r in kb if r["actual"] is not None
+                and _kb_phase(r["mins_left"]) == ph][-400:]
+        if len(rows) < 20:
+            out[ph] = 1.0
+            continue
+        num = sum((r.get("p_raw", r["p_up"]) - 0.5) * (r["actual"] - 0.5)
+                  for r in rows)
+        den = sum((r.get("p_raw", r["p_up"]) - 0.5) ** 2 for r in rows)
+        out[ph] = max(0.0, min(1.2, num / den)) if den > 1e-9 else 1.0
+    return out
+
+
 def _load_kb() -> list[dict]:
     path = RESULTS_DIR / KB_LOG_NAME
     if not path.exists():
@@ -1035,13 +1061,16 @@ def run(once: bool = False) -> None:
                 p = _kb_p_up(arms, kfeat, snap,
                              pm_mkt["strike"], base, mins_left)
                 if p is not None:
+                    w = _kb_cal_weights(kb)[_kb_phase(mins_left)]
+                    p_cal = round(0.5 + w * (p - 0.5), 4)
                     kb.append({
                         "variant": "kb", "ticker": pm_mkt["ticker"],
                         "made_ts": slot1, "close_ts": k_close_ts,
                         "strike": pm_mkt["strike"],
                         "base": round(base, 2),
                         "mins_left": round(mins_left, 1),
-                        "p_up": p, "call": int(p >= 0.5),
+                        "p_up": p_cal, "p_raw": p, "cal_w": round(w, 3),
+                        "call": int(p_cal >= 0.5),
                         "mkt_p_up": k_pup,
                         "actual": None, "hit": None,
                     })
@@ -1050,7 +1079,10 @@ def run(once: bool = False) -> None:
             for r in kb:
                 if r["actual"] is not None or now_ts < r["close_ts"]:
                     continue
-                settle_bar = by_ts.get(r["close_ts"])
+                # bars are keyed by bucket START: the final minute of the
+                # window is bucket close_ts-60, whose close lands exactly at
+                # the close — bar[close_ts] would settle a minute late
+                settle_bar = by_ts.get(r["close_ts"] - 60)
                 if settle_bar is None:
                     continue
                 outcome = int(settle_bar["close"] >= r["strike"])

@@ -56,6 +56,22 @@ for h in (1, 5, 15, 30):
     print()
 
 print("=" * 100)
+print("2b. DIRECTION PAPER P&L — $1 notional on the predicted direction each")
+print("    moved slot; cumulative return in bps (scored slots only, post-hoc)")
+for h in (1, 5, 15, 30):
+    line = f"  +{h:>2}m: "
+    for fam in ("h", "t2-h", "t6-h", "t7-h", "t8-h", "t9-h", "t10-h"):
+        g = [r for r in sc if r["variant"] == vname(fam, h) and r["delta"]]
+        if len(g) < 15:
+            continue
+        rets = [(1 if r["delta"] > 0 else -1)
+                * (r["actual"] - r["price_now"]) / r["price_now"] * 1e4
+                for r in g]
+        line += (f"{fam.rstrip('-h') or 'ctl'} {sum(rets):+.0f} "
+                 f"({sum(rets)/len(rets):+.1f}/slot, n={len(g)})  ")
+    print(line)
+
+print("=" * 100)
 print("3. CALIBRATION — 80% band coverage (target 80%)")
 for fam in FAMS:
     g = [r for r in sc if r["variant"].startswith(fam if fam != "h" else "h")
@@ -145,3 +161,26 @@ if gates:
     for a, hh, d in worst:
         print(f"    best gate delta: {a} {hh} "
               f"{d['val_mae_before']:.0f}→{d['val_mae_after']:.0f}")
+
+print("=" * 100)
+print("8. VERDICT WATCH — treatments with 300+ scored slots that trail control")
+print("   by >10% on identical slots are retire candidates (t3/t4/t5 precedent)")
+flagged = 0
+for h in (1, 5, 15, 30):
+    base = {r["made_ts"]: r["abs_err"] for r in sc if r["variant"] == vname("h", h)}
+    for fam in ("t2-h", "t6-h", "t7-h", "t8-h", "t9-h", "t10-h", "t11-h", "cal-h"):
+        g = [r for r in sc if r["variant"] == vname(fam, h)
+             and r["made_ts"] in base]
+        if len(g) < 300:
+            continue
+        mae = sum(r["abs_err"] for r in g) / len(g)
+        cmae = sum(base[r["made_ts"]] for r in g) / len(g)
+        if mae > 1.10 * cmae:
+            flagged += 1
+            print(f"  RETIRE CANDIDATE: {vname(fam, h)} — ${mae:.0f} vs "
+                  f"control ${cmae:.0f} on {len(g)} shared slots")
+if not flagged:
+    biggest = max(len([r for r in sc if r["variant"] == vname("t2-h", h)])
+                  for h in (1, 5, 15, 30))
+    print(f"  none flagged yet — largest treatment sample is {biggest} slots "
+          "(verdict window: 300)")

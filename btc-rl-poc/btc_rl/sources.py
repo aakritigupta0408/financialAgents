@@ -187,10 +187,36 @@ def fetch_kalshi_btc15() -> dict | None:
         if not ms:
             return None
         m = ms[0]
+        yes_bid, yes_ask = m.get("yes_bid"), m.get("yes_ask")
+        if not yes_bid or not yes_ask:
+            # markets endpoint often carries no quotes — derive the touch
+            # from the orderbook (best yes bid; best no bid => 100 - yes ask)
+            try:
+                raw = _session.get(
+                    "https://api.elections.kalshi.com/trade-api/v2/markets/"
+                    f"{m['ticker']}/orderbook",
+                    params={"depth": 1}, timeout=8).json()
+                book = raw.get("orderbook") or raw.get("orderbook_fp") or {}
+                if "yes_dollars" in book or "no_dollars" in book:
+                    yes_lvls = [float(p) * 100 for p, _ in
+                                book.get("yes_dollars") or []]
+                    no_lvls = [float(p) * 100 for p, _ in
+                               book.get("no_dollars") or []]
+                else:  # legacy shape: integer-cent [price, qty] levels
+                    yes_lvls = [lvl[0] for lvl in book.get("yes") or []]
+                    no_lvls = [lvl[0] for lvl in book.get("no") or []]
+                # resting YES buys: best bid = highest; resting NO buys
+                # imply the YES ask at 100 - best no bid
+                if yes_lvls:
+                    yes_bid = yes_bid or round(max(yes_lvls), 1)
+                if no_lvls:
+                    yes_ask = yes_ask or round(100 - max(no_lvls), 1)
+            except Exception:
+                pass
         return {"ticker": m["ticker"], "title": m.get("title"),
                 "strike": m.get("floor_strike"),
                 "close_time": m.get("close_time"),
-                "yes_bid": m.get("yes_bid"), "yes_ask": m.get("yes_ask"),
+                "yes_bid": yes_bid, "yes_ask": yes_ask,
                 "last_price": m.get("last_price")}
     except Exception:
         return None
