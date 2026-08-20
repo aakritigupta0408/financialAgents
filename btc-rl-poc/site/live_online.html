@@ -228,9 +228,11 @@ function chartHorizon(prices, preds, h) {
   const scored = preds.filter(p => p.actual != null)
     .sort((a, b) => a.target_ts - b.target_ts);
   const color = H_COLOR[h];
+  // NB: colors go in style="", not presentation attributes — var() is
+  // invalid in SVG attributes and silently renders stroke:none / black.
   if (scored.length > 80) {
     // dense stream (1-min): a line reads, dots don't
-    g += `<path class="predline" stroke="${color}" d="${scored.map((p, i) =>
+    g += `<path class="predline" style="stroke:${color}" d="${scored.map((p, i) =>
       `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
     for (let i = 0; i < scored.length; i += 5)  // sparse hover targets
       g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="7" data-tip="${tipText(scored[i])}"/>`;
@@ -239,11 +241,11 @@ function chartHorizon(prices, preds, h) {
     for (const p of scored) {
       const x = f.X(p.target_ts), y = f.Y(p.pred);
       g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${f.Y(p.actual)}"/>` +
-        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${color}" data-tip="${tipText(p)}"/>`;
+        `<circle class="pt" cx="${x}" cy="${y}" r="4.5" style="fill:${color}" data-tip="${tipText(p)}"/>`;
     }
   }
   for (const p of preds.filter(p => p.actual == null))
-    g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" stroke="${color}" data-tip="${tipText(p)}"/>`;
+    g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" style="stroke:${color}" data-tip="${tipText(p)}"/>`;
   return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="+${h} min predicted vs actual">${g}</svg>`;
 }
 
@@ -273,10 +275,14 @@ function draw() {
   const { prices, preds } = latest;
   const t0 = prices.length ? prices[0].ts : 0;
   for (const h of T1_HORIZONS) {
-    const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
-    document.getElementById(`chart-h${h}`).innerHTML = chartHorizon(prices, hp, h);
-    document.getElementById(`mini-h${h}`).textContent = stats(hp);
-    document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
+    try {
+      const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
+      document.getElementById(`chart-h${h}`).innerHTML = chartHorizon(prices, hp, h);
+      document.getElementById(`mini-h${h}`).textContent = stats(hp);
+      document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp, false);
+    } catch (e) {  // one bad section must not blank the other three
+      document.getElementById(`mini-h${h}`).textContent = "render error: " + e.message;
+    }
   }
   attachTips();
 }

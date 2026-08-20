@@ -61,7 +61,7 @@ def bar_group_svg(rows: list[tuple[str, dict]], key: str, fmt, unit: str,
             w = max(2, v / vmax * (width - left - 70))
             parts.append(
                 f'<rect class="bar" x="{left}" y="{y}" width="{w:.1f}" height="{bar_h}" '
-                f'rx="4" fill="{H_COLOR[h]}" data-tip="{html.escape(label)} · {H_LABEL[h]}: {fmt(v)}"/>'
+                f'rx="4" style="fill:{H_COLOR[h]}" data-tip="{html.escape(label)} · {H_LABEL[h]}: {fmt(v)}"/>'
                 f'<text x="{left + w + 8:.1f}" y="{y + bar_h - 4}" class="val">{fmt(v)}</text>')
             y += bar_h + gap
         mid = (group_top + y - gap) / 2 + 4
@@ -86,7 +86,7 @@ def hist_svg(hist: dict[str, int], color: str, title: str) -> str:
         x = 10 + i * bw
         parts.append(
             f'<rect class="bar" x="{x:.1f}" y="{height - bottom - bh:.1f}" width="{max(1.5, bw - 2):.1f}" '
-            f'height="{bh:.1f}" rx="2" fill="{color}" data-tip="[{k}, {k + 25}): {v} episodes"/>')
+            f'height="{bh:.1f}" rx="2" style="fill:{color}" data-tip="[{k}, {k + 25}): {v} episodes"/>')
         if k % 200 == 0:
             parts.append(f'<text x="{x:.1f}" y="{height - 8}" class="tick">{k:+d}</text>')
     zero_i = next((i for i, (k, _) in enumerate(bins) if k == 0), None)

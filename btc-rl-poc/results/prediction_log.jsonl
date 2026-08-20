@@ -357,7 +357,7 @@
 {"variant": "h1", "made_ts": 1787201640, "target_ts": 1787201700, "horizon": 1, "price_now": 69472.31, "pred": 69475, "delta": 3, "state": [2, 2, 1, 2], "actual": 69448.96, "abs_err": 26.04, "hit": false}
 {"variant": "h1", "made_ts": 1787201700, "target_ts": 1787201760, "horizon": 1, "price_now": 69448.96, "pred": 69446, "delta": -2, "state": [1, 2, 1, 1], "actual": 69457.5, "abs_err": 11.5, "hit": false}
 {"variant": "h1", "made_ts": 1787201760, "target_ts": 1787201820, "horizon": 1, "price_now": 69457.5, "pred": 69460, "delta": 3, "state": [2, 2, 1, 2], "actual": 69457.39, "abs_err": 2.61, "hit": false}
-{"variant": "h1", "made_ts": 1787201820, "target_ts": 1787201880, "horizon": 1, "price_now": 69457.39, "pred": 69457, "delta": 0, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h1", "made_ts": 1787201820, "target_ts": 1787201880, "horizon": 1, "price_now": 69457.39, "pred": 69457, "delta": 0, "state": [1, 2, 1, 2], "actual": 69463.12, "abs_err": 6.12, "hit": false}
 {"variant": "h5", "made_ts": 1787180400, "target_ts": 1787180700, "horizon": 5, "price_now": 69195.62, "pred": 69174, "delta": -21, "state": [1, 1, 1, 1], "actual": 69274.64, "abs_err": 100.64, "hit": false}
 {"variant": "h5", "made_ts": 1787180700, "target_ts": 1787181000, "horizon": 5, "price_now": 69274.64, "pred": 69308, "delta": 34, "state": [2, 1, 2, 1], "actual": 69282.09, "abs_err": 25.91, "hit": false}
 {"variant": "h5", "made_ts": 1787181000, "target_ts": 1787181300, "horizon": 5, "price_now": 69282.09, "pred": 69282, "delta": 0, "state": [1, 2, 1, 1], "actual": 69362.38, "abs_err": 80.38, "hit": false}
@@ -429,7 +429,7 @@
 {"variant": "h5", "made_ts": 1787200800, "target_ts": 1787201100, "horizon": 5, "price_now": 69267, "pred": 69266, "delta": -1, "state": [2, 1, 0, 1], "actual": 69331.64, "abs_err": 65.64, "hit": false}
 {"variant": "h5", "made_ts": 1787201100, "target_ts": 1787201400, "horizon": 5, "price_now": 69331.64, "pred": 69318, "delta": -13, "state": [2, 1, 1, 2], "actual": 69417.64, "abs_err": 99.64, "hit": false}
 {"variant": "h5", "made_ts": 1787201400, "target_ts": 1787201700, "horizon": 5, "price_now": 69417.64, "pred": 69430, "delta": 13, "state": [2, 2, 1, 2], "actual": 69448.96, "abs_err": 18.96, "hit": false}
-{"variant": "h5", "made_ts": 1787201700, "target_ts": 1787202000, "horizon": 5, "price_now": 69448.96, "pred": 69448, "delta": 0, "state": [1, 2, 1, 1], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h5", "made_ts": 1787201700, "target_ts": 1787202000, "horizon": 5, "price_now": 69448.96, "pred": 69448, "delta": 0, "state": [1, 2, 1, 1], "actual": 69453.02, "abs_err": 5.02, "hit": false}
 {"variant": "h15", "made_ts": 1787180400, "target_ts": 1787181300, "horizon": 15, "price_now": 69195.62, "pred": 69203, "delta": 8, "state": [1, 1, 1, 1], "actual": 69362.38, "abs_err": 159.38, "hit": false}
 {"variant": "h15", "made_ts": 1787181300, "target_ts": 1787182200, "horizon": 15, "price_now": 69362.38, "pred": 69364, "delta": 2, "state": [2, 2, 1, 1], "actual": 69336.35, "abs_err": 27.65, "hit": false}
 {"variant": "h15", "made_ts": 1787182200, "target_ts": 1787183100, "horizon": 15, "price_now": 69336.35, "pred": 69341, "delta": 5, "state": [2, 1, 1, 1], "actual": 69216.77, "abs_err": 124.23, "hit": false}
@@ -453,7 +453,7 @@
 {"variant": "h15", "made_ts": 1787198400, "target_ts": 1787199300, "horizon": 15, "price_now": 69133.74, "pred": 69154, "delta": 21, "state": [1, 0, 1, 1], "actual": 69304.37, "abs_err": 150.37, "hit": false}
 {"variant": "h15", "made_ts": 1787199300, "target_ts": 1787200200, "horizon": 15, "price_now": 69304.37, "pred": 69325, "delta": 21, "state": [1, 2, 1, 2], "actual": 69289.92, "abs_err": 35.08, "hit": false}
 {"variant": "h15", "made_ts": 1787200200, "target_ts": 1787201100, "horizon": 15, "price_now": 69289.92, "pred": 69297, "delta": 8, "state": [1, 1, 1, 1], "actual": 69331.64, "abs_err": 34.64, "hit": false}
-{"variant": "h15", "made_ts": 1787201100, "target_ts": 1787202000, "horizon": 15, "price_now": 69331.64, "pred": 69336, "delta": 5, "state": [2, 1, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h15", "made_ts": 1787201100, "target_ts": 1787202000, "horizon": 15, "price_now": 69331.64, "pred": 69336, "delta": 5, "state": [2, 1, 1, 2], "actual": 69453.02, "abs_err": 117.02, "hit": false}
 {"variant": "h30", "made_ts": 1787180400, "target_ts": 1787182200, "horizon": 30, "price_now": 69195.62, "pred": 69140, "delta": -55, "state": [1, 1, 1, 1], "actual": 69336.35, "abs_err": 196.35, "hit": false}
 {"variant": "h30", "made_ts": 1787182200, "target_ts": 1787184000, "horizon": 30, "price_now": 69336.35, "pred": 69341, "delta": 5, "state": [2, 1, 1, 1], "actual": 69349.14, "abs_err": 8.14, "hit": false}
 {"variant": "h30", "made_ts": 1787184000, "target_ts": 1787185800, "horizon": 30, "price_now": 69349.14, "pred": 69370, "delta": 21, "state": [2, 2, 1, 1], "actual": 69522.55, "abs_err": 152.55, "hit": false}
@@ -465,4 +465,12 @@
 {"variant": "h30", "made_ts": 1787194800, "target_ts": 1787196600, "horizon": 30, "price_now": 69184.87, "pred": 69150, "delta": -34, "state": [0, 0, 1, 1], "actual": 68941.95, "abs_err": 208.05, "hit": false}
 {"variant": "h30", "made_ts": 1787196600, "target_ts": 1787198400, "horizon": 30, "price_now": 68941.95, "pred": 68933, "delta": -8, "state": [1, 0, 1, 1], "actual": 69133.74, "abs_err": 200.74, "hit": false}
 {"variant": "h30", "made_ts": 1787198400, "target_ts": 1787200200, "horizon": 30, "price_now": 69133.74, "pred": 69125, "delta": -8, "state": [1, 0, 1, 1], "actual": 69289.92, "abs_err": 164.92, "hit": false}
-{"variant": "h30", "made_ts": 1787200200, "target_ts": 1787202000, "horizon": 30, "price_now": 69289.92, "pred": 69234, "delta": -55, "state": [1, 1, 1, 1], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h30", "made_ts": 1787200200, "target_ts": 1787202000, "horizon": 30, "price_now": 69289.92, "pred": 69234, "delta": -55, "state": [1, 1, 1, 1], "actual": 69453.02, "abs_err": 219.02, "hit": false}
+{"variant": "h1", "made_ts": 1787201880, "target_ts": 1787201940, "horizon": 1, "price_now": 69463.12, "pred": 69463, "delta": 0, "state": [1, 2, 1, 2], "actual": 69456.29, "abs_err": 6.71, "hit": false}
+{"variant": "h1", "made_ts": 1787201940, "target_ts": 1787202000, "horizon": 1, "price_now": 69456.29, "pred": 69456, "delta": 0, "state": [1, 2, 1, 2], "actual": 69453.02, "abs_err": 2.98, "hit": false}
+{"variant": "h1", "made_ts": 1787202000, "target_ts": 1787202060, "horizon": 1, "price_now": 69453.02, "pred": 69453, "delta": 0, "state": [1, 2, 1, 2], "actual": 69460.52, "abs_err": 7.52, "hit": false}
+{"variant": "h5", "made_ts": 1787202000, "target_ts": 1787202300, "horizon": 5, "price_now": 69453.02, "pred": 69453, "delta": 0, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h15", "made_ts": 1787202000, "target_ts": 1787202900, "horizon": 15, "price_now": 69453.02, "pred": 69474, "delta": 21, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h30", "made_ts": 1787202000, "target_ts": 1787203800, "horizon": 30, "price_now": 69453.02, "pred": 69440, "delta": -13, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}
+{"variant": "h1", "made_ts": 1787202060, "target_ts": 1787202120, "horizon": 1, "price_now": 69460.52, "pred": 69460, "delta": 0, "state": [1, 2, 1, 2], "actual": 69458.68, "abs_err": 1.32, "hit": false}
+{"variant": "h1", "made_ts": 1787202120, "target_ts": 1787202180, "horizon": 1, "price_now": 69458.68, "pred": 69458, "delta": 0, "state": [1, 2, 1, 2], "actual": null, "abs_err": null, "hit": null}

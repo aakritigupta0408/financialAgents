@@ -177,9 +177,9 @@ function lineChart(rowsByKey, field, opts) {
     if (!rows.length) continue;
     const vals = smoothSeries(rows.map(r => r[field]));
     const d = vals.map((v, i) => `${i ? "L" : "M"}${X(rows[i].epoch).toFixed(1)},${Y(v).toFixed(1)}`).join("");
-    g += `<path class="series" d="${d}" stroke="${s.color}" ${s.dash ? `stroke-dasharray="${s.dash}"` : ""}/>`;
+    g += `<path class="series" d="${d}" style="stroke:${s.color}" ${s.dash ? `stroke-dasharray="${s.dash}"` : ""}/>`;
     const last = rows[rows.length - 1], lv = vals[vals.length - 1];
-    g += `<circle class="endpt" cx="${X(last.epoch)}" cy="${Y(lv)}" r="4" fill="${s.color}">` +
+    g += `<circle class="endpt" cx="${X(last.epoch)}" cy="${Y(lv)}" r="4" style="fill:${s.color}">` +
          `<title>${s.label} — epoch ${last.epoch}: ${opts.fmt(last[field])}</title></circle>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${field} by epoch">${g}</svg>`;
