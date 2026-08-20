@@ -6,79 +6,98 @@
 <meta http-equiv="cache-control" content="no-store">
 <title>BTC 7PM Oracle — Always Training</title>
 <style>
-/* Production dark design system — matches experiment_review.html */
+/* Ticker-desk design system — Robinhood canvas, Kalshi market cards.
+   Flat surfaces, no filters/gradients; system stack; tabular numerals. */
 * { box-sizing: border-box; margin: 0; }
 :root {
-  --page: #0b0a1a; --surface: rgba(255,255,255,.04);
-  --ink: #f8fafc; --ink-2: #cbd5e1; --muted: #94a3b8; --faint: #64748b;
-  --grid: rgba(255,255,255,.07); --axis: rgba(255,255,255,.22);
-  --border: rgba(255,255,255,.10);
-  --series-1: #94a3b8; --series-2: #a78bfa; --series-3: #f472b6;
-  --series-4: #fbbf24; --series-5: #34d399; --series-6: #38bdf8;
-  --series-7: #fb7185; --series-8: #a3e635; --series-9: #e879f9;
-  --series-10: #5eead4;
-  --good: #34d399; --good-text: #6ee7b7; --critical: #f87171;
+  --page: #0b0d10; --surface: #12151b; --surface-2: #191d25;
+  --ink: #f2efe6; --ink-2: #b3afa2; --muted: #837f74; --faint: #5d5a51;
+  --display: Didot, "Didot LT STD", "Bodoni 72", "Bodoni MT",
+             "Iowan Old Style", Georgia, serif;
+  --grid: rgba(255,255,255,.05); --axis: rgba(255,255,255,.18);
+  --border: rgba(255,255,255,.07);
+  /* categorical arm palette — validated (CVD + contrast) for dark surface;
+     baselines are neutral by design: ctl = series-1 gray, rp = faint */
+  --series-1: #aeb6c2; --series-2: #3987e5; --series-3: #d55181;
+  --series-4: #c98500; --series-5: #2fb59a; --series-6: #d95926;
+  --series-7: #199e70; --series-8: #008300; --series-9: #9085e9;
+  --series-10: #e66767;
+  /* reserved status colors — price/YES/NO only, never a series */
+  --up: #2bd97e; --down: #ff5d5d;
+  --good: #2bd97e; --good-text: #5fe8a0; --critical: #ff5d5d;
 }
 body { min-height: 100vh; overflow-x: hidden; background: var(--page);
   color: var(--ink);
   font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 48px 20px 96px; }
-.bg-fx { position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background:
-    radial-gradient(circle at top left, rgba(167,139,250,.18), transparent 26%),
-    radial-gradient(circle at 85% 15%, rgba(244,114,182,.16), transparent 26%),
-    radial-gradient(circle at 50% 100%, rgba(251,191,36,.10), transparent 30%); }
-.bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: .3;
-  background-image:
-    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
-  background-size: 72px 72px; }
-main { position: relative; z-index: 1; max-width: 72rem; margin: 0 auto;
-  display: flex; flex-direction: column; gap: 20px; }
-.hero { border-radius: 2rem; border: 1px solid var(--border);
-  background: linear-gradient(140deg, rgba(20,18,40,.88), rgba(11,10,26,.72));
-  box-shadow: 0 30px 90px rgba(4,12,19,.42); backdrop-filter: blur(24px);
-  padding: 32px 36px; }
+  padding: 40px 20px 96px; }
+main { max-width: 72rem; margin: 0 auto;
+  display: flex; flex-direction: column; gap: 18px; }
+/* ── ticker hero ───────────────────────────────────────────── */
+.ticker { display: flex; align-items: center; justify-content: space-between;
+  gap: 28px; flex-wrap: wrap; padding: 8px 4px 18px;
+  border-bottom: 1px solid var(--border); }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px;
-  border-radius: 999px; border: 1px solid rgba(167,139,250,.30);
-  background: rgba(167,139,250,.10); padding: 7px 15px; font-size: 12px;
-  font-weight: 600; text-transform: uppercase; letter-spacing: .22em;
-  color: #ede9fe; }
-h1 { margin-top: 16px; font-size: clamp(1.9rem, 4vw, 2.8rem); font-weight: 900;
-  line-height: 1.12; color: #fff; }
-h1 .grad { display: block;
-  background: linear-gradient(90deg, #c4b5fd, #fbcfe8, #fde68a);
-  -webkit-background-clip: text; background-clip: text; color: transparent; }
-h2 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .18em; color: var(--muted); }
+.price-big { font-size: clamp(2.6rem, 6vw, 4rem); font-weight: 650;
+  letter-spacing: -.02em; line-height: 1.05; margin-top: 10px;
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.price-big.tick-up { animation: flash-up 1.1s ease-out; }
+.price-big.tick-down { animation: flash-down 1.1s ease-out; }
+@keyframes flash-up { 0%, 35% { color: var(--up); } }
+@keyframes flash-down { 0%, 35% { color: var(--down); } }
+.delta { margin-top: 4px; font-size: 15px; font-weight: 600;
+  font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.delta.up { color: var(--up); } .delta.down { color: var(--down); }
+.t-sub { margin-top: 10px; max-width: 56ch; font-size: 13.5px;
+  color: var(--muted); }
+.t-right { display: flex; align-items: center; gap: 16px; }
+.ring { width: 128px; height: auto; margin: 0; }
+.ring-bg { fill: none; stroke: var(--surface-2); stroke-width: 8; }
+.ring-fg { fill: none; stroke: var(--up); stroke-width: 8;
+  stroke-linecap: round; transform: rotate(-90deg);
+  transform-origin: 60px 60px; transition: stroke-dashoffset .6s ease; }
+#ring-p { font-size: 26px; font-weight: 650; fill: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.ring-cap { font-size: 9.5px; letter-spacing: .14em; text-transform: uppercase;
+  fill: var(--muted); }
+.ring-meta { font-size: 13px; color: var(--ink-2); line-height: 1.45;
+  font-variant-numeric: tabular-nums; }
+h1 { font-size: 1rem; font-weight: 700; color: var(--ink); }
+h2 { font: 500 19px/1.3 var(--display); letter-spacing: .012em;
+  color: var(--ink); margin-bottom: 2px; }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 4px 0 0; }
-.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .btn { display: inline-flex; align-items: center; gap: 8px;
-  border-radius: 999px; border: 1px solid var(--border);
-  background: rgba(255,255,255,.05); padding: 7px 15px; font-size: 13.5px;
-  color: var(--ink-2); text-decoration: none; }
-.btn:hover { background: rgba(255,255,255,.10); }
+  border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); padding: 6px 14px; font-size: 13px;
+  font-weight: 600; color: var(--ink-2); text-decoration: none; }
+.btn:hover { background: var(--surface-2); color: var(--ink); }
+.btn:focus-visible, .chip:focus-visible { outline: 2px solid var(--series-2);
+  outline-offset: 2px; }
 section { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 1.6rem; padding: 22px 24px; backdrop-filter: blur(6px); }
+  border-radius: 14px; padding: 20px 22px; }
 .statusbar { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.live-dot { width: 10px; height: 10px; border-radius: 50%;
-  background: var(--good); animation: pulse 1.4s ease-in-out infinite; }
+.live-dot { width: 9px; height: 9px; border-radius: 50%;
+  background: var(--up); animation: pulse 1.6s ease-in-out infinite; }
 .live-dot.stale { animation: none; background: var(--faint); }
-@keyframes pulse { 50% { opacity: .25; } }
-@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
-.stat .k { font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
-  color: var(--faint); font-weight: 600; }
-.bignum { font-size: 21px; font-weight: 700; color: #fff;
+@keyframes pulse { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) {
+  .live-dot, .price-big.tick-up, .price-big.tick-down { animation: none; }
+  .ring-fg { transition: none; } }
+.stat .k { font-size: 10.5px; text-transform: uppercase; letter-spacing: .12em;
+  color: var(--muted); font-weight: 600; }
+.bignum { font-size: 20px; font-weight: 650; color: var(--ink);
   font-variant-numeric: tabular-nums; }
-.consensus-num { font-size: 34px; font-weight: 800; color: #fff;
-  font-variant-numeric: tabular-nums; }
+.consensus-num { font-size: 34px; font-weight: 650; letter-spacing: -.01em;
+  color: var(--ink); font-variant-numeric: tabular-nums; }
 .arm-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: .1em; padding: 3px 10px; border-radius: 999px;
+  letter-spacing: .1em; padding: 3px 10px; border-radius: 6px;
   vertical-align: 2px; border: 1px solid var(--border); color: var(--ink-2);
-  background: rgba(255,255,255,.05); }
-.arm-tag.agg { color: #c4b5fd; border-color: rgba(167,139,250,.35);
-  background: rgba(167,139,250,.10); }
-.arm-tag.treatment { color: var(--good-text); border-color: rgba(52,211,153,.3);
-  background: rgba(52,211,153,.08); }
+  background: var(--surface-2); }
+.arm-tag.agg { color: var(--ink); border-color: rgba(255,255,255,.2); }
+.arm-tag.treatment { color: var(--good-text);
+  border-color: rgba(43,217,126,.3); background: rgba(43,217,126,.07); }
 .arm-tag.control { color: var(--series-1); }
 .arm-tag.t2 { color: var(--series-2); }
 .arm-tag.t6 { color: var(--series-6); }
@@ -99,9 +118,8 @@ section { background: var(--surface); border: 1px solid var(--border);
 .chip { font: 600 13px ui-sans-serif, system-ui; color: var(--ink-2);
   background: rgba(255,255,255,.04); border: 1px solid var(--border);
   border-radius: 999px; padding: 5px 14px; cursor: pointer; }
-.chip.on { color: #fff; border-color: rgba(167,139,250,.45);
-  background: rgba(167,139,250,.14); }
-.chip:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
+.chip.on { color: var(--ink); border-color: var(--series-2);
+  background: rgba(57,135,229,.14); }
 svg { width: 100%; height: auto; display: block; margin-top: 8px; }
 .chart-box svg { cursor: crosshair; touch-action: none; }
 .chart-box { user-select: none; -webkit-user-select: none; }
@@ -115,8 +133,8 @@ svg .actual { fill: none; stroke: var(--ink-2); stroke-width: 2;
 svg .predline { fill: none; stroke-width: 2; stroke-linejoin: round;
   stroke-linecap: round; }
 svg .stem { stroke: var(--faint); stroke-width: 1.5; opacity: .7; }
-svg .pt { stroke: #0b0a1a; stroke-width: 1.5; }
-svg .pt-pending { fill: #0b0a1a; stroke-width: 2; }
+svg .pt { stroke: var(--page); stroke-width: 1.5; }
+svg .pt-pending { fill: var(--page); stroke-width: 2; }
 svg .hover-pt { fill: transparent; stroke: none; }
 svg .hover-pt:hover { fill: #fff; fill-opacity: .35; }
 svg .xhair { stroke: #fff; stroke-width: 1; stroke-dasharray: 2 3;
@@ -126,7 +144,7 @@ svg .xhair { stroke: #fff; stroke-width: 1; stroke-dasharray: 2 3;
 .scroll { overflow-x: auto; }
 .ledger-scroll { max-height: 430px; overflow-y: auto; }
 .ledger-scroll thead th { position: sticky; top: 0;
-  background: #14122a; z-index: 1; }
+  background: var(--surface-2); z-index: 1; }
 table { border-collapse: collapse; width: 100%; font-size: 13px;
   min-width: 680px; margin-top: 10px; }
 th { text-align: left; font-size: 11px; text-transform: uppercase;
@@ -137,9 +155,9 @@ td { border-bottom: 1px solid var(--grid); padding: 7px 12px 7px 0;
 td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
 .pill { font-size: 11.5px; font-weight: 600; padding: 2px 9px;
   border-radius: 999px; }
-.pill.hit { color: var(--good-text); background: rgba(52,211,153,.12); }
-.pill.miss { color: var(--muted); background: rgba(148,163,184,.12); }
-.pill.pending { color: #c4b5fd; background: rgba(167,139,250,.12); }
+.pill.hit { color: var(--good-text); background: rgba(43,217,126,.10); }
+.pill.miss { color: var(--muted); background: rgba(124,134,149,.12); }
+.pill.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
 .card { display: grid; grid-template-columns: 140px 1fr; gap: 8px 18px;
   font-size: 13.5px; }
 .card dt { color: var(--faint); font-size: 11px; text-transform: uppercase;
@@ -147,35 +165,85 @@ td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
 .card dd { margin: 0; color: var(--ink-2); line-height: 1.65; }
 .card dd b { color: #fff; }
 .muted { color: var(--muted); }
-#tip { position: fixed; pointer-events: none; background: #f8fafc;
-  color: #0b0a1a; font-size: 12.5px; padding: 6px 10px; border-radius: 8px;
+#tip { position: fixed; pointer-events: none; background: var(--ink);
+  color: var(--page); font-size: 12.5px; padding: 6px 10px; border-radius: 8px;
   opacity: 0; transition: opacity .1s; z-index: 10; max-width: 300px; }
 footer { color: var(--faint); font-size: 12.5px; }
-@media (max-width: 640px) { .card { grid-template-columns: 1fr; gap: 2px; } }
+/* mascot: bull when the live call is UP, bear when DOWN */
+.mascot { width: 64px; height: auto; margin: 0; }
+.mascot .hidden { display: none; }
+.mascot-bubble { font-size: 11px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; text-align: center; margin-top: 2px; }
+.mascot-bubble.up { color: var(--up); } .mascot-bubble.down { color: var(--down); }
+@media (max-width: 640px) { .card { grid-template-columns: 1fr; gap: 2px; }
+  .ticker { gap: 14px; } .t-right { width: 100%; justify-content: flex-start; } }
 </style>
 </head>
 <body>
-<div class="bg-fx"></div>
-<div class="bg-grid"></div>
 <main>
-<div class="hero">
-  <div class="eyebrow">✦ Live A/B experiment · reinforcement learning</div>
-  <h1>BTC 7PM Oracle
-    <span class="grad">Live predictions, minute by minute</span></h1>
-  <p class="sub">Four RL treatments, a frozen control, and two naive baselines predict Bitcoin's price at +5, +15 and +30 minutes,
-  every five minutes, against the persistence and chart-replay baselines. Each
-  prediction carries a calibrated 80% interval; models learn from every scored slot
-  behind hold-out safety gates. All times US Pacific.</p>
-  <div class="btns">
-    <a class="btn" href="experiment_review.html">Experiment review</a>
-    <a class="btn" href="live_training.html">Training curves</a>
-    <a class="btn" href="index.html">Batch backtest</a>
+<header class="ticker">
+  <div class="t-left">
+    <div class="eyebrow"><span class="live-dot" id="dot"></span>
+      Live · BTC-USD ·
+      <span style="font: italic 500 15px var(--display); letter-spacing: .02em;
+        text-transform: none; color: var(--ink-2)">BTC 7PM Oracle</span></div>
+    <div class="price-big" id="price">–</div>
+    <div class="delta" id="price-delta">loading…</div>
+    <p class="t-sub">Eight learning arms, a frozen control and two naive baselines
+    call Bitcoin's price at +1/+5/+15/+30 minutes, every five minutes, with 80%
+    bands — and a YES/NO call on the live Kalshi 15-minute contract every minute.
+    Times US Pacific.</p>
+    <nav class="btns">
+      <a class="btn" href="experiment_review.html">Experiment review</a>
+      <a class="btn" href="live_training.html">Training curves</a>
+      <a class="btn" href="index.html">Batch backtest</a>
+    </nav>
   </div>
-</div>
+  <div class="t-right">
+    <div>
+      <svg class="mascot" viewBox="0 0 64 60" role="img" aria-label="market mood mascot">
+        <g id="mascot-bull">
+          <path d="M10 14 Q4 4 12 5 Q18 6 17 13" fill="#2bd97e" opacity=".85"/>
+          <path d="M54 14 Q60 4 52 5 Q46 6 47 13" fill="#2bd97e" opacity=".85"/>
+          <ellipse cx="32" cy="32" rx="22" ry="20" fill="#1d2a22" stroke="#2bd97e" stroke-width="2"/>
+          <circle cx="24" cy="28" r="3.4" fill="#eef1f6"/>
+          <circle cx="40" cy="28" r="3.4" fill="#eef1f6"/>
+          <circle cx="25" cy="29" r="1.6" fill="#0b0d10"/>
+          <circle cx="41" cy="29" r="1.6" fill="#0b0d10"/>
+          <ellipse cx="32" cy="42" rx="9" ry="6" fill="#2bd97e" opacity=".9"/>
+          <circle cx="29" cy="42" r="1.3" fill="#0b0d10"/>
+          <circle cx="35" cy="42" r="1.3" fill="#0b0d10"/>
+          <path d="M26 36 Q32 40 38 36" stroke="#eef1f6" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </g>
+        <g id="mascot-bear" class="hidden">
+          <circle cx="13" cy="12" r="6" fill="#3a2b2b" stroke="#ff5d5d" stroke-width="1.6"/>
+          <circle cx="51" cy="12" r="6" fill="#3a2b2b" stroke="#ff5d5d" stroke-width="1.6"/>
+          <ellipse cx="32" cy="32" rx="22" ry="20" fill="#2a2020" stroke="#ff5d5d" stroke-width="2"/>
+          <circle cx="24" cy="28" r="3.4" fill="#eef1f6"/>
+          <circle cx="40" cy="28" r="3.4" fill="#eef1f6"/>
+          <circle cx="24" cy="30" r="1.6" fill="#0b0d10"/>
+          <circle cx="40" cy="30" r="1.6" fill="#0b0d10"/>
+          <ellipse cx="32" cy="40" rx="8" ry="6" fill="#4a3535"/>
+          <circle cx="32" cy="38" r="2.2" fill="#0b0d10"/>
+          <path d="M27 46 Q32 43 37 46" stroke="#eef1f6" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg>
+      <div class="mascot-bubble" id="mascot-say">–</div>
+    </div>
+    <svg class="ring" viewBox="0 0 120 120" role="img"
+         aria-label="minutes left in the current Kalshi 15-minute window">
+      <circle class="ring-bg" cx="60" cy="60" r="52"/>
+      <circle class="ring-fg" id="ring-fg" cx="60" cy="60" r="52"/>
+      <text id="ring-p" x="60" y="58" text-anchor="middle">–</text>
+      <text x="60" y="76" text-anchor="middle" class="ring-cap">our P(up)</text>
+    </svg>
+    <div class="ring-meta"><b id="ring-close">–</b><br>
+      <span class="muted">window closes</span><br>
+      <span class="muted" id="ring-left"></span></div>
+  </div>
+</header>
 
 <section class="statusbar">
-  <div class="live-dot" id="dot"></div>
-  <div class="stat"><div class="k">BTC (Coinbase 1m)</div><div class="bignum" id="price">–</div></div>
   <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
   <div class="stat"><div class="k">Direction (goal &gt;55%)</div><div class="bignum" id="t-dir">–</div></div>
@@ -527,7 +595,8 @@ function stats(preds) {
       : "";
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
   };
-  return [one("ctl"), one("rp"), one("t2"), one("t6"), one("t7"), one("t8"), one("t9")].join("   |   ");
+  return ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"]
+    .map(one).join("   |   ");
 }
 
 function draw() {
@@ -694,7 +763,7 @@ function drawLearning(preds, learnLog) {
     if (learnLog[i].retrains > learnLog[i - 1].retrains)
       marks.push(learnLog[i].ts);
   let svg = miniLine(
-    [{ label: "cumulative $ gained vs doing nothing", color: "#a78bfa", pts }],
+    [{ label: "cumulative $ gained vs doing nothing", color: "#3987e5", pts }],
     { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(Math.round(v)).toLocaleString(),
       zero: true, h: 220 });
   if (marks.length && svg.startsWith("<svg")) {
@@ -773,6 +842,42 @@ async function poll() {
           .map(([n, p]) => `${n}: $${Math.round(p).toLocaleString()}`).join(" · ") +
           " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
       } else { brtiEl.textContent = "–"; }
+      // ticker: flash on tick, 5-min delta, window ring, mascot mood
+      const pxN = Math.round(status.price_now);
+      const pxEl = document.getElementById("price");
+      if (pxEl.dataset.v && +pxEl.dataset.v !== pxN) {
+        pxEl.classList.remove("tick-up", "tick-down"); void pxEl.offsetWidth;
+        pxEl.classList.add(pxN > +pxEl.dataset.v ? "tick-up" : "tick-down");
+      }
+      pxEl.dataset.v = pxN;
+      const dEl = document.getElementById("price-delta");
+      const ago5 = prices.length > 5 ? prices[prices.length - 6].c : null;
+      if (dEl && ago5) {
+        const d = status.price_now - ago5;
+        dEl.textContent = `${d >= 0 ? "▲" : "▼"} $${Math.abs(d).toFixed(0)} ` +
+          `(${(100 * Math.abs(d) / ago5).toFixed(2)}%) past 5 min`;
+        dEl.className = "delta " + (d >= 0 ? "up" : "down");
+      }
+      const kbl = status.kalshi_binary?.last;
+      const rf = document.getElementById("ring-fg");
+      if (rf && kbl) {
+        const left = Math.max(0, Math.min(1, (kbl.close_ts - Date.now() / 1000) / 900));
+        const C = 2 * Math.PI * 52;
+        rf.style.strokeDasharray = C;
+        rf.style.strokeDashoffset = C * (1 - left);
+        document.getElementById("ring-p").textContent =
+          Math.round(100 * kbl.p_up) + "%";
+        document.getElementById("ring-close").textContent =
+          fmtTime(kbl.close_ts) + " PST";
+        document.getElementById("ring-left").textContent =
+          left > 0 ? Math.ceil(left * 15) + " min left" : "settling…";
+        const up = kbl.p_up >= 0.5;
+        document.getElementById("mascot-bull").classList.toggle("hidden", !up);
+        document.getElementById("mascot-bear").classList.toggle("hidden", up);
+        const say = document.getElementById("mascot-say");
+        say.textContent = up ? "bullish" : "bearish";
+        say.className = "mascot-bubble " + (up ? "up" : "down");
+      }
       const cons = status.consensus;
       if (cons) {
         document.getElementById("cons-when").textContent =
