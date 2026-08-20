@@ -194,6 +194,10 @@ SIGMA_FLOOR = 5.0              # $ floor for the per-horizon vol estimate
 BIAS_WINDOW = 30               # trailing scored rows for online bias correction
                                # (~2.5h at 5-min cadence — reacts to trends
                                # the 50-row window lagged badly)
+CAL_VARIANT = "cal-h15"        # calibrated-winner meta-arm (+15m only)
+CAL_WINDOW = 30                # trailing scored residuals the calibrator sees
+CAL_MIN = 10                   # need this many residuals before correcting
+CAL_TRAIL = 50                 # scored rows per arm used to pick the winner
 
 
 def _horizon_sigma(feat: dict, horizon: int) -> float:
@@ -275,6 +279,45 @@ def _bias_map(ledger: list[dict]) -> dict:
             row["actual"] - row["pred"])
     return {k: int(statistics.median(v[-BIAS_WINDOW:]))
             for k, v in res.items() if len(v) >= 10}
+
+
+def _winner_variant(ledger: list[dict], horizon: int) -> str | None:
+    """The arm with the best trailing MAE at this horizon (last CAL_TRAIL
+    scored rows, min 20) — the model the calibrated meta-arm shadows."""
+    errs: dict[str, list[float]] = {}
+    for row in ledger:
+        if (row["actual"] is None or row["horizon"] != horizon
+                or row["variant"].startswith(("consensus", "cal-"))):
+            continue
+        errs.setdefault(row["variant"], []).append(row["abs_err"])
+    mae = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
+           for v, e in errs.items() if len(e) >= 20}
+    return min(mae, key=mae.get) if mae else None
+
+
+def _calibration_adj(residuals: list[float]) -> int | None:
+    """Dollar correction added to the winner's +15m prediction, fit on the
+    winner's own trailing residuals (actual - pred; positive = it ran low).
+
+    This is the meta-arm's entire edge over the winner it shadows, and the
+    A/B against the shrunk (x0.5, ±0.5 sigma-capped) bias intercept the
+    treatment arms already receive. Returns a whole-dollar adjustment, or
+    None/0 for "leave the winner's prediction alone".
+
+    Design: dual-window agreement median. Full window (30) and recent
+    window (10) must agree on sign — disagreement marks a trend turn, the
+    exact regime where the original full-strength intercept doubled the
+    miss, so we stand down there. When they agree, apply the smaller of
+    the two magnitudes UNSHRUNK: persistent bias gets corrected at full
+    strength, turns get zero.
+    """
+    long_med = statistics.median(residuals)
+    short_med = statistics.median(residuals[-10:])
+    if long_med * short_med <= 0:
+        return 0
+    return int(long_med if abs(long_med) < abs(short_med) else short_med)
+
+
 LEDGER_MAX_ROWS = 60_000       # ~2 weeks of both arms; keeps rewrites cheap
 
 
@@ -787,6 +830,44 @@ def run(once: bool = False) -> None:
                     crow["hi"] = crow["pred"] + cband[1]
                 ledger.append(crow)
                 new_preds += 1
+
+            # 1c. calibrated winner: shadow whichever arm currently leads on
+            #     trailing +15m MAE and re-center its committed prediction
+            #     with a full-strength correction fit on that arm's own
+            #     trailing residuals. Reporting-layer meta-arm like the
+            #     consensus — no model state, never learns.
+            #     LEAKAGE GUARD: the residual window is built from the
+            #     ledger as of NOW, so only unscored live commits are
+            #     shadowed (backfill would calibrate on its own future).
+            have_cal = {r["made_ts"] for r in ledger
+                        if r["variant"] == CAL_VARIANT}
+            win = _winner_variant(ledger, 15)
+            if win:
+                res = [r["actual"] - r["pred"] for r in ledger
+                       if r["variant"] == win and r["horizon"] == 15
+                       and r["actual"] is not None][-CAL_WINDOW:]
+                adj = (_calibration_adj(res) or 0) if len(res) >= CAL_MIN else 0
+                shadow = [r for r in ledger
+                          if r["variant"] == win and r["horizon"] == 15
+                          and r["actual"] is None
+                          and r["made_ts"] >= int(started)
+                          and r["made_ts"] not in have_cal]
+                for src in shadow:
+                    crow = {
+                        "variant": CAL_VARIANT, "made_ts": src["made_ts"],
+                        "target_ts": src["target_ts"], "horizon": 15,
+                        "price_now": src["price_now"],
+                        "pred": int(src["pred"] + adj),
+                        "delta": int(src["pred"] + adj - src["price_now"]),
+                        "src": win, "cal_adj": int(adj), "state": None,
+                        "actual": None, "abs_err": None, "hit": None,
+                    }
+                    cband = bands.get((CAL_VARIANT, 15))
+                    if cband:
+                        crow["lo"] = crow["pred"] + cband[0]
+                        crow["hi"] = crow["pred"] + cband[1]
+                    ledger.append(crow)
+                    new_preds += 1
 
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
