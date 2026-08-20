@@ -239,10 +239,46 @@ footer { color: var(--faint); font-size: 12.5px; }
 <div id="horizon-sections"></div>
 
 <section>
-  <h2>The arms — architecture · features · metrics</h2>
-  <p class="sub muted">Offline = 120-day batch backtest (control only; treatments are
-  online-only). Online = live ledger since deployment. Refreshes with the page.</p>
-  <div id="arm-cards"></div>
+  <h2>The model ladder — at a glance</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-top:12px;font-size:12px">
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--faint)">L0 · baselines</b><br><span class="muted">persistence · chart-replay (rp)</span></div>
+    <div style="align-self:center;color:var(--faint)">→</div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-1)">L1 · ctl</b><br><span class="muted">tabular Q, 81 states, frozen control</span></div>
+    <div style="align-self:center;color:var(--faint)">→</div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-2)">bandit · t2/t6</b><br><span class="muted">LinUCB, vol-scaled arms (k·σ, ±1.5σ); t6 adds live streams + order flow + news</span></div>
+    <div style="align-self:center;color:var(--faint)">→</div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-7)">L2 · t7</b><br><span class="muted">linear Q(s,a), SGD</span></div>
+    <div style="align-self:center;color:var(--faint)">→</div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-4)">L3 · t8</b><br><span class="muted">distributional MLP, mode action</span></div>
+    <div style="align-self:center;color:var(--faint)">→</div>
+    <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-3)">L4 · t9</b><br><span class="muted">LSTM over raw return sequence</span></div>
+  </div>
+
+  <p class="mini" style="margin-top:16px">Offline — held-out test MAE (chronological splits; 60-day runs except control 120-day):</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Arm</th><th>Class</th><th class="num">Input dims</th>
+    <th class="num">+1m</th><th class="num">+5m</th><th class="num">+15m</th><th class="num">+30m</th></tr></thead>
+    <tbody>
+      <tr><td class="muted">persistence (floor)</td><td class="muted">no model</td><td class="num">—</td><td class="num">$13.9</td><td class="num">$31.1</td><td class="num">$50.4</td><td class="num">$71.8</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-1)"></span>ctl</td><td>tabular Q</td><td class="num">4 buckets</td><td class="num">$16</td><td class="num">$37</td><td class="num">$70</td><td class="num">$87</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-2)"></span>t2</td><td>LinUCB</td><td class="num">10</td><td class="num" colspan="4">online-only (gated offline; kept as algorithm baseline)</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-6)"></span>t6</td><td>LinUCB + live streams</td><td class="num">27</td><td class="num" colspan="4">online-only (live dims have no history)</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-7)"></span>t7</td><td>linear Q</td><td class="num">13</td><td class="num">$14.1</td><td class="num">$32.0</td><td class="num">$50.7</td><td class="num">$77.3</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-4)"></span>t8</td><td>dist. MLP</td><td class="num">13</td><td class="num">$14.1</td><td class="num">$32.9</td><td class="num">$53.6</td><td class="num">$82.0</td></tr>
+      <tr><td><span class="sw" style="background:var(--series-3)"></span>t9</td><td>LSTM</td><td class="num">60-seq</td><td class="num">$13.9</td><td class="num">$33.2</td><td class="num">$53.6</td><td class="num">$78.4</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="mini" style="margin-top:16px">Online — live ledger since deployment (refreshes with the page):</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Arm</th>
+    <th class="num">+1m n·MAE·±$10</th><th class="num">+5m n·MAE·±$10</th>
+    <th class="num">+15m n·MAE·±$10</th><th class="num">+30m n·MAE·±$10</th></tr></thead>
+    <tbody id="arm-online-body"></tbody>
+  </table></div>
+  <p class="sub muted" style="margin-top:8px">Full architecture/feature/reward detail per arm
+  lives on the <a href="experiment_review.html" style="color:#c4b5fd">experiment review</a> page,
+  with per-horizon comparison graphs and Diebold–Mariano significance tests.</p>
 </section>
 
 <footer id="foot">Polling every 5s…</footer>
@@ -546,188 +582,29 @@ function armOffline(metrics, key) {
 }
 
 let batchMetrics = null;
+const LADDER_ARMS = [
+  ["ctl", "var(--series-1)", ["h1", "h5", "h15", "h30"]],
+  ["rp", "var(--faint)", ["rp-h1", "rp-h5", "rp-h15", "rp-h30"]],
+  ["t2", "var(--series-2)", ["t2-h1", "t2-h5", "t2-h15", "t2-h30"]],
+  ["t6", "var(--series-6)", ["t6-h1", "t6-h5", "t6-h15", "t6-h30"]],
+  ["t7", "var(--series-7)", ["t7-h1", "t7-h5", "t7-h15", "t7-h30"]],
+  ["t8", "var(--series-4)", ["t8-h1", "t8-h5", "t8-h15", "t8-h30"]],
+  ["t9", "var(--series-3)", ["t9-h1", "t9-h5", "t9-h15", "t9-h30"]],
+];
 function renderArmCards(preds) {
-  document.getElementById("arm-cards").innerHTML = ARM_INFO.map(a => `
-  <dl class="card" style="margin-top:16px;border-top:1px solid var(--grid);padding-top:12px">
-    <dt>Arm</dt><dd><b><span class="sw" style="background:${ARM_COLOR[a.key]}"></span>${a.title}</b></dd>
-    <dt>Architecture</dt><dd>${a.architecture}</dd>
-    <dt>Features</dt><dd>${a.features}</dd>
-    <dt>Reward</dt><dd>${a.reward}</dd>
-    <dt>Sampling</dt><dd>${a.sampling}</dd>
-    <dt>Offline</dt><dd>${armOffline(batchMetrics, a.offline)}</dd>
-    <dt>Online</dt><dd>${armOnline(preds, a.variants)}</dd>
-  </dl>`).join("");
-}
-
-
-// ── zoom / pan / crosshair (containers persist across redraws) ─────────────
-function pxToTs(h, clientX, svg) {
-  const m = chartMeta[h]; if (!m) return null;
-  const r = svg.getBoundingClientRect();
-  const xv = (clientX - r.left) / r.width * m.W;
-  return m.t0 + (xv - m.L) / (m.W - m.L - m.R) * (m.t1 - m.t0);
-}
-function setFollow(on) {
-  if (on) view.end = null;
-  document.getElementById("follow-btn").classList.toggle("on", view.end == null);
-}
-function bindChart(h) {
-  const box = document.getElementById(`chart-h${h}`);
-  box.classList.add("chart-box");
-  let dragX = null, moved = false;
-  box.addEventListener("wheel", e => {
-    const svg = box.querySelector("svg"); if (!svg || !latest) return;
-    e.preventDefault();
-    const m = chartMeta[h], ts = pxToTs(h, e.clientX, svg);
-    // proportional to wheel delta — trackpads fire many small events, so a
-    // fixed step made zooming explosive; exp() keeps it smooth both ways
-    const f = Math.min(2, Math.max(0.5, Math.exp(e.deltaY * 0.0015)));
-    const span = Math.min(Math.max((m.t1 - m.t0) * f, 900), 86400);
-    view.span = span;
-    view.end = Math.min(ts + (m.t1 - ts) * f, m.dataMax);
-    if (view.end >= m.dataMax - 60) view.end = null;
-    setFollow(false); draw();
-  }, { passive: false });
-  box.addEventListener("mousedown", e => { dragX = e.clientX; moved = false;
-    box.classList.add("panning"); });
-  window.addEventListener("mouseup", () => { dragX = null;
-    box.classList.remove("panning"); });
-  box.addEventListener("mousemove", e => {
-    const svg = box.querySelector("svg"); if (!svg || !latest) return;
-    const m = chartMeta[h]; if (!m) return;
-    if (dragX != null) {
-      const r = svg.getBoundingClientRect();
-      const dt = (e.clientX - dragX) / r.width * (m.t1 - m.t0);
-      if (Math.abs(e.clientX - dragX) > 2) moved = true;
-      dragX = e.clientX;
-      view.span = m.t1 - m.t0;
-      view.end = Math.min((view.end ?? m.dataMax) - dt, m.dataMax);
-      if (view.end >= m.dataMax - 60) view.end = null;
-      setFollow(false); draw(); return;
-    }
-    // crosshair + readout across every horizon graph (synced)
-    const ts = pxToTs(h, e.clientX, svg);
-    for (const hh of T1_HORIZONS) {
-      const mm = chartMeta[hh], ln = document.getElementById(`xhair-h${hh}`);
-      if (!mm || !ln) continue;
-      const x = mm.L + (ts - mm.t0) / (mm.t1 - mm.t0) * (mm.W - mm.L - mm.R);
-      ln.setAttribute("x1", x.toFixed(1)); ln.setAttribute("x2", x.toFixed(1));
-    }
-    const { prices, preds } = latest;
-    const near = prices.reduce((b, p2) =>
-      Math.abs(p2.ts - ts) < Math.abs(b.ts - ts) ? p2 : b, prices[0]);
-    const slot = Math.round(ts / 300) * 300;
-    const calls = preds.filter(p => p.horizon === h && p.target_ts === slot)
-      .map(p => `${armOf(p)} $${p.pred.toLocaleString()}`).join(" · ");
-    const tip = document.getElementById("tip");
-    tip.textContent = `${fmtTime(near.ts)} PST — actual $${Math.round(near.c).toLocaleString()}`
-      + (calls ? `  |  ${calls}` : "");
-    tip.style.opacity = 1;
-    tip.style.left = Math.min(e.clientX + 14, innerWidth - 320) + "px";
-    tip.style.top = (e.clientY + 16) + "px";
-  });
-  box.addEventListener("mouseleave", () => {
-    document.getElementById("tip").style.opacity = 0;
-    for (const hh of T1_HORIZONS) {
-      const ln = document.getElementById(`xhair-h${hh}`);
-      if (ln) { ln.setAttribute("x1", -9); ln.setAttribute("x2", -9); }
-    }
-  });
-}
-for (const h of T1_HORIZONS) bindChart(h);
-document.querySelectorAll(".range-bar .chip[data-span]").forEach(el =>
-  el.addEventListener("click", () => {
-    view.span = +el.dataset.span || 0; view.end = null;
-    document.querySelectorAll(".range-bar .chip[data-span]")
-      .forEach(c => c.classList.toggle("on", c === el));
-    setFollow(true); draw();
-  }));
-document.getElementById("follow-btn").addEventListener("click",
-  () => { setFollow(true); draw(); });
-
-function miniLine(seriesList, opts) {
-  const W = 900, H = opts.h || 190, L = 62, R = 16, T = 10, B = 24;
-  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
-  for (const s2 of seriesList) for (const p2 of s2.pts) {
-    xmin = Math.min(xmin, p2[0]); xmax = Math.max(xmax, p2[0]);
-    ymin = Math.min(ymin, p2[1]); ymax = Math.max(ymax, p2[1]);
-  }
-  if (!isFinite(xmin)) return '<p class="mini">collecting…</p>';
-  if (opts.zero) { ymin = Math.min(ymin, -5); ymax = Math.max(ymax, 5); }
-  const pad = (ymax - ymin) * 0.1 || 1; ymin -= pad; ymax += pad;
-  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
-  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
-  let g = "";
-  for (let i = 0; i <= 3; i++) {
-    const v = ymin + (ymax - ymin) * i / 3, y = Y(v);
-    g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
-      `<text x="${L - 8}" y="${y + 4}" text-anchor="end">${opts.fmt(v)}</text>`;
-  }
-  const stepS = [900, 1800, 3600, 7200].find(x => (xmax - xmin) / x <= 7) || 7200;
-  for (let ts = Math.ceil(xmin / stepS) * stepS; ts <= xmax; ts += stepS)
-    g += `<text x="${X(ts)}" y="${H - 6}" text-anchor="middle">${fmtTime(ts)}</text>`;
-  if (opts.zero)
-    g += `<line x1="${L}" y1="${Y(0)}" x2="${W - R}" y2="${Y(0)}" ` +
-      `stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5" stroke-width="1.5"/>`;
-  for (const s2 of seriesList) {
-    g += `<path class="predline" style="stroke:${s2.color}"${s2.dash ? ' stroke-dasharray="6 5"' : ""} d="${s2.pts.map((p2, i) =>
-      `${i ? "L" : "M"}${X(p2[0]).toFixed(1)},${Y(p2[1]).toFixed(1)}`).join("")}"/>`;
-    const last = s2.pts[s2.pts.length - 1];
-    g += `<circle class="pt" cx="${X(last[0])}" cy="${Y(last[1])}" r="3.5" style="fill:${s2.color}"><title>${s2.label}: ${opts.fmt(last[1])}</title></circle>`;
-  }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
-}
-
-function drawLearning(preds, learnLog) {
-  const sc = preds.filter(p => p.variant === "consensus" && p.horizon === 5
-    && p.actual != null).sort((a, b) => a.target_ts - b.target_ts);
-  if (sc.length < 8) {
-    document.getElementById("learn-skill").innerHTML =
-      '<p class="mini">collecting scored predictions…</p>';
-    return;
-  }
-  let cum = 0, wins = 0;
-  const pts = [];
-  const advs = [];
-  for (const p2 of sc) {
-    const adv = Math.abs(p2.actual - p2.price_now) - p2.abs_err;
-    cum += adv; advs.push(adv);
-    if (adv > 0) wins++;
-    pts.push([p2.target_ts, cum]);
-  }
-  // retrain event timestamps (where the retrain counter increments)
-  const marks = [];
-  for (let i = 1; i < learnLog.length; i++)
-    if (learnLog[i].retrains > learnLog[i - 1].retrains)
-      marks.push(learnLog[i].ts);
-  let svg = miniLine(
-    [{ label: "cumulative $ gained vs doing nothing", color: "#a78bfa", pts }],
-    { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(Math.round(v)).toLocaleString(),
-      zero: true, h: 220 });
-  if (marks.length && svg.startsWith("<svg")) {
-    const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
-    const extra = marks.filter(ts => ts >= t0 && ts <= t1).map(ts => {
-      const x = 62 + (ts - t0) / Math.max(1, t1 - t0) * (900 - 62 - 16);
-      return `<line x1="${x.toFixed(1)}" y1="10" x2="${x.toFixed(1)}" y2="196" ` +
-        `stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="2 4" opacity=".8">` +
-        `</line><text x="${x.toFixed(1)}" y="205" text-anchor="middle" ` +
-        `style="fill:#fbbf24">retrain</text>`;
-    }).join("");
-    svg = svg.replace("</svg>", extra + "</svg>");
-  }
-  document.getElementById("learn-skill").innerHTML = svg;
-  const last50 = advs.slice(-50);
-  const w50 = last50.filter(a => a > 0).length;
-  const recent = last50.reduce((a, x) => a + x, 0);
-  const upd = learnLog.length ? learnLog[learnLog.length - 1].updates : 0;
-  document.getElementById("learn-verdict").innerHTML =
-    `Across ${sc.length} scored predictions the model has ` +
-    (cum >= 0
-      ? `<b style="color:#6ee7b7">gained $${Math.round(cum).toLocaleString()} of accuracy</b>`
-      : `<b style="color:#f87171">given up $${Math.abs(Math.round(cum)).toLocaleString()} of accuracy</b>`) +
-    ` vs doing nothing · last 50 slots: won ${w50}/50 ` +
-    `(${recent >= 0 ? "+" : "−"}$${Math.abs(Math.round(recent))}) · ` +
-    `${upd.toLocaleString()} model updates this session`;
+  const cell = (variants, h) => {
+    const sc = preds.filter(p => variants.includes(p.variant)
+      && p.horizon === h && p.actual != null);
+    if (!sc.length) return "–";
+    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+    const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
+    return `${sc.length} · $${Math.round(mae)} · ${(100 * w10).toFixed(0)}%`;
+  };
+  document.getElementById("arm-online-body").innerHTML =
+    LADDER_ARMS.map(([key, color, variants]) =>
+      `<tr><td><span class="sw" style="background:${color}"></span>${key}</td>` +
+      [1, 5, 15, 30].map(h =>
+        `<td class="num">${cell(variants, h)}</td>`).join("") + "</tr>").join("");
 }
 
 async function poll() {
