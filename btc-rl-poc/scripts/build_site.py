@@ -102,12 +102,15 @@ def hist_svg(hist: dict[str, int], color: str, title: str) -> str:
 
 
 def main() -> None:
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from btc_rl.history import append_history, load_history
     m = json.loads((ROOT / "results" / "metrics.json").read_text())
     d = m["data"]
     agents = m["agents"]
-    rows = [(AGENT_LABELS[n], {h: ev[h]["all"] for h in HKEYS})
+    rows = [(AGENT_LABELS.get(n, n), {h: ev[h]["all"] for h in HKEYS})
             for n, ev in agents.items()]
-    tslots = [(AGENT_LABELS[n], {h: ev[h]["target_slots"] for h in HKEYS})
+    tslots = [(AGENT_LABELS.get(n, n), {h: ev[h]["target_slots"] for h in HKEYS})
               for n, ev in agents.items()]
 
     pac = ZoneInfo("America/Los_Angeles")
@@ -117,6 +120,12 @@ def main() -> None:
     next_target_str = target.strftime("%-I:%M %p %Z %a")
 
     base = agents["persistence-baseline"]
+    best_hit = max(((ev["h15"]["all"]["exact_int_hit_rate"],
+                     AGENT_LABELS.get(n, n)) for n, ev in agents.items()))
+    best_mae15 = min(((ev["h15"]["all"]["mae"], AGENT_LABELS.get(n, n))
+                      for n, ev in agents.items()))
+    best_mae30 = min(((ev["h30"]["all"]["mae"], AGENT_LABELS.get(n, n))
+                      for n, ev in agents.items()))
     fmt_pct = lambda v: f"{v:.2%}"
     fmt_usd = lambda v: f"${v:,.0f}"
 
@@ -133,10 +142,10 @@ def main() -> None:
              f'{d["train_episodes"]:,} train · {d["test_episodes"]:,} held-out test'),
             ("15-min move σ", f'${d["delta_stats_h15"]["std"]:.0f}',
              f'30-min: ${d["delta_stats_h30"]["std"]:.0f} — why exact hits are rare'),
-            ("Best exact-int hit rate", f'{base["h15"]["all"]["exact_int_hit_rate"]:.2%}',
-             "persistence & shaped-Q, 15 min, test set"),
-            ("Best MAE", f'${base["h15"]["all"]["mae"]:.0f}',
-             f'15 min · 30 min: ${base["h30"]["all"]["mae"]:.0f}'),
+            ("Best hit rate (15m)", f'{best_hit[0]:.2%}',
+             html.escape(best_hit[1]) + " · legacy exact-int metric"),
+            ("Best MAE (15m)", f'${best_mae15[0]:.0f}',
+             f'{html.escape(best_mae15[1])} · 30 min: ${best_mae30[0]:.0f}'),
         ])
 
     stream_rows = "".join(
@@ -151,16 +160,19 @@ def main() -> None:
         f'{"✓ built" if status == "done" else "✓ live" if status == "live" else ("→ next" if status == "next" else "later")}</span></div>'
         for lid, name, desc, status in LADDER)
 
-    def slot_table(rows_):
+    def slot_table(rows_, kind="all"):
         body = ""
         for label, ev in rows_:
             for h in HKEYS:
                 s = ev[h]
+                naive = base[h][kind]["mae"]
+                mase = s["mae"] / naive if naive else None
                 body += (f'<tr><td>{html.escape(label)}</td>'
                          f'<td><span class="dot" style="background:{H_COLOR[h]}"></span>{H_LABEL[h]}</td>'
                          f'<td class="num">{s["episodes"]:,}</td>'
                          f'<td class="num">{s["exact_int_hit_rate"]:.2%}</td>'
                          f'<td class="num">${s["mae"]:.0f}</td>'
+                         f'<td class="num">{mase:.2f}</td>'
                          f'<td class="num">{s["within_$10"]:.1%}</td>'
                          f'<td class="num">{s["within_$50"]:.1%}</td>'
                          f'<td class="num">{s["mean_sparse_reward"]:+.3f}</td></tr>')
@@ -175,95 +187,57 @@ def main() -> None:
 
     generated = datetime.now(tz=pac).strftime("%Y-%m-%d %H:%M %Z")
 
+    cur_summary = {name: {h: ev[h]["all"]["mae"] for h in HKEYS}
+                   for name, ev in agents.items()}
+    hb = load_history("batch")
+    last_l1 = next((r for r in reversed(hb) if r.get("source") == "train_l1"),
+                   None)
+    if last_l1 is None or last_l1.get("agents") != cur_summary:
+        append_history("batch", {"source": "train_l1", "agents": cur_summary})
+        hb = load_history("batch")
+    hist_rows = ""
+    for r in hb[-12:][::-1]:
+        when = datetime.fromtimestamp(r["ts"], tz=pac).strftime("%Y-%m-%d %H:%M")
+        for agent_name, hs in sorted(r.get("agents", {}).items()):
+            cells = " · ".join(f"{hk}: ${v:.0f}" for hk, v in sorted(hs.items()))
+            hist_rows += (f'<tr><td class="num">{when}</td>'
+                          f'<td>{html.escape(r.get("source", ""))}</td>'
+                          f'<td>{html.escape(AGENT_LABELS.get(agent_name, agent_name))}</td>'
+                          f'<td class="num">{cells}</td></tr>')
+    hist_section = ("" if not hist_rows else f"""
+<section>
+  <h2>Previous training runs</h2>
+  <p class="sub muted">Every batch training run appends its held-out test MAEs to
+  metrics_history.jsonl — reruns accumulate for comparison instead of overwriting.</p>
+  <div class="scroll"><table>
+  <thead><tr><th>When</th><th>Run</th><th>Agent</th><th>Test MAE by horizon</th></tr></thead>
+  <tbody>{hist_rows}</tbody></table></div>
+</section>""")
+
     page = f"""<title>BTC 7PM Oracle</title>
+<link rel="stylesheet" href="theme.css">
 <style>
-:root {{
-  color-scheme: light;
-  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
-  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
-  --border: rgba(11,11,11,0.10);
-  --series-1: #2a78d6; --series-2: #eb6834;
-  --series-3: #1baf7a; --series-4: #eda100;
-  --good: #0ca30c; --critical: #d03b3b;
-  --good-text: #006300;
-}}
-@media (prefers-color-scheme: dark) {{
-  :root:where(:not([data-theme="light"])) {{
-    color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-    --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5; --series-2: #d95926;
-    --series-3: #199e70; --series-4: #c98500;
-    --good-text: #0ca30c;
-  }}
-}}
-:root[data-theme="dark"] {{
-  color-scheme: dark;
-  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-  --border: rgba(255,255,255,0.10);
-  --series-1: #3987e5; --series-2: #d95926;
-  --series-3: #199e70; --series-4: #c98500;
-  --good-text: #0ca30c;
-}}
-* {{ box-sizing: border-box; }}
-body {{ background: var(--page); color: var(--ink);
-  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-  margin: 0; padding: 32px 20px 64px; }}
-main {{ max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }}
-.eyebrow {{ text-transform: uppercase; letter-spacing: 0.09em; font-size: 12px;
-  color: var(--muted); font-weight: 600; }}
-h1 {{ margin: 4px 0 2px; font-size: 30px; letter-spacing: -0.01em; text-wrap: balance; }}
-h2 {{ margin: 0 0 4px; font-size: 19px; }}
-.sub {{ color: var(--ink-2); max-width: 68ch; }}
-section {{ background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 20px 22px; }}
 .tiles {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; }}
-.tile {{ background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px 16px; }}
-.tile-label {{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em;
-  color: var(--muted); font-weight: 600; }}
-.tile-value {{ font-size: 26px; font-weight: 650; margin-top: 2px; }}
-.tile-sub {{ font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }}
-svg {{ width: 100%; height: auto; display: block; }}
-svg text {{ font: 12px system-ui, sans-serif; fill: var(--ink-2); }}
-svg .val {{ font-variant-numeric: tabular-nums; fill: var(--ink-2); }}
+.tile {{ background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }}
+.tile-label {{ font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }}
+.tile-value {{ font-size: 25px; font-weight: 650; margin-top: 2px; color: var(--ink); font-variant-numeric: tabular-nums; }}
+.tile-sub {{ font-size: 12.5px; color: var(--muted); margin-top: 2px; }}
+svg .val {{ fill: var(--ink-2); font-variant-numeric: tabular-nums; }}
 svg .lbl {{ fill: var(--ink); }}
 svg .tick {{ fill: var(--muted); font-variant-numeric: tabular-nums; }}
-svg .axis {{ stroke: var(--axis); stroke-width: 1; }}
 svg .zero {{ stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }}
-svg .bar:hover {{ opacity: 0.8; }}
-.legend {{ display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 6px 0 10px; }}
-.dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px;
-  vertical-align: -1px; }}
-.scroll {{ overflow-x: auto; }}
-table {{ border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }}
-th {{ text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0; }}
-td {{ border-bottom: 1px solid var(--grid); padding: 7px 10px 7px 0; }}
-td.num {{ font-variant-numeric: tabular-nums; text-align: right; }}
-th.num {{ text-align: right; }}
-.muted {{ color: var(--ink-2); }}
-.pill {{ font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px;
-  white-space: nowrap; }}
-.pill.ok {{ color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }}
-.pill.blocked {{ color: var(--critical); background: color-mix(in srgb, var(--critical) 12%, transparent); }}
-.pill.todo {{ color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }}
-.rung {{ display: flex; align-items: center; gap: 14px; padding: 10px 0;
-  border-bottom: 1px solid var(--grid); }}
+svg .bar:hover {{ opacity: .8; }}
+.dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }}
+.pill.blocked {{ color: var(--down); background: rgba(255,93,93,.1); }}
+.pill.todo {{ color: var(--ink-2); background: var(--surface-2); }}
+.rung {{ display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--grid); }}
 .rung:last-child {{ border-bottom: none; }}
 .rung > div {{ flex: 1; }}
 .rung-id {{ font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }}
-.rung-name {{ font-weight: 600; }}
+.rung-name {{ font-weight: 600; color: var(--ink); }}
 .reward-box {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }}
-.reward {{ border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
-  font-variant-numeric: tabular-nums; }}
-.reward b {{ font-size: 17px; }}
-#tip {{ position: fixed; pointer-events: none; background: var(--ink); color: var(--page);
-  font-size: 12.5px; padding: 5px 9px; border-radius: 6px; opacity: 0; transition: opacity .1s;
-  z-index: 10; max-width: 260px; }}
-footer {{ color: var(--muted); font-size: 12.5px; }}
+.reward {{ border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-variant-numeric: tabular-nums; color: var(--ink-2); }}
+.reward b {{ font-size: 17px; color: var(--ink); }}
 </style>
 
 <main>
@@ -271,8 +245,7 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <div class="eyebrow">Reinforcement learning · proof of concept</div>
   <h1>BTC 7PM Oracle</h1>
   <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
-  (next target {next_target_str}), scored at <strong>integer level</strong> — 68000 and 68000.98
-  count as the same answer. Reward +1 on an exact match, −1 otherwise.
+  (next target {next_target_str}), scored with a <strong>volatility-scaled hit band</strong> — within max($5, 0.1·σ_h) of the actual counts as a hit. (The batch runs below predate the band and report the legacy exact-integer spec.)
   Built entirely on open, no-auth data streams.</p>
 </header>
 
@@ -306,24 +279,26 @@ footer {{ color: var(--muted); font-size: 12.5px; }}
   <h2>Scoreboard — all test episodes</h2>
   <div class="scroll"><table>
   <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
-  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">MASE</th><th class="num">± $10</th>
   <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
   <tbody>{slot_table(rows)}</tbody></table></div>
   <h2 style="margin-top:22px">Scoreboard — 7:00 / 7:15 PM slots only</h2>
   <p class="sub muted">The actual deliverable: 48 held-out evenings per horizon.</p>
   <div class="scroll"><table>
   <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
-  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">MASE</th><th class="num">± $10</th>
   <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
-  <tbody>{slot_table(tslots)}</tbody></table></div>
+  <tbody>{slot_table(tslots, "target_slots")}</tbody></table></div>
 </section>
+
+{hist_section}
 
 <section>
   <h2>Reward design</h2>
   <p class="sub muted">The spec reward is honest but nearly silent — it fires on ~0.5% of
   episodes. The shaped variant keeps the same objective while making the gradient audible.</p>
   <div class="reward-box">
-    <div class="reward"><b>+1</b> &nbsp;int(pred) == int(actual)</div>
+    <div class="reward"><b>+1</b> &nbsp;|pred − actual| ≤ max($5, 0.1·σ_h)</div>
     <div class="reward"><b>−1</b> &nbsp;any other outcome (spec)</div>
     <div class="reward"><b>−|error| / 100</b> &nbsp;shaped variant on a miss</div>
   </div>

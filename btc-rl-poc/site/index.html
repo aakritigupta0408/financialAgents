@@ -1,92 +1,27 @@
 <title>BTC 7PM Oracle</title>
+<link rel="stylesheet" href="theme.css">
 <style>
-:root {
-  color-scheme: light;
-  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
-  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
-  --border: rgba(11,11,11,0.10);
-  --series-1: #2a78d6; --series-2: #eb6834;
-  --series-3: #1baf7a; --series-4: #eda100;
-  --good: #0ca30c; --critical: #d03b3b;
-  --good-text: #006300;
-}
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    color-scheme: dark;
-    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-    --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5; --series-2: #d95926;
-    --series-3: #199e70; --series-4: #c98500;
-    --good-text: #0ca30c;
-  }
-}
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
-  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
-  --border: rgba(255,255,255,0.10);
-  --series-1: #3987e5; --series-2: #d95926;
-  --series-3: #199e70; --series-4: #c98500;
-  --good-text: #0ca30c;
-}
-* { box-sizing: border-box; }
-body { background: var(--page); color: var(--ink);
-  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-  margin: 0; padding: 32px 20px 64px; }
-main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
-.eyebrow { text-transform: uppercase; letter-spacing: 0.09em; font-size: 12px;
-  color: var(--muted); font-weight: 600; }
-h1 { margin: 4px 0 2px; font-size: 30px; letter-spacing: -0.01em; text-wrap: balance; }
-h2 { margin: 0 0 4px; font-size: 19px; }
-.sub { color: var(--ink-2); max-width: 68ch; }
-section { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 20px 22px; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 12px; }
-.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
-  padding: 14px 16px; }
-.tile-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em;
-  color: var(--muted); font-weight: 600; }
-.tile-value { font-size: 26px; font-weight: 650; margin-top: 2px; }
-.tile-sub { font-size: 12.5px; color: var(--ink-2); margin-top: 2px; }
-svg { width: 100%; height: auto; display: block; }
-svg text { font: 12px system-ui, sans-serif; fill: var(--ink-2); }
-svg .val { font-variant-numeric: tabular-nums; fill: var(--ink-2); }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+.tile-label { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 600; }
+.tile-value { font-size: 25px; font-weight: 650; margin-top: 2px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tile-sub { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+svg .val { fill: var(--ink-2); font-variant-numeric: tabular-nums; }
 svg .lbl { fill: var(--ink); }
 svg .tick { fill: var(--muted); font-variant-numeric: tabular-nums; }
-svg .axis { stroke: var(--axis); stroke-width: 1; }
 svg .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
-svg .bar:hover { opacity: 0.8; }
-.legend { display: flex; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 6px 0 10px; }
-.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px;
-  vertical-align: -1px; }
-.scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
-th { text-align: left; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0; }
-td { border-bottom: 1px solid var(--grid); padding: 7px 10px 7px 0; }
-td.num { font-variant-numeric: tabular-nums; text-align: right; }
-th.num { text-align: right; }
-.muted { color: var(--ink-2); }
-.pill { font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px;
-  white-space: nowrap; }
-.pill.ok { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
-.pill.blocked { color: var(--critical); background: color-mix(in srgb, var(--critical) 12%, transparent); }
-.pill.todo { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
-.rung { display: flex; align-items: center; gap: 14px; padding: 10px 0;
-  border-bottom: 1px solid var(--grid); }
+svg .bar:hover { opacity: .8; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.pill.blocked { color: var(--down); background: rgba(255,93,93,.1); }
+.pill.todo { color: var(--ink-2); background: var(--surface-2); }
+.rung { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--grid); }
 .rung:last-child { border-bottom: none; }
 .rung > div { flex: 1; }
 .rung-id { font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
-.rung-name { font-weight: 600; }
+.rung-name { font-weight: 600; color: var(--ink); }
 .reward-box { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
-.reward { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
-  font-variant-numeric: tabular-nums; }
-.reward b { font-size: 17px; }
-#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--page);
-  font-size: 12.5px; padding: 5px 9px; border-radius: 6px; opacity: 0; transition: opacity .1s;
-  z-index: 10; max-width: 260px; }
-footer { color: var(--muted); font-size: 12.5px; }
+.reward { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.reward b { font-size: 17px; color: var(--ink); }
 </style>
 
 <main>
@@ -94,12 +29,11 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="eyebrow">Reinforcement learning · proof of concept</div>
   <h1>BTC 7PM Oracle</h1>
   <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
-  (next target 7:00 PM PDT Thu), scored at <strong>integer level</strong> — 68000 and 68000.98
-  count as the same answer. Reward +1 on an exact match, −1 otherwise.
+  (next target 7:00 PM PDT Thu), scored with a <strong>volatility-scaled hit band</strong> — within max($5, 0.1·σ_h) of the actual counts as a hit. (The batch runs below predate the band and report the legacy exact-integer spec.)
   Built entirely on open, no-auth data streams.</p>
 </header>
 
-<div class="tiles"><div class="tile"><div class="tile-label">Training days</div><div class="tile-value">120</div><div class="tile-sub">2026-04-21 → 2026-08-18</div></div><div class="tile"><div class="tile-label">Episodes</div><div class="tile-value">91,386</div><div class="tile-sub">70,434 train · 20,952 held-out test</div></div><div class="tile"><div class="tile-label">15-min move σ</div><div class="tile-value">$91</div><div class="tile-sub">30-min: $129 — why exact hits are rare</div></div><div class="tile"><div class="tile-label">Best exact-int hit rate</div><div class="tile-value">0.75%</div><div class="tile-sub">persistence & shaped-Q, 15 min, test set</div></div><div class="tile"><div class="tile-label">Best MAE</div><div class="tile-value">$60</div><div class="tile-sub">15 min · 30 min: $85</div></div></div>
+<div class="tiles"><div class="tile"><div class="tile-label">Training days</div><div class="tile-value">120</div><div class="tile-sub">2026-04-21 → 2026-08-18</div></div><div class="tile"><div class="tile-label">Episodes</div><div class="tile-value">91,386</div><div class="tile-sub">70,434 train · 20,952 held-out test</div></div><div class="tile"><div class="tile-label">15-min move σ</div><div class="tile-value">$91</div><div class="tile-sub">30-min: $129 — why exact hits are rare</div></div><div class="tile"><div class="tile-label">Best hit rate (15m)</div><div class="tile-value">0.75%</div><div class="tile-sub">Persistence (L0) · legacy exact-int metric</div></div><div class="tile"><div class="tile-label">Best MAE (15m)</div><div class="tile-value">$60</div><div class="tile-sub">Persistence (L0) · 30 min: $85</div></div></div>
 
 <section>
   <h2>Mean absolute error by agent</h2>
@@ -129,16 +63,26 @@ footer { color: var(--muted); font-size: 12.5px; }
   <h2>Scoreboard — all test episodes</h2>
   <div class="scroll"><table>
   <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
-  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">MASE</th><th class="num">± $10</th>
   <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
-  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">8.06%</td><td class="num">$15</td><td class="num">50.5%</td><td class="num">96.0%</td><td class="num">-0.839</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">1.60%</td><td class="num">$35</td><td class="num">26.9%</td><td class="num">77.6%</td><td class="num">-0.968</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.75%</td><td class="num">$60</td><td class="num">16.8%</td><td class="num">59.2%</td><td class="num">-0.985</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.48%</td><td class="num">$85</td><td class="num">11.3%</td><td class="num">46.1%</td><td class="num">-0.990</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">6.88%</td><td class="num">$16</td><td class="num">49.0%</td><td class="num">95.2%</td><td class="num">-0.862</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">0.52%</td><td class="num">$65</td><td class="num">12.1%</td><td class="num">44.4%</td><td class="num">-0.990</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.31%</td><td class="num">$87</td><td class="num">7.0%</td><td class="num">33.3%</td><td class="num">-0.994</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.17%</td><td class="num">$108</td><td class="num">6.8%</td><td class="num">30.8%</td><td class="num">-0.997</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">2.12%</td><td class="num">$16</td><td class="num">48.0%</td><td class="num">95.9%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">1.27%</td><td class="num">$37</td><td class="num">23.2%</td><td class="num">75.8%</td><td class="num">-0.975</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.44%</td><td class="num">$70</td><td class="num">10.5%</td><td class="num">46.8%</td><td class="num">-0.991</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.48%</td><td class="num">$87</td><td class="num">10.7%</td><td class="num">44.0%</td><td class="num">-0.990</td></tr></tbody></table></div>
+  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">8.06%</td><td class="num">$15</td><td class="num">1.00</td><td class="num">50.5%</td><td class="num">96.0%</td><td class="num">-0.839</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">1.60%</td><td class="num">$35</td><td class="num">1.00</td><td class="num">26.9%</td><td class="num">77.6%</td><td class="num">-0.968</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.75%</td><td class="num">$60</td><td class="num">1.00</td><td class="num">16.8%</td><td class="num">59.2%</td><td class="num">-0.985</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.48%</td><td class="num">$85</td><td class="num">1.00</td><td class="num">11.3%</td><td class="num">46.1%</td><td class="num">-0.990</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">6.88%</td><td class="num">$16</td><td class="num">1.07</td><td class="num">49.0%</td><td class="num">95.2%</td><td class="num">-0.862</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">0.52%</td><td class="num">$65</td><td class="num">1.87</td><td class="num">12.1%</td><td class="num">44.4%</td><td class="num">-0.990</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.31%</td><td class="num">$87</td><td class="num">1.46</td><td class="num">7.0%</td><td class="num">33.3%</td><td class="num">-0.994</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.17%</td><td class="num">$108</td><td class="num">1.26</td><td class="num">6.8%</td><td class="num">30.8%</td><td class="num">-0.997</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">5,520</td><td class="num">2.12%</td><td class="num">$16</td><td class="num">1.06</td><td class="num">48.0%</td><td class="num">95.9%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">5,424</td><td class="num">1.27%</td><td class="num">$37</td><td class="num">1.06</td><td class="num">23.2%</td><td class="num">75.8%</td><td class="num">-0.975</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">5,184</td><td class="num">0.44%</td><td class="num">$70</td><td class="num">1.17</td><td class="num">10.5%</td><td class="num">46.8%</td><td class="num">-0.991</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">4,824</td><td class="num">0.48%</td><td class="num">$87</td><td class="num">1.01</td><td class="num">10.7%</td><td class="num">44.0%</td><td class="num">-0.990</td></tr></tbody></table></div>
   <h2 style="margin-top:22px">Scoreboard — 7:00 / 7:15 PM slots only</h2>
   <p class="sub muted">The actual deliverable: 48 held-out evenings per horizon.</p>
   <div class="scroll"><table>
   <thead><tr><th>Agent</th><th>Horizon</th><th class="num">Episodes</th>
-  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">± $10</th>
+  <th class="num">Exact-int hit</th><th class="num">MAE</th><th class="num">MASE</th><th class="num">± $10</th>
   <th class="num">± $50</th><th class="num">Reward / ep</th></tr></thead>
-  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$18</td><td class="num">41.7%</td><td class="num">97.9%</td><td class="num">-0.917</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$29</td><td class="num">20.8%</td><td class="num">81.2%</td><td class="num">-0.917</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$66</td><td class="num">16.7%</td><td class="num">58.3%</td><td class="num">-1.000</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$116</td><td class="num">4.2%</td><td class="num">35.4%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$19</td><td class="num">41.7%</td><td class="num">95.8%</td><td class="num">-0.917</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$62</td><td class="num">6.2%</td><td class="num">37.5%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$99</td><td class="num">8.3%</td><td class="num">29.2%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$132</td><td class="num">2.1%</td><td class="num">27.1%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">2.08%</td><td class="num">$18</td><td class="num">41.7%</td><td class="num">97.9%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$32</td><td class="num">18.8%</td><td class="num">85.4%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">2.08%</td><td class="num">$71</td><td class="num">14.6%</td><td class="num">54.2%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$115</td><td class="num">4.2%</td><td class="num">33.3%</td><td class="num">-1.000</td></tr></tbody></table></div>
+  <tbody><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$18</td><td class="num">1.00</td><td class="num">41.7%</td><td class="num">97.9%</td><td class="num">-0.917</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$29</td><td class="num">1.00</td><td class="num">20.8%</td><td class="num">81.2%</td><td class="num">-0.917</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$66</td><td class="num">1.00</td><td class="num">16.7%</td><td class="num">58.3%</td><td class="num">-1.000</td></tr><tr><td>Persistence (L0)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$116</td><td class="num">1.00</td><td class="num">4.2%</td><td class="num">35.4%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">4.17%</td><td class="num">$19</td><td class="num">1.06</td><td class="num">41.7%</td><td class="num">95.8%</td><td class="num">-0.917</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$62</td><td class="num">2.13</td><td class="num">6.2%</td><td class="num">37.5%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$99</td><td class="num">1.50</td><td class="num">8.3%</td><td class="num">29.2%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · sparse ±1 (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$132</td><td class="num">1.14</td><td class="num">2.1%</td><td class="num">27.1%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-1)"></span>1 min</td><td class="num">48</td><td class="num">2.08%</td><td class="num">$18</td><td class="num">1.05</td><td class="num">41.7%</td><td class="num">97.9%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-2)"></span>5 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$32</td><td class="num">1.12</td><td class="num">18.8%</td><td class="num">85.4%</td><td class="num">-1.000</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-3)"></span>15 min</td><td class="num">48</td><td class="num">2.08%</td><td class="num">$71</td><td class="num">1.09</td><td class="num">14.6%</td><td class="num">54.2%</td><td class="num">-0.958</td></tr><tr><td>Tabular Q · shaped (L1)</td><td><span class="dot" style="background:var(--series-4)"></span>30 min</td><td class="num">48</td><td class="num">0.00%</td><td class="num">$115</td><td class="num">0.99</td><td class="num">4.2%</td><td class="num">33.3%</td><td class="num">-1.000</td></tr></tbody></table></div>
+</section>
+
+
+<section>
+  <h2>Previous training runs</h2>
+  <p class="sub muted">Every batch training run appends its held-out test MAEs to
+  metrics_history.jsonl — reruns accumulate for comparison instead of overwriting.</p>
+  <div class="scroll"><table>
+  <thead><tr><th>When</th><th>Run</th><th>Agent</th><th>Test MAE by horizon</th></tr></thead>
+  <tbody><tr><td class="num">2026-08-20 15:40</td><td>train_l1</td><td>Persistence (L0)</td><td class="num">h1: $15 · h15: $60 · h30: $85 · h5: $35</td></tr><tr><td class="num">2026-08-20 15:40</td><td>train_l1</td><td>Tabular Q · shaped (L1)</td><td class="num">h1: $16 · h15: $70 · h30: $87 · h5: $37</td></tr><tr><td class="num">2026-08-20 15:40</td><td>train_l1</td><td>Tabular Q · sparse ±1 (L1)</td><td class="num">h1: $16 · h15: $87 · h30: $108 · h5: $65</td></tr></tbody></table></div>
 </section>
 
 <section>
@@ -146,7 +90,7 @@ footer { color: var(--muted); font-size: 12.5px; }
   <p class="sub muted">The spec reward is honest but nearly silent — it fires on ~0.5% of
   episodes. The shaped variant keeps the same objective while making the gradient audible.</p>
   <div class="reward-box">
-    <div class="reward"><b>+1</b> &nbsp;int(pred) == int(actual)</div>
+    <div class="reward"><b>+1</b> &nbsp;|pred − actual| ≤ max($5, 0.1·σ_h)</div>
     <div class="reward"><b>−1</b> &nbsp;any other outcome (spec)</div>
     <div class="reward"><b>−|error| / 100</b> &nbsp;shaped variant on a miss</div>
   </div>
@@ -164,7 +108,7 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="rung done"><span class="rung-id">L0</span><div><div class="rung-name">Persistence baseline</div><div class="muted">predict the current price — the bar to clear</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L1</span><div><div class="rung-name">Tabular Q-learning</div><div class="muted">81 states × 21 integer-delta actions, ε-greedy, sparse + shaped rewards</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L2</span><div><div class="rung-name">Linear function approximation</div><div class="muted">continuous features, SGD on Q(s,a) — live as t7</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L3</span><div><div class="rung-name">Small distributional DQN</div><div class="muted">predict the delta distribution, act on its mode — live as t8</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L4</span><div><div class="rung-name">LSTM sequence model</div><div class="muted">raw 1-minute return stream, distributional head — live as t9</div></div><span class="pill ok">✓ built</span></div><div class="rung live"><span class="rung-id">L5</span><div><div class="rung-name">Market & human signals</div><div class="muted">Kalshi prediction-market context (t10) · RLHF human feedback (t11) · kb binary calls on the Kalshi 15-min contract · calibrated-winner meta-arm (cal)</div></div><span class="pill ok">✓ live</span></div>
 </section>
 
-<footer>Generated 2026-08-20 10:17 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
+<footer>Generated 2026-08-20 15:40 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
 sentiment: alternative.me Fear &amp; Greed · chronological 80/20 split, no lookahead.</footer>
 </main>
 
