@@ -153,9 +153,12 @@ footer { color: var(--muted); font-size: 12.5px; }
 <section>
   <h2>Model card</h2>
   <dl class="card">
-    <dt>Experiment</dt><dd>One stream per horizon, each predicting at its own cadence
-      (cadence = horizon) with its own Q-table — streams never share updates. The +15/+30
-      tables warm-started from the original (control) model; +1/+5 are new treatments.</dd>
+    <dt>Experiment</dt><dd><b>Control</b> (solid lines): tabular Q-learning, one table per
+      horizon, untouched. <b>Treatment 2</b> (dashed): LinUCB contextual bandit over the
+      same 21 integer-delta arms — each arm keeps a ridge reward model over the continuous
+      features; selection is optimistic (θ·x + α·uncertainty); <b>reward = betting P&amp;L</b>
+      (+$40 within ±$10, −$10 miss), so t2 directly maximizes the bankroll. Arms never
+      share updates; both bet under identical rules on identical slots.</dd>
     <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
       81 discrete states × 21 actions = 1,701 Q-values per horizon per arm.</dd>
     <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
@@ -183,6 +186,7 @@ footer { color: var(--muted); font-size: 12.5px; }
 <script>
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [5, 15, 30];
+const armOf = p => (p.variant || "").startsWith("t2") ? "t2" : "ctl";
 let latest = null;
 
 // All times on this page are US Pacific (PST/PDT).
@@ -201,6 +205,8 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw line"></span>actual @ t</span>
     ${T1_HORIZONS.map(h =>
       `<span><span class="sw" style="background:${H_COLOR[h]}"></span>+${h} min</span>`).join("")}
+    <span><span class="sw line" style="border-top-style:solid"></span>solid = control (tabular Q)</span>
+    <span><span class="sw line" style="border-top-style:dashed"></span>dashed = t2 (LinUCB bandit)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-all"></div>
@@ -210,7 +216,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span class="arm-tag treatment">predicts every 5 min</span></h2>
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
-    <thead><tr><th>Target T=t (PST)</th><th class="num">Predicted @ t</th>
+    <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th>
     <th class="num">Bet</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
@@ -262,17 +268,20 @@ function chartCombined(prices, preds) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   for (const h of T1_HORIZONS) {
     const color = H_COLOR[h];
-    const hp = preds.filter(p => p.horizon === h);
-    const scored = hp.filter(p => p.actual != null)
-      .sort((a, b) => a.target_ts - b.target_ts);
-    if (scored.length) {
-      g += `<path class="predline" style="stroke:${color}" d="${scored.map((p, i) =>
-        `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
-      for (let i = 0; i < scored.length; i += 2)  // sparse hover targets
-        g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="6" data-tip="${tipText(scored[i])}"/>`;
+    for (const arm of ["ctl", "t2"]) {   // solid = control, dashed = treatment 2
+      const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
+      const scored = hp.filter(p => p.actual != null)
+        .sort((a, b) => a.target_ts - b.target_ts);
+      const dash = arm === "t2" ? ' stroke-dasharray="6 5"' : "";
+      if (scored.length) {
+        g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
+          `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
+        for (let i = 0; i < scored.length; i += 2)  // sparse hover targets
+          g += `<circle class="hover-pt" cx="${f.X(scored[i].target_ts)}" cy="${f.Y(scored[i].pred)}" r="6" data-tip="[${arm}] ${tipText(scored[i])}"/>`;
+      }
+      for (const p of hp.filter(p => p.actual == null))
+        g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" style="stroke:${color}"${dash} data-tip="[${arm}] ${tipText(p)}"/>`;
     }
-    for (const p of hp.filter(p => p.actual == null))
-      g += `<circle class="pt-pending" cx="${f.X(p.target_ts)}" cy="${f.Y(p.pred)}" r="4" style="stroke:${color}" data-tip="${tipText(p)}"/>`;
   }
   return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="predicted vs actual, all horizons">${g}</svg>`;
 }
@@ -281,8 +290,9 @@ function ledgerRows(preds, withHorizon) {
   return preds.slice(-8).reverse().map(p => {
     const state = p.actual == null ? '<span class="pill pending">pending</span>'
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
-    const hz = withHorizon
-      ? `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` : "";
+    const hz = `<td>${armOf(p) === "t2"
+      ? '<span class="arm-tag treatment">t2</span>'
+      : '<span class="arm-tag control">ctl</span>'}</td>`;
     const bet = !p.bet ? "no bet"
       : p.pnl == null ? "$10 in play"
       : p.pnl > 0 ? `<span class="pill hit">won +$${p.pnl}</span>`
@@ -296,16 +306,17 @@ function ledgerRows(preds, withHorizon) {
 }
 
 function stats(preds) {
-  const sc = preds.filter(p => p.actual != null);
-  if (!sc.length) return "no scored predictions yet";
-  const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-  const hits = sc.filter(p => p.hit).length;
-  const bets = sc.filter(p => p.bet);
-  const pnl = bets.reduce((a, p) => a + (p.pnl || 0), 0);
-  const wins = bets.filter(p => p.pnl > 0).length;
-  return `scored ${sc.length} · MAE $${Math.round(mae)} · exact hits ${hits}` +
-    ` (${(100 * hits / sc.length).toFixed(2)}%)` +
-    (bets.length ? ` · betting: ${wins}/${bets.length} won, P&L ${pnl >= 0 ? "+" : "−"}$${Math.abs(pnl)}` : "");
+  const one = arm => {
+    const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
+    if (!sc.length) return `${arm}: no scored predictions yet`;
+    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+    const bets = sc.filter(p => p.bet);
+    const pnl = bets.reduce((a, p) => a + (p.pnl || 0), 0);
+    const wins = bets.filter(p => p.pnl > 0).length;
+    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}` +
+      (bets.length ? ` · bets ${wins}/${bets.length} won, P&L ${pnl >= 0 ? "+" : "−"}$${Math.abs(pnl)}` : "");
+  };
+  return one("ctl") + "   |   " + one("t2");
 }
 
 function draw() {
@@ -377,7 +388,7 @@ async function poll() {
         document.getElementById("bpending").textContent = money(bk.pending_staked);
         document.getElementById("book").innerHTML =
           Object.entries(bk.per_stream).map(([v, s]) =>
-            `<tr><td>+${v.slice(1)} min</td><td class="num">${s.bets}</td>` +
+            `<tr><td>${v.startsWith("t2-") ? "t2 +" + v.slice(4) : "ctl +" + v.slice(1)} min</td><td class="num">${s.bets}</td>` +
             `<td class="num">${s.settled}</td><td class="num">${s.wins}</td>` +
             `<td class="num">${s.settled ? (100 * s.wins / s.settled).toFixed(0) + "%" : "–"}</td>` +
             `<td class="num">$${s.staked}</td><td class="num">$${s.received}</td>` +

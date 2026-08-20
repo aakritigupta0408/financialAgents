@@ -26,10 +26,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
-from .agents import TabularQAgent
+from .agents import LinUCBAgent, TabularQAgent
 from .env import build_episodes, reward
-from .features import compute_features, discretize
+from .features import compute_features, discretize, feature_vector
 from .sources import fetch_brti_composite, fetch_fear_greed, fetch_range
+
+FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
 
 RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
 PRED_LOG = RESULTS_DIR / "prediction_log.jsonl"
@@ -40,12 +42,17 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # cadence (cadence == horizon), each with its own Q-table file. The h15/h30
 # tables warm-start from the original (control) model's batch tables; add new
 # dicts here for future treatments.
-# All arms predict every 5 minutes (9:00, 9:05, 9:10…), one line each on the
-# shared graph; they differ only in how far ahead they predict.
+# All arms predict every 5 minutes (9:00, 9:05, 9:10…). CONTROL arms (h5/h15/
+# h30, tabular Q) are frozen — do not touch. TREATMENT 2 (t2-*) is a LinUCB
+# contextual bandit over the same 21 integer-delta arms: reward = betting P&L
+# (+$40 within ±$10, −$10 otherwise), context = the continuous feature vector.
 VARIANTS: dict[str, dict] = {
-    "h5": {"predict_every": 300, "horizons": [5]},
-    "h15": {"predict_every": 300, "horizons": [15]},
-    "h30": {"predict_every": 300, "horizons": [30]},
+    "h5": {"predict_every": 300, "horizons": [5], "agent": "tabular"},
+    "h15": {"predict_every": 300, "horizons": [15], "agent": "tabular"},
+    "h30": {"predict_every": 300, "horizons": [30], "agent": "tabular"},
+    "t2-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb"},
+    "t2-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb"},
+    "t2-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb"},
 }
 
 # Betting rules: each committed prediction stakes $10 from a shared $1,000
@@ -71,6 +78,19 @@ def _qtable_path(variant: str) -> Path:
     return RESULTS_DIR / f"q_table_online_{variant}.json"
 
 
+def _bandit_path(variant: str) -> Path:
+    return RESULTS_DIR / f"linucb_{variant}.json"
+
+
+def _load_bandits(variant: str, horizons: list[int]) -> dict[int, LinUCBAgent]:
+    path = _bandit_path(variant)
+    if path.exists():
+        raw = json.loads(path.read_text())
+        return {h: LinUCBAgent.from_dict(raw[f"h{h}"]) for h in horizons
+                if f"h{h}" in raw} or {h: LinUCBAgent(FEATURE_DIM) for h in horizons}
+    return {h: LinUCBAgent(FEATURE_DIM) for h in horizons}
+
+
 def _load_agents(variant: str, horizons: list[int]) -> dict[int, TabularQAgent]:
     """This arm's own tables if checkpointed, else warm-start from batch."""
     own = _qtable_path(variant)
@@ -87,12 +107,17 @@ def _load_agents(variant: str, horizons: list[int]) -> dict[int, TabularQAgent]:
     return agents
 
 
-def _checkpoint(variant: str, agents: dict[int, TabularQAgent]) -> None:
-    payload = {f"h{h}": {"|".join(map(str, s)): qs for s, qs in a.q.items()}
-               for h, a in agents.items()}
-    tmp = _qtable_path(variant).with_suffix(".tmp")
+def _checkpoint(variant: str, agents: dict) -> None:
+    if any(isinstance(a, LinUCBAgent) for a in agents.values()):
+        payload = {f"h{h}": a.to_dict() for h, a in agents.items()}
+        target = _bandit_path(variant)
+    else:
+        payload = {f"h{h}": {"|".join(map(str, s)): qs for s, qs in a.q.items()}
+                   for h, a in agents.items()}
+        target = _qtable_path(variant)
+    tmp = target.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload))
-    tmp.replace(_qtable_path(variant))
+    tmp.replace(target)
 
 
 def _load_ledger() -> list[dict]:
@@ -122,9 +147,15 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     rows = []
     for horizon in horizons:
         agent = agents[horizon]
-        qs = agent.q.get(state)
-        delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
-                 if qs else 0)
+        row_extra: dict = {}
+        if isinstance(agent, LinUCBAgent):
+            x = feature_vector(feat)
+            delta = config.ACTION_DELTAS[agent.select(x)]
+            row_extra["x"] = [round(v, 5) for v in x]
+        else:
+            qs = agent.q.get(state)
+            delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
+                     if qs else 0)
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
@@ -132,6 +163,7 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             "pred": int(feat["price"] + delta), "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
             "bet": BET_STAKE if slot_ts >= bet_start_ts else 0,
+            **row_extra,
         })
     return rows
 
@@ -157,6 +189,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
                   "val_episodes": len(val_eps), "epochs": RETRAIN_EPOCHS,
                   "arms": {}}
     for variant, agents in arms.items():
+        if any(isinstance(a, LinUCBAgent) for a in agents.values()):
+            continue  # t2 bandits learn purely online — no batch retrain
         horizons = list(agents)
         eps = [e for e in train_eps if e.horizon_min in horizons]
         before = {h: {s: list(qs) for s, qs in agents[h].q.items()}
@@ -190,8 +224,13 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]]) -> dict:
 
 def run(once: bool = False) -> None:
     RESULTS_DIR.mkdir(exist_ok=True)
-    arms = {v: _load_agents(v, spec["horizons"])
+    arms = {v: (_load_bandits(v, spec["horizons"])
+                if spec.get("agent") == "linucb"
+                else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
+    cold_bandits = {v for v, spec in VARIANTS.items()
+                    if spec.get("agent") == "linucb"
+                    and all(a.total_pulls == 0 for a in arms[v].values())}
     ledger = _load_ledger()
     made = {(r.get("variant", "control"), r["made_ts"], r["horizon"])
             for r in ledger}
@@ -220,6 +259,24 @@ def run(once: bool = False) -> None:
             bars = fetch_range(now - timedelta(hours=BACKFILL_HOURS + 1), now)
             by_ts = {b["ts"]: b for b in bars}
             fng = fetch_fear_greed().get(now.date().isoformat())
+
+            # 0. cold-start: warm a fresh bandit up on recent history so its
+            #    first real bets aren't pure exploration
+            if cold_bandits:
+                warm_eps = build_episodes({"warm": bars}, {"warm": None})
+                for v in sorted(cold_bandits):
+                    for h, agent in arms[v].items():
+                        for e in (e for e in warm_eps if e.horizon_min == h):
+                            x = feature_vector(e.features)
+                            a = agent.select(x)
+                            pred = e.price_now + config.ACTION_DELTAS[a]
+                            r = (BET_PAYOUT - BET_STAKE
+                                 if abs(pred - e.price_future) <= BET_TOLERANCE
+                                 else -BET_STAKE)
+                            agent.update(x, a, r)
+                    _checkpoint(v, arms[v])
+                    print(f"warmed up {v} on {len(warm_eps)} recent episodes")
+                cold_bandits.clear()
 
             # 1. commit predictions per arm, at each arm's own cadence
             #    (uniformly covers live boundaries and first-run backfill)
@@ -260,12 +317,19 @@ def run(once: bool = False) -> None:
                     row["pnl"] = row["payout"] - row["bet"]
                 scored += 1
                 agents = arms.get(row["variant"])
-                if (agents and row["horizon"] in agents and row.get("state")
-                        and row["delta"] in config.ACTION_DELTAS):
+                agent = agents.get(row["horizon"]) if agents else None
+                if agent is None or row["delta"] not in config.ACTION_DELTAS:
+                    continue
+                if isinstance(agent, LinUCBAgent) and row.get("x"):
+                    r = (BET_PAYOUT - BET_STAKE
+                         if row["abs_err"] <= BET_TOLERANCE else -BET_STAKE)
+                    agent.update(row["x"],
+                                 config.ACTION_DELTAS.index(row["delta"]), r)
+                    online_updates += 1
+                elif isinstance(agent, TabularQAgent) and row.get("state"):
                     r = reward(row["pred"], row["actual"], shaped=True)
-                    agents[row["horizon"]].learn(
-                        tuple(row["state"]),
-                        config.ACTION_DELTAS.index(row["delta"]), r)
+                    agent.learn(tuple(row["state"]),
+                                config.ACTION_DELTAS.index(row["delta"]), r)
                     online_updates += 1
             if scored:  # persist what was just learned
                 for variant, agents in arms.items():
@@ -314,8 +378,11 @@ def run(once: bool = False) -> None:
                 "brti": fetch_brti_composite(),
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],
-                                 "states_known": {h: len(a.q)
-                                                  for h, a in arms[v].items()}}
+                                 "agent": s.get("agent", "tabular"),
+                                 "states_known": {
+                                     h: (a.total_pulls if isinstance(a, LinUCBAgent)
+                                         else len(a.q))
+                                     for h, a in arms[v].items()}}
                              for v, s in VARIANTS.items()},
                 "betting": book,
                 "online_updates_session": online_updates,

@@ -65,6 +65,28 @@ def compute_features(bars: list[dict], fng: int | None) -> dict:
     }
 
 
+def feature_vector(feat: dict) -> list[float]:
+    """Normalized continuous context for linear/bandit models (LinUCB).
+
+    Leading 1.0 is the intercept. Returns are in ~basis-point scale, RSI and
+    Fear&Greed centered at 0 — everything roughly O(1) so one ridge prior
+    (lambda*I) suits all dimensions.
+    """
+    import math as _m
+    return [
+        1.0,
+        feat["ret_1m"] * 1e4 / 10,
+        feat["ret_5m"] * 1e4 / 20,
+        feat["ret_15m"] * 1e4 / 30,
+        feat["ret_60m"] * 1e4 / 60,
+        feat["vol_30m"] * 1e4 / 10,
+        (feat["rsi_14"] - 50) / 50,
+        feat["ema_dist"] * 1e4 / 30,
+        _m.log(max(feat["vol_ratio"], 1e-6)) / 2,
+        (feat["fng"] - 50) / 50,
+    ]
+
+
 def _bucket3(x: float, lo: float, hi: float) -> int:
     """3-way bucket: 0 below lo, 1 between, 2 above hi."""
     if x < lo:
