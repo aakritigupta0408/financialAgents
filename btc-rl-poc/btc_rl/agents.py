@@ -144,6 +144,95 @@ class LinearQAgent:
         return agent
 
 
+class DistDQNAgent:
+    """Level 3: small distributional network — predict the DELTA DISTRIBUTION,
+    act on its mode.
+
+    An MLP maps the context to a categorical distribution over the vol-scaled
+    action bins (K_FACTORS as bin centers, sigma units). Training is
+    cross-entropy against the realized bin (one-step distributional target);
+    greedy action = distribution mode; exploratory action = a sample from the
+    predicted distribution itself.
+    """
+
+    name = "dist-dqn"
+
+    def __init__(self, dim: int, n_arms: int | None = None, lr: float = 1e-3,
+                 seed: int = 7):
+        import torch
+        from torch import nn
+        self.torch = torch
+        self.dim = dim
+        # distribution support = action bins + OVERFLOW bins (targets only):
+        # without them, clipping piles tail mass onto the ±1.5 edges and the
+        # mode degenerates into a permanent ±1.5-sigma bet
+        self.bins = sorted(set(config.K_FACTORS) | {2.0, -2.0, 3.0, -3.0})
+        self.n_arms = len(self.bins)
+        self._act_ok = [abs(k) <= 1.5 + 1e-9 for k in self.bins]
+        torch.manual_seed(seed)
+        self.net = nn.Sequential(
+            nn.Linear(dim, 64), nn.ReLU(),
+            nn.Linear(64, 64), nn.ReLU(),
+            nn.Linear(64, self.n_arms))
+        self.opt = torch.optim.Adam(self.net.parameters(), lr=lr)
+        self.loss_fn = nn.CrossEntropyLoss()
+        self.steps = 0
+
+    def _logits(self, x):
+        return self.net(self.torch.tensor(x, dtype=self.torch.float32))
+
+    def select(self, x, greedy: bool = False) -> int:
+        with self.torch.no_grad():
+            logits = self._logits(x).clone()
+            for i, ok in enumerate(self._act_ok):
+                if not ok:            # overflow bins are never actions
+                    logits[i] = -1e9
+            if greedy:
+                return int(logits.argmax())
+            probs = self.torch.softmax(logits, dim=-1)
+            return int(self.torch.multinomial(probs, 1))
+
+    def target_bin(self, z: float) -> int:
+        z = max(-3.0, min(3.0, z))
+        return min(range(len(self.bins)), key=lambda i: abs(self.bins[i] - z))
+
+    def learn_dist(self, x, z: float) -> None:
+        t = self.torch.tensor([self.target_bin(z)])
+        loss = self.loss_fn(self._logits(x).unsqueeze(0), t)
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
+        self.steps += 1
+
+    def learn_batch(self, X, Z) -> float:
+        t = self.torch.tensor([self.target_bin(z) for z in Z])
+        xt = self.torch.tensor(X, dtype=self.torch.float32)
+        loss = self.loss_fn(self.net(xt), t)
+        self.opt.zero_grad()
+        loss.backward()
+        self.opt.step()
+        self.steps += len(Z)
+        return float(loss)
+
+    @property
+    def total_pulls(self) -> int:
+        return self.steps
+
+    def save(self, path) -> None:
+        self.torch.save({"dim": self.dim, "n_arms": self.n_arms,
+                         "steps": self.steps,
+                         "state": self.net.state_dict()}, path)
+
+    @classmethod
+    def load(cls, path) -> "DistDQNAgent":
+        import torch
+        ck = torch.load(path, weights_only=False)
+        agent = cls(dim=ck["dim"], n_arms=ck["n_arms"])
+        agent.net.load_state_dict(ck["state"])
+        agent.steps = ck.get("steps", 0)
+        return agent
+
+
 class TabularQAgent:
     """Level 1: one-step Q-learning (a contextual bandit, so no bootstrapping).
 

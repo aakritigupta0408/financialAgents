@@ -28,9 +28,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
-from .agents import LinearQAgent, LinUCBAgent, TabularQAgent
+from .agents import (DistDQNAgent, LinearQAgent, LinUCBAgent,
+                     TabularQAgent)
 
-BANDIT_TYPES = (LinUCBAgent, LinearQAgent)  # shared select/update API
+BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
 from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, OFI_DIM, TREND_DIM,
                        book_feature_vector, compute_features, discretize,
@@ -66,6 +67,12 @@ VARIANTS: dict[str, dict] = {
     "h5": {"predict_every": 300, "horizons": [5], "agent": "tabular"},
     "h15": {"predict_every": 300, "horizons": [15], "agent": "tabular"},
     "h30": {"predict_every": 300, "horizons": [30], "agent": "tabular"},
+    # RP = chart-replay baseline: copy the last h-minute move forward —
+    # pred(t+h) = price(t) + (price(t) - price(t-h)). No learning; exists so
+    # "better than copying the past graph?" is answered on every chart.
+    "rp-h5": {"predict_every": 300, "horizons": [5], "agent": "replay"},
+    "rp-h15": {"predict_every": 300, "horizons": [15], "agent": "replay"},
+    "rp-h30": {"predict_every": 300, "horizons": [30], "agent": "replay"},
     "t2-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb"},
     "t2-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb"},
     "t2-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb"},
@@ -83,6 +90,15 @@ VARIANTS: dict[str, dict] = {
     # short-horizon signal (Cont et al.; crypto order-flow literature):
     # signed taker-volume imbalance over 1/5/15 min + trade intensity,
     # computed live from the Coinbase trades stream.
+    # TREATMENT 8 = the roadmap's L3 rung: small distributional network —
+    # predict the vol-normalized delta DISTRIBUTION over the action bins,
+    # act on its mode. Batch-trained by scripts/train_l3.py.
+    "t8-h5": {"predict_every": 300, "horizons": [5], "agent": "dqn",
+              "trend": True},
+    "t8-h15": {"predict_every": 300, "horizons": [15], "agent": "dqn",
+               "trend": True},
+    "t8-h30": {"predict_every": 300, "horizons": [30], "agent": "dqn",
+               "trend": True},
     "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
               "live": True, "trend": True, "book": True, "llm": True,
               "ofi": True},
@@ -164,6 +180,11 @@ def _horizon_sigma(feat: dict, horizon: int) -> float:
     return max(feat["vol_30m"] * math.sqrt(horizon) * feat["price"], SIGMA_FLOOR)
 
 
+def _k_of(agent, arm: int) -> float:
+    """Action multiple for an arm index — DQN carries its own bin support."""
+    return agent.bins[arm] if hasattr(agent, "bins") else config.K_FACTORS[arm]
+
+
 def _vol_delta(k: float, feat: dict, horizon: int) -> int:
     return int(round(k * _horizon_sigma(feat, horizon)))
 
@@ -216,6 +237,25 @@ def _qtable_path(variant: str) -> Path:
 
 def _bandit_path(variant: str) -> Path:
     return RESULTS_DIR / f"linucb_{variant}.json"
+
+
+def _load_dqn(variant: str, horizons: list[int], dim: int):
+    agents = {}
+    for h in horizons:
+        own = RESULTS_DIR / f"dqn_{variant}.pt"
+        batch = RESULTS_DIR / f"dqn_h{h}.pt"
+        try:
+            if own.exists():
+                agents[h] = DistDQNAgent.load(own)
+            elif batch.exists():
+                agents[h] = DistDQNAgent.load(batch)
+            else:
+                agents[h] = DistDQNAgent(dim)
+        except Exception:
+            agents[h] = DistDQNAgent(dim)
+        if agents[h].dim != dim:
+            agents[h] = DistDQNAgent(dim)
+    return agents
 
 
 def _load_bandits(variant: str, horizons: list[int], dim: int,
@@ -284,6 +324,10 @@ def _load_agents(variant: str, horizons: list[int]) -> dict[int, TabularQAgent]:
 
 
 def _checkpoint(variant: str, agents: dict) -> None:
+    if any(isinstance(a, DistDQNAgent) for a in agents.values()):
+        for a in agents.values():
+            a.save(RESULTS_DIR / f"dqn_{variant}.pt")
+        return
     if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
         payload = {f"h{h}": a.to_dict() for h, a in agents.items()}
         target = _bandit_path(variant)
@@ -331,16 +375,22 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     spec = spec or {}
     rows = []
     for horizon in horizons:
-        agent = agents[horizon]
         row_extra: dict = {}
         adj = 0
+        if spec.get("agent") == "replay":
+            # copy the past chart segment forward, verbatim
+            agent = None
+            delta = (int(round(feat["price"] - bars_upto[-1 - horizon]["close"]))
+                     if len(bars_upto) > horizon else 0)
+        else:
+            agent = agents[horizon]
         if isinstance(agent, BANDIT_TYPES):
             x = _context(spec, feat, snap)
             # commitments are GREEDY — exploration (UCB bonus / epsilon)
             # belongs in warm-up and hourly replay, never in the published
             # forecast (it was leaking ±3-sigma probes into predictions)
             arm = agent.select(x, greedy=True)
-            delta = _vol_delta(config.K_FACTORS[arm], feat, horizon)
+            delta = _vol_delta(_k_of(agent, arm), feat, horizon)
             # shrink (x0.5) and cap (±0.5 sigma_h) the bias intercept — the
             # uncapped version chased rallies and doubled the miss at turns
             raw_adj = (bias or {}).get((variant, horizon), 0)
@@ -348,9 +398,11 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             adj = int(max(-cap, min(cap, 0.5 * raw_adj)))
             row_extra["x"] = [round(v, 5) for v in x]
             row_extra["arm"] = arm
+            if isinstance(agent, DistDQNAgent):
+                row_extra["sigma"] = round(_horizon_sigma(feat, horizon), 2)
             if adj:
                 row_extra["bias_adj"] = adj
-        else:
+        elif agent is not None:
             qs = agent.q.get(state)
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
                      if qs else 0)
@@ -383,7 +435,7 @@ def _bandit_val_mae(agent: LinUCBAgent, spec: dict, episodes: list,
     for e in episodes:
         x = _context(spec, e.features, _nearest_snap(snaps, e.minute_ts))
         a = agent.select(x, greedy=True)
-        d = _vol_delta(config.K_FACTORS[a], e.features, e.horizon_min)
+        d = _vol_delta(_k_of(agent, a), e.features, e.horizon_min)
         errs.append(abs(e.price_now + d - e.price_future))
     return sum(errs) / len(errs) if errs else 0.0
 
@@ -404,18 +456,28 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                   "val_episodes": len(val_eps), "epochs": RETRAIN_EPOCHS,
                   "arms": {}}
     for variant, agents in arms.items():
+        if not agents:
+            continue  # replay baseline has no model
         if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
             spec = VARIANTS[variant]
             gate = {}
             for h, agent in agents.items():
                 eps = [e for e in train_eps if e.horizon_min == h]
                 veps = [e for e in val_eps if e.horizon_min == h]
-                before = ([a.copy() for a in agent.A],
-                          [b.copy() for b in agent.b], list(agent.pulls))
+                if isinstance(agent, DistDQNAgent):
+                    import copy as _copy
+                    before = _copy.deepcopy(agent.net.state_dict())
+                else:
+                    before = ([a.copy() for a in agent.A],
+                              [b.copy() for b in agent.b], list(agent.pulls))
                 before_mae = _bandit_val_mae(agent, spec, veps, snaps)
                 for e in eps:
                     x = _context(spec, e.features,
                                  _nearest_snap(snaps, e.minute_ts))
+                    if isinstance(agent, DistDQNAgent):
+                        agent.learn_dist(x, (e.price_future - e.price_now)
+                                         / _horizon_sigma(e.features, h))
+                        continue
                     a = agent.select(x)
                     d = _vol_delta(config.K_FACTORS[a], e.features, h)
                     agent.update(x, a, _bandit_reward(
@@ -423,7 +485,10 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 after_mae = _bandit_val_mae(agent, spec, veps, snaps)
                 reverted = after_mae > before_mae
                 if reverted:
-                    agent.A, agent.b, agent.pulls = before
+                    if isinstance(agent, DistDQNAgent):
+                        agent.net.load_state_dict(before)
+                    else:
+                        agent.A, agent.b, agent.pulls = before
                 gate[f"h{h}"] = {"val_mae_before": round(before_mae, 2),
                                  "val_mae_after": round(after_mae, 2),
                                  "reverted": reverted}
@@ -466,12 +531,15 @@ def run(once: bool = False) -> None:
     arms = {v: (_load_bandits(v, spec["horizons"], _ctx_dim(spec),
                               kind=spec["agent"])
                 if spec.get("agent") in ("linucb", "linearq")
+                else _load_dqn(v, spec["horizons"], _ctx_dim(spec))
+                if spec.get("agent") == "dqn"
+                else {} if spec.get("agent") == "replay"
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
     snaps = _load_snapshots()
     trades: dict[int, dict] = {}  # rolling taker-flow store (last ~20 min)
     cold_bandits = {v for v, spec in VARIANTS.items()
-                    if spec.get("agent") in ("linucb", "linearq")
+                    if spec.get("agent") in ("linucb", "linearq", "dqn")
                     and all(a.total_pulls == 0 for a in arms[v].values())}
     ledger = _load_ledger()
     made = {(r.get("variant", "control"), r["made_ts"], r["horizon"])
@@ -544,6 +612,11 @@ def run(once: bool = False) -> None:
                         for e in (e for e in warm_eps if e.horizon_min == h):
                             x = _context(vspec, e.features,
                                          _nearest_snap(snaps, e.minute_ts))
+                            if isinstance(agent, DistDQNAgent):
+                                agent.learn_dist(
+                                    x, (e.price_future - e.price_now)
+                                    / _horizon_sigma(e.features, h))
+                                continue
                             a = agent.select(x)
                             d = _vol_delta(config.K_FACTORS[a], e.features, h)
                             agent.update(x, a, _bandit_reward(
@@ -586,12 +659,13 @@ def run(once: bool = False) -> None:
             by_slot: dict[int, dict] = {}
             for r in ledger:
                 if r["horizon"] == 5 \
-                        and r["variant"] in ("h5", "t2-h5", "t6-h5", "t7-h5") \
+                        and r["variant"] in ("h5", "rp-h5", "t2-h5", "t6-h5", "t7-h5",
+                                             "t8-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             # skill-weighted poll: drop the voter with the worst trailing MAE
             trail: dict[str, float] = {}
-            for v in ("h5", "t2-h5", "t6-h5", "t7-h5"):
+            for v in ("h5", "rp-h5", "t2-h5", "t6-h5", "t7-h5", "t8-h5"):
                 errs = [r["abs_err"] for r in ledger
                         if r["variant"] == v and r["actual"] is not None][-50:]
                 if len(errs) >= 20:
@@ -643,7 +717,13 @@ def run(once: bool = False) -> None:
                 agent = agents.get(row["horizon"]) if agents else None
                 if agent is None:
                     continue
-                if isinstance(agent, BANDIT_TYPES) and row.get("x") \
+                if isinstance(agent, DistDQNAgent) and row.get("x") \
+                        and row.get("sigma"):
+                    z = (row["actual"] - row["price_now"]) / row["sigma"]
+                    if len(row["x"]) == agent.dim:
+                        agent.learn_dist(row["x"], z)
+                        online_updates += 1
+                elif isinstance(agent, BANDIT_TYPES) and row.get("x") \
                         and row.get("arm") is not None:
                     if row["arm"] < agent.n_arms and len(row["x"]) == agent.dim:
                         agent.update(row["x"], row["arm"], _bandit_reward(
@@ -658,7 +738,8 @@ def run(once: bool = False) -> None:
                     online_updates += 1
             if scored:  # persist what was just learned
                 for variant, agents in arms.items():
-                    _checkpoint(variant, agents)
+                    if agents:
+                        _checkpoint(variant, agents)
             if new_preds or scored:
                 ledger = ledger[-LEDGER_MAX_ROWS:]
                 _save_ledger(ledger)

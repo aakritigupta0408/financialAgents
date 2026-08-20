@@ -57,6 +57,8 @@ h2 { margin: 0 0 2px; font-size: 17px; }
 .arm-tag.t5 { color: var(--series-5); background: color-mix(in srgb, var(--series-5) 13%, transparent); }
 .arm-tag.t6 { color: var(--series-6); background: color-mix(in srgb, var(--series-6) 13%, transparent); }
 .arm-tag.t7 { color: var(--series-7); background: color-mix(in srgb, var(--series-7) 13%, transparent); }
+.arm-tag.t8 { color: var(--series-4); background: color-mix(in srgb, var(--series-4) 13%, transparent); }
+.arm-tag.rp { color: var(--muted); background: color-mix(in srgb, var(--muted) 16%, transparent); }
 .consensus-num { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
 section { background: var(--surface); border: 1px solid var(--border);
@@ -188,6 +190,8 @@ footer { color: var(--muted); font-size: 12.5px; }
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [5, 15, 30];
 const armOf = p => p.variant === "consensus" ? "agg"
+  : (p.variant || "").startsWith("t8") ? "t8"
+  : (p.variant || "").startsWith("rp") ? "rp"
   : (p.variant || "").startsWith("t7") ? "t7"
   : (p.variant || "").startsWith("t6") ? "t6"
   : (p.variant || "").startsWith("t5") ? "t5"
@@ -215,6 +219,8 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw" style="background:var(--series-4)"></span>t4 (+ trend/book/abstain)</span>
     <span><span class="sw" style="background:var(--series-6)"></span>t6 (+ order flow)</span>
     <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
+    <span><span class="sw" style="background:var(--series-4)"></span>t8 (L3 dist-DQN)</span>
+    <span><span class="sw" style="background:var(--muted)"></span>rp (chart replay)</span>
     <span><span class="sw ring"></span>pending</span>
   </div>
   <div id="chart-h${h}"></div>
@@ -281,7 +287,8 @@ function tipText(p) {
 const ARM_COLOR = { ctl: "var(--series-1)", t2: "var(--series-2)",
                     t3: "var(--series-3)", t4: "var(--series-4)",
                     t5: "var(--series-5)", t6: "var(--series-6)",
-                    t7: "var(--series-7)" };
+                    t7: "var(--series-7)", t8: "var(--series-4)",
+                    rp: "var(--muted)" };
 
 function chartHorizon(prices, preds, h) {
   if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
@@ -290,7 +297,7 @@ function chartHorizon(prices, preds, h) {
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
   // shaded ribbon: the trailing-MAE leader arm's 80% band
-  const armsHere = ["ctl", "t2", "t6", "t7"];
+  const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8"];
   let leader = null, bestMae = Infinity;
   for (const a of armsHere) {
     const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
@@ -314,7 +321,7 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "t2", "t6", "t7"]) {
+    for (const arm of ["ctl", "rp", "t2", "t6", "t7", "t8"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
@@ -324,7 +331,9 @@ function chartHorizon(prices, preds, h) {
         : arm === "t4" ? ' stroke-dasharray="10 3 2 3"'
         : arm === "t5" ? ' stroke-dasharray="1 3"'
         : arm === "t6" ? ' stroke-dasharray="12 3"'
-        : arm === "t7" ? ' stroke-dasharray="3 3 8 3"' : "";
+        : arm === "t7" ? ' stroke-dasharray="3 3 8 3"'
+        : arm === "t8" ? ' stroke-dasharray="8 6"'
+        : arm === "rp" ? ' stroke-dasharray="2 6"' : "";
       if (scored.length) {
         g += `<path class="predline" style="stroke:${color}"${dash} d="${scored.map((p, i) =>
           `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.pred).toFixed(1)}`).join("")}"/>`;
@@ -353,6 +362,8 @@ function ledgerRows(preds) {
       : arm === "t5" ? '<span class="arm-tag t5">t5</span>'
       : arm === "t6" ? '<span class="arm-tag t6">t6</span>'
       : arm === "t7" ? '<span class="arm-tag t7">t7</span>'
+      : arm === "t8" ? '<span class="arm-tag t8">t8</span>'
+      : arm === "rp" ? '<span class="arm-tag rp">rp</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     const band = p.lo == null ? "–"
@@ -377,7 +388,7 @@ function stats(preds) {
       : "";
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
   };
-  return [one("ctl"), one("t2"), one("t6"), one("t7")].join("   |   ");
+  return [one("ctl"), one("rp"), one("t2"), one("t6"), one("t7"), one("t8")].join("   |   ");
 }
 
 function draw() {
@@ -419,6 +430,18 @@ const ARM_INFO = [
     features: "13 bar-derived dims (base 10 + trend 3) — deliberately snapshot-free so batch and live are identical.",
     reward: "Same as t2 (+1 exact / −|error|/100 + direction credit).",
     sampling: "Batch: 60 days through yesterday, 200k+ SGD updates per horizon, chronological 80/20 (test MAE within 1–4% of persistence). Online: per-prediction SGD + hourly gated replay + bias intercept.",
+    offline: null },
+  { key: "rp", variants: ["rp-h5", "rp-h15", "rp-h30"],
+    title: "Chart-replay baseline",
+    architecture: "No model: pred(t+h) = price(t) + (price(t) − price(t−h)) — the past graph copied forward. Exists so every arm is judged against literal chart replay.",
+    features: "The last h-minute move.", reward: "Scored only; never learns.",
+    sampling: "None.", offline: null },
+  { key: "t8", variants: ["t8-h5", "t8-h15", "t8-h30"],
+    title: "Treatment 8 — L3 distributional DQN",
+    architecture: "Small MLP (13→64→64→23) predicting the vol-normalized delta DISTRIBUTION over the action bins + overflow tail bins (targets only); greedy action = distribution mode, exploration = sampling the predicted distribution.",
+    features: "13 bar-derived dims (base + trend), like t7.",
+    reward: "Cross-entropy on the realized bin (distributional one-step target).",
+    sampling: "Batch: 60 days, ~60k steps/horizon (test MAE ties persistence at 5/15m, +4.5% at 30m). Online: per-prediction distributional update + hourly gated replay.",
     offline: null },
   { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"],
     title: "Treatment 6 — + order-flow imbalance",
