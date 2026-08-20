@@ -25,12 +25,13 @@ class Episode:
 
 
 def reward(pred_price: float, actual_price: float, shaped: bool) -> float:
-    """User spec: integer-level match => reward, else penalty.
+    """Within ±HIT_BAND dollars of the actual => full hit reward.
 
-    68000.00 and 68000.98 are the same integer; shaped mode instead pays
+    (Originally exact-integer match, which fired on <1% of predictions —
+    far too sparse to shape learning.) Shaped mode otherwise pays
     -|error|/scale so the gradient toward the right neighborhood is visible.
     """
-    if int(pred_price) == int(actual_price):
+    if abs(pred_price - actual_price) <= config.HIT_BAND:
         return config.REWARD_HIT
     if shaped:
         return -abs(pred_price - actual_price) / config.SHAPED_SCALE

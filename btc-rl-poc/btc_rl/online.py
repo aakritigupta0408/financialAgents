@@ -1209,7 +1209,7 @@ def run(once: bool = False) -> None:
                 row["actual"] = bar["close"]
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
-                row["hit"] = int(row["pred"]) == int(bar["close"])
+                row["hit"] = abs(row["pred"] - bar["close"]) <= config.HIT_BAND
                 if row.get("lo") is not None:
                     row["in_band"] = row["lo"] <= bar["close"] <= row["hi"]
                 scored += 1

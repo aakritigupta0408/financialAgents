@@ -38,6 +38,9 @@ K_FACTORS = sorted({0.0, 0.1, -0.1, 0.2, -0.2, 0.35, -0.35, 0.5, -0.5,
 
 # Rewards (user spec): +1 when int(pred) == int(actual), else penalty.
 REWARD_HIT = 1.0
+HIT_BAND = 5.0                    # a prediction within ±$5 of actual is a hit
+                                  # (exact-integer hits fired <1% — too sparse
+                                  # to teach; ±$5 fires 2-8% by horizon)
 REWARD_MISS = -1.0
 SHAPED_SCALE = 100.0              # shaped mode: reward = -|error| / SHAPED_SCALE
 
