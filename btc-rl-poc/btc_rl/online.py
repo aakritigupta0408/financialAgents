@@ -197,6 +197,25 @@ def _bandit_reward(pred: float, actual: float, price_now: float,
     return r
 
 
+def _band_map(ledger: list[dict]) -> dict:
+    """Rolling 80% conformal band per arm x horizon: 10th/90th percentiles
+    of the last 100 scored residuals (actual - pred). Reporting layer only —
+    it never alters any model's point prediction."""
+    res: dict = {}
+    for row in ledger:
+        if row["actual"] is None:
+            continue
+        res.setdefault((row["variant"], row["horizon"]), []).append(
+            row["actual"] - row["pred"])
+    out = {}
+    for k, v in res.items():
+        v = sorted(v[-100:])
+        if len(v) >= 20:
+            out[k] = (int(v[int(0.1 * len(v))]),
+                      int(v[min(len(v) - 1, int(0.9 * len(v)))]))
+    return out
+
+
 def _bias_map(ledger: list[dict]) -> dict:
     """Trailing median residual (actual - pred) per treatment arm x horizon —
     an adaptive intercept that removes conditional trend bias."""
@@ -223,8 +242,8 @@ def _load_bandits(variant: str, horizons: list[int], dim: int,
                   n_arms: int | None = None, kind: str = "linucb"):
     cls = LinearQAgent if kind == "linearq" else LinUCBAgent
     path = _bandit_path(variant)
-    agents = {h: cls(dim, n_arms=n_arms) for h in horizons}
-    want_arms = n_arms or len(config.K_FACTORS)
+    want_arms = n_arms or len(config.K_FACTORS)  # bandits act on K_FACTORS
+    agents = {h: cls(dim, n_arms=want_arms) for h in horizons}
     ok = lambda d: d["dim"] == dim and d.get("n_arms", want_arms) == want_arms
     if path.exists():
         raw = json.loads(path.read_text())
@@ -319,7 +338,8 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 bars_upto: list[dict], fng, slot_ts: int,
                 horizons: list[int], spec: dict | None = None,
                 snap: dict | None = None,
-                bias: dict | None = None) -> list[dict]:
+                bias: dict | None = None,
+                bands: dict | None = None) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts.
 
     Treatment bandits act in vol-scaled units (arm k -> k * sigma_h dollars)
@@ -354,11 +374,16 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             qs = agent.q.get(state)
             delta = (config.ACTION_DELTAS[max(range(len(qs)), key=lambda i: qs[i])]
                      if qs else 0)
+        pred = int(feat["price"] + delta + adj)
+        band = (bands or {}).get((variant, horizon))
+        if band:
+            row_extra["lo"] = pred + band[0]
+            row_extra["hi"] = pred + band[1]
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
             "horizon": horizon, "price_now": feat["price"],
-            "pred": int(feat["price"] + delta + adj), "delta": delta,
+            "pred": pred, "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
             **row_extra,
         })
@@ -551,6 +576,7 @@ def run(once: bool = False) -> None:
             # 1. commit predictions per arm, at each arm's own cadence
             #    (uniformly covers live boundaries and first-run backfill)
             bias = _bias_map(ledger)
+            bands = _band_map(ledger)
             new_preds = 0
             for variant, spec in VARIANTS.items():
                 step = spec["predict_every"]
@@ -565,7 +591,7 @@ def run(once: bool = False) -> None:
                     rows = _predict_at(variant, arms[variant], upto, fng,
                                        slot_ts, spec["horizons"], spec=spec,
                                        snap=_nearest_snap(snaps, slot_ts),
-                                       bias=bias)
+                                       bias=bias, bands=bands)
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
@@ -602,15 +628,20 @@ def run(once: bool = False) -> None:
                 mid = len(polled) // 2
                 final = (polled[mid] if len(polled) % 2
                          else (polled[mid - 1] + polled[mid]) // 2)
-                ledger.append({
+                crow = {
                     "variant": "consensus", "made_ts": slot_ts,
                     "target_ts": slot_ts + 300, "horizon": 5,
                     "price_now": base["price_now"],
                     "pred": int(final),  # median of all voters
                     "delta": int(final) - int(base["price_now"]),
                     "votes": polled, "state": None,
-                    "actual": None, "abs_err": None, "hit": None, "bet": 0,
-                })
+                    "actual": None, "abs_err": None, "hit": None,
+                }
+                cband = bands.get(("consensus", 5))
+                if cband:
+                    crow["lo"] = crow["pred"] + cband[0]
+                    crow["hi"] = crow["pred"] + cband[1]
+                ledger.append(crow)
                 new_preds += 1
 
             # 2. score matured predictions (all arms alike) and LEARN from
@@ -626,6 +657,8 @@ def run(once: bool = False) -> None:
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
                 row["hit"] = int(row["pred"]) == int(bar["close"])
+                if row.get("lo") is not None:
+                    row["in_band"] = row["lo"] <= bar["close"] <= row["hi"]
                 scored += 1
                 agents = arms.get(row["variant"])
                 agent = agents.get(row["horizon"]) if agents else None
@@ -691,6 +724,8 @@ def run(once: bool = False) -> None:
                 print(f"{now:%H:%M:%S} +{new_preds} predictions, {scored} scored "
                       f"({len(ledger)} total)")
         except Exception as exc:
+            import traceback
+            traceback.print_exc()
             print(f"poll error (will retry): {exc}")
         if once:
             for variant, agents in arms.items():

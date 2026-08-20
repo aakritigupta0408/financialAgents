@@ -138,6 +138,8 @@ footer { color: var(--muted); font-size: 12.5px; }
   <div class="stat"><div class="k">BTC (Coinbase 1m)</div><div class="bignum" id="price">–</div></div>
   <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
+  <div class="stat"><div class="k">Direction (goal &gt;55%)</div><div class="bignum" id="t-dir">–</div></div>
+  <div class="stat"><div class="k">80% band coverage (goal 80%)</div><div class="bignum" id="t-cov">–</div></div>
   <div class="stat"><div class="k">Q-updates (live)</div><div class="bignum" id="qupd">–</div></div>
   <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
   <div class="stat"><div class="k">Overfit gate</div><div class="bignum" id="gate">–</div></div>
@@ -221,6 +223,7 @@ document.getElementById("horizon-sections").innerHTML = `
   <p class="mini" id="mini-h${h}"></p>
   <div class="scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
+    <th class="num">80% band</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
     <tbody id="ledger-h${h}"></tbody>
   </table></div>
@@ -288,6 +291,27 @@ function chartHorizon(prices, preds, h) {
   const m = chartMeta[h];
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
+  // shaded ribbon: the trailing-MAE leader arm's 80% band
+  const armsHere = ["ctl", "t2", "t3", "t4", "t5", "t6", "t7"];
+  let leader = null, bestMae = Infinity;
+  for (const a of armsHere) {
+    const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
+    if (sc.length >= 5) {
+      const mae2 = sc.reduce((s2, p) => s2 + p.abs_err, 0) / sc.length;
+      if (mae2 < bestMae) { bestMae = mae2; leader = a; }
+    }
+  }
+  if (leader) {
+    const br = preds.filter(p => armOf(p) === leader && p.lo != null)
+      .sort((a, b) => a.target_ts - b.target_ts);
+    if (br.length >= 2) {
+      const up = br.map((p, i) =>
+        `${i ? "L" : "M"}${f.X(p.target_ts).toFixed(1)},${f.Y(p.hi).toFixed(1)}`).join("");
+      const dn = [...br].reverse().map(p =>
+        `L${f.X(p.target_ts).toFixed(1)},${f.Y(p.lo).toFixed(1)}`).join("");
+      g += `<path d="${up}${dn}Z" fill="${ARM_COLOR[leader]}" fill-opacity="0.10" stroke="none"/>`;
+    }
+  }
   // NB: colors go in style="", not presentation attributes — var() is
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
@@ -333,8 +357,12 @@ function ledgerRows(preds) {
       : arm === "t7" ? '<span class="arm-tag t7">t7</span>'
       : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
+    const band = p.lo == null ? "–"
+      : `${p.lo.toLocaleString()}–${p.hi.toLocaleString()}` +
+        (p.in_band == null ? "" : p.in_band ? " ✓" : " ✗");
     return `<tr><td>${fmtTime(p.target_ts)}</td>${hz}` +
       `<td class="num">$${p.pred.toLocaleString()}</td>` +
+      `<td class="num muted">${band}</td>` +
       `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
       `<td class="num">${p.actual == null ? "–" : fmtErr(p)}</td><td>${state}</td></tr>`;
   }).join("");
@@ -345,8 +373,11 @@ function stats(preds) {
     const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
     if (!sc.length) return `${arm}: no scored predictions yet`;
     const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-    const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
-    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)} · ±$10 ${(100 * w10).toFixed(0)}%`;
+    const banded = sc.filter(p => p.in_band != null);
+    const cov = banded.length
+      ? ` · band ${(100 * banded.filter(p => p.in_band).length / banded.length).toFixed(0)}%`
+      : "";
+    return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
   };
   return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5"), one("t6"), one("t7")].join("   |   ");
 }
@@ -596,6 +627,16 @@ async function poll() {
       document.getElementById("retrains").textContent = status.retrains_this_session;
       document.getElementById("qupd").textContent =
         (status.online_updates_session ?? 0).toLocaleString();
+      const tsc = preds.filter(p => (p.variant || "").startsWith("t")
+        && p.actual != null).slice(-300);
+      const moved = tsc.filter(p => p.delta !== 0);
+      const dirOk = moved.filter(p =>
+        Math.sign(p.pred - p.price_now) === Math.sign(p.actual - p.price_now)).length;
+      document.getElementById("t-dir").textContent =
+        moved.length ? (100 * dirOk / moved.length).toFixed(0) + "%" : "–";
+      const banded = tsc.filter(p => p.in_band != null);
+      document.getElementById("t-cov").textContent =
+        banded.length ? (100 * banded.filter(p => p.in_band).length / banded.length).toFixed(0) + "%" : "collecting…";
       const armsGate = status.last_retrain?.arms;
       document.getElementById("gate").textContent = !armsGate ? "–" :
         Object.values(armsGate).some(g => Object.values(g).some(x => x.reverted))

@@ -157,6 +157,7 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
     <th class="num">MAE</th><th class="num">MSE</th><th class="num">±$10</th>
     <th class="num">Direction</th><th class="num">Replay</th>
+    <th class="num">Coverage</th><th class="num">Width</th>
     <th class="num">Exact</th></tr></thead>
     <tbody id="scoreboard"></tbody>
   </table></div>
@@ -253,6 +254,10 @@ function onlineStats(preds, variants) {
         ? (dirHit - moved.length / 2) / Math.sqrt(moved.length / 4) > 1.64 : false,
       dirCov: sc.length ? moved.length / sc.length : null,
       replay: meanMove ? Math.max(0, 1 - meanDev / meanMove) : null,
+      cov: (() => { const b = sc.filter(p => p.in_band != null);
+        return b.length ? b.filter(p => p.in_band).length / b.length : null; })(),
+      width: (() => { const b = sc.filter(p => p.lo != null);
+        return b.length ? b.reduce((a, p) => a + (p.hi - p.lo), 0) / b.length : null; })(),
       hits: sc.filter(p => p.hit).length,
     });
   }
@@ -348,6 +353,8 @@ async function poll() {
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.dirSig ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
           `<td class="num">${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"}</td>` +
+          `<td class="num">${s.cov == null ? "–" : (100 * s.cov).toFixed(0) + "%"}</td>` +
+          `<td class="num">${s.width == null ? "–" : "$" + Math.round(s.width)}</td>` +
           `<td class="num">${s.hits}</td></tr>`;
       }
     }
@@ -358,7 +365,8 @@ async function poll() {
       `is the last price carried forward — 100% = pure time-shift copy of the past ` +
       `chart (persistence scores 100% by construction); real prediction pushes this ` +
       `down while keeping Direction above 50% · † = direction significantly above ` +
-      `chance (p<0.05, one-sided)`;
+      `chance (p<0.05, one-sided) · TARGETS: direction > 55%, 80%-band coverage ` +
+      `≈ 80% (well-calibrated), width as narrow as coverage allows`;
 
     document.getElementById("cards").innerHTML = ARMS.map(arm => `
 <div class="arm-card">
