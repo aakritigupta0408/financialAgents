@@ -216,11 +216,12 @@ footer { color: var(--faint); font-size: 12.5px; }
 </section>
 
 <section>
-  <h2>Is it learning? <span class="arm-tag treatment">live</span></h2>
-  <p class="sub muted">Average miss over the last 30 predictions (+5 min horizon).
-  <b style="color:#a78bfa">Purple = our model (consensus)</b> ·
-  <b style="color:#94a3b8">grey dashed = doing nothing</b> (persistence baseline).
-  When the purple line is <b>below</b> the grey line, the model is adding value.</p>
+  <h2>Is it learning? <span class="arm-tag treatment">live · cumulative</span></h2>
+  <p class="sub muted">Every 5 minutes, both our model and a "do nothing" baseline
+  predict the same target; whoever lands closer wins that slot. The purple line adds
+  up the <b>dollars of accuracy the model has gained (or given up) vs doing nothing</b>
+  — a rising line means the model is converting learning into value right now; its
+  slope is the live learning payoff. Vertical ticks mark hourly retrains.</p>
   <div id="learn-skill"></div>
   <p class="mini" id="learn-verdict"></p>
 </section>
@@ -678,41 +679,55 @@ function miniLine(seriesList, opts) {
 }
 
 function drawLearning(preds, learnLog) {
-  // Two intuitive lines: rolling average miss of our consensus model vs the
-  // do-nothing baseline, on the same slots. Lower line wins.
   const sc = preds.filter(p => p.variant === "consensus" && p.horizon === 5
     && p.actual != null).sort((a, b) => a.target_ts - b.target_ts);
-  if (sc.length < 12) {
+  if (sc.length < 8) {
     document.getElementById("learn-skill").innerHTML =
       '<p class="mini">collecting scored predictions…</p>';
     return;
   }
-  const mPts = [], bPts = [];
-  let mw = [], bw = [];
+  let cum = 0, wins = 0;
+  const pts = [];
+  const advs = [];
   for (const p2 of sc) {
-    mw.push(p2.abs_err); bw.push(Math.abs(p2.actual - p2.price_now));
-    if (mw.length > 30) { mw.shift(); bw.shift(); }
-    if (mw.length >= 10) {
-      mPts.push([p2.target_ts, mw.reduce((a, x) => a + x, 0) / mw.length]);
-      bPts.push([p2.target_ts, bw.reduce((a, x) => a + x, 0) / bw.length]);
-    }
+    const adv = Math.abs(p2.actual - p2.price_now) - p2.abs_err;
+    cum += adv; advs.push(adv);
+    if (adv > 0) wins++;
+    pts.push([p2.target_ts, cum]);
   }
-  document.getElementById("learn-skill").innerHTML = miniLine(
-    [{ label: "doing nothing (baseline)", color: "#94a3b8", pts: bPts, dash: true },
-     { label: "our model (consensus)", color: "#a78bfa", pts: mPts }],
-    { fmt: v => "$" + Math.round(v), h: 210 });
-  const mNow = mPts[mPts.length - 1][1], bNow = bPts[bPts.length - 1][1];
-  const edge = bNow - mNow;
+  // retrain event timestamps (where the retrain counter increments)
+  const marks = [];
+  for (let i = 1; i < learnLog.length; i++)
+    if (learnLog[i].retrains > learnLog[i - 1].retrains)
+      marks.push(learnLog[i].ts);
+  let svg = miniLine(
+    [{ label: "cumulative $ gained vs doing nothing", color: "#a78bfa", pts }],
+    { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(Math.round(v)).toLocaleString(),
+      zero: true, h: 220 });
+  if (marks.length && svg.startsWith("<svg")) {
+    const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+    const extra = marks.filter(ts => ts >= t0 && ts <= t1).map(ts => {
+      const x = 62 + (ts - t0) / Math.max(1, t1 - t0) * (900 - 62 - 16);
+      return `<line x1="${x.toFixed(1)}" y1="10" x2="${x.toFixed(1)}" y2="196" ` +
+        `stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="2 4" opacity=".8">` +
+        `</line><text x="${x.toFixed(1)}" y="205" text-anchor="middle" ` +
+        `style="fill:#fbbf24">retrain</text>`;
+    }).join("");
+    svg = svg.replace("</svg>", extra + "</svg>");
+  }
+  document.getElementById("learn-skill").innerHTML = svg;
+  const last50 = advs.slice(-50);
+  const w50 = last50.filter(a => a > 0).length;
+  const recent = last50.reduce((a, x) => a + x, 0);
   const upd = learnLog.length ? learnLog[learnLog.length - 1].updates : 0;
   document.getElementById("learn-verdict").innerHTML =
-    `Right now: our model misses by <b style="color:#fff">$${Math.round(mNow)}</b> ` +
-    `on average vs <b style="color:#fff">$${Math.round(bNow)}</b> for doing nothing — ` +
-    (edge >= 1
-      ? `<b style="color:#6ee7b7">the model is $${Math.round(edge)} better; it is learning and adding value.</b>`
-      : edge <= -1
-        ? `<b style="color:#f87171">the model is $${Math.round(-edge)} behind; it is re-adapting after a regime change.</b>`
-        : `<b style="color:#cbd5e1">the model matches the baseline — the ceiling in a calm market.</b>`) +
-    ` <span class="muted">· ${upd.toLocaleString()} model updates this session</span>`;
+    `Across ${sc.length} scored predictions the model has ` +
+    (cum >= 0
+      ? `<b style="color:#6ee7b7">gained $${Math.round(cum).toLocaleString()} of accuracy</b>`
+      : `<b style="color:#f87171">given up $${Math.abs(Math.round(cum)).toLocaleString()} of accuracy</b>`) +
+    ` vs doing nothing · last 50 slots: won ${w50}/50 ` +
+    `(${recent >= 0 ? "+" : "−"}$${Math.abs(Math.round(recent))}) · ` +
+    `${upd.toLocaleString()} model updates this session`;
 }
 
 async function poll() {
