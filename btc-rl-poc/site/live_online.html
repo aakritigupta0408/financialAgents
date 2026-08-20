@@ -215,6 +215,16 @@ footer { color: var(--faint); font-size: 12.5px; }
   </div>
 </section>
 
+<section>
+  <h2>Is it learning? <span class="arm-tag treatment">live</span></h2>
+  <p class="sub muted">Top: each arm's rolling-30 skill vs persistence at +5 min
+  (above the zero line = beating "predict no change"; the market's difficulty is
+  cancelled out because both are scored on the same slots). Bottom: cumulative
+  model updates this session — the learning volume driving it.</p>
+  <div id="learn-skill"></div>
+  <div id="learn-updates"></div>
+</section>
+
 <div class="range-bar">
   <span class="muted">window:</span>
   <button class="chip" data-span="3600">1h</button>
@@ -634,13 +644,78 @@ document.querySelectorAll(".range-bar .chip[data-span]").forEach(el =>
 document.getElementById("follow-btn").addEventListener("click",
   () => { setFollow(true); draw(); });
 
+function miniLine(seriesList, opts) {
+  const W = 900, H = opts.h || 190, L = 62, R = 16, T = 10, B = 24;
+  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
+  for (const s2 of seriesList) for (const p2 of s2.pts) {
+    xmin = Math.min(xmin, p2[0]); xmax = Math.max(xmax, p2[0]);
+    ymin = Math.min(ymin, p2[1]); ymax = Math.max(ymax, p2[1]);
+  }
+  if (!isFinite(xmin)) return '<p class="mini">collecting…</p>';
+  if (opts.zero) { ymin = Math.min(ymin, -5); ymax = Math.max(ymax, 5); }
+  const pad = (ymax - ymin) * 0.1 || 1; ymin -= pad; ymax += pad;
+  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
+  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
+  let g = "";
+  for (let i = 0; i <= 3; i++) {
+    const v = ymin + (ymax - ymin) * i / 3, y = Y(v);
+    g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
+      `<text x="${L - 8}" y="${y + 4}" text-anchor="end">${opts.fmt(v)}</text>`;
+  }
+  const stepS = [900, 1800, 3600, 7200].find(x => (xmax - xmin) / x <= 7) || 7200;
+  for (let ts = Math.ceil(xmin / stepS) * stepS; ts <= xmax; ts += stepS)
+    g += `<text x="${X(ts)}" y="${H - 6}" text-anchor="middle">${fmtTime(ts)}</text>`;
+  if (opts.zero)
+    g += `<line x1="${L}" y1="${Y(0)}" x2="${W - R}" y2="${Y(0)}" ` +
+      `stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5" stroke-width="1.5"/>`;
+  for (const s2 of seriesList) {
+    g += `<path class="predline" style="stroke:${s2.color}" d="${s2.pts.map((p2, i) =>
+      `${i ? "L" : "M"}${X(p2[0]).toFixed(1)},${Y(p2[1]).toFixed(1)}`).join("")}"/>`;
+    const last = s2.pts[s2.pts.length - 1];
+    g += `<circle class="pt" cx="${X(last[0])}" cy="${Y(last[1])}" r="3.5" style="fill:${s2.color}"><title>${s2.label}: ${opts.fmt(last[1])}</title></circle>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+
+function drawLearning(preds, learnLog) {
+  const skill = [];
+  for (const arm of ["ctl", "t2", "t6", "t7", "t8", "t9"]) {
+    const sc = preds.filter(p => armOf(p) === arm && p.horizon === 5
+      && p.actual != null).sort((a, b) => a.target_ts - b.target_ts);
+    if (sc.length < 10) continue;
+    const pts = [];
+    let win = [];
+    for (const p2 of sc) {
+      win.push(Math.abs(p2.actual - p2.price_now) - p2.abs_err);
+      if (win.length > 30) win.shift();
+      if (win.length >= 10)
+        pts.push([p2.target_ts, win.reduce((a, x) => a + x, 0) / win.length]);
+    }
+    skill.push({ label: arm, color: ARM_COLOR[arm], pts });
+  }
+  document.getElementById("learn-skill").innerHTML =
+    miniLine(skill, { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(v).toFixed(0),
+                      zero: true, h: 200 });
+  if (learnLog.length >= 2)
+    document.getElementById("learn-updates").innerHTML =
+      miniLine([{ label: "model updates", color: "#a78bfa",
+                  pts: learnLog.map(r => [r.ts, r.updates]) }],
+               { fmt: v => Math.round(v).toLocaleString(), h: 120 });
+}
+
 async function poll() {
   try {
-    const [pxRes, plRes, sRes] = await Promise.all([
+    const [pxRes, plRes, sRes, llRes] = await Promise.all([
       fetch("../results/recent_prices.json", { cache: "no-store" }),
       fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
       fetch("../results/online_status.json", { cache: "no-store" }),
+      fetch("../results/learning_log.jsonl", { cache: "no-store" }),
     ]);
+    const learnLog = [];
+    if (llRes.ok) for (const line of (await llRes.text()).split("\n")) {
+      if (!line.trim()) continue;
+      try { learnLog.push(JSON.parse(line)); } catch {}
+    }
     const prices = pxRes.ok ? await pxRes.json() : [];
     const preds = [];
     if (plRes.ok) for (const line of (await plRes.text()).split("\n")) {
@@ -650,6 +725,7 @@ async function poll() {
     const status = sRes.ok ? await sRes.json() : null;
     latest = { prices, preds };
     draw();
+    try { drawLearning(preds, learnLog.slice(-400)); } catch {}
     if (!batchMetrics) {
       try {
         const r = await fetch("../results/metrics.json", { cache: "no-store" });

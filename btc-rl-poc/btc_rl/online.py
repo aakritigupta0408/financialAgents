@@ -872,6 +872,11 @@ def run(once: bool = False) -> None:
                 "last_retrain": retrain_info or None,
                 "predictions_total": len(ledger),
             }))
+            # learning telemetry for the live "is it learning?" chart
+            with (RESULTS_DIR / "learning_log.jsonl").open("a") as lf:
+                lf.write(json.dumps({"ts": now_ts,
+                                     "updates": online_updates,
+                                     "retrains": retrains}) + "\n")
             if new_preds or scored:
                 print(f"{now:%H:%M:%S} +{new_preds} predictions, {scored} scored "
                       f"({len(ledger)} total)")
