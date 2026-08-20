@@ -12,7 +12,7 @@
   --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
   --border: rgba(11,11,11,0.10);
   --series-1: #2a78d6; --series-2: #eb6834;
-  --series-3: #1baf7a; --series-4: #eda100; --series-5: #4a3aa7;
+  --series-3: #1baf7a; --series-4: #eda100; --series-5: #4a3aa7; --series-6: #e34948;
   --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
 }
 @media (prefers-color-scheme: dark) {
@@ -22,7 +22,7 @@
     --muted: #898781; --grid: #2c2c2a; --axis: #383835;
     --border: rgba(255,255,255,0.10);
     --series-1: #3987e5; --series-2: #d95926;
-    --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9;
+    --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9; --series-6: #e66767; --series-6: #e66767;
     --good-text: #0ca30c;
   }
 }
@@ -32,7 +32,7 @@
   --muted: #898781; --grid: #2c2c2a; --axis: #383835;
   --border: rgba(255,255,255,0.10);
   --series-1: #3987e5; --series-2: #d95926;
-  --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9;
+  --series-3: #199e70; --series-4: #c98500; --series-5: #9085e9; --series-6: #e66767;
   --good-text: #0ca30c;
 }
 * { box-sizing: border-box; }
@@ -145,6 +145,13 @@ const ARMS = [
     features: "t4's 20 + three LLM dims from live CoinDesk/Cointelegraph/Decrypt headlines: mean sentiment P(bull)−P(bear), 1h sentiment momentum, news intensity. Each headline scored once, cached.",
     reward: "Prediction reward (+1 exact / −|error|/100).",
     sampling: "Same warm-up + per-prediction updates; headlines fetched every poll (30s), scored on Apple-GPU locally.",
+    offline: null },
+  { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"], color: "var(--series-6)",
+    title: "Treatment 6 — + order-flow imbalance (research-backed)",
+    architecture: "Same LinUCB machinery, 27-dim context.",
+    features: "t5's 23 + four order-flow dims from the live Coinbase trades stream: signed taker-volume imbalance over 1/5/15 min and log trade-intensity vs the 15m baseline. The literature's strongest short-horizon signal (Cont et al.; crypto order-flow studies).",
+    reward: "Same prediction reward (+1 exact / \u2212|error|/100).",
+    sampling: "Same warm-up + per-prediction updates + hourly gated replay. Trades kept in a rolling 20-min store; snapshots persist the computed OFI so history joins by timestamp.",
     offline: null },
   { key: "agg", variants: ["consensus"], color: "var(--ink-2)",
     title: "Consensus — median poll (our headline +5 min call)",

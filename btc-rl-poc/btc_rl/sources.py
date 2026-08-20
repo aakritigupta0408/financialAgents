@@ -147,6 +147,29 @@ def fetch_book_stats(depth: int = 20) -> dict | None:
         return None
 
 
+def fetch_recent_trades(limit: int = 1000) -> list[dict]:
+    """Recent Coinbase BTC-USD trades with the TAKER side resolved.
+
+    Coinbase's `side` field is the MAKER's side, so side=="sell" means the
+    resting order was a sell — i.e., the aggressor was a BUYER (up-tick).
+    Getting this backwards inverts the order-flow signal.
+    """
+    try:
+        resp = _session.get(f"{config.COINBASE_BASE}/products/BTC-USD/trades",
+                            params={"limit": limit}, timeout=8)
+        resp.raise_for_status()
+        out = []
+        for t in resp.json():
+            ts = datetime.fromisoformat(
+                t["time"].replace("Z", "+00:00")).timestamp()
+            out.append({"id": t["trade_id"], "ts": ts,
+                        "size": float(t["size"]),
+                        "taker_buy": t["side"] == "sell"})
+        return out
+    except Exception:
+        return []
+
+
 def fetch_brti_composite() -> dict | None:
     """BRTI-style live BTC price: volume-weighted across CME CF BRTI
     constituent exchanges that expose open, no-auth tickers.

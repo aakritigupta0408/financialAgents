@@ -28,14 +28,15 @@ from pathlib import Path
 from . import config
 from .agents import LinUCBAgent, TabularQAgent
 from .env import build_episodes, reward
-from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, TREND_DIM,
+from .features import (BOOK_DIM, LIVE_DIM, LLM_DIM, OFI_DIM, TREND_DIM,
                        book_feature_vector, compute_features, discretize,
                        feature_vector, live_feature_vector,
-                       llm_feature_vector, trend_feature_vector)
+                       llm_feature_vector, ofi_feature_vector,
+                       trend_feature_vector)
 from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_deribit_mark, fetch_fear_greed, fetch_mempool_fee,
-                      fetch_okx_funding_rate, fetch_range)
+                      fetch_okx_funding_rate, fetch_range, fetch_recent_trades)
 
 FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
 SNAP_FILE_NAME = "live_snapshots.jsonl"  # streamed-feature history (t3)
@@ -84,6 +85,19 @@ VARIANTS: dict[str, dict] = {
                "live": True, "trend": True, "book": True, "llm": True},
     "t5-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
                "live": True, "trend": True, "book": True, "llm": True},
+    # TREATMENT 6 = t5 + ORDER-FLOW IMBALANCE — the research-backed
+    # short-horizon signal (Cont et al.; crypto order-flow literature):
+    # signed taker-volume imbalance over 1/5/15 min + trade intensity,
+    # computed live from the Coinbase trades stream.
+    "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
+              "live": True, "trend": True, "book": True, "llm": True,
+              "ofi": True},
+    "t6-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "llm": True,
+               "ofi": True},
+    "t6-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
+               "live": True, "trend": True, "book": True, "llm": True,
+               "ofi": True},
 }
 
 
@@ -91,7 +105,8 @@ def _ctx_dim(spec: dict) -> int:
     return (FEATURE_DIM + (TREND_DIM if spec.get("trend") else 0)
             + (LIVE_DIM if spec.get("live") else 0)
             + (BOOK_DIM if spec.get("book") else 0)
-            + (LLM_DIM if spec.get("llm") else 0))
+            + (LLM_DIM if spec.get("llm") else 0)
+            + (OFI_DIM if spec.get("ofi") else 0))
 
 
 def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
@@ -104,7 +119,34 @@ def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
         x += book_feature_vector(snap)
     if spec.get("llm"):
         x += llm_feature_vector(snap)
+    if spec.get("ofi"):
+        x += ofi_feature_vector(snap)
     return x
+
+
+def _ofi_stats(trades: dict[int, dict], now_ts: float) -> dict:
+    """Signed taker-volume imbalance over 1/5/15 min + trade intensity."""
+    import math
+    out: dict = {}
+    n_1m = 0
+    for label, secs in (("ofi_1m", 60), ("ofi_5m", 300), ("ofi_15m", 900)):
+        buy = sell = 0.0
+        n = 0
+        for t in trades.values():
+            if t["ts"] >= now_ts - secs:
+                n += 1
+                if t["taker_buy"]:
+                    buy += t["size"]
+                else:
+                    sell += t["size"]
+        out[label] = ((buy - sell) / (buy + sell)) if buy + sell else None
+        if secs == 60:
+            n_1m = n
+        if secs == 900:
+            baseline = n / 15.0
+            out["tr_int"] = (math.log(max(n_1m, 1) / max(baseline, 1)) / 2
+                             if baseline else None)
+    return out
 
 RETRAIN_EVERY = 3600           # 1 hour
 RETRAIN_WINDOW_H = 24          # replay the last day of bars
@@ -342,6 +384,7 @@ def run(once: bool = False) -> None:
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
     snaps = _load_snapshots()
+    trades: dict[int, dict] = {}  # rolling taker-flow store (last ~20 min)
     cold_bandits = {v for v, spec in VARIANTS.items()
                     if spec.get("agent") == "linucb"
                     and all(a.total_pulls == 0 for a in arms[v].values())}
@@ -378,6 +421,11 @@ def run(once: bool = False) -> None:
                 "imb": book["imb"] if book else None,
                 "spread_bp": book["spread_bp"] if book else None,
             }
+            for t in fetch_recent_trades():   # order-flow store (t6)
+                trades[t["id"]] = t
+            trades = {i: t for i, t in trades.items()
+                      if t["ts"] >= now_ts - 1200}
+            snap.update(_ofi_stats(trades, now_ts))
             try:  # frozen crypto-LLM reads the news tape (cached per headline)
                 senti = sentiment_snapshot()
             except Exception:
@@ -450,7 +498,7 @@ def run(once: bool = False) -> None:
             for r in ledger:
                 if r["horizon"] == 5 \
                         and r["variant"] in ("h5", "t2-h5", "t3-h5", "t4-h5",
-                                             "t5-h5") \
+                                             "t5-h5", "t6-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             for slot_ts, votes in sorted(by_slot.items()):

@@ -98,6 +98,24 @@ LIVE_DIM = 5
 TREND_DIM = 3
 BOOK_DIM = 2
 LLM_DIM = 3
+OFI_DIM = 4
+
+
+def ofi_feature_vector(snap: dict | None) -> list[float]:
+    """Order-flow imbalance context (t6): the literature's short-horizon signal.
+
+    Signed taker-volume imbalance over 1/5/15 min (each already in [-1, 1])
+    plus trade intensity vs the trailing 15m baseline; neutral zeros when
+    the trades stream is missing.
+    """
+    if not snap:
+        return [0.0] * OFI_DIM
+    return [
+        snap.get("ofi_1m") or 0.0,
+        snap.get("ofi_5m") or 0.0,
+        snap.get("ofi_15m") or 0.0,
+        snap.get("tr_int") or 0.0,
+    ]
 
 
 def llm_feature_vector(snap: dict | None) -> list[float]:

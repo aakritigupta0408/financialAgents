@@ -17,7 +17,9 @@ rows = [json.loads(l) for l in
 scored = [r for r in rows if r["actual"] is not None]
 
 ARMS = ["h5", "h15", "h30", "t2-h5", "t2-h15", "t2-h30",
-        "t3-h5", "t3-h15", "t3-h30", "consensus"]
+        "t3-h5", "t3-h15", "t3-h30", "t4-h5", "t4-h15", "t4-h30",
+        "t5-h5", "t5-h15", "t5-h30", "t6-h5", "t6-h15", "t6-h30",
+        "consensus"]
 
 
 def q(vals, p):
@@ -98,7 +100,7 @@ print()
 print("=" * 100)
 print("ANGLE 5 — Policy behavior (chosen deltas per arm; convergence signal)")
 from collections import Counter
-for arm in ARMS[:9]:
+for arm in ARMS[:-1]:
     a = [r for r in rows if r["variant"] == arm]
     if not a:
         continue
