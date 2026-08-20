@@ -1,0 +1,1 @@
+{"phase": "done", "runs_total": 4, "runs_done": 4, "current": null, "epochs": 60, "baselines": {"h15": {"val_mae": 69.95, "val_hit_rate": 0.00772}, "h30": {"val_mae": 95.95, "val_hit_rate": 0.00431}}, "val_episodes": 6255, "train_episodes": 33637, "started_at": 1787198161.990318}

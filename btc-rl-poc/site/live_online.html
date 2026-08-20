@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Always Training</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6; --series-2: #eb6834;
+  --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --good-text: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926;
+  --good-text: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); margin: 0;
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 28px 20px 60px; }
+main { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: 12px;
+  color: var(--muted); font-weight: 600; }
+h1 { margin: 4px 0 2px; font-size: 26px; letter-spacing: -0.01em; }
+h2 { margin: 0 0 2px; font-size: 17px; }
+.sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
+section { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; }
+.statusbar { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--good-text);
+  animation: pulse 1.4s ease-in-out infinite; }
+.live-dot.stale { animation: none; background: var(--muted); }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+.stat .k { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.bignum { font-size: 21px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px;
+  color: var(--ink-2); margin: 8px 0 6px; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 6px; vertical-align: -1px; }
+.sw.line { width: 18px; height: 0; border-top: 2.5px solid var(--ink-2);
+  border-radius: 2px; vertical-align: 3px; }
+.sw.ring { background: transparent; border: 2px solid var(--muted); }
+svg { width: 100%; height: auto; display: block; }
+svg text { font: 11.5px system-ui, sans-serif; fill: var(--muted);
+  font-variant-numeric: tabular-nums; }
+svg .gridline { stroke: var(--grid); stroke-width: 1; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .actual { fill: none; stroke: var(--ink-2); stroke-width: 2;
+  stroke-linejoin: round; }
+svg .stem { stroke: var(--muted); stroke-width: 1.5; opacity: .7; }
+svg .pt { stroke: var(--surface); stroke-width: 1.5; }
+svg .pt-pending { fill: var(--surface); stroke-width: 2; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 620px; }
+th { text-align: left; font-size: 11.5px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--grid);
+  padding: 6px 10px 6px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0; }
+td.num, th.num { font-variant-numeric: tabular-nums; text-align: right; }
+.pill { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
+.pill.hit { color: var(--good-text); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.pill.miss { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
+.pill.pending { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 12%, transparent); }
+.card { display: grid; grid-template-columns: 130px 1fr; gap: 6px 14px; font-size: 14px; }
+.card dt { color: var(--muted); font-size: 12px; text-transform: uppercase;
+  letter-spacing: .06em; font-weight: 600; padding-top: 2px; }
+.card dd { margin: 0; color: var(--ink-2); }
+.card dd b { color: var(--ink); }
+.muted { color: var(--ink-2); }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--page);
+  font-size: 12.5px; padding: 5px 9px; border-radius: 6px; opacity: 0;
+  transition: opacity .1s; z-index: 10; max-width: 280px; }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">Reinforcement learning · online mode</div>
+  <h1>Predicted vs actual, minute by minute</h1>
+  <p class="sub">The model commits an integer prediction every <b>15 minutes</b>
+  (for +15 and +30 min targets) and retrains every <b>1 hour</b> on the freshest
+  data — guarded by a hold-out gate so it never overfits live noise.</p>
+</header>
+
+<section class="statusbar">
+  <div class="live-dot" id="dot"></div>
+  <div class="stat"><div class="k">BTC now</div><div class="bignum" id="price">–</div></div>
+  <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
+  <div class="stat"><div class="k">Exact hits</div><div class="bignum" id="hits">–</div></div>
+  <div class="stat"><div class="k">Retrains</div><div class="bignum" id="retrains">–</div></div>
+  <div class="stat"><div class="k">Overfit gate</div><div class="bignum" id="gate">–</div></div>
+  <div class="stat"><div class="k">Data</div><div class="bignum" id="fresh">–</div></div>
+</section>
+
+<section>
+  <h2>Actual price at HH:MM vs predicted price at HH:MM</h2>
+  <p class="sub muted">Grey line = actual 1m close. Dots = the price the model predicted
+  for that exact minute, committed 15/30 minutes earlier. The stem is the miss distance.
+  Hollow dots ahead of the line are commitments awaiting their minute.</p>
+  <div class="legend">
+    <span><span class="sw line"></span>actual price</span>
+    <span><span class="sw" style="background:var(--series-1)"></span>predicted · 15 min ahead</span>
+    <span><span class="sw" style="background:var(--series-2)"></span>predicted · 30 min ahead</span>
+    <span><span class="sw ring"></span>pending target</span>
+  </div>
+  <div id="chart"></div>
+</section>
+
+<section>
+  <h2>Prediction ledger</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Committed</th><th>Target (PT · IST)</th><th>Horizon</th>
+    <th class="num">Predicted</th><th class="num">Actual</th>
+    <th class="num">Error</th><th>Integer match</th></tr></thead>
+    <tbody id="ledger"></tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Model card</h2>
+  <dl class="card">
+    <dt>Model</dt><dd><b>Tabular Q-learning</b> (contextual bandit — one-step episodes).
+      81 discrete states × 21 actions = 1,701 Q-values per horizon. Two independent
+      tables: +15 min and +30 min.</dd>
+    <dt>State features</dt><dd>5m &amp; 15m return buckets, 30m volatility bucket,
+      RSI(14) bucket (each 3-way). Continuous inputs behind them: 1m/5m/15m/60m returns,
+      EMA(30) distance, volume ratio, Fear &amp; Greed index.</dd>
+    <dt>Action</dt><dd>Integer dollar delta from the current price:
+      0, ±1, ±2, ±3, ±5, ±8, ±13, ±21, ±34, ±55, ±89.</dd>
+    <dt>Reward</dt><dd><b>+1</b> if int(pred) == int(actual) — 68000 and 68000.98 are the
+      same answer; otherwise <b>−1</b> (spec) or <b>−|error|/100</b> (shaped, used for
+      learning because the sparse reward fires on ~0.5% of episodes).</dd>
+    <dt>Update rule</dt><dd>Q(s,a) ← Q(s,a) + 0.1 · (r − Q(s,a)); ε-greedy with ε = 0.05
+      kept online forever.</dd>
+    <dt>Anti-overfit</dt><dd>Hourly retrain replays the last 24h <b>except the newest 3h</b>,
+      which validate it — if validation MAE worsens, the new table is <b>reverted</b>.
+      Tiny capacity (1,701 values), small α, chronological splits, test set never touched
+      during training.</dd>
+  </dl>
+</section>
+
+<footer id="foot">Polling every 5s…</footer>
+</main>
+<div id="tip"></div>
+
+<script>
+const H_COLOR = { 15: "var(--series-1)", 30: "var(--series-2)" };
+const fmtTime = (ts, tz) => new Date(ts * 1000).toLocaleTimeString(
+  tz === "IST" ? "en-IN" : "en-US",
+  { timeZone: tz === "IST" ? "Asia/Kolkata" : "America/Los_Angeles",
+    hour: "2-digit", minute: "2-digit", hour12: false });
+
+function chart(prices, preds) {
+  if (!prices.length) return '<p class="muted">Waiting for price data…</p>';
+  const W = 920, H = 320, L = 62, R = 16, T = 12, B = 28;
+  const t0 = prices[0].ts;
+  const t1 = Math.max(prices[prices.length - 1].ts,
+    ...preds.map(p => p.target_ts));
+  let ymin = Infinity, ymax = -Infinity;
+  for (const p of prices) { ymin = Math.min(ymin, p.c); ymax = Math.max(ymax, p.c); }
+  for (const p of preds) { ymin = Math.min(ymin, p.pred); ymax = Math.max(ymax, p.pred); }
+  const pad = (ymax - ymin) * 0.08 || 20;
+  ymin -= pad; ymax += pad;
+  const X = ts => L + (ts - t0) / Math.max(1, t1 - t0) * (W - L - R);
+  const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
+  let g = "";
+  for (let i = 0; i <= 4; i++) {
+    const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+    g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
+         `<text x="${L - 8}" y="${y + 4}" text-anchor="end">$${Math.round(v).toLocaleString()}</text>`;
+  }
+  const hourStep = Math.max(1, Math.ceil((t1 - t0) / 3600 / 7));
+  for (let ts = Math.ceil(t0 / 3600) * 3600; ts <= t1; ts += 3600 * hourStep)
+    g += `<text x="${X(ts)}" y="${H - 8}" text-anchor="middle">${fmtTime(ts, "PT")}</text>`;
+  g += `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`;
+  g += `<path class="actual" d="${prices.map((p, i) =>
+    `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("")}"/>`;
+  const priceAt = new Map(prices.map(p => [p.ts, p.c]));
+  for (const p of preds) {
+    const x = X(p.target_ts), y = Y(p.pred);
+    const tPT = fmtTime(p.target_ts, "PT"), tIST = fmtTime(p.target_ts, "IST");
+    if (p.actual != null) {
+      g += `<line class="stem" x1="${x}" y1="${y}" x2="${x}" y2="${Y(p.actual)}"/>`;
+      g += `<circle class="pt" cx="${x}" cy="${y}" r="4.5" fill="${H_COLOR[p.horizon]}" ` +
+        `data-tip="${tPT} PT / ${tIST} IST (+${p.horizon}m) — predicted $${p.pred.toLocaleString()}, ` +
+        `actual $${Math.round(p.actual).toLocaleString()}, off by $${p.abs_err}` +
+        `${p.hit ? " — EXACT INTEGER HIT" : ""}"/>`;
+    } else {
+      g += `<circle class="pt-pending" cx="${x}" cy="${y}" r="4.5" stroke="${H_COLOR[p.horizon]}" ` +
+        `data-tip="${tPT} PT / ${tIST} IST (+${p.horizon}m) — committed $${p.pred.toLocaleString()}, awaiting the minute"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="predicted vs actual price">${g}</svg>`;
+}
+
+async function poll() {
+  try {
+    const [pxRes, plRes, sRes] = await Promise.all([
+      fetch("../results/recent_prices.json", { cache: "no-store" }),
+      fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
+      fetch("../results/online_status.json", { cache: "no-store" }),
+    ]);
+    const prices = pxRes.ok ? await pxRes.json() : [];
+    const preds = [];
+    if (plRes.ok) for (const line of (await plRes.text()).split("\n")) {
+      if (!line.trim()) continue;
+      try { preds.push(JSON.parse(line)); } catch {}
+    }
+    const status = sRes.ok ? await sRes.json() : null;
+    const t0 = prices.length ? prices[0].ts : 0;
+    const visible = preds.filter(p => p.target_ts >= t0);
+    document.getElementById("chart").innerHTML = chart(prices, visible);
+
+    const scored = preds.filter(p => p.actual != null);
+    document.getElementById("npred").textContent = preds.length.toLocaleString();
+    document.getElementById("hits").textContent =
+      scored.filter(p => p.hit).length + " / " + scored.length;
+    document.getElementById("ledger").innerHTML = preds.slice(-14).reverse().map(p => {
+      const state = p.actual == null ? '<span class="pill pending">pending</span>'
+        : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
+      return `<tr><td>${fmtTime(p.made_ts, "PT")}</td>` +
+        `<td>${fmtTime(p.target_ts, "PT")} · ${fmtTime(p.target_ts, "IST")}</td>` +
+        `<td><span class="sw" style="background:${H_COLOR[p.horizon]}"></span>+${p.horizon}m</td>` +
+        `<td class="num">$${p.pred.toLocaleString()}</td>` +
+        `<td class="num">${p.actual == null ? "–" : "$" + Math.round(p.actual).toLocaleString()}</td>` +
+        `<td class="num">${p.abs_err == null ? "–" : "$" + p.abs_err}</td><td>${state}</td></tr>`;
+    }).join("");
+
+    if (status) {
+      const ageS = Date.now() / 1000 - status.alive_at;
+      document.getElementById("dot").className = "live-dot" + (ageS > 120 ? " stale" : "");
+      document.getElementById("price").textContent =
+        "$" + Math.round(status.price_now).toLocaleString();
+      document.getElementById("retrains").textContent = status.retrains_this_session;
+      const gate = status.last_retrain?.gate;
+      document.getElementById("gate").textContent = !gate ? "–" :
+        Object.values(gate).some(g => g.reverted) ? "reverted" : "passed";
+      document.getElementById("fresh").textContent =
+        ageS < 90 ? "live" : Math.round(ageS / 60) + "m ago";
+      document.getElementById("foot").textContent =
+        `predicts every ${status.predict_every_min}m · retrains every ${status.retrain_every_min}m · ` +
+        `daemon up since ${new Date(status.started_at * 1000).toLocaleTimeString()}` +
+        (status.last_retrain ? ` · last retrain ${status.last_retrain.at.slice(11, 16)} PT ` +
+          `(${status.last_retrain.train_episodes} replay episodes, ` +
+          `${status.last_retrain.val_episodes} held out)` : " · first retrain at the top of the hour");
+    } else {
+      document.getElementById("foot").textContent =
+        "daemon not running — start it with: python -m btc_rl.online";
+    }
+    const tip = document.getElementById("tip");
+    document.querySelectorAll("[data-tip]").forEach(el => {
+      el.addEventListener("mousemove", e => {
+        tip.textContent = el.dataset.tip; tip.style.opacity = 1;
+        tip.style.left = Math.min(e.clientX + 12, innerWidth - 290) + "px";
+        tip.style.top = (e.clientY + 14) + "px";
+      });
+      el.addEventListener("mouseleave", () => tip.style.opacity = 0);
+    });
+  } catch (e) {
+    document.getElementById("foot").textContent = "waiting for daemon… (" + e.message + ")";
+  }
+  setTimeout(poll, 5000);
+}
+poll();
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@ import argparse
 import json
 import math
 import random
+import time
 from pathlib import Path
 
 from . import config
@@ -32,17 +33,35 @@ def split_by_day(episodes: list[Episode]) -> tuple[list[Episode], list[Episode]]
 
 
 def train_q_agent(train_eps: list[Episode], horizon: int, shaped: bool,
-                  epochs: int, seed: int = 7) -> TabularQAgent:
+                  epochs: int, seed: int = 7, val_eps: list[Episode] | None = None,
+                  telemetry=None, name: str = "") -> TabularQAgent:
     agent = TabularQAgent(seed=seed)
     eps = [e for e in train_eps if e.horizon_min == horizon]
+    val = ([e for e in val_eps if e.horizon_min == horizon]
+           if val_eps is not None else [])
     rng = random.Random(seed)
     for epoch in range(epochs):
         agent.decay_epsilon(epoch, epochs)
         rng.shuffle(eps)
+        total_r = 0.0
         for e in eps:
             a = agent.act(e.state, e.price_now, explore=True)
             pred = e.price_now + agent.delta_for(a)
-            agent.learn(e.state, a, reward(pred, e.price_future, shaped))
+            r = reward(pred, e.price_future, shaped)
+            agent.learn(e.state, a, r)
+            total_r += r
+        if telemetry is not None and val:
+            v = _score(agent, val)
+            telemetry({
+                "agent": name, "horizon": horizon, "epoch": epoch,
+                "epochs": epochs, "epsilon": round(agent.epsilon, 4),
+                "train_reward_mean": round(total_r / max(1, len(eps)), 4),
+                "val_mae": round(v["mae"], 2),
+                "val_hit_rate": round(v["exact_int_hit_rate"], 5),
+                "val_sparse_reward": round(v["mean_sparse_reward"], 4),
+                "states_seen": len(agent.q),
+                "ts": time.time(),
+            })
     return agent
 
 
@@ -95,6 +114,8 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--days", type=int, default=config.HISTORY_DAYS)
     parser.add_argument("--epochs", type=int, default=config.EPOCHS)
+    parser.add_argument("--live", action="store_true",
+                        help="emit per-epoch telemetry for the live dashboard")
     args = parser.parse_args()
 
     print(f"Fetching {args.days} days of 1m bars from Coinbase...")
@@ -105,6 +126,37 @@ def main() -> None:
     episodes = build_episodes(history, fng)
     train_eps, test_eps = split_by_day(episodes)
     print(f"  episodes: {len(train_eps)} train / {len(test_eps)} test")
+
+    # Live mode: carve a validation slice off the END of the train days so the
+    # dashboard's learning curves never peek at the held-out test set.
+    val_eps: list[Episode] = []
+    telemetry = None
+    if args.live:
+        tdays = sorted({e.day for e in train_eps})
+        val_days = set(tdays[int(len(tdays) * 0.85):])
+        val_eps = [e for e in train_eps if e.day in val_days]
+        train_eps = [e for e in train_eps if e.day not in val_days]
+        progress_path = RESULTS_DIR / "training_progress.jsonl"
+        status_path = RESULTS_DIR / "live_status.json"
+        progress_path.write_text("")
+        baselines = {}
+        for horizon in config.HORIZONS_MIN:
+            b = _score(PersistenceAgent(),
+                       [e for e in val_eps if e.horizon_min == horizon])
+            baselines[f"h{horizon}"] = {"val_mae": round(b["mae"], 2),
+                                        "val_hit_rate": round(b["exact_int_hit_rate"], 5)}
+        status = {"phase": "training", "runs_total": 2 * len(config.HORIZONS_MIN),
+                  "runs_done": 0, "current": None, "epochs": args.epochs,
+                  "baselines": baselines, "val_episodes": len(val_eps),
+                  "train_episodes": len(train_eps), "started_at": time.time()}
+        status_path.write_text(json.dumps(status))
+
+        def telemetry(row: dict) -> None:
+            with progress_path.open("a") as f:
+                f.write(json.dumps(row) + "\n")
+            status["current"] = {"agent": row["agent"], "horizon": row["horizon"],
+                                 "epoch": row["epoch"], "epsilon": row["epsilon"]}
+            status_path.write_text(json.dumps(status))
 
     metrics: dict = {
         "data": {
@@ -126,7 +178,11 @@ def main() -> None:
         for shaped in (False, True):
             name = "tabular-q-shaped" if shaped else "tabular-q-sparse"
             print(f"Training {name} (horizon {horizon}m)...")
-            agent = train_q_agent(train_eps, horizon, shaped, args.epochs)
+            agent = train_q_agent(train_eps, horizon, shaped, args.epochs,
+                                  val_eps=val_eps, telemetry=telemetry, name=name)
+            if args.live:
+                status["runs_done"] += 1
+                status_path.write_text(json.dumps(status))
             metrics["agents"].setdefault(name, {})[f"h{horizon}"] = \
                 evaluate(agent, test_eps, horizon)
             q_tables[f"{name}_h{horizon}"] = \
@@ -137,6 +193,11 @@ def main() -> None:
         deltas = [e.price_future - e.price_now
                   for e in test_eps if e.horizon_min == horizon]
         metrics["data"][f"delta_stats_h{horizon}"] = _delta_stats(deltas)
+
+    if args.live:
+        status["phase"] = "done"
+        status["current"] = None
+        status_path.write_text(json.dumps(status))
 
     (RESULTS_DIR / "metrics.json").write_text(json.dumps(metrics, indent=2))
     (RESULTS_DIR / "q_table.json").write_text(json.dumps(q_tables))

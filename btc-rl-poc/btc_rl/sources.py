@@ -48,6 +48,19 @@ def fetch_coinbase_candles(start: datetime, end: datetime) -> list[dict]:
     raise RuntimeError("Coinbase rate limit persisted after retries")
 
 
+def fetch_range(start: datetime, end: datetime) -> list[dict]:
+    """Fetch an arbitrary 1m-bar range by chunking Coinbase's 300-candle cap."""
+    bars: dict[int, dict] = {}
+    cur = start
+    while cur < end:
+        nxt = min(cur + timedelta(hours=4), end)
+        for b in fetch_coinbase_candles(cur, nxt):
+            bars[b["ts"]] = b
+        cur = nxt
+        time.sleep(0.12)
+    return [bars[ts] for ts in sorted(bars)]
+
+
 def fetch_day_window(day_pacific: datetime) -> list[dict]:
     """Fetch (and disk-cache) the configured Pacific-time window for one day."""
     cache = CACHE_DIR / f"bars_{day_pacific:%Y-%m-%d}.json"

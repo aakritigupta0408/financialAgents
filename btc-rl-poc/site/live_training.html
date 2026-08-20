@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Live Training</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e;
+  --muted: #898781; --grid: #e1e0d9; --axis: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6; --series-2: #eb6834;
+  --good-text: #006300;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+    --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926;
+    --good-text: #0ca30c;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7;
+  --muted: #898781; --grid: #2c2c2a; --axis: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5; --series-2: #d95926;
+  --good-text: #0ca30c;
+}
+* { box-sizing: border-box; }
+body { background: var(--page); color: var(--ink); margin: 0;
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 28px 20px 60px; }
+main { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .09em; font-size: 12px;
+  color: var(--muted); font-weight: 600; }
+h1 { margin: 4px 0 2px; font-size: 26px; letter-spacing: -0.01em; }
+h2 { margin: 0 0 2px; font-size: 17px; }
+.sub { color: var(--ink-2); max-width: 68ch; margin: 0; }
+section { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; }
+.statusbar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.live-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--good-text);
+  animation: pulse 1.4s ease-in-out infinite; }
+.live-dot.done { animation: none; background: var(--muted); }
+@keyframes pulse { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+.bignum { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.stat { min-width: 120px; }
+.stat .k { font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); font-weight: 600; }
+.progress { flex: 1 1 220px; height: 8px; border-radius: 99px;
+  background: color-mix(in srgb, var(--muted) 18%, transparent); overflow: hidden; }
+.progress > div { height: 100%; border-radius: 99px; background: var(--series-1);
+  width: 0%; transition: width .6s ease; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px;
+  color: var(--ink-2); margin: 8px 0 6px; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 3px solid;
+  border-radius: 2px; margin-right: 6px; vertical-align: 3px; }
+.swatch.dashed { border-top-style: dashed; }
+svg { width: 100%; height: auto; display: block; }
+svg text { font: 11.5px system-ui, sans-serif; fill: var(--muted);
+  font-variant-numeric: tabular-nums; }
+svg .gridline { stroke: var(--grid); stroke-width: 1; }
+svg .axis { stroke: var(--axis); stroke-width: 1; }
+svg .base { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; }
+svg path.series { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+svg .endpt { stroke: var(--surface); stroke-width: 2; }
+.muted { color: var(--ink-2); }
+#tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--page);
+  font-size: 12.5px; padding: 5px 9px; border-radius: 6px; opacity: 0;
+  transition: opacity .1s; z-index: 10; }
+footer { color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">Reinforcement learning · live run</div>
+  <h1>Watching the Q-agents learn</h1>
+  <p class="sub">Four training runs stream in sequence — sparse then shaped reward, at the
+  15- and 30-minute horizons. Curves are greedy-policy scores on a validation slice
+  (last 15% of training days) the agent never trains on. Dotted line = persistence baseline.</p>
+</header>
+
+<section class="statusbar">
+  <div class="live-dot" id="dot"></div>
+  <div class="stat"><div class="k">Now training</div><div class="bignum" id="cur">waiting…</div></div>
+  <div class="stat"><div class="k">Epoch</div><div class="bignum" id="epoch">–</div></div>
+  <div class="stat"><div class="k">ε (exploration)</div><div class="bignum" id="eps">–</div></div>
+  <div class="progress"><div id="pbar"></div></div>
+</section>
+
+<section>
+  <h2>Validation MAE by epoch</h2>
+  <p class="sub muted">Dollars off the true price, greedy policy. Lower is better —
+  under the dotted baseline means the agent beats "predict no change".</p>
+  <div class="legend" id="legend1"></div>
+  <div id="chart-mae"></div>
+</section>
+
+<section>
+  <h2>Mean training reward by epoch</h2>
+  <p class="sub muted">Reward collected while exploring (ε-greedy). Sparse runs hover near −1
+  by design — the reward fires on ~0.5% of episodes. Shaped runs climb toward 0 as the
+  policy tightens.</p>
+  <div class="legend" id="legend2"></div>
+  <div id="chart-reward"></div>
+</section>
+
+<footer id="foot">Polling results/training_progress.jsonl every 1.5s…</footer>
+</main>
+<div id="tip"></div>
+
+<script>
+const SERIES = [
+  { key: "tabular-q-sparse|15",  label: "sparse · 15 min",  color: "var(--series-1)", dash: "5 5" },
+  { key: "tabular-q-shaped|15",  label: "shaped · 15 min",  color: "var(--series-1)", dash: "" },
+  { key: "tabular-q-sparse|30",  label: "sparse · 30 min",  color: "var(--series-2)", dash: "5 5" },
+  { key: "tabular-q-shaped|30",  label: "shaped · 30 min",  color: "var(--series-2)", dash: "" },
+];
+
+// TODO(human): smoothSeries() — the raw per-epoch curves can be jittery.
+// Implement smoothing here (2–10 lines). `values` is an array of numbers in
+// epoch order; return an equal-length array. Options: return values (raw),
+// an EMA (v' = a*v + (1-a)*prev), or a centered moving average. Your choice
+// shapes how "learning" visually reads on screen.
+function smoothSeries(values) {
+  return values;
+}
+
+function legend(el) {
+  el.innerHTML = SERIES.map(s =>
+    `<span><span class="swatch ${s.dash ? "dashed" : ""}" style="border-top-color:${s.color}"></span>${s.label}</span>`
+  ).join("");
+}
+legend(document.getElementById("legend1"));
+legend(document.getElementById("legend2"));
+
+function lineChart(rowsByKey, field, opts) {
+  const W = 900, H = 260, L = 56, R = 14, T = 12, B = 28;
+  let ymin = Infinity, ymax = -Infinity, xmax = 1;
+  for (const s of SERIES) {
+    const rows = rowsByKey.get(s.key) || [];
+    for (const r of rows) { ymin = Math.min(ymin, r[field]); ymax = Math.max(ymax, r[field]); }
+    xmax = Math.max(xmax, rows.length ? rows[rows.length - 1].epoch : 0, (rows[0]?.epochs || 1) - 1);
+  }
+  if (opts.baselines) for (const b of Object.values(opts.baselines))
+    { ymin = Math.min(ymin, b); ymax = Math.max(ymax, b); }
+  if (!isFinite(ymin)) { ymin = 0; ymax = 1; }
+  const pad = (ymax - ymin) * 0.08 || 1;
+  ymin -= pad; ymax += pad;
+  const X = e => L + e / Math.max(1, xmax) * (W - L - R);
+  const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
+  let g = "";
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = ymin + (ymax - ymin) * i / ticks, y = Y(v);
+    g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
+         `<text x="${L - 8}" y="${y + 4}" text-anchor="end">${opts.fmt(v)}</text>`;
+  }
+  for (let e = 0; e <= xmax; e += Math.max(1, Math.ceil(xmax / 8)))
+    g += `<text x="${X(e)}" y="${H - 8}" text-anchor="middle">${e}</text>`;
+  g += `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/>`;
+  if (opts.baselines) for (const [name, v] of Object.entries(opts.baselines))
+    g += `<line class="base" x1="${L}" y1="${Y(v)}" x2="${W - R}" y2="${Y(v)}"/>` +
+         `<text x="${W - R}" y="${Y(v) - 4}" text-anchor="end">${name} baseline ${opts.fmt(v)}</text>`;
+  for (const s of SERIES) {
+    const rows = rowsByKey.get(s.key) || [];
+    if (!rows.length) continue;
+    const vals = smoothSeries(rows.map(r => r[field]));
+    const d = vals.map((v, i) => `${i ? "L" : "M"}${X(rows[i].epoch).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+    g += `<path class="series" d="${d}" stroke="${s.color}" ${s.dash ? `stroke-dasharray="${s.dash}"` : ""}/>`;
+    const last = rows[rows.length - 1], lv = vals[vals.length - 1];
+    g += `<circle class="endpt" cx="${X(last.epoch)}" cy="${Y(lv)}" r="4" fill="${s.color}">` +
+         `<title>${s.label} — epoch ${last.epoch}: ${opts.fmt(last[field])}</title></circle>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${field} by epoch">${g}</svg>`;
+}
+
+async function poll() {
+  try {
+    const [pRes, sRes] = await Promise.all([
+      fetch("../results/training_progress.jsonl", { cache: "no-store" }),
+      fetch("../results/live_status.json", { cache: "no-store" }),
+    ]);
+    const text = pRes.ok ? await pRes.text() : "";
+    const status = sRes.ok ? await sRes.json() : null;
+    const rowsByKey = new Map();
+    let total = 0;
+    for (const line of text.split("\n")) {
+      if (!line.trim()) continue;
+      try {
+        const r = JSON.parse(line);
+        const k = `${r.agent}|${r.horizon}`;
+        if (!rowsByKey.has(k)) rowsByKey.set(k, []);
+        rowsByKey.get(k).push(r);
+        total++;
+      } catch {} // ignore a partially-written trailing line
+    }
+    const baselines = status?.baselines
+      ? { "15m": status.baselines.h15.val_mae, "30m": status.baselines.h30.val_mae } : null;
+    document.getElementById("chart-mae").innerHTML =
+      lineChart(rowsByKey, "val_mae", { fmt: v => "$" + v.toFixed(0), baselines });
+    document.getElementById("chart-reward").innerHTML =
+      lineChart(rowsByKey, "train_reward_mean", { fmt: v => v.toFixed(2) });
+    if (status) {
+      const cur = status.current;
+      const done = status.phase === "done";
+      document.getElementById("dot").className = "live-dot" + (done ? " done" : "");
+      document.getElementById("cur").textContent =
+        done ? "run complete" : cur ? `${cur.agent.replace("tabular-q-", "")} · ${cur.horizon}m` : "warming up…";
+      document.getElementById("epoch").textContent =
+        cur ? `${cur.epoch + 1} / ${status.epochs}` : done ? `${status.epochs}` : "–";
+      document.getElementById("eps").textContent = cur ? cur.epsilon.toFixed(3) : "–";
+      const frac = done ? 1 :
+        (status.runs_done + (cur ? (cur.epoch + 1) / status.epochs : 0)) / status.runs_total;
+      document.getElementById("pbar").style.width = (frac * 100).toFixed(1) + "%";
+      document.getElementById("foot").textContent =
+        `${total} telemetry points · ${status.train_episodes.toLocaleString()} train / ` +
+        `${status.val_episodes.toLocaleString()} validation episodes · ` +
+        (done ? "training finished — final test-set metrics land in the main dashboard" : "training live");
+      if (done) return; // stop polling once the run is over
+    }
+  } catch (e) {
+    document.getElementById("foot").textContent = "waiting for trainer… (" + e.message + ")";
+  }
+  setTimeout(poll, 1500);
+}
+poll();
+</script>
+</body>
+</html>

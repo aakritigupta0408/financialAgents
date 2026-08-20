@@ -3,7 +3,7 @@
     "days": 120,
     "first_day": "2026-04-21",
     "last_day": "2026-08-18",
-    "train_episodes": 39892,
+    "train_episodes": 33637,
     "test_episodes": 10008,
     "action_deltas": [
       -89,
@@ -209,25 +209,25 @@
       "h15": {
         "all": {
           "episodes": 5184,
-          "exact_int_hit_rate": 0.0036651234567901233,
-          "exact_int_hits": 19,
-          "within_$1": 0.006172839506172839,
-          "within_$10": 0.07253086419753087,
-          "within_$50": 0.30574845679012347,
-          "mae": 91.8242303240741,
-          "rmse": 119.20658765445768,
-          "mean_sparse_reward": -0.9926697530864198,
-          "cumulative_sparse_reward": -5146.0
+          "exact_int_hit_rate": 0.0055941358024691355,
+          "exact_int_hits": 29,
+          "within_$1": 0.009645061728395061,
+          "within_$10": 0.07542438271604938,
+          "within_$50": 0.3080632716049383,
+          "mae": 90.94754050925928,
+          "rmse": 117.94974516443732,
+          "mean_sparse_reward": -0.9888117283950617,
+          "cumulative_sparse_reward": -5126.0
         },
         "target_slots": {
           "episodes": 48,
           "exact_int_hit_rate": 0.020833333333333332,
           "exact_int_hits": 1,
-          "within_$1": 0.020833333333333332,
+          "within_$1": 0.041666666666666664,
           "within_$10": 0.125,
-          "within_$50": 0.3541666666666667,
-          "mae": 99.0991666666664,
-          "rmse": 138.37854492598723,
+          "within_$50": 0.3333333333333333,
+          "mae": 96.97041666666685,
+          "rmse": 136.63967376217445,
           "mean_sparse_reward": -0.9583333333333334,
           "cumulative_sparse_reward": -46.0
         }
@@ -235,15 +235,15 @@
       "h30": {
         "all": {
           "episodes": 4824,
-          "exact_int_hit_rate": 0.003109452736318408,
-          "exact_int_hits": 15,
-          "within_$1": 0.00642620232172471,
-          "within_$10": 0.06965174129353234,
-          "within_$50": 0.3092868988391376,
-          "mae": 106.77023009950247,
-          "rmse": 146.80232911999008,
-          "mean_sparse_reward": -0.9937810945273632,
-          "cumulative_sparse_reward": -4794.0
+          "exact_int_hit_rate": 0.0022802653399668325,
+          "exact_int_hits": 11,
+          "within_$1": 0.004975124378109453,
+          "within_$10": 0.06509121061359867,
+          "within_$50": 0.2939469320066335,
+          "mae": 109.99660240464343,
+          "rmse": 149.15754303812452,
+          "mean_sparse_reward": -0.9954394693200663,
+          "cumulative_sparse_reward": -4802.0
         },
         "target_slots": {
           "episodes": 48,
@@ -251,9 +251,9 @@
           "exact_int_hits": 0,
           "within_$1": 0.0,
           "within_$10": 0.020833333333333332,
-          "within_$50": 0.22916666666666666,
-          "mae": 142.69291666666655,
-          "rmse": 193.45622632566457,
+          "within_$50": 0.14583333333333334,
+          "mae": 150.00125000000025,
+          "rmse": 193.55595832773224,
           "mean_sparse_reward": -1.0,
           "cumulative_sparse_reward": -48.0
         }
@@ -263,51 +263,51 @@
       "h15": {
         "all": {
           "episodes": 5184,
-          "exact_int_hit_rate": 0.007523148148148148,
-          "exact_int_hits": 39,
-          "within_$1": 0.015625,
-          "within_$10": 0.1537422839506173,
-          "within_$50": 0.5713734567901234,
-          "mae": 61.493308256172746,
-          "rmse": 92.79836456611628,
-          "mean_sparse_reward": -0.9849537037037037,
-          "cumulative_sparse_reward": -5106.0
+          "exact_int_hit_rate": 0.008487654320987654,
+          "exact_int_hits": 44,
+          "within_$1": 0.01890432098765432,
+          "within_$10": 0.16415895061728394,
+          "within_$50": 0.5852623456790124,
+          "mae": 60.585889274691304,
+          "rmse": 92.33989737633992,
+          "mean_sparse_reward": -0.9830246913580247,
+          "cumulative_sparse_reward": -5096.0
         },
         "target_slots": {
           "episodes": 48,
-          "exact_int_hit_rate": 0.0,
-          "exact_int_hits": 0,
-          "within_$1": 0.0,
-          "within_$10": 0.10416666666666667,
-          "within_$50": 0.5416666666666666,
-          "mae": 69.91208333333346,
-          "rmse": 108.95941536110348,
-          "mean_sparse_reward": -1.0,
-          "cumulative_sparse_reward": -48.0
+          "exact_int_hit_rate": 0.020833333333333332,
+          "exact_int_hits": 1,
+          "within_$1": 0.020833333333333332,
+          "within_$10": 0.125,
+          "within_$50": 0.6041666666666666,
+          "mae": 65.28208333333366,
+          "rmse": 103.2892844353509,
+          "mean_sparse_reward": -0.9583333333333334,
+          "cumulative_sparse_reward": -46.0
         }
       },
       "h30": {
         "all": {
           "episodes": 4824,
-          "exact_int_hit_rate": 0.004353233830845771,
-          "exact_int_hits": 21,
-          "within_$1": 0.012230514096185738,
-          "within_$10": 0.1111111111111111,
-          "within_$50": 0.45791873963515756,
-          "mae": 87.04574419568813,
-          "rmse": 130.5302323243263,
-          "mean_sparse_reward": -0.9912935323383084,
-          "cumulative_sparse_reward": -4782.0
+          "exact_int_hit_rate": 0.0041459369817578775,
+          "exact_int_hits": 20,
+          "within_$1": 0.008706467661691543,
+          "within_$10": 0.10302653399668325,
+          "within_$50": 0.45501658374792703,
+          "mae": 87.07506011608615,
+          "rmse": 130.33669323287825,
+          "mean_sparse_reward": -0.9917081260364843,
+          "cumulative_sparse_reward": -4784.0
         },
         "target_slots": {
           "episodes": 48,
           "exact_int_hit_rate": 0.0,
           "exact_int_hits": 0,
           "within_$1": 0.0,
-          "within_$10": 0.08333333333333333,
-          "within_$50": 0.375,
-          "mae": 117.62125000000044,
-          "rmse": 176.57284923651252,
+          "within_$10": 0.041666666666666664,
+          "within_$50": 0.4166666666666667,
+          "mae": 111.26416666666682,
+          "rmse": 164.40462357904298,
           "mean_sparse_reward": -1.0,
           "cumulative_sparse_reward": -48.0
         }
