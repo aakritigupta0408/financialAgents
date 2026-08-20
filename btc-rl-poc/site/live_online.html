@@ -212,9 +212,7 @@ document.getElementById("horizon-sections").innerHTML = `
     <span><span class="sw line"></span>actual</span>
     <span><span class="sw" style="background:var(--series-1)"></span>ctl (tabular Q)</span>
     <span><span class="sw" style="background:var(--series-2)"></span>t2 (LinUCB)</span>
-    <span><span class="sw" style="background:var(--series-3)"></span>t3 (+ live streams)</span>
     <span><span class="sw" style="background:var(--series-4)"></span>t4 (+ trend/book/abstain)</span>
-    <span><span class="sw" style="background:var(--series-5)"></span>t5 (+ CryptoBERT news)</span>
     <span><span class="sw" style="background:var(--series-6)"></span>t6 (+ order flow)</span>
     <span><span class="sw" style="background:var(--series-7)"></span>t7 (L2 linear-Q)</span>
     <span><span class="sw ring"></span>pending</span>
@@ -292,7 +290,7 @@ function chartHorizon(prices, preds, h) {
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
   // shaded ribbon: the trailing-MAE leader arm's 80% band
-  const armsHere = ["ctl", "t2", "t3", "t4", "t5", "t6", "t7"];
+  const armsHere = ["ctl", "t2", "t6", "t7"];
   let leader = null, bestMae = Infinity;
   for (const a of armsHere) {
     const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
@@ -316,7 +314,7 @@ function chartHorizon(prices, preds, h) {
   // invalid in SVG attributes and silently renders stroke:none / black.
   {
     // color by arm; dash patterns kept as a second (CVD-safe) cue
-    for (const arm of ["ctl", "t2", "t3", "t4", "t5", "t6", "t7"]) {
+    for (const arm of ["ctl", "t2", "t6", "t7"]) {
       const color = ARM_COLOR[arm];
       const hp = preds.filter(p => p.horizon === h && armOf(p) === arm);
       const scored = hp.filter(p => p.actual != null)
@@ -379,7 +377,7 @@ function stats(preds) {
       : "";
     return `${arm}: scored ${sc.length} · MAE $${Math.round(mae)}${cov}`;
   };
-  return [one("ctl"), one("t2"), one("t3"), one("t4"), one("t5"), one("t6"), one("t7")].join("   |   ");
+  return [one("ctl"), one("t2"), one("t6"), one("t7")].join("   |   ");
 }
 
 function draw() {
@@ -414,23 +412,6 @@ const ARM_INFO = [
     features: "10 continuous dims: returns 1/5/15/60m, vol, RSI, EMA distance, volume ratio, Fear & Greed.",
     reward: "+1 exact / −|error|/100, plus +0.1 direction credit for a correct-sign deviation.",
     sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated replay; adaptive bias intercept (trailing median residual).",
-    offline: null },
-  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"],
-    title: "Treatment 3 — + live-streamed microstructure",
-    architecture: "Same vol-scaled LinUCB, 15-dim context.",
-    features: "t2 + perp basis, funding rate, exchange dispersion, BRTI gap, mempool fee (30s snapshots).",
-    reward: "Same as t2.", sampling: "Same as t2; snapshots joined by timestamp.",
-    offline: null },
-  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"],
-    title: "Treatment 4 — + trend & order-book state",
-    architecture: "Same vol-scaled LinUCB, 20-dim context.",
-    features: "t3 + 4h momentum, trend alignment, range position, book imbalance, spread.",
-    reward: "Same as t2.", sampling: "Same as t2.", offline: null },
-  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"],
-    title: "Treatment 5 — + frozen Bitcoin-trained LLM",
-    architecture: "Same vol-scaled LinUCB, 23-dim context; CryptoBERT (frozen) perceives, RL decides.",
-    features: "t4 + live headline sentiment, 1h sentiment momentum, news intensity.",
-    reward: "Same as t2.", sampling: "Same as t2; headlines scored once, cached.",
     offline: null },
   { key: "t7", variants: ["t7-h5", "t7-h15", "t7-h30"],
     title: "Treatment 7 — L2 linear function approximation",

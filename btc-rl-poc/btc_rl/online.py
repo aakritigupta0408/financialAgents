@@ -55,6 +55,9 @@ BATCH_QTABLE = RESULTS_DIR / "q_table.json"
 # cadence (cadence == horizon), each with its own Q-table file. The h15/h30
 # tables warm-start from the original (control) model's batch tables; add new
 # dicts here for future treatments.
+# POLICY: a new treatment must pass scripts/offline_gate.py (MAE gate +
+# duplicate check) BEFORE being added here. t3/t4/t5 were retired as
+# offline-proven duplicates of t2/t6 (see results/offline_gate.json).
 # All arms predict every 5 minutes (9:00, 9:05, 9:10…). CONTROL arms (h5/h15/
 # h30, tabular Q) are frozen — do not touch. TREATMENT 2 (t2-*) is a LinUCB
 # contextual bandit over the same 21 integer-delta arms; every learner uses
@@ -66,29 +69,6 @@ VARIANTS: dict[str, dict] = {
     "t2-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb"},
     "t2-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb"},
     "t2-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb"},
-    # TREATMENT 3: LinUCB + 5 live-streamed features (perp basis, funding,
-    # cross-exchange dispersion, composite gap, mempool fee). t2 untouched.
-    "t3-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb", "live": True},
-    "t3-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb", "live": True},
-    "t3-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb", "live": True},
-    # TREATMENT 4 = t3 + trend features (4h momentum, alignment, range
-    # position) and order-book features (imbalance, spread). t3/t2/ctl frozen.
-    "t4-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
-              "live": True, "trend": True, "book": True},
-    "t4-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
-               "live": True, "trend": True, "book": True},
-    "t4-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
-               "live": True, "trend": True, "book": True},
-    # TREATMENT 5 = t4 + a frozen open fintech LLM trained on Bitcoin text
-    # (ElKulako/cryptobert) as the perception module: live headline sentiment,
-    # its momentum, and news intensity join the context. The RL policy stays
-    # the decision maker — the FinRL-Contest "LLM signals + RL agent" pattern.
-    "t5-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
-              "live": True, "trend": True, "book": True, "llm": True},
-    "t5-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "llm": True},
-    "t5-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
-               "live": True, "trend": True, "book": True, "llm": True},
     # TREATMENT 7 = the roadmap's L2 rung: linear function approximation,
     # SGD on Q(s,a) over continuous bar-derived features (base + trend, 13
     # dims — no snapshot dependency), vol-scaled actions. Batch-trained on
@@ -606,13 +586,12 @@ def run(once: bool = False) -> None:
             by_slot: dict[int, dict] = {}
             for r in ledger:
                 if r["horizon"] == 5 \
-                        and r["variant"] in ("h5", "t2-h5", "t3-h5", "t4-h5",
-                                             "t5-h5", "t6-h5") \
+                        and r["variant"] in ("h5", "t2-h5", "t6-h5", "t7-h5") \
                         and r["made_ts"] not in have_consensus:
                     by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
             # skill-weighted poll: drop the voter with the worst trailing MAE
             trail: dict[str, float] = {}
-            for v in ("h5", "t2-h5", "t3-h5", "t4-h5", "t5-h5", "t6-h5"):
+            for v in ("h5", "t2-h5", "t6-h5", "t7-h5"):
                 errs = [r["abs_err"] for r in ledger
                         if r["variant"] == v and r["actual"] is not None][-50:]
                 if len(errs) >= 20:

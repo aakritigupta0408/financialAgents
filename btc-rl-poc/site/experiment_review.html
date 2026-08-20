@@ -128,7 +128,9 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
     <span class="grad">Treatment ladder — head to head</span></h1>
   <p class="lede">Six reinforcement-learning arms predict Bitcoin's price every
   5 minutes at +5/+15/+30 min horizons, scored at integer level against the
-  same market. The first model is the frozen control; each treatment adds
+  same market. The first model is the frozen control; treatments must pass the offline gate
+  (scripts/offline_gate.py — MAE + duplicate checks) before deployment; t3/t4/t5
+  were retired as offline-proven duplicates. Each survivor adds
   exactly one capability — continuous features, live streams, trend &amp;
   order book, a Bitcoin-trained LLM, order-flow imbalance — so every metric
   gap is attributable. All numbers refresh live from the prediction ledger.</p>
@@ -185,27 +187,6 @@ const ARMS = [
     features: "10 continuous dims: intercept, returns at 1/5/15/60m, 30m vol, RSI, EMA(30) distance, log volume ratio, Fear & Greed.",
     reward: "+1 exact integer match, else −|error|/100, plus +0.1 direction credit for correct-sign deviations (cashes the measured 60%+ direction skill). Control keeps the pure shaped reward.",
     sampling: "Warm-up ~1,400 recent episodes; per-prediction updates; hourly gated 24h replay; adaptive bias intercept (trailing median residual per arm × horizon).",
-    offline: null },
-  { key: "t3", variants: ["t3-h5", "t3-h15", "t3-h30"], color: "#f472b6",
-    title: "Treatment 3 — + live-streamed microstructure",
-    architecture: "Same LinUCB machinery as t2, 15-dim context.",
-    features: "t2's 10 + five live streams snapshotted every 30s: Deribit perp basis (bp), OKX funding rate, cross-exchange dispersion of BRTI constituents (bp), BRTI-composite vs Coinbase gap (bp), mempool fastest fee. Missing snapshot ⇒ neutral zeros.",
-    reward: "Same prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same as t2; snapshots joined by nearest timestamp (≤10 min), so history without snapshots degrades gracefully to t2-equivalent.",
-    offline: null },
-  { key: "t4", variants: ["t4-h5", "t4-h15", "t4-h30"], color: "#fbbf24",
-    title: "Treatment 4 — + trend & order-book state",
-    architecture: "LinUCB, 20-dim context over the 21 delta arms.",
-    features: "t3's 15 + trend (4h momentum, multi-scale sign alignment, 60m range position) + order book (Coinbase L2 top-20 bid/ask imbalance, spread bp).",
-    reward: "Prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same warm-up + per-prediction updates + hourly gated replay.",
-    offline: null },
-  { key: "t5", variants: ["t5-h5", "t5-h15", "t5-h30"], color: "#34d399",
-    title: "Treatment 5 — + frozen Bitcoin-trained fintech LLM",
-    architecture: "FinRL-Contest pattern: LLM perceives, RL decides. CryptoBERT (BERTweet pre-trained on 3.2M crypto posts) is frozen; its outputs join the context of the same LinUCB (23 dims). No LLM weight updates — reinforcement learning stays the sole decision layer.",
-    features: "t4's 20 + three LLM dims from live CoinDesk/Cointelegraph/Decrypt headlines: mean sentiment P(bull)−P(bear), 1h sentiment momentum, news intensity. Each headline scored once, cached.",
-    reward: "Prediction reward (+1 exact / −|error|/100).",
-    sampling: "Same warm-up + per-prediction updates + hourly gated replay; headlines fetched every poll (30s), scored on Apple-GPU locally.",
     offline: null },
   { key: "t6", variants: ["t6-h5", "t6-h15", "t6-h30"], color: "#38bdf8",
     title: "Treatment 6 — + order-flow imbalance (research-backed)",
