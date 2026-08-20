@@ -146,13 +146,13 @@ footer { color: #64748b; font-size: 13px; margin-top: 40px; }
 <div class="sect">Headline — online MAE, +5 minute horizon</div>
 <div class="cards-grid" id="headline"></div>
 
-<div class="sect">Skill vs the noise floor — every arm, every horizon, one scale</div>
+<div class="sect">Online MAE — all arms, all horizons, one chart</div>
 <div class="panel">
-  <p class="sub">Each dot is one arm at one horizon, plotted as <b>MAE relative to
-  persistence on the same slots</b> — the vertical line at 1.00 is the noise floor
-  ("doing nothing"). Left of the line = adding value. A red ring = Diebold–Mariano
-  significantly worse than control (p&lt;0.05, HAC); green ring = significantly better.
-  Hover any dot for exact numbers.</p>
+  <p class="sub">Average miss in dollars, grouped by horizon. Bars are colored by arm
+  (same colors as the tables); the dashed marker across each group is
+  <b>persistence — the "do nothing" floor</b> on the same slots. Shorter bar = better;
+  a bar near its floor marker is at the theoretical ceiling. Red ▼ = Diebold–Mariano
+  significantly worse than control (p&lt;0.05).</p>
   <div class="legend" id="rel-legend"></div>
   <div id="graph-rel"></div>
 </div>
@@ -378,59 +378,66 @@ function dmStat(preds, armVariants, h) {
   return v > 0 ? mean / Math.sqrt(v / n) : null;
 }
 
-const H_DOT = { 1: "#34d399", 5: "#a78bfa", 15: "#38bdf8", 30: "#fbbf24" };
-
-function relChart(preds) {
+function groupedChart(preds) {
   const order = ["ctl", "t2", "t6", "t7", "t8", "t9", "agg", "rp"];
-  const rows = [];
-  for (const key of order) {
-    const arm = ARMS.find(a => a.key === key);
-    if (!arm) continue;
-    const dots = [];
-    for (const h of [1, 5, 15, 30]) {
+  const groups = [];
+  for (const h of [1, 5, 15, 30]) {
+    const bars = [];
+    let floor = null;
+    for (const key of order) {
+      const arm = ARMS.find(a => a.key === key);
+      if (!arm) continue;
       const sc = preds.filter(p => arm.variants.includes(p.variant)
         && p.horizon === h && p.actual != null);
       if (sc.length < 15) continue;
       const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
-      const pers = sc.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0)
-        / sc.length;
-      if (!pers) continue;
-      const dm = (key === "ctl") ? null : dmStat(preds, arm.variants, h);
-      dots.push({ h, ratio: mae / pers, mae, pers, n: sc.length, dm });
+      if (key === "ctl")
+        floor = sc.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0)
+          / sc.length;
+      const dm = key === "ctl" ? null : dmStat(preds, arm.variants, h);
+      bars.push({ key, color: arm.color, mae, n: sc.length, dm });
     }
-    if (dots.length) rows.push({ key, color: arm.color, dots });
+    if (bars.length) groups.push({ h, bars, floor });
   }
-  if (!rows.length) return '<p class="sub">collecting…</p>';
-  const allR = rows.flatMap(r => r.dots.map(d => d.ratio));
-  const xmin = Math.min(0.92, ...allR) - 0.02;
-  const xmax = Math.max(1.35, ...allR) + 0.04;
-  const W = 900, rowH = 36, L = 56, R = 20, T = 26;
-  const H = T + rows.length * rowH + 34;
-  const X = v => L + (v - xmin) / (xmax - xmin) * (W - L - R);
+  if (!groups.length) return '<p class="sub">collecting…</p>';
+  const W = 900, H = 330, L = 56, R = 12, T = 16, B = 44;
+  const ymax = Math.max(...groups.flatMap(g => g.bars.map(b => b.mae))) * 1.15;
+  const Y = v => T + (1 - v / ymax) * (H - T - B);
+  const gw = (W - L - R) / groups.length;
   let g = "";
-  for (let v = Math.ceil(xmin * 10) / 10; v <= xmax; v += 0.1) {
-    g += `<line x1="${X(v).toFixed(1)}" y1="${T - 8}" x2="${X(v).toFixed(1)}" y2="${H - 26}" stroke="rgba(255,255,255,.06)"/>` +
-      `<text x="${X(v).toFixed(1)}" y="${H - 10}" text-anchor="middle">${v.toFixed(1)}×</text>`;
+  for (let v = 0; v <= ymax; v += ymax > 300 ? 100 : 25) {
+    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(255,255,255,.06)"/>` +
+      `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">$${Math.round(v)}</text>`;
   }
-  g += `<line x1="${X(1)}" y1="${T - 12}" x2="${X(1)}" y2="${H - 26}" ` +
-    `stroke="rgba(255,255,255,.5)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
-    `<text x="${X(1)}" y="${T - 14}" text-anchor="middle" style="fill:#e2e8f0;font-weight:600">persistence = 1.00×</text>`;
-  rows.forEach((r, i) => {
-    const y = T + i * rowH + rowH / 2;
-    g += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="rgba(255,255,255,.04)"/>` +
-      `<text x="${L - 8}" y="${y + 4}" text-anchor="end" style="fill:#f8fafc;font-weight:700">${r.key}</text>`;
-    for (const d of r.dots) {
-      const sig = d.dm != null && Math.abs(d.dm) > 1.96;
-      const ring = sig ? (d.dm > 0 ? "#f87171" : "#6ee7b7") : "none";
-      g += `<circle cx="${X(d.ratio).toFixed(1)}" cy="${y}" r="7" ` +
-        `fill="${H_DOT[d.h]}" fill-opacity="0.9" ` +
-        `stroke="${ring}" stroke-width="2.5">` +
-        `<title>${r.key} +${d.h}m — MAE $${Math.round(d.mae)} vs persistence ` +
-        `$${Math.round(d.pers)} (${d.ratio.toFixed(2)}×, n=${d.n})` +
-        `${sig ? d.dm > 0 ? " — significantly worse than control" : " — significantly better than control" : ""}</title></circle>`;
+  groups.forEach((grp, gi) => {
+    const x0 = L + gi * gw + 10;
+    const bw = (gw - 20) / grp.bars.length;
+    grp.bars.forEach((b, bi) => {
+      const x = x0 + bi * bw;
+      const y = Y(b.mae);
+      const sig = b.dm != null && b.dm > 1.96;
+      g += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}" ` +
+        `height="${(H - B - y).toFixed(1)}" rx="5" fill="${b.color}" fill-opacity="0.9">` +
+        `<title>${b.key} +${grp.h}m — MAE $${Math.round(b.mae)} (n=${b.n})` +
+        `${sig ? " — significantly worse than control" : ""}</title></rect>` +
+        `<text x="${(x + bw / 2 - 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" ` +
+        `text-anchor="middle" style="fill:#cbd5e1;font-size:10.5px">$${Math.round(b.mae)}</text>`;
+      if (sig)
+        g += `<text x="${(x + bw / 2 - 2).toFixed(1)}" y="${H - B + 14}" ` +
+          `text-anchor="middle" style="fill:#f87171;font-size:11px">▼</text>`;
+    });
+    if (grp.floor != null) {
+      const fy = Y(grp.floor);
+      g += `<line x1="${x0 - 4}" y1="${fy.toFixed(1)}" x2="${(x0 + gw - 24).toFixed(1)}" y2="${fy.toFixed(1)}" ` +
+        `stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
+        `<text x="${(x0 + gw - 24).toFixed(1)}" y="${(fy - 5).toFixed(1)}" text-anchor="end" ` +
+        `style="fill:#e2e8f0;font-size:10.5px">floor $${Math.round(grp.floor)}</text>`;
     }
+    g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 30}" ` +
+      `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
   });
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="MAE relative to persistence, all arms and horizons">${g}</svg>`;
+  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(255,255,255,.22)"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE, all arms and horizons">${g}</svg>`;
 }
 
 function offlineBlock(metrics, agentKey) {
@@ -479,12 +486,10 @@ async function poll() {
       </div>`).join("");
 
     document.getElementById("rel-legend").innerHTML =
-      [1, 5, 15, 30].map(h =>
-        `<span><span class="dot" style="background:${H_DOT[h]}"></span>+${h} min</span>`
-      ).join("") +
-      '<span><span class="dot" style="background:transparent;border:2px solid #f87171"></span>sig worse vs ctl</span>' +
-      '<span><span class="dot" style="background:transparent;border:2px solid #6ee7b7"></span>sig better vs ctl</span>';
-    document.getElementById("graph-rel").innerHTML = relChart(preds);
+      ARMS.filter(a => a.key !== "agg" || true).map(a =>
+        `<span><span class="dot" style="background:${a.color}"></span>${a.key}</span>`
+      ).join("");
+    document.getElementById("graph-rel").innerHTML = groupedChart(preds);
 
     let sb = "";
     for (const arm of ARMS) {
