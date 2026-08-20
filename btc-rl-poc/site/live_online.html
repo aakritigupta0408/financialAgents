@@ -99,6 +99,7 @@ section { background: var(--surface); border: 1px solid var(--border);
 .chip:focus-visible { outline: 2px solid var(--series-2); outline-offset: 2px; }
 svg { width: 100%; height: auto; display: block; margin-top: 8px; }
 .chart-box svg { cursor: crosshair; touch-action: none; }
+.chart-box { user-select: none; -webkit-user-select: none; }
 .chart-box.panning svg { cursor: grabbing; }
 svg text { font: 11.5px ui-sans-serif, system-ui; fill: var(--muted);
   font-variant-numeric: tabular-nums; }
@@ -118,6 +119,9 @@ svg .xhair { stroke: #fff; stroke-width: 1; stroke-dasharray: 2 3;
 .mini { font-size: 13px; color: var(--muted); margin-top: 8px;
   font-variant-numeric: tabular-nums; }
 .scroll { overflow-x: auto; }
+.ledger-scroll { max-height: 430px; overflow-y: auto; }
+.ledger-scroll thead th { position: sticky; top: 0;
+  background: #14122a; z-index: 1; }
 table { border-collapse: collapse; width: 100%; font-size: 13px;
   min-width: 680px; margin-top: 10px; }
 th { text-align: left; font-size: 11px; text-transform: uppercase;
@@ -271,7 +275,7 @@ document.getElementById("horizon-sections").innerHTML = `
   </div>
   <div id="chart-h${h}"></div>
   <p class="mini" id="mini-h${h}"></p>
-  <div class="scroll"><table>
+  <div class="scroll ledger-scroll"><table>
     <thead><tr><th>Target T=t (PST)</th><th>Arm</th><th class="num">Predicted @ t</th>
     <th class="num">80% band</th>
     <th class="num">Actual @ t</th><th class="num">Error (+ = high)</th><th>Match</th></tr></thead>
@@ -393,12 +397,17 @@ function chartHorizon(prices, preds, h) {
   return `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" aria-label="+${h} min predicted vs actual, all arms">${g}</svg>`;
 }
 
+const ARM_ORDER = { agg: 0, ctl: 1, rp: 2, t2: 3, t6: 4, t7: 5, t8: 6 };
 function ledgerRows(preds) {
-  // Newest slots first, both arms adjacent per slot — never let one arm's
-  // batch-append order monopolize the table.
-  const sorted = [...preds].sort((a, b) =>
-    b.target_ts - a.target_ts || (armOf(a) < armOf(b) ? -1 : 1));
-  return sorted.slice(0, 16).map(p => {
+  // Newest COMPLETE slots only — a slot's arms are never split across the
+  // cut, and the table scrolls instead of truncating.
+  const slots = [...new Set(preds.map(p => p.target_ts))]
+    .sort((a, b) => b - a).slice(0, 6);
+  const keep = new Set(slots);
+  const sorted = preds.filter(p => keep.has(p.target_ts)).sort((a, b) =>
+    b.target_ts - a.target_ts
+    || (ARM_ORDER[armOf(a)] ?? 9) - (ARM_ORDER[armOf(b)] ?? 9));
+  return sorted.map(p => {
     const state = p.actual == null ? '<span class="pill pending">pending</span>'
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
     const arm = armOf(p);
@@ -554,7 +563,9 @@ function bindChart(h) {
     const svg = box.querySelector("svg"); if (!svg || !latest) return;
     e.preventDefault();
     const m = chartMeta[h], ts = pxToTs(h, e.clientX, svg);
-    const f = e.deltaY > 0 ? 1.25 : 0.8;
+    // proportional to wheel delta — trackpads fire many small events, so a
+    // fixed step made zooming explosive; exp() keeps it smooth both ways
+    const f = Math.min(2, Math.max(0.5, Math.exp(e.deltaY * 0.0015)));
     const span = Math.min(Math.max((m.t1 - m.t0) * f, 900), 86400);
     view.span = span;
     view.end = Math.min(ts + (m.t1 - ts) * f, m.dataMax);
