@@ -298,6 +298,34 @@ def run(once: bool = False) -> None:
                                 for r in rows)
                     new_preds += len(rows)
 
+            # 1b. consensus: for every 5-min slot where all +5 predictors have
+            #     committed, poll them (ctl-h5, t2-h5, persistence) and take
+            #     the median as OUR final level for t+5. Scored like any
+            #     predictor; never bets, never learns.
+            have_consensus = {r["made_ts"] for r in ledger
+                              if r["variant"] == "consensus"}
+            by_slot: dict[int, dict] = {}
+            for r in ledger:
+                if r["horizon"] == 5 and r["variant"] in ("h5", "t2-h5") \
+                        and r["made_ts"] not in have_consensus:
+                    by_slot.setdefault(r["made_ts"], {})[r["variant"]] = r
+            for slot_ts, votes in sorted(by_slot.items()):
+                if len(votes) < 2:
+                    continue
+                base = votes["h5"]
+                polled = sorted([votes["h5"]["pred"], votes["t2-h5"]["pred"],
+                                 int(base["price_now"])])
+                ledger.append({
+                    "variant": "consensus", "made_ts": slot_ts,
+                    "target_ts": slot_ts + 300, "horizon": 5,
+                    "price_now": base["price_now"],
+                    "pred": int(polled[1]),  # median of the three voters
+                    "delta": int(polled[1]) - int(base["price_now"]),
+                    "votes": polled, "state": None,
+                    "actual": None, "abs_err": None, "hit": None, "bet": 0,
+                })
+                new_preds += 1
+
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
             scored = 0
@@ -385,6 +413,10 @@ def run(once: bool = False) -> None:
                                      for h, a in arms[v].items()}}
                              for v, s in VARIANTS.items()},
                 "betting": book,
+                "consensus": next(
+                    (dict(r) for r in reversed(ledger)
+                     if r["variant"] == "consensus" and r["actual"] is None),
+                    None),
                 "online_updates_session": online_updates,
                 "retrain_every_min": RETRAIN_EVERY // 60,
                 "retrains_this_session": retrains,

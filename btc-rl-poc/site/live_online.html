@@ -48,6 +48,8 @@ h2 { margin: 0 0 2px; font-size: 17px; }
   letter-spacing: .08em; padding: 2px 9px; border-radius: 99px; vertical-align: 2px; }
 .arm-tag.control { color: var(--ink-2); background: color-mix(in srgb, var(--muted) 16%, transparent); }
 .arm-tag.treatment { color: var(--good-text); background: color-mix(in srgb, var(--good) 13%, transparent); }
+.arm-tag.agg { color: var(--series-1); background: color-mix(in srgb, var(--series-1) 13%, transparent); }
+.consensus-num { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .sub { color: var(--ink-2); max-width: 70ch; margin: 0; }
 section { background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 18px 20px; }
@@ -129,6 +131,21 @@ footer { color: var(--muted); font-size: 12.5px; }
 </section>
 
 <section>
+  <h2>Our +5 min call <span class="arm-tag agg">consensus of all predictors</span></h2>
+  <p class="sub muted">At each 5-minute slot t, every model that predicts T=t+5 is polled —
+  control (tabular Q), treatment 2 (LinUCB), and persistence — and the <b>median</b> is
+  our final level, shown beside the live Coinbase and BRTI-style prices.</p>
+  <div class="statusbar" style="margin-top:10px">
+    <div class="stat"><div class="k">Prediction for <span id="cons-when">–</span></div>
+      <div class="consensus-num" id="cons-pred">–</div>
+      <div class="sub muted" id="cons-votes"></div></div>
+    <div class="stat"><div class="k">Coinbase now</div><div class="bignum" id="cons-cb">–</div></div>
+    <div class="stat"><div class="k">BRTI composite now</div><div class="bignum" id="cons-brti">–</div></div>
+    <div class="stat"><div class="k">Consensus track record</div><div class="bignum" id="cons-acc">–</div></div>
+  </div>
+</section>
+
+<section>
   <h2>Betting book <span class="arm-tag treatment">$10 per prediction · ±$10 pays $50</span></h2>
   <p class="sub muted">Every committed prediction stakes $10 from a shared $1,000 bankroll;
   a settled prediction within ±$10 of the actual price receives $50 (net +$40), a miss
@@ -187,7 +204,8 @@ footer { color: var(--muted); font-size: 12.5px; }
 <script>
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [5, 15, 30];
-const armOf = p => (p.variant || "").startsWith("t2") ? "t2" : "ctl";
+const armOf = p => p.variant === "consensus" ? "agg"
+  : (p.variant || "").startsWith("t2") ? "t2" : "ctl";
 let latest = null;
 
 // All times on this page are US Pacific (PST/PDT).
@@ -295,8 +313,9 @@ function ledgerRows(preds) {
   return sorted.slice(0, 12).map(p => {
     const state = p.actual == null ? '<span class="pill pending">pending</span>'
       : p.hit ? '<span class="pill hit">✓ hit</span>' : '<span class="pill miss">miss</span>';
-    const hz = `<td>${armOf(p) === "t2"
-      ? '<span class="arm-tag treatment">t2</span>'
+    const arm = armOf(p);
+    const hz = `<td>${arm === "t2" ? '<span class="arm-tag treatment">t2</span>'
+      : arm === "agg" ? '<span class="arm-tag agg">agg</span>'
       : '<span class="arm-tag control">ctl</span>'}</td>`;
     const bet = !p.bet ? "no bet"
       : p.pnl == null ? "$10 in play"
@@ -376,6 +395,25 @@ async function poll() {
           .map(([n, p]) => `${n}: $${Math.round(p).toLocaleString()}`).join(" · ") +
           " — volume-weighted (real BRTI is licensed; this uses its open constituents)";
       } else { brtiEl.textContent = "–"; }
+      const cons = status.consensus;
+      if (cons) {
+        document.getElementById("cons-when").textContent =
+          fmtTime(cons.target_ts) + " PST";
+        document.getElementById("cons-pred").textContent =
+          "$" + cons.pred.toLocaleString();
+        document.getElementById("cons-votes").textContent =
+          "votes: " + (cons.votes || []).map(v => "$" + v.toLocaleString()).join(" · ");
+      }
+      document.getElementById("cons-cb").textContent =
+        "$" + Math.round(status.price_now).toLocaleString();
+      document.getElementById("cons-brti").textContent = status.brti
+        ? "$" + Math.round(status.brti.price).toLocaleString() : "–";
+      const consScored = preds.filter(p => p.variant === "consensus" && p.actual != null);
+      document.getElementById("cons-acc").textContent = consScored.length
+        ? "MAE $" + Math.round(consScored.reduce((a, p) => a + p.abs_err, 0) / consScored.length)
+          + " · ±$10: " + (100 * consScored.filter(p => p.abs_err <= 10).length / consScored.length).toFixed(0)
+          + "% (" + consScored.length + ")"
+        : "collecting…";
       document.getElementById("retrains").textContent = status.retrains_this_session;
       document.getElementById("qupd").textContent =
         (status.online_updates_session ?? 0).toLocaleString();
