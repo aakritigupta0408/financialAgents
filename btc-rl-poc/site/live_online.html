@@ -360,7 +360,10 @@ details[open] > summary { margin-bottom: 6px; }
     <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-8)">L5 · t10/t11</b><br><span class="muted">Kalshi market context (t10) · RLHF human feedback (t11) · cal + kb meta-arms</span></div>
   </div>
 
-  <p class="mini" style="margin-top:16px">Offline — held-out test MAE (chronological splits; 60-day runs except control 120-day):</p>
+  <p class="mini" style="margin-top:16px">Offline — held-out test MAE from the runs
+  that shipped each arm (historical reference; the <a href="index.html"
+  style="color:var(--series-2)">backtest page</a> and its previous-runs table carry
+  the latest batch numbers):</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Class</th><th class="num">Input dims</th>
     <th class="num">+1m</th><th class="num">+5m</th><th class="num">+15m</th><th class="num">+30m</th></tr></thead>
