@@ -130,6 +130,20 @@ VARIANTS: dict[str, dict] = {
                 "kalshi": True},
     "t10-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
                 "kalshi": True},
+    # TREATMENT 11 = RLHF: same bandit/base features as t2, but its ONLINE
+    # reward is blended with human feedback — a directional view recorded
+    # via scripts/feedback.py earns agreement credit (±HF_WEIGHT) on
+    # predictions committed within the next 30 min. With no feedback it
+    # degenerates to exactly t2, so the t11-vs-t2 standings gap is a
+    # measured price of the human in the loop.
+    "t11-h1": {"predict_every": 300, "horizons": [1], "agent": "linucb",
+               "hf": True},
+    "t11-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
+               "hf": True},
+    "t11-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
+                "hf": True},
+    "t11-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
+                "hf": True},
     "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
               "live": True, "trend": True, "book": True, "llm": True,
               "ofi": True},
@@ -218,6 +232,12 @@ CAL_TRAIL = 50                 # scored rows per arm used to pick the winner
 KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
                                # probability row doesn't fit the ledger schema
 KB_MAX_ROWS = 20_000
+HF_LOG_NAME = "human_feedback.jsonl"  # scripts/feedback.py appends here
+HF_WEIGHT = 0.15               # RLHF blend: comparable to DIR_BONUS so the
+                               # human tilts learning but can't drown the
+                               # realized-price reward (typically O(1))
+HF_LOOKBACK_S = 1800           # a view guides predictions made in the next
+                               # 30 min, then expires
 
 
 def _horizon_sigma(feat: dict, horizon: int) -> float:
@@ -286,6 +306,34 @@ def _pm_view(arms: dict, feat: dict, snap: dict | None,
     except Exception:
         pass
     return out
+
+
+def _load_hf() -> list[dict]:
+    path = RESULTS_DIR / HF_LOG_NAME
+    if not path.exists():
+        return []
+    rows = []
+    for line in path.read_text().splitlines():
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows[-500:]
+
+
+def _hf_bonus(hf: list[dict], row: dict) -> float:
+    """RLHF shaping for t11: the latest human view recorded in the 30 min
+    before this prediction was committed earns agreement credit on the
+    committed delta's SIGN. Zero when there's no view, the view expired,
+    or the arm predicted flat — so with no feedback t11 is exactly t2."""
+    if not row["delta"]:
+        return 0.0
+    view = next((v for v in reversed(hf)
+                 if row["made_ts"] - HF_LOOKBACK_S <= v["ts"] <= row["made_ts"]),
+                None)
+    if view is None:
+        return 0.0
+    return HF_WEIGHT * view["view"] * (1 if row["delta"] > 0 else -1)
 
 
 def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
@@ -1016,6 +1064,7 @@ def run(once: bool = False) -> None:
 
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
+            hf_rows = _load_hf()  # human views for t11's blended reward
             scored = 0
             for row in ledger:
                 if row["actual"] is not None:
@@ -1043,9 +1092,11 @@ def run(once: bool = False) -> None:
                 elif isinstance(agent, BANDIT_TYPES) and row.get("x") \
                         and row.get("arm") is not None:
                     if row["arm"] < agent.n_arms and len(row["x"]) == agent.dim:
-                        agent.update(row["x"], row["arm"], _bandit_reward(
-                            row["pred"], row["actual"],
-                            row["price_now"], row["delta"]))
+                        r = _bandit_reward(row["pred"], row["actual"],
+                                           row["price_now"], row["delta"])
+                        if row["variant"].startswith("t11"):
+                            r += _hf_bonus(hf_rows, row)
+                        agent.update(row["x"], row["arm"], r)
                         online_updates += 1
                 elif isinstance(agent, TabularQAgent) and row.get("state") \
                         and row["delta"] in config.ACTION_DELTAS:
@@ -1080,6 +1131,8 @@ def run(once: bool = False) -> None:
                 "brti": brti,
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "kalshi_binary": _kb_summary(kb),
+                "human_feedback": {"n": len(hf_rows),
+                                   "last": hf_rows[-1] if hf_rows else None},
                 "live_features": snap,
                 "variants": {v: {"predict_every_min": s["predict_every"] // 60,
                                  "horizons": s["horizons"],
