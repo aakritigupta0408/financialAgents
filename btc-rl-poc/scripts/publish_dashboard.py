@@ -95,8 +95,12 @@ def publish_ghpages() -> None:
     else:
         _git(GH, "commit", "-q", "-m",
              f"{MARKER} {time.strftime('%Y-%m-%d %H:%M')}")
-    push = _git(GH, "push", "--force-with-lease", _push_url(GH),
-                "HEAD:gh-pages", check=False)
+    # lease against the just-fetched tip explicitly — pushing to a URL
+    # (not a named remote) gives git no tracking ref to infer it from
+    expected = _git(GH, "rev-parse", "origin/gh-pages").stdout.strip()
+    push = _git(GH, "push",
+                f"--force-with-lease=refs/heads/gh-pages:{expected}",
+                _push_url(GH), "HEAD:refs/heads/gh-pages", check=False)
     print("gh-pages:", "published" if push.returncode == 0
           else f"deferred ({push.stderr.strip()[:80]})")
 
