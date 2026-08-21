@@ -492,6 +492,12 @@ document.getElementById("horizon-sections").innerHTML = `
   </div>
   <div id="chart-h${h}"></div>
   <div class="scorechips" id="mini-h${h}"></div>
+  <h3 style="margin-top:18px;font:500 16px var(--display)">Winner's circle — best arm per window</h3>
+  <p class="sub muted small">At every slot the trailing-MAE leader is re-selected;
+  this line is <b>that winner's own prediction</b> vs the actual, colored by which
+  arm held the lead (ticks mark leadership changes).</p>
+  <div id="chart-win-h${h}"></div>
+  <p class="mini" id="win-note-h${h}"></p>
 </div>`).join("");
 
 // the ledger gets its own horizon tabs, independent of the chart tabs
@@ -714,6 +720,57 @@ function stats(preds) {
     `${r.arm} $${Math.round(r.mae)} · ${r.cov}</span>`).join("");
 }
 
+function winnerChart(prices, preds, h) {
+  // the cal meta-arm re-picks the trailing-MAE winner every slot and
+  // records who led (src); its pred minus cal_adj is the winner's own call
+  const rows = preds.filter(p => p.variant === `cal-h${h}` && p.src)
+    .map(p => ({ ts: p.target_ts, pred: p.pred - (p.cal_adj || 0),
+                 actual: p.actual, src: armOf({ variant: p.src }) }))
+    .sort((a, b) => a.ts - b.ts);
+  const box = document.getElementById(`chart-win-h${h}`);
+  const note = document.getElementById(`win-note-h${h}`);
+  if (rows.length < 3) {
+    box.innerHTML = '<p class="mini">collecting winner history…</p>';
+    note.textContent = "";
+    return;
+  }
+  const f = frame(prices, preds.filter(p => p.variant === `cal-h${h}`), h);
+  let g = f.g;
+  // winner line, one path per leadership stretch, colored by the leader
+  let seg = [rows[0]];
+  const flush = () => {
+    if (seg.length < 1) return;
+    const c = ARM_COLOR[seg[0].src] || "var(--ink-2)";
+    if (seg.length > 1)
+      g += `<path class="predline" style="stroke:${c}" d="${seg.map((r, i) =>
+        `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.pred).toFixed(1)}`).join("")}"/>`;
+    for (const r of seg)
+      g += `<circle class="hover-pt" cx="${f.X(r.ts).toFixed(1)}" cy="${f.Y(r.pred).toFixed(1)}" r="6" ` +
+        `data-tip="[winner: ${seg[0].src}] pred $${r.pred.toLocaleString()}` +
+        `${r.actual != null ? `, actual $${Math.round(r.actual).toLocaleString()}` : " (pending)"}"></circle>`;
+  };
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i].src === seg[0].src) { seg.push(rows[i]); continue; }
+    flush();
+    // leadership change tick
+    const x = f.X(rows[i].ts).toFixed(1);
+    g += `<line x1="${x}" y1="12" x2="${x}" y2="${f.H - 30}" ` +
+      `stroke="rgba(255,255,255,.25)" stroke-dasharray="2 4"><title>lead: ` +
+      `${seg[0].src} → ${rows[i].src}</title></line>`;
+    seg = [rows[i]];
+  }
+  flush();
+  box.innerHTML = `<svg viewBox="0 0 ${f.W} ${f.H}" role="img" ` +
+    `aria-label="+${h} min winner arm predictions vs actual">${g}</svg>`;
+  const cur = rows[rows.length - 1];
+  const since = rows.filter(r => r.src === cur.src &&
+    rows.slice(rows.indexOf(r)).every(x => x.src === cur.src))[0];
+  const changes = rows.reduce((a, r, i) => a + (i && r.src !== rows[i - 1].src ? 1 : 0), 0);
+  note.innerHTML = `current winner: <b style="color:${ARM_COLOR[cur.src] || "inherit"}">` +
+    `${cur.src}</b> (since ${fmtTime(since.ts)} PT) · ${changes} leadership ` +
+    `change${changes === 1 ? "" : "s"} in view`;
+}
+
 function draw() {
   const { prices, preds } = latest;
   const t0 = prices.length ? prices[0].ts : 0;
@@ -722,6 +779,7 @@ function draw() {
       const hp = preds.filter(p => p.horizon === h && p.target_ts >= t0);
       document.getElementById(`chart-h${h}`).innerHTML =
         chartHorizon(prices, hp.filter(p => armOf(p) !== "agg"), h);
+      try { winnerChart(prices, hp, h); } catch {}
       document.getElementById(`mini-h${h}`).innerHTML = stats(hp);
       document.getElementById(`ledger-h${h}`).innerHTML = ledgerRows(hp);
     } catch (e) {  // one bad section must not blank the others
