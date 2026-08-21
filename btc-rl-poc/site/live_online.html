@@ -293,7 +293,7 @@ details[open] > summary { margin-bottom: 6px; }
     <div class="stat"><div class="k">Market Brier</div><div class="bignum" id="kb-mkt">–</div></div>
     <div class="stat"><div class="k">This window's bet</div><div class="bignum" id="kb-bet">–</div></div>
     <div class="stat"><div class="k">One-bet record · P&amp;L</div><div class="bignum" id="kb-bet-pnl">–</div></div>
-    <div class="stat"><div class="k">Today's hit rate (PT)</div><div class="bignum" id="kb-today">–</div></div>
+    <div class="stat"><div class="k">Today's bet win rate (PT)</div><div class="bignum" id="kb-today">–</div></div>
     <div class="stat"><div class="k">Today · Brier us vs market</div><div class="bignum" id="kb-today-brier">–</div></div>
   </div>
   <details style="margin-top:12px"><summary>Call history &amp; contract detail</summary>
@@ -1040,11 +1040,15 @@ async function poll() {
           { timeZone: "America/Los_Angeles" }));
         const sod = (Date.now() - (ptNow.getHours() * 3600 + ptNow.getMinutes() * 60
           + ptNow.getSeconds()) * 1000) / 1000;
+        // hit rate = % of the day's one-per-window BETS won, not call accuracy
+        const tbets = betRows.filter(b => b.made_ts >= sod && b.actual != null);
+        if (tbets.length >= 3) {
+          const tw = tbets.filter(b => b.win).length;
+          document.getElementById("kb-today").textContent =
+            `${(100 * tw / tbets.length).toFixed(0)}% (${tw}–${tbets.length - tw})`;
+        }
         const today = kbRows.filter(r => r.made_ts >= sod && r.actual != null);
         if (today.length >= 10) {
-          const th = today.filter(r => r.hit).length;
-          document.getElementById("kb-today").textContent =
-            `${(100 * th / today.length).toFixed(0)}% (${today.length})`;
           const tq = today.filter(r => r.mkt_brier != null);
           document.getElementById("kb-today-brier").textContent = tq.length
             ? `${(tq.reduce((a, r) => a + r.brier, 0) / tq.length).toFixed(3)} vs ` +
