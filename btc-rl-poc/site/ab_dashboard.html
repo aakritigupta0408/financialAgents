@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>Deliverable — A/B & Baseline</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+.target { color: var(--good-text); }
+.warn { color: var(--down); }
+.big2 { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 6px; }
+.badge.pass { color: var(--good-text); background: rgba(43,217,126,.12); }
+.badge.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span> Final deliverable · live evaluation</div>
+  <h1>The 80/80 scoreboard &amp; bet-policy A/B</h1>
+  <p class="sub">Deliverable model <b>kbf</b>: one definitive call per 15-minute
+  window at T-3 minutes — every window called, both classes tracked, no
+  abstention. Class baseline to beat: <b>80% precision and 80% recall per
+  class</b>. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
+  per window) vs the <b>selector model</b> (bets only when the precision-tuned
+  confidence gate clears; may skip windows). Selector ranking criterion: final
+  bankroll from $1,000 at 2% risked per bet, compounding, fees included.</p>
+</header>
+
+<section>
+  <h2>kbf vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
+  <div class="statusbar" style="margin-top:12px" id="kbf-tiles"><p class="mini">loading…</p></div>
+  <p class="mini" id="kbf-note"></p>
+</section>
+
+<section>
+  <h2>A/B — bidding model vs selector model</h2>
+  <div class="scroll"><table id="ab-tbl">
+    <thead><tr><th>Policy</th><th class="num">Bets</th><th class="num">Skipped windows</th>
+      <th class="num">Win rate</th><th class="num">Net P&amp;L (fees in)</th>
+      <th class="num">Per bet</th><th class="num">Max DD</th>
+      <th class="num">Bankroll ($1,000 start)</th><th class="num">Return</th></tr></thead>
+    <tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="ab-sig"></p>
+  <h3 style="margin-top:16px;font:500 16px var(--display)">Bankroll — $1,000 start, 2% risked per bet</h3>
+  <div class="legend">
+    <span><span class="sw" style="background:#3987e5"></span>bidding model (1 bet, mandatory)</span>
+    <span><span class="sw" style="background:#199e70"></span>selector model (gated, may skip)</span>
+  </div>
+  <div id="bankroll"></div>
+</section>
+
+<section>
+  <h2>Traffic &amp; freshness</h2>
+  <div class="statusbar" style="margin-top:12px" id="traffic"><p class="mini">loading…</p></div>
+</section>
+
+<footer id="foot">loading…</footer>
+</main>
+<script>
+const REMOTE = !["localhost", "127.0.0.1"].includes(location.hostname);
+const bust = u => REMOTE
+  ? u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 30000) : u;
+const fee = pc => Math.ceil(7 * (pc / 100) * (1 - pc / 100));
+const wilsonLo = (p, n) => { if (!n) return 0; const z = 1.96;
+  return (p + z*z/(2*n) - z*Math.sqrt((p*(1-p) + z*z/(4*n))/n)) / (1 + z*z/n); };
+
+function bankroll(bets) {
+  let br = 1000; const pts = [[bets.length ? bets[0].made_ts : 0, br]];
+  for (const b of bets) {
+    const risk = br * 0.02;
+    const contracts = Math.max(1, Math.floor(risk / (b.price_c / 100)));
+    const net = (b.pnl_c - fee(b.price_c)) / 100 * contracts;
+    br += net; pts.push([b.close_ts, Math.max(0, br)]);
+  }
+  return { final: br, pts };
+}
+
+function stats(bets) {
+  const done = bets.filter(b => b.actual != null);
+  const w = done.filter(b => b.win).length;
+  const net = done.reduce((a, b) => a + b.pnl_c - fee(b.price_c), 0);
+  let s = 0, pk = -1e9, dd = 0;
+  for (const b of done) { s += b.pnl_c - fee(b.price_c); pk = Math.max(pk, s); dd = Math.max(dd, pk - s); }
+  const bk = bankroll(done);
+  return { n: done.length, w, net, dd, bk };
+}
+
+async function jsonl(u) {
+  const r = await fetch(bust(u), { cache: "no-store" });
+  if (!r.ok) return [];
+  return (await r.text()).split("\n").filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+}
+
+function lineSVG(seriesList) {
+  const W = 900, H = 240, L = 64, R = 16, T = 12, B = 26;
+  let xmin = 1/0, xmax = -1/0, ymin = 1/0, ymax = -1/0;
+  for (const s of seriesList) for (const [x, y] of s.pts) {
+    xmin = Math.min(xmin, x); xmax = Math.max(xmax, x);
+    ymin = Math.min(ymin, y); ymax = Math.max(ymax, y); }
+  if (!isFinite(xmin)) return '<p class="mini">collecting…</p>';
+  ymin = Math.min(ymin, 1000); ymax = Math.max(ymax, 1000);
+  const pad = (ymax - ymin) * .08 || 10; ymin -= pad; ymax += pad;
+  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
+  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
+  let g = "";
+  for (let i = 0; i <= 3; i++) { const v = ymin + (ymax - ymin) * i / 3;
+    g += `<line class="gridline" x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}"/>` +
+         `<text x="${L-8}" y="${Y(v)+4}" text-anchor="end">$${v.toFixed(0)}</text>`; }
+  g += `<line x1="${L}" y1="${Y(1000)}" x2="${W-R}" y2="${Y(1000)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>`;
+  for (const s of seriesList) {
+    g += `<path fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" d="${
+      s.pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("")}"/>`;
+    const last = s.pts[s.pts.length - 1];
+    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${s.color}"><title>${s.label}: $${last[1].toFixed(0)}</title></circle>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="bankroll over time by policy">${g}</svg>`;
+}
+
+async function poll() {
+  try {
+    const [kb, bets, sel, stRes] = await Promise.all([
+      jsonl("../results/kalshi_binary_log.jsonl"),
+      jsonl("../results/kb_bets.jsonl"),
+      jsonl("../results/kb_bets_sel.jsonl"),
+      fetch(bust("../results/online_status.json"), { cache: "no-store" }),
+    ]);
+    const st = stRes.ok ? await stRes.json() : {};
+    document.getElementById("dot").className =
+      "live-dot" + ((Date.now()/1000 - (st.alive_at||0)) > 300 ? " stale" : "");
+
+    // kbf vs baseline
+    const kf = st.kbf || {};
+    const tiles = [];
+    let allPass = true, anyPending = false;
+    for (const cls of ["up", "down"]) {
+      const c = kf[cls] || {};
+      for (const [key, label] of [["prec", "precision"], ["recall", "recall"]]) {
+        const v = c[key], n = key === "prec" ? c.n_called : c.n_actual;
+        const lo = v != null ? wilsonLo(v, n) : 0;
+        const ok = v != null && v >= 0.8;
+        const sig = lo >= 0.8;
+        if (!ok) allPass = false;
+        if (v == null || n < 30) anyPending = true;
+        tiles.push(`<div class="stat"><div class="k">${cls.toUpperCase()} ${label}</div>` +
+          `<div class="big2 ${ok ? "target" : "warn"}">${v == null ? "–" : (100*v).toFixed(1) + "%"}</div>` +
+          `<div class="mini">n=${n ?? 0} · 95% LB ${(100*lo).toFixed(0)}%${sig ? " ✓ sig" : ""}</div></div>`);
+      }
+    }
+    tiles.push(`<div class="stat"><div class="k">Windows called</div><div class="big2">${kf.n ?? 0}</div><div class="mini">every window, T-3 min</div></div>`);
+    document.getElementById("kbf-tiles").innerHTML = tiles.join("");
+    const v = document.getElementById("verdict");
+    if (kf.n >= 30 && allPass) { v.className = "badge pass"; v.textContent = "above 80/80"; }
+    else if (!anyPending && !allPass) { v.className = "badge pending"; v.textContent = "below target"; }
+    else { v.className = "badge pending"; v.textContent = `collecting (n=${kf.n ?? 0})`; }
+    document.getElementById("kbf-note").textContent =
+      "Beating the baseline *significantly* requires every 95% lower bound above 80% — " +
+      "lower bounds tighten as windows accumulate (~96/day).";
+
+    // A/B table
+    const A = stats(bets), B = stats(sel);
+    const kbWindows = new Set(kb.filter(r => (r.variant||"kb") === "kb").map(r => r.ticker)).size;
+    const row = (name, sw, s, skipped) =>
+      `<tr><td><span class="sw" style="background:${sw}"></span>${name}</td>` +
+      `<td class="num">${s.n}</td><td class="num">${skipped}</td>` +
+      `<td class="num">${s.n ? (100*s.w/s.n).toFixed(0) + "%" : "–"}</td>` +
+      `<td class="num">${(s.net/100).toFixed(2)}$</td>` +
+      `<td class="num">${s.n ? (s.net/s.n).toFixed(1) : "–"}¢</td>` +
+      `<td class="num">${(s.dd/100).toFixed(2)}$</td>` +
+      `<td class="num">$${s.bk.final.toFixed(0)}</td>` +
+      `<td class="num">${((s.bk.final/1000 - 1)*100).toFixed(1)}%</td></tr>`;
+    document.querySelector("#ab-tbl tbody").innerHTML =
+      row("Bidding (mandatory 1/window)", "#3987e5", A, 0) +
+      row("Selector (gated)", "#199e70", B, Math.max(0, kbWindows - B.n));
+    // significance: two-proportion z on win rates
+    if (A.n >= 10 && B.n >= 10) {
+      const p1 = A.w / A.n, p2 = B.w / B.n, p = (A.w + B.w) / (A.n + B.n);
+      const se = Math.sqrt(p * (1 - p) * (1 / A.n + 1 / B.n));
+      const z = se > 0 ? (p2 - p1) / se : 0;
+      document.getElementById("ab-sig").textContent =
+        `Selector − bidding win-rate difference: ${(100*(p2-p1)).toFixed(1)} points, ` +
+        `two-proportion z = ${z.toFixed(2)} ${Math.abs(z) >= 1.96 ? "(significant at 5%)" : "(not yet significant)"} · ` +
+        `note: selector bets are a chosen subset at different prices — bankroll return is the ranking criterion.`;
+    } else {
+      document.getElementById("ab-sig").textContent =
+        "Significance test activates at 10+ settled bets per policy.";
+    }
+    document.getElementById("bankroll").innerHTML = lineSVG([
+      { label: "bidding", color: "#3987e5", pts: A.bk.pts },
+      { label: "selector", color: "#199e70", pts: B.bk.pts },
+    ]);
+
+    // traffic
+    const settled = kb.filter(r => r.actual != null).length;
+    const t0 = kb.length ? kb[0].made_ts : Date.now()/1000;
+    const days = Math.max(1/24, (Date.now()/1000 - t0) / 86400);
+    document.getElementById("traffic").innerHTML = [
+      [`${kb.length}`, "binary calls logged"],
+      [`${settled}`, "settled"],
+      [`${(kbWindows/days).toFixed(0)}/day`, "windows"],
+      [`${(bets.length/days).toFixed(0)}/day`, "bidding bets"],
+      [`${(sel.length/days).toFixed(0)}/day`, "selector bets"],
+      [`${st.kb_logit_updates ?? 0}`, "kb3 logit updates"],
+    ].map(([val, l]) => `<div class="stat"><div class="k">${l}</div><div class="big2">${val}</div></div>`).join("");
+
+    document.getElementById("foot").textContent =
+      `auto-refreshes · data as of ${new Date((st.alive_at||0)*1000).toLocaleTimeString("en-US",{timeZone:"America/Los_Angeles",hour12:false})} PT · ` +
+      `A/B runs continuously server-side; this page only reads the ledgers`;
+  } catch (e) {
+    document.getElementById("foot").textContent = "waiting for data… (" + e.message + ")";
+  }
+  setTimeout(poll, REMOTE ? 60000 : 10000);
+}
+poll();
+</script>
+</body>
+</html>

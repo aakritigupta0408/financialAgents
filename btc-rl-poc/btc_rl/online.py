@@ -514,8 +514,29 @@ def _load_kb() -> list[dict]:
     return rows
 
 
-def _load_kb_bets() -> list[dict]:
-    path = RESULTS_DIR / KB_BET_LOG_NAME
+KB_SEL_BET_LOG_NAME = "kb_bets_sel.jsonl"  # selector-gated A/B shadow bets
+
+
+def _class_prf(kb: list[dict], variant: str = "kbf") -> dict:
+    """Per-class precision/recall for a binary variant (the deliverable's
+    headline metric: every window called, no abstention)."""
+    rows = [r for r in kb if r.get("variant") == variant
+            and r["actual"] is not None]
+    out: dict = {"n": len(rows)}
+    for cls, want in (("up", 1), ("down", 0)):
+        called = [r for r in rows if r["call"] == want]
+        actual = [r for r in rows if r["actual"] == want]
+        out[cls] = {
+            "prec": round(sum(r["hit"] for r in called) / len(called), 4)
+                    if called else None,
+            "recall": round(sum(1 for r in actual if r["call"] == want)
+                            / len(actual), 4) if actual else None,
+            "n_called": len(called), "n_actual": len(actual)}
+    return out
+
+
+def _load_kb_bets(name: str = KB_BET_LOG_NAME) -> list[dict]:
+    path = RESULTS_DIR / name
     if not path.exists():
         return []
     rows = []
@@ -1046,6 +1067,8 @@ def run(once: bool = False) -> None:
     kb_made = {(r.get("variant", "kb"), r["ticker"], r["made_ts"]) for r in kb}
     kb_bets = _load_kb_bets()
     kb_bet_tickers = {b["ticker"] for b in kb_bets}
+    kb_sel_bets = _load_kb_bets(KB_SEL_BET_LOG_NAME)
+    kb_sel_tickers = {b["ticker"] for b in kb_sel_bets}
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -1377,6 +1400,16 @@ def run(once: bool = False) -> None:
                         row.update(extra)
                         kb.append(row)
                         kb_made.add((variant, pm_mkt["ticker"], slot1))
+                    # kbf — THE deliverable: one definitive call per window
+                    # at T-3 min (every window called; no abstention), the
+                    # operating point where per-class precision/recall
+                    # cleared 80/80 in backtest (tests/window_call_eval.py)
+                    if (mins_left <= 3.4
+                            and ("kbf", pm_mkt["ticker"], 0) not in kb_made):
+                        kb.append({**common, "variant": "kbf", "p_up": p_cal,
+                                   "call": int(p_cal >= 0.5),
+                                   "decide_at": round(mins_left, 1)})
+                        kb_made.add(("kbf", pm_mkt["ticker"], 0))
                     kb_changed = True
             logit_changed = False
             for r in kb:
@@ -1468,6 +1501,53 @@ def run(once: bool = False) -> None:
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
                                    else -b["price_c"], 1)
                 bets_changed = True
+            # 1e-B. SELECTOR-GATED shadow bets (the A/B treatment): same
+            #     instrument and prices, but the bet is placed only when
+            #     the latest kb call clears its precision-tuned confidence
+            #     gate inside the final 8 minutes — windows without a
+            #     confident call are SKIPPED (abstention is the treatment).
+            sel_changed = False
+            if (pm_mkt and pm_mkt.get("strike") and k_close_ts
+                    and pm_mkt["ticker"] not in kb_sel_tickers
+                    and 60 <= k_close_ts - now_ts <= 8 * 60):
+                last_kb = next((r for r in reversed(kb)
+                                if r.get("variant", "kb") == "kb"
+                                and r["ticker"] == pm_mkt["ticker"]), None)
+                yb2, ya2 = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
+                if (last_kb and last_kb.get("conf") == 1 and yb2 and ya2):
+                    p_sel = last_kb["p_up"]
+                    side = "yes" if p_sel >= 0.5 else "no"
+                    price = ya2 if side == "yes" else 100 - yb2
+                    if price < KB_BET_MAX_PRICE_C:
+                        kb_sel_bets.append({
+                            "ticker": pm_mkt["ticker"], "made_ts": now_ts,
+                            "close_ts": k_close_ts,
+                            "strike": pm_mkt["strike"],
+                            "side": side, "price_c": round(price, 1),
+                            "p_model": p_sel,
+                            "gate_tau": last_kb.get("tau"),
+                            "mins_left": round((k_close_ts - now_ts) / 60, 1),
+                            "actual": None, "win": None, "pnl_c": None,
+                        })
+                        kb_sel_tickers.add(pm_mkt["ticker"])
+                        sel_changed = True
+            for b in kb_sel_bets:
+                if b["actual"] is not None or now_ts < b["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(b["close_ts"] - 60)
+                if settle_bar is None:
+                    continue
+                outcome = int(settle_bar["close"] >= b["strike"])
+                b["actual"] = outcome
+                b["win"] = int((b["side"] == "yes") == bool(outcome))
+                b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
+                                   else -b["price_c"], 1)
+                sel_changed = True
+            if sel_changed:
+                tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
+                tmp.write_text("".join(json.dumps(b) + "\n"
+                                       for b in kb_sel_bets))
+                tmp.replace(RESULTS_DIR / KB_SEL_BET_LOG_NAME)
             if bets_changed:
                 tmp = (RESULTS_DIR / KB_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n" for b in kb_bets))
@@ -1577,7 +1657,9 @@ def run(once: bool = False) -> None:
                     for v in ("kb", "kb2", "kb3")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
+                "kbf": _class_prf(kb),
                 "kb_bets": _kb_bets_summary(kb_bets),
+                "kb_bets_sel": _kb_bets_summary(kb_sel_bets),
                 "human_feedback": {"n": len(hf_rows),
                                    "last": hf_rows[-1] if hf_rows else None},
                 "live_features": snap,

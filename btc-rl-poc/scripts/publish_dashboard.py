@@ -28,7 +28,7 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 
 PAGES = ["live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css",
-         "bet_policy_sim.html"]
+         "bet_policy_sim.html", "ab_dashboard.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -36,6 +36,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("learning_log.jsonl", 1500),
     ("kalshi_binary_log.jsonl", 1500),
     ("kb_bets.jsonl", None),
+    ("kb_bets_sel.jsonl", None),
     ("metrics_history.jsonl", None),
     ("metrics.json", None),
     ("training_progress.jsonl", None),
