@@ -47,6 +47,18 @@ def _git(cwd, *args, check=True):
                           capture_output=True, text=True, check=check)
 
 
+def _push_url(repo) -> str:
+    """Tokenized push URL: cron has no TTY/keychain, so HTTPS credential
+    helpers fail there. Token minted once via `gh auth token` into
+    ~/.btc_publish_token (chmod 600)."""
+    url = _git(repo, "config", "--get", "remote.origin.url").stdout.strip()
+    tok_file = Path.home() / ".btc_publish_token"
+    if url.startswith("https://") and tok_file.exists():
+        tok = tok_file.read_text().strip()
+        return url.replace("https://", f"https://x-access-token:{tok}@", 1)
+    return url
+
+
 def copy_bundle(dest: Path) -> None:
     (dest / "site").mkdir(parents=True, exist_ok=True)
     (dest / "results").mkdir(parents=True, exist_ok=True)
@@ -83,8 +95,8 @@ def publish_ghpages() -> None:
     else:
         _git(GH, "commit", "-q", "-m",
              f"{MARKER} {time.strftime('%Y-%m-%d %H:%M')}")
-    push = _git(GH, "push", "--force-with-lease", "origin", "HEAD:gh-pages",
-                check=False)
+    push = _git(GH, "push", "--force-with-lease", _push_url(GH),
+                "HEAD:gh-pages", check=False)
     print("gh-pages:", "published" if push.returncode == 0
           else f"deferred ({push.stderr.strip()[:80]})")
 
@@ -101,7 +113,7 @@ def sync_main() -> None:
         _git(SITE_REPO, "add", *staged)
         _git(SITE_REPO, "commit", "-q", "-m",
              f"btc-oracle hourly sync {time.strftime('%Y-%m-%d %H:%M')}")
-        _git(SITE_REPO, "push", "-q")
+        _git(SITE_REPO, "push", "-q", _push_url(SITE_REPO), "HEAD")
         print("main: synced")
     STAMP.touch()
 
