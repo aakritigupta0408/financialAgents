@@ -303,3 +303,40 @@ class TabularQAgent:
 
     def delta_for(self, action_idx: int) -> int:
         return config.ACTION_DELTAS[action_idx]
+
+
+class BinaryLogit:
+    """Online logistic regression for the Kalshi binary task: predicts
+    P(window close >= strike) directly from market + microstructure
+    features, one SGD step per settled call. Log-loss training keeps the
+    output probability naturally calibrated."""
+
+    def __init__(self, dim: int, lr: float = 0.05, l2: float = 1e-4):
+        import numpy as np
+        self.np = np
+        self.dim = dim
+        self.lr = lr
+        self.l2 = l2
+        self.w = np.zeros(dim)
+        self.updates = 0
+
+    def predict(self, x) -> float:
+        z = float(self.np.asarray(x) @ self.w)
+        return 1.0 / (1.0 + self.np.exp(-max(-30.0, min(30.0, z))))
+
+    def update(self, x, y: int) -> None:
+        xv = self.np.asarray(x)
+        p = self.predict(xv)
+        self.w -= self.lr * ((p - y) * xv + self.l2 * self.w)
+        self.updates += 1
+
+    def to_dict(self) -> dict:
+        return {"dim": self.dim, "w": self.w.tolist(),
+                "updates": self.updates}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "BinaryLogit":
+        m = cls(d["dim"])
+        m.w = m.np.asarray(d["w"], dtype=float)
+        m.updates = d["updates"]
+        return m

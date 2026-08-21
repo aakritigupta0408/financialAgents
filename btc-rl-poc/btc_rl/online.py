@@ -28,7 +28,7 @@ from pathlib import Path
 from . import config
 from . import metrics as M
 from .history import append_history
-from .agents import (DistDQNAgent, LinearQAgent, LinUCBAgent,
+from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
                      LSTMDistAgent, TabularQAgent)
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
@@ -226,6 +226,20 @@ ONLINE_ALPHA = 0.3             # LinUCB bonus — reward gaps are ~0.1, so a big
 DIR_BONUS = 0.1                # reward credit for a correct-sign deviation —
                                # cashes the measured 60%+ direction skill
 SIGMA_FLOOR = 5.0              # $ floor for the per-horizon vol estimate
+BAND_CAP = 200.0               # max published 80%-band width in dollars —
+                               # wider tells a viewer nothing actionable;
+                               # when the true spread exceeds it, coverage
+                               # will honestly read below 80%
+
+
+def _cap_band(pred: float, lo: float, hi: float) -> tuple[int, int]:
+    """Shrink a band toward its prediction so hi-lo <= BAND_CAP, keeping
+    the original asymmetry ratio around pred."""
+    width = hi - lo
+    if width <= BAND_CAP:
+        return int(lo), int(hi)
+    k = BAND_CAP / width
+    return int(pred - (pred - lo) * k), int(pred + (hi - pred) * k)
 CAL_HORIZONS = (1, 5, 15, 30)  # calibrated-winner meta-arm: every horizon
 CAL_WINDOW = 30                # trailing scored residuals the calibrator sees
 CAL_MIN = 10                   # need this many residuals before correcting
@@ -378,6 +392,87 @@ def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
         return None
 
 
+KB_LOGIT_PATH_NAME = "kb_logit.json"
+KB_LOGIT_DIM = 12
+KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
+
+
+def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
+                       base: float, mins_left: float,
+                       k_pup: float | None) -> list[float]:
+    """Direct binary-task features: the market's own opinion, the physical
+    strike geometry, and the microstructure the t8 path never saw."""
+    z0 = (strike - base) / _horizon_sigma(feat, max(mins_left, 1.0))
+    s = snap or {}
+    return [
+        1.0,                                          # intercept
+        (k_pup - 0.5) * 2 if k_pup is not None else 0.0,   # market mid
+        1.0 if k_pup is not None else 0.0,            # quote present
+        max(-4.0, min(4.0, -z0)),                     # above-strike z
+        mins_left / 15.0,                             # window phase
+        max(-4.0, min(4.0, -z0)) * (mins_left / 15.0),  # z x phase
+        s.get("ofi_1m") or 0.0,
+        s.get("ofi_5m") or 0.0,
+        s.get("imb") or 0.0,
+        feat.get("ret_5m", 0.0) * 1e4 / 30,
+        feat.get("ret_15m", 0.0) * 1e4 / 60,
+        _m_log_vol(feat),
+    ]
+
+
+def _m_log_vol(feat: dict) -> float:
+    import math as _m
+    return _m.log(max(feat.get("vol_ratio", 1.0), 1e-6)) / 2
+
+
+def _kb_conf_threshold(kb: list[dict], variant: str,
+                       target: float = 0.8) -> dict | None:
+    """Precision-targeted operating point: the smallest confidence
+    threshold tau such that calls with max(p, 1-p) >= tau hit >= target
+    precision on this variant's trailing settled rows (maximizing coverage
+    subject to the precision floor). None until 25 qualifying samples."""
+    rows = [r for r in kb if r.get("variant", "kb") == variant
+            and r["actual"] is not None][-600:]
+    if len(rows) < 50:
+        return None
+    best = None
+    for t100 in range(50, 96):
+        tau = t100 / 100
+        sel = [r for r in rows if max(r["p_up"], 1 - r["p_up"]) >= tau]
+        if len(sel) < 25:
+            break
+        prec = sum(r["hit"] for r in sel) / len(sel)
+        if prec >= target:
+            best = {"tau": tau, "precision": round(prec, 3),
+                    "coverage": round(len(sel) / len(rows), 3)}
+            break
+    return best
+
+
+def _kb_blend_weights(kb: list[dict]) -> dict:
+    """Per-phase least-squares weight for p_final = w*p_model + (1-w)*mkt,
+    fit on settled quoted calls (w = cov(pm-mk, y-mk)/var(pm-mk), clamped
+    [0,1]). A data-chosen blend is >= the better input on the fit set —
+    'beat the market' becomes 'learn the residual corrections'."""
+    out = {}
+    for ph in ("early", "mid", "late"):
+        rows = [r for r in kb
+                if r["actual"] is not None and r.get("mkt_p_up") is not None
+                and r.get("variant", "kb") == "kb"
+                and _kb_phase(r["mins_left"]) == ph][-500:]
+        if len(rows) < 30:
+            out[ph] = 0.5
+            continue
+        num = den = 0.0
+        for r in rows:
+            pm = r.get("p_cal", r["p_up"])
+            d = pm - r["mkt_p_up"]
+            num += d * (r["actual"] - r["mkt_p_up"])
+            den += d * d
+        out[ph] = max(0.0, min(1.0, num / den)) if den > 1e-9 else 0.5
+    return out
+
+
 def _kb_phase(mins_left: float) -> str:
     return "early" if mins_left >= 10 else "mid" if mins_left >= 5 else "late"
 
@@ -443,9 +538,10 @@ def _kb_bets_summary(bets: list[dict]) -> dict | None:
     return out
 
 
-def _kb_summary(kb: list[dict]) -> dict | None:
+def _kb_summary(kb: list[dict], variant: str = "kb") -> dict | None:
     """Status-page view: last call + trailing accuracy/Brier, ours vs the
     market's own implied probability on the same settled windows."""
+    kb = [r for r in kb if r.get("variant", "kb") == variant]
     if not kb:
         return None
     sc = [r for r in kb if r["actual"] is not None][-100:]
@@ -794,14 +890,14 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 if cum < 0.90 <= cum + pb:
                     k90 = k
                 cum += pb
-            row_extra["lo"] = int(pred + k10 * sig)
-            row_extra["hi"] = int(pred + k90 * sig)
+            row_extra["lo"], row_extra["hi"] = _cap_band(
+                pred, pred + k10 * sig, pred + k90 * sig)
             row_extra["band_src"] = "native"
         else:
             band = (bands or {}).get((variant, horizon))
             if band:
-                row_extra["lo"] = pred + band[0]
-                row_extra["hi"] = pred + band[1]
+                row_extra["lo"], row_extra["hi"] = _cap_band(
+                    pred, pred + band[0], pred + band[1])
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
@@ -946,9 +1042,17 @@ def run(once: bool = False) -> None:
     made = {(r.get("variant", "control"), r["made_ts"], r["horizon"])
             for r in ledger}
     kb = _load_kb()
-    kb_made = {(r["ticker"], r["made_ts"]) for r in kb}
+    kb_made = {(r.get("variant", "kb"), r["ticker"], r["made_ts"]) for r in kb}
     kb_bets = _load_kb_bets()
     kb_bet_tickers = {b["ticker"] for b in kb_bets}
+    logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
+    try:
+        kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
+                    if logit_path.exists() else BinaryLogit(KB_LOGIT_DIM))
+        if kb_logit.dim != KB_LOGIT_DIM:
+            kb_logit = BinaryLogit(KB_LOGIT_DIM)
+    except Exception:
+        kb_logit = BinaryLogit(KB_LOGIT_DIM)
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -1162,8 +1266,9 @@ def run(once: bool = False) -> None:
                 }
                 cband = bands.get((ch, hz))
                 if cband:
-                    crow["lo"] = crow["pred"] + cband[0]
-                    crow["hi"] = crow["pred"] + cband[1]
+                    crow["lo"], crow["hi"] = _cap_band(
+                        crow["pred"], crow["pred"] + cband[0],
+                        crow["pred"] + cband[1])
                 ledger.append(crow)
                 new_preds += 1
 
@@ -1205,8 +1310,9 @@ def run(once: bool = False) -> None:
                     }
                     cband = bands.get((cal_v, cal_h))
                     if cband:
-                        crow["lo"] = crow["pred"] + cband[0]
-                        crow["hi"] = crow["pred"] + cband[1]
+                        crow["lo"], crow["hi"] = _cap_band(
+                            crow["pred"], crow["pred"] + cband[0],
+                            crow["pred"] + cband[1])
                     ledger.append(crow)
                     new_preds += 1
 
@@ -1219,10 +1325,19 @@ def run(once: bool = False) -> None:
             #     (9:00, 9:15, ...) against the bar closing there (honest
             #     proxy for the official BRTI 60s-average settle). Never
             #     bets, never learns; lives in its own log (binary schema).
+            # BINARY TREATMENT SET (one row per variant per minute):
+            #   kb  — control: t8's distribution + per-phase calibration
+            #   kb2 — market blend: w*p_cal + (1-w)*market mid, w fit per
+            #         phase on settled history
+            #   kb3 — direct online logistic on the binary task (market
+            #         mid + strike z + phase + order flow/book/momentum),
+            #         one SGD step per settled call
+            # Each row also carries the precision-0.8 operating point:
+            # conf=1 when max(p,1-p) clears the variant's auto-tuned tau.
             kb_changed = False
             slot1 = now_ts // 60 * 60
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
-                    and (pm_mkt["ticker"], slot1) not in kb_made
+                    and ("kb", pm_mkt["ticker"], slot1) not in kb_made
                     and k_close_ts - now_ts >= 60):
                 kfeat = compute_features(bars, fng)
                 base = (brti["price"] if brti else None) or kfeat["price"]
@@ -1232,19 +1347,37 @@ def run(once: bool = False) -> None:
                 if p is not None:
                     w = _kb_cal_weights(kb)[_kb_phase(mins_left)]
                     p_cal = round(0.5 + w * (p - 0.5), 4)
-                    kb.append({
-                        "variant": "kb", "ticker": pm_mkt["ticker"],
-                        "made_ts": slot1, "close_ts": k_close_ts,
-                        "strike": pm_mkt["strike"],
+                    bw = _kb_blend_weights(kb)[_kb_phase(mins_left)]
+                    p_blend = (round(bw * p_cal + (1 - bw) * k_pup, 4)
+                               if k_pup is not None else p_cal)
+                    bx = _kb_logit_features(kfeat, snap, pm_mkt["strike"],
+                                            base, mins_left, k_pup)
+                    p_logit = round(kb_logit.predict(bx), 4)
+                    common = {
+                        "ticker": pm_mkt["ticker"], "made_ts": slot1,
+                        "close_ts": k_close_ts, "strike": pm_mkt["strike"],
                         "base": round(base, 2),
                         "mins_left": round(mins_left, 1),
-                        "p_up": p_cal, "p_raw": p, "cal_w": round(w, 3),
-                        "call": int(p_cal >= 0.5),
-                        "mkt_p_up": k_pup,
-                        "actual": None, "hit": None,
-                    })
-                    kb_made.add((pm_mkt["ticker"], slot1))
+                        "mkt_p_up": k_pup, "actual": None, "hit": None,
+                    }
+                    for variant, pv, extra in (
+                            ("kb", p_cal, {"p_raw": p, "cal_w": round(w, 3)}),
+                            ("kb2", p_blend, {"w_mkt": round(bw, 3),
+                                              "p_cal": p_cal}),
+                            ("kb3", p_logit,
+                             {"bx": [round(v, 5) for v in bx],
+                              "trained": kb_logit.updates})):
+                        tau = _kb_conf_threshold(kb, variant)
+                        row = {**common, "variant": variant, "p_up": pv,
+                               "call": int(pv >= 0.5)}
+                        if tau:
+                            row["tau"] = tau["tau"]
+                            row["conf"] = int(max(pv, 1 - pv) >= tau["tau"])
+                        row.update(extra)
+                        kb.append(row)
+                        kb_made.add((variant, pm_mkt["ticker"], slot1))
                     kb_changed = True
+            logit_changed = False
             for r in kb:
                 if r["actual"] is not None or now_ts < r["close_ts"]:
                     continue
@@ -1260,7 +1393,14 @@ def run(once: bool = False) -> None:
                 r["brier"] = round((r["p_up"] - outcome) ** 2, 4)
                 if r.get("mkt_p_up") is not None:
                     r["mkt_brier"] = round((r["mkt_p_up"] - outcome) ** 2, 4)
+                if r.get("bx") and len(r["bx"]) == kb_logit.dim:
+                    kb_logit.update(r["bx"], outcome)
+                    logit_changed = True
                 kb_changed = True
+            if logit_changed:
+                tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
+                tmp.write_text(json.dumps(kb_logit.to_dict()))
+                tmp.replace(RESULTS_DIR / KB_LOGIT_PATH_NAME)
             if kb_changed:
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
@@ -1279,7 +1419,8 @@ def run(once: bool = False) -> None:
                     and k_close_ts - now_ts >= 60):
                 yb, ya = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
                 p_now = next((r["p_up"] for r in reversed(kb)
-                              if r["ticker"] == pm_mkt["ticker"]), None)
+                              if r["ticker"] == pm_mkt["ticker"]
+                              and r.get("variant", "kb") == "kb"), None)
                 if p_now is not None and yb and ya:
                     # bet the side the model calls — value-betting the other
                     # side degenerates into buying longshots (calibration
@@ -1427,6 +1568,14 @@ def run(once: bool = False) -> None:
                 "brti": brti,
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "kalshi_binary": _kb_summary(kb),
+                "kb_treatments": {
+                    v: {"scored": s.get("scored"), "acc": s.get("acc"),
+                        "brier": s.get("brier"),
+                        "mkt_brier": s.get("mkt_brier"),
+                        "prec80": _kb_conf_threshold(kb, v)}
+                    for v in ("kb", "kb2", "kb3")
+                    if (s := _kb_summary(kb, v)) is not None},
+                "kb_logit_updates": kb_logit.updates,
                 "kb_bets": _kb_bets_summary(kb_bets),
                 "human_feedback": {"n": len(hf_rows),
                                    "last": hf_rows[-1] if hf_rows else None},

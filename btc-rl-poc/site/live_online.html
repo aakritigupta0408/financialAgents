@@ -426,6 +426,30 @@ details[open] > summary { margin-bottom: 6px; }
 </section>
 
 <section>
+  <h2>Binary treatments — model vs blend vs logit</h2>
+  <p class="sub muted small">Three binary predictors race on identical windows:
+  <b>kb</b> (control: t8's distribution, phase-calibrated), <b>kb2</b> (market
+  blend: per-phase weight between kb and the quoted mid), <b>kb3</b> (online
+  logistic trained directly on the binary task with market + order-flow
+  features). Lines are rolling-60 Brier — lower is better; grey dashed = the
+  market itself. Each variant also auto-tunes a confidence threshold targeting
+  <b>80% precision</b>; coverage is the share of calls confident enough to make.</p>
+  <div class="legend">
+    <span><span class="sw" style="background:#3987e5"></span>kb (control)</span>
+    <span><span class="sw" style="background:#2fb59a"></span>kb2 (market blend)</span>
+    <span><span class="sw" style="background:#d55181"></span>kb3 (logit)</span>
+    <span><span class="sw" style="background:var(--ink-2)"></span>market (dashed)</span>
+  </div>
+  <div id="kbrace"></div>
+  <div class="scroll"><table id="kbt-tbl">
+    <thead><tr><th>Variant</th><th class="num">Scored</th><th class="num">Accuracy</th>
+      <th class="num">Brier (last 100)</th><th class="num">Prec@0.8 · τ</th>
+      <th class="num">Coverage</th></tr></thead>
+    <tbody><tr><td colspan="6" class="muted">collecting…</td></tr></tbody>
+  </table></div>
+</section>
+
+<section>
   <h2>Is it learning?</h2>
   <p class="sub muted small">Two metrics, same +5-minute consensus calls. <b>Level</b>
   (solid blue): dollars of accuracy gained vs "predict no change" — a baseline that is
@@ -725,7 +749,8 @@ function winnerChart(prices, preds, h) {
   // records who led (src); its pred minus cal_adj is the winner's own call
   const rows = preds.filter(p => p.variant === `cal-h${h}` && p.src)
     .map(p => ({ ts: p.target_ts, pred: p.pred - (p.cal_adj || 0),
-                 actual: p.actual, src: armOf({ variant: p.src }) }))
+                 actual: p.actual, src: armOf({ variant: p.src }),
+                 lo: p.lo, hi: p.hi }))
     .sort((a, b) => a.ts - b.ts);
   const box = document.getElementById(`chart-win-h${h}`);
   const note = document.getElementById(`win-note-h${h}`);
@@ -736,6 +761,15 @@ function winnerChart(prices, preds, h) {
   }
   const f = frame(prices, preds.filter(p => p.variant === `cal-h${h}`), h);
   let g = f.g;
+  // the winner's 80% band as a shaded ribbon behind the line
+  const banded = rows.filter(r => r.lo != null);
+  if (banded.length >= 2) {
+    const up = banded.map((r, i) =>
+      `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.hi).toFixed(1)}`).join("");
+    const dn = [...banded].reverse().map(r =>
+      `L${f.X(r.ts).toFixed(1)},${f.Y(r.lo).toFixed(1)}`).join("");
+    g += `<path d="${up}${dn}Z" fill="rgba(255,255,255,.08)" stroke="none"/>`;
+  }
   // winner line, one path per leadership stretch, colored by the leader
   let seg = [rows[0]];
   const flush = () => {
@@ -846,6 +880,47 @@ function miniLine(seriesList, opts) {
     g += `<circle class="pt" cx="${X(last[0])}" cy="${Y(last[1])}" r="3.5" style="fill:${s2.color}"><title>${s2.label}: ${opts.fmt(last[1])}</title></circle>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+}
+
+function binaryRace(kbRows, status) {
+  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181" };
+  const groups = { kb: [], kb2: [], kb3: [] };
+  for (const r of kbRows) {
+    const v = r.variant || "kb";
+    if (groups[v] && r.actual != null) groups[v].push(r);
+  }
+  const roll = (rows, key) => {
+    rows.sort((a, b) => a.made_ts - b.made_ts);
+    const pts = [];
+    for (let i = 59; i < rows.length; i += 3) {
+      const win = rows.slice(i - 59, i + 1);
+      pts.push([rows[i].made_ts,
+                win.reduce((a, r) => a + r[key], 0) / win.length]);
+    }
+    return pts;
+  };
+  const series = [];
+  for (const [v, rows] of Object.entries(groups)) {
+    const pts = roll(rows, "brier");
+    if (pts.length > 1) series.push({ label: v, color: COL[v], pts });
+  }
+  const mpts = roll(groups.kb.filter(r => r.mkt_brier != null), "mkt_brier");
+  if (mpts.length > 1)
+    series.push({ label: "market", color: "var(--ink-2)", dash: true, pts: mpts });
+  document.getElementById("kbrace").innerHTML = series.length
+    ? miniLine(series, { fmt: v => v.toFixed(2), h: 200 })
+    : '<p class="mini">collecting…</p>';
+  const t = status.kb_treatments || {};
+  const rowsH = ["kb", "kb2", "kb3"].filter(v => t[v]).map(v => {
+    const s = t[v], p = s.prec80;
+    return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
+      `<td class="num">${s.scored ?? "–"}</td>` +
+      `<td class="num">${s.acc != null ? (100 * s.acc).toFixed(0) + "%" : "–"}</td>` +
+      `<td class="num">${s.brier != null ? s.brier.toFixed(3) : "–"}</td>` +
+      `<td class="num">${p ? (100 * p.precision).toFixed(0) + "% · τ " + p.tau.toFixed(2) : "tuning…"}</td>` +
+      `<td class="num">${p ? (100 * p.coverage).toFixed(0) + "%" : "–"}</td></tr>`;
+  }).join("");
+  if (rowsH) document.querySelector("#kbt-tbl tbody").innerHTML = rowsH;
 }
 
 function drawBets(bets) {
@@ -965,6 +1040,7 @@ async function poll() {
       try { betRows.push(JSON.parse(line)); } catch {}
     }
     try { drawBets(betRows); } catch {}
+    window._kbRows = kbRows;
     const learnLog = [];
     if (llRes.ok) for (const line of (await llRes.text()).split("\n")) {
       if (!line.trim()) continue;
@@ -1082,6 +1158,7 @@ async function poll() {
           kbS?.brier != null ? kbS.brier.toFixed(3) : "collecting…";
         document.getElementById("kb-mkt").textContent =
           kbS?.mkt_brier != null ? kbS.mkt_brier.toFixed(3) : "no quotes yet";
+        try { binaryRace(window._kbRows || [], status); } catch {}
         const bS = status.kb_bets;
         const lastBet = bS?.last;
         document.getElementById("kb-bet").textContent =
