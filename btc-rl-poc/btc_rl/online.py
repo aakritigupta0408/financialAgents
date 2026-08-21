@@ -650,8 +650,9 @@ def _winner_variant(ledger: list[dict], horizon: int) -> str | None:
     errs: dict[str, list[float]] = {}
     for row in ledger:
         if (row["actual"] is None or row["horizon"] != horizon
-                or row["variant"].startswith(("consensus", "cal-"))):
-            continue
+                or row["variant"].startswith(("consensus", "cal-"))
+                or row["variant"] not in VARIANTS):  # retired arms' fossil
+            continue                                 # rows can't win
         errs.setdefault(row["variant"], []).append(row["abs_err"])
     mae = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
            for v, e in errs.items() if len(e) >= 20}
