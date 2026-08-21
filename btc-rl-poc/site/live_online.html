@@ -770,7 +770,12 @@ function winnerChart(prices, preds, h) {
       `L${f.X(r.ts).toFixed(1)},${f.Y(r.lo).toFixed(1)}`).join("");
     g += `<path d="${up}${dn}Z" fill="rgba(255,255,255,.08)" stroke="none"/>`;
   }
-  // winner line, one path per leadership stretch, colored by the leader
+  // faint continuous connector so churn-heavy stretches never vanish
+  if (rows.length > 1)
+    g += `<path class="predline" style="stroke:rgba(255,255,255,.22);stroke-width:1.5" ` +
+      `d="${rows.map((r, i) =>
+        `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.pred).toFixed(1)}`).join("")}"/>`;
+  // colored overlay per leadership stretch + a visible dot on every point
   let seg = [rows[0]];
   const flush = () => {
     if (seg.length < 1) return;
@@ -779,7 +784,9 @@ function winnerChart(prices, preds, h) {
       g += `<path class="predline" style="stroke:${c}" d="${seg.map((r, i) =>
         `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.pred).toFixed(1)}`).join("")}"/>`;
     for (const r of seg)
-      g += `<circle class="hover-pt" cx="${f.X(r.ts).toFixed(1)}" cy="${f.Y(r.pred).toFixed(1)}" r="6" ` +
+      g += `<circle cx="${f.X(r.ts).toFixed(1)}" cy="${f.Y(r.pred).toFixed(1)}" r="2.5" ` +
+        `style="fill:${c}"${r.actual == null ? ' fill-opacity=".45"' : ""}></circle>` +
+        `<circle class="hover-pt" cx="${f.X(r.ts).toFixed(1)}" cy="${f.Y(r.pred).toFixed(1)}" r="6" ` +
         `data-tip="[winner: ${seg[0].src}] pred $${r.pred.toLocaleString()}` +
         `${r.actual != null ? `, actual $${Math.round(r.actual).toLocaleString()}` : " (pending)"}"></circle>`;
   };
