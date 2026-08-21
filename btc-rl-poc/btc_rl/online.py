@@ -581,6 +581,18 @@ def _calibration_adj(residuals: list[float]) -> int | None:
 LEDGER_MAX_ROWS = 60_000       # ~2 weeks of both arms; keeps rewrites cheap
 
 
+def _heartbeat() -> None:
+    """Touch alive_at without a full status build — called on the network
+    retry path and between retrain arms, so the watchdog doesn't shoot a
+    daemon that is alive but mid-retrain or riding out an outage."""
+    try:
+        st = json.loads(STATUS.read_text())
+        st["alive_at"] = time.time()
+        STATUS.write_text(json.dumps(st))
+    except Exception:
+        pass
+
+
 def _qtable_path(variant: str) -> Path:
     return RESULTS_DIR / f"q_table_online_{variant}.json"
 
@@ -829,6 +841,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                   "val_episodes": len(val_eps), "epochs": RETRAIN_EPOCHS,
                   "arms": {}}
     for variant, agents in arms.items():
+        _heartbeat()  # a full-fleet retrain can outlast the watchdog window
         if not agents:
             continue  # replay baseline has no model
         if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
@@ -1430,6 +1443,7 @@ def run(once: bool = False) -> None:
             import traceback
             traceback.print_exc()
             print(f"poll error (will retry): {exc}")
+            _heartbeat()  # alive and retrying — an outage isn't a hang
         if once:
             for variant, agents in arms.items():
                 if agents:  # replay baseline has no model
