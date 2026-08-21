@@ -235,7 +235,14 @@ KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
 KB_MAX_ROWS = 20_000
 KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
 KB_BET_MAX_PRICE_C = 85        # broker rule: entries only below 85 cents
-KB_BET_EDGE_C = 5              # edge (cents) that triggers an EARLY strike
+KB_BET_EDGE_C = 3              # edge (cents) that triggers an EARLY strike —
+                               # tuned on a leakage-free chronological
+                               # backtest (tests/tune_bet_thresholds.py):
+                               # under exactly-one-bet, higher thresholds
+                               # only convert chosen strikes into forced
+                               # late longshots; 3c beat 5c on held-out
+                               # windows (58% vs 52% win, +11.7 vs +7.5
+                               # cents/bet)
 KB_BET_FORCE_S = 180           # exactly-one-bet rule: if no edge appeared,
                                # forced entry in the last 3 min of the window
 KB_BET_DOOR_C = 75             # closing-door strike: if the called side's
