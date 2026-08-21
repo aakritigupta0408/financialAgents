@@ -99,11 +99,14 @@ VARIANTS: dict[str, dict] = {
     # SGD on Q(s,a) over continuous bar-derived features (base + trend, 13
     # dims — no snapshot dependency), vol-scaled actions. Batch-trained on
     # 60 days (scripts/train_l2.py), then online like every other arm.
-    "t7-h5": {"predict_every": 300, "horizons": [5], "agent": "linearq",
-              "trend": True},
+    # RETIRED 2026-08-20 (evidence in metrics_history kind="retire"):
+    # t7-h5 (MASE 1.115 worsening, replay gate 1/8 kept), t7-h30 (direction
+    # 45% PT z -2.3 significantly wrong-way, -2627 bps paper P&L), t6-h5
+    # (MASE 1.135, PT z -2.4 anti-directional), t8-h30 (MASE 1.252
+    # worsening, 64% band coverage), t9-h5 (MASE 1.126, 44% direction).
+    # Criterion: >=250 scored slots, MASE >= 1.10, no significant positive
+    # direction/P&L signal, no marked improvement trend.
     "t7-h15": {"predict_every": 300, "horizons": [15], "agent": "linearq",
-               "trend": True},
-    "t7-h30": {"predict_every": 300, "horizons": [30], "agent": "linearq",
                "trend": True},
     # TREATMENT 6 = t5 + ORDER-FLOW IMBALANCE — the research-backed
     # short-horizon signal (Cont et al.; crypto order-flow literature):
@@ -116,11 +119,8 @@ VARIANTS: dict[str, dict] = {
               "trend": True},
     "t8-h15": {"predict_every": 300, "horizons": [15], "agent": "dqn",
                "trend": True},
-    "t8-h30": {"predict_every": 300, "horizons": [30], "agent": "dqn",
-               "trend": True},
     # TREATMENT 9 = the L4 rung: LSTM over the raw 1m return stream,
     # distributional output, mode action (scripts/train_l4.py).
-    "t9-h5": {"predict_every": 300, "horizons": [5], "agent": "seq"},
     "t9-h15": {"predict_every": 300, "horizons": [15], "agent": "seq"},
     "t9-h30": {"predict_every": 300, "horizons": [30], "agent": "seq"},
     # TREATMENT 10 = t2 + the KALSHI BTC-15-MIN PREDICTION MARKET — the
@@ -151,9 +151,6 @@ VARIANTS: dict[str, dict] = {
                 "hf": True},
     "t11-h30": {"predict_every": 300, "horizons": [30], "agent": "linucb",
                 "hf": True},
-    "t6-h5": {"predict_every": 300, "horizons": [5], "agent": "linucb",
-              "live": True, "trend": True, "book": True, "llm": True,
-              "ofi": True},
     "t6-h15": {"predict_every": 300, "horizons": [15], "agent": "linucb",
                "live": True, "trend": True, "book": True, "llm": True,
                "ofi": True},

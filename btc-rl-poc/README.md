@@ -18,6 +18,12 @@ via CryptoBERT, Kalshi's BTC-15-min market).
 | t7 | Linear-Q (SGD function approximation) | the L2 rung |
 | t8 | Distributional DQN (predicts the delta distribution, acts on its mode) | the L3 rung |
 | t9 | LSTM over the raw 1m return sequence | the L4 rung (sequence memory) |
+
+Underperforming arm×horizon streams are retired on evidence (≥250 scored
+slots, MASE ≥ 1.10, no significant direction/P&L signal, no improvement
+trend); verdicts append to metrics_history.jsonl with `kind: "retire"`.
+Retired so far: t3/t4/t5 (offline duplicates, see offline_gate.json) and
+the streams t6-h5, t7-h5, t7-h30, t8-h30, t9-h5 (2026-08-20).
 | t10 | t2 + Kalshi market features (crowd P(up), strike gap, clock, spread) | what the prediction market adds |
 | t11 | t2 + RLHF: `scripts/feedback.py up/down` votes blend ±0.15 into its reward for 30 min | the human in the loop |
 
