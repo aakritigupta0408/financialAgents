@@ -950,11 +950,22 @@ def run(once: bool = False) -> None:
     started = time.time()
     print(f"experiment runner up — arms: {', '.join(VARIANTS)}")
 
+    last_bars: list[dict] = []
+    last_bars_ts = 0.0
     while True:
         try:
             now = datetime.now(tz=config.PACIFIC)
             now_ts = int(now.timestamp())
-            bars = fetch_range(now - timedelta(hours=BACKFILL_HOURS + 1), now)
+            try:
+                bars = fetch_range(now - timedelta(hours=BACKFILL_HOURS + 1),
+                                   now)
+                last_bars, last_bars_ts = bars, time.time()
+            except Exception:
+                # one flaky vendor must not stall kb/bets/scoring: reuse the
+                # last good bars if they're recent enough to trust
+                if not last_bars or time.time() - last_bars_ts > 900:
+                    raise
+                bars = last_bars
             by_ts = {b["ts"]: b for b in bars}
             fng = fetch_fear_greed().get(now.date().isoformat())
 

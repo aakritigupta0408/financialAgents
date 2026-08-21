@@ -21,6 +21,19 @@ _session = requests.Session()
 _session.headers["User-Agent"] = "btc-rl-poc/0.1"
 
 
+def _reset_session() -> None:
+    """Rebuild the shared session. After a network blip, requests' keep-alive
+    pool can wedge into endless read-timeouts while a fresh session works
+    (observed 2026-08-21: 1h of timeouts, fresh session answered in 0.4s)."""
+    global _session
+    try:
+        _session.close()
+    except Exception:
+        pass
+    _session = requests.Session()
+    _session.headers["User-Agent"] = "btc-rl-poc/0.1"
+
+
 def fetch_coinbase_candles(start: datetime, end: datetime) -> list[dict]:
     """Fetch 1m BTC-USD candles [start, end) from Coinbase Exchange (max 300/req).
 
@@ -33,7 +46,14 @@ def fetch_coinbase_candles(start: datetime, end: datetime) -> list[dict]:
         "end": end.isoformat(),
     }
     for attempt in range(4):
-        resp = _session.get(url, params=params, timeout=15)
+        try:
+            resp = _session.get(url, params=params, timeout=15)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == 3:
+                raise
+            _reset_session()
+            time.sleep(1.0 * (attempt + 1))
+            continue
         if resp.status_code == 429:
             time.sleep(1.5 * (attempt + 1))
             continue
