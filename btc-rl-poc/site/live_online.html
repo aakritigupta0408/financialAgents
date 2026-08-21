@@ -293,6 +293,8 @@ details[open] > summary { margin-bottom: 6px; }
     <div class="stat"><div class="k">Market Brier</div><div class="bignum" id="kb-mkt">–</div></div>
     <div class="stat"><div class="k">This window's bet</div><div class="bignum" id="kb-bet">–</div></div>
     <div class="stat"><div class="k">One-bet record · P&amp;L</div><div class="bignum" id="kb-bet-pnl">–</div></div>
+    <div class="stat"><div class="k">Today's hit rate (PT)</div><div class="bignum" id="kb-today">–</div></div>
+    <div class="stat"><div class="k">Today · Brier us vs market</div><div class="bignum" id="kb-today-brier">–</div></div>
   </div>
   <details style="margin-top:12px"><summary>Call history &amp; contract detail</summary>
     <div class="statusbar" style="margin-top:12px">
@@ -1033,6 +1035,22 @@ async function poll() {
           ? `${bS.wins}–${bS.settled - bS.wins} · ` +
             `${bS.pnl_c >= 0 ? "+" : "−"}${Math.abs(bS.pnl_c).toFixed(0)}¢`
           : "collecting…";
+        // rolling "today in PT" scoreboard from the full call log
+        const ptNow = new Date(new Date().toLocaleString("en-US",
+          { timeZone: "America/Los_Angeles" }));
+        const sod = (Date.now() - (ptNow.getHours() * 3600 + ptNow.getMinutes() * 60
+          + ptNow.getSeconds()) * 1000) / 1000;
+        const today = kbRows.filter(r => r.made_ts >= sod && r.actual != null);
+        if (today.length >= 10) {
+          const th = today.filter(r => r.hit).length;
+          document.getElementById("kb-today").textContent =
+            `${(100 * th / today.length).toFixed(0)}% (${today.length})`;
+          const tq = today.filter(r => r.mkt_brier != null);
+          document.getElementById("kb-today-brier").textContent = tq.length
+            ? `${(tq.reduce((a, r) => a + r.brier, 0) / tq.length).toFixed(3)} vs ` +
+              `${(tq.reduce((a, r) => a + r.mkt_brier, 0) / tq.length).toFixed(3)}`
+            : "no quotes";
+        }
         if (kbRows.length) {
           document.querySelector("#kb-tbl tbody").innerHTML =
             kbRows.slice(-16).reverse().map(r => {
