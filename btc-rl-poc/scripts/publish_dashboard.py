@@ -1,12 +1,17 @@
-"""Publish the dashboards + a data snapshot to theaakritigupta.com.
+"""Publish the dashboards + data snapshots to theaakritigupta.com.
 
-Copies the four site pages, theme.css, and a whitelisted (and trimmed)
-snapshot of results/ into ~/TheAakritiGupta.com/public/btc-oracle/, then
-commits and pushes the site repo — Netlify redeploys automatically, so
-the dashboard is reachable anywhere with data at cron freshness.
+Fast path (every cron minute): push pages + a trimmed data snapshot
+DIRECTLY to the gh-pages branch that GitHub Pages serves — no site
+rebuild, so end-to-end freshness is ~1-2 min. A dedicated single-branch
+clone under ~/.btc-oracle-ghpages is reset to origin each run and the
+snapshot rides a single amended marker commit (history never grows);
+--force-with-lease loses gracefully to a real Actions deploy and
+retries next minute.
 
-Install (every 10 min):
-  */10 * * * * /opt/anaconda3/bin/python3 "<repo>/scripts/publish_dashboard.py" >> /tmp/btc_publish.log 2>&1
+Slow path (hourly): sync the same files into the main repo's
+public/btc-oracle/ and push, so full rebuilds re-seed the dashboard.
+
+Install:  * * * * * /opt/anaconda3/bin/python3 "<repo>/scripts/publish_dashboard.py" >> /tmp/btc_publish.log 2>&1
 """
 import shutil
 import subprocess
@@ -16,11 +21,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SITE_REPO = Path.home() / "TheAakritiGupta.com"
 DEST = SITE_REPO / "public" / "btc-oracle"
+GH = Path.home() / ".btc-oracle-ghpages"
+MARKER = "btc-oracle data snapshot"
+MAIN_SYNC_S = 3600
+STAMP = ROOT / "results" / ".publish_main_stamp"
 
 PAGES = ["live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css"]
-# results whitelist: (filename, max jsonl lines or None for full copy)
-DATA = [
+DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
     ("online_status.json", None),
@@ -34,39 +42,76 @@ DATA = [
 ]
 
 
-def main() -> None:
-    (DEST / "site").mkdir(parents=True, exist_ok=True)
-    (DEST / "results").mkdir(parents=True, exist_ok=True)
+def _git(cwd, *args, check=True):
+    return subprocess.run(["git", "-C", str(cwd), *args],
+                          capture_output=True, text=True, check=check)
+
+
+def copy_bundle(dest: Path) -> None:
+    (dest / "site").mkdir(parents=True, exist_ok=True)
+    (dest / "results").mkdir(parents=True, exist_ok=True)
     for name in PAGES:
-        shutil.copy2(ROOT / "site" / name, DEST / "site" / name)
+        shutil.copy2(ROOT / "site" / name, dest / "site" / name)
     for name, cap in DATA:
         src = ROOT / "results" / name
         if not src.exists():
             continue
         if cap is None:
-            shutil.copy2(src, DEST / "results" / name)
+            shutil.copy2(src, dest / "results" / name)
         else:
             lines = src.read_text().splitlines()[-cap:]
-            (DEST / "results" / name).write_text("\n".join(lines) + "\n")
+            (dest / "results" / name).write_text("\n".join(lines) + "\n")
 
-    # stage the dashboard tree plus the React wiring for its route/card
+
+def publish_ghpages() -> None:
+    if not GH.exists():
+        url = _git(SITE_REPO, "config", "--get",
+                   "remote.origin.url").stdout.strip()
+        subprocess.run(["git", "clone", "--depth", "2", "--branch", "gh-pages",
+                        "--single-branch", url, str(GH)], check=True)
+    _git(GH, "fetch", "--depth", "2", "origin", "gh-pages")
+    _git(GH, "reset", "--hard", "origin/gh-pages")
+    copy_bundle(GH / "btc-oracle")
+    if not _git(GH, "status", "--porcelain").stdout.strip():
+        print("gh-pages: no changes")
+        return
+    _git(GH, "add", "btc-oracle")
+    tip = _git(GH, "log", "-1", "--format=%s").stdout.strip()
+    if tip.startswith(MARKER):  # ride the same marker commit forever
+        _git(GH, "commit", "-q", "--amend", "-m",
+             f"{MARKER} {time.strftime('%Y-%m-%d %H:%M')}")
+    else:
+        _git(GH, "commit", "-q", "-m",
+             f"{MARKER} {time.strftime('%Y-%m-%d %H:%M')}")
+    push = _git(GH, "push", "--force-with-lease", "origin", "HEAD:gh-pages",
+                check=False)
+    print("gh-pages:", "published" if push.returncode == 0
+          else f"deferred ({push.stderr.strip()[:80]})")
+
+
+def sync_main() -> None:
+    if STAMP.exists() and time.time() - STAMP.stat().st_mtime < MAIN_SYNC_S:
+        return
+    copy_bundle(DEST)
     staged = [str(DEST.relative_to(SITE_REPO)),
               "client/pages/BtcOracleDemo.tsx", "client/App.tsx",
               "client/pages/AIPlayground.tsx",
               "client/pages/TradeRecommendationSystemDemo.tsx"]
-    if subprocess.run(["git", "-C", str(SITE_REPO), "status", "--porcelain",
-                       *staged], capture_output=True,
-                      text=True).stdout.strip():
-        subprocess.run(["git", "-C", str(SITE_REPO), "add", *staged],
-                       check=True)
-        subprocess.run(["git", "-C", str(SITE_REPO), "commit", "-q", "-m",
-                        f"btc-oracle data snapshot "
-                        f"{time.strftime('%Y-%m-%d %H:%M')}"], check=True)
-        subprocess.run(["git", "-C", str(SITE_REPO), "push", "-q"],
-                       check=True)
-        print(f"published at {time.strftime('%H:%M:%S')}")
-    else:
-        print("no changes")
+    if _git(SITE_REPO, "status", "--porcelain", *staged).stdout.strip():
+        _git(SITE_REPO, "add", *staged)
+        _git(SITE_REPO, "commit", "-q", "-m",
+             f"btc-oracle hourly sync {time.strftime('%Y-%m-%d %H:%M')}")
+        _git(SITE_REPO, "push", "-q")
+        print("main: synced")
+    STAMP.touch()
+
+
+def main() -> None:
+    publish_ghpages()
+    try:
+        sync_main()
+    except subprocess.CalledProcessError as e:
+        print("main sync failed:", str(e)[:120])
 
 
 if __name__ == "__main__":
