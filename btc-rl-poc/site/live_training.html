@@ -84,6 +84,12 @@ svg .endpt { stroke: var(--surface); stroke-width: 2; }
 <div id="tip"></div>
 
 <script>
+const REMOTE = !["localhost", "127.0.0.1"].includes(location.hostname);
+// CDN cache-buster: bucketed so the edge can still coalesce requests
+const bust = u => REMOTE
+  ? u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 30000)
+  : u;
+
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const SERIES = [];
 for (const h of [1, 5, 15, 30]) {
@@ -156,8 +162,8 @@ function lineChart(rowsByKey, field, opts) {
 async function poll() {
   try {
     const [pRes, sRes] = await Promise.all([
-      fetch("../results/training_progress.jsonl", { cache: "no-store" }),
-      fetch("../results/live_status.json", { cache: "no-store" }),
+      fetch(bust("../results/training_progress.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/live_status.json"), { cache: "no-store" }),
     ]);
     const text = pRes.ok ? await pRes.text() : "";
     const status = sRes.ok ? await sRes.json() : null;
@@ -201,7 +207,7 @@ async function poll() {
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for trainer… (" + e.message + ")";
   }
-  setTimeout(poll, 1500);
+  setTimeout(poll, REMOTE ? 20000 : 1500);
 }
 poll();
 
@@ -212,7 +218,7 @@ function fmtHM(ts) {
 }
 async function retrainLoop() {
   try {
-    const r = await fetch("../results/metrics_history.jsonl", { cache: "no-store" });
+    const r = await fetch(bust("../results/metrics_history.jsonl"), { cache: "no-store" });
     if (r.ok) {
       const rows = [];
       for (const line of (await r.text()).split("\n")) {
@@ -244,7 +250,7 @@ async function retrainLoop() {
       }
     }
   } catch {}
-  setTimeout(retrainLoop, 60000);
+  setTimeout(retrainLoop, REMOTE ? 120000 : 60000);
 }
 retrainLoop();
 </script>

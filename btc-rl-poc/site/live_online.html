@@ -445,6 +445,12 @@ details[open] > summary { margin-bottom: 6px; }
 <div id="tip"></div>
 
 <script>
+const REMOTE = !["localhost", "127.0.0.1"].includes(location.hostname);
+// CDN cache-buster: bucketed so the edge can still coalesce requests
+const bust = u => REMOTE
+  ? u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 30000)
+  : u;
+
 const H_COLOR = { 1: "var(--series-5)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [1, 5, 15, 30];
 const armOf = p => (p.variant || "").startsWith("consensus") ? "agg"
@@ -881,12 +887,12 @@ function drawLearning(preds, learnLog) {
 async function poll() {
   try {
     const [pxRes, plRes, sRes, llRes, kbRes, betRes] = await Promise.all([
-      fetch("../results/recent_prices.json", { cache: "no-store" }),
-      fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
-      fetch("../results/online_status.json", { cache: "no-store" }),
-      fetch("../results/learning_log.jsonl", { cache: "no-store" }),
-      fetch("../results/kalshi_binary_log.jsonl", { cache: "no-store" }),
-      fetch("../results/kb_bets.jsonl", { cache: "no-store" }),
+      fetch(bust("../results/recent_prices.json"), { cache: "no-store" }),
+      fetch(bust("../results/prediction_log.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/online_status.json"), { cache: "no-store" }),
+      fetch(bust("../results/learning_log.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/kalshi_binary_log.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/kb_bets.jsonl"), { cache: "no-store" }),
     ]);
     const kbRows = [];
     if (kbRes.ok) for (const line of (await kbRes.text()).split("\n")) {
@@ -1074,7 +1080,7 @@ async function poll() {
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for daemon… (" + e.message + ")";
   }
-  setTimeout(poll, 5000);
+  setTimeout(poll, REMOTE ? 45000 : 5000);
 }
 
 function attachTips() {

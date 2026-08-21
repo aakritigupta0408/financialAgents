@@ -280,6 +280,12 @@
 </main>
 
 <script>
+const REMOTE = !["localhost", "127.0.0.1"].includes(location.hostname);
+// CDN cache-buster: bucketed so the edge can still coalesce requests
+const bust = u => REMOTE
+  ? u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 30000)
+  : u;
+
 // ── The registry: add one entry per new treatment ──────────────────────────
 const ARMS = [
   { key: "ctl", variants: ["h1", "h5", "h15", "h30"], color: "#aeb6c2",
@@ -633,11 +639,11 @@ function binaryPanel(kb, bets) {
 async function poll() {
   try {
     const [mRes, pRes, hRes, kRes, bRes] = await Promise.all([
-      fetch("../results/metrics.json", { cache: "no-store" }),
-      fetch("../results/prediction_log.jsonl", { cache: "no-store" }),
-      fetch("../results/metrics_history.jsonl", { cache: "no-store" }),
-      fetch("../results/kalshi_binary_log.jsonl", { cache: "no-store" }),
-      fetch("../results/kb_bets.jsonl", { cache: "no-store" }),
+      fetch(bust("../results/metrics.json"), { cache: "no-store" }),
+      fetch(bust("../results/prediction_log.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/metrics_history.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/kalshi_binary_log.jsonl"), { cache: "no-store" }),
+      fetch(bust("../results/kb_bets.jsonl"), { cache: "no-store" }),
     ]);
     const jsonl = async r => { const out = [];
       if (r && r.ok) for (const line of (await r.text()).split("\n")) {
@@ -742,7 +748,7 @@ async function poll() {
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for data… (" + e.message + ")";
   }
-  setTimeout(poll, 10000);
+  setTimeout(poll, REMOTE ? 60000 : 10000);
 }
 poll();
 </script>
