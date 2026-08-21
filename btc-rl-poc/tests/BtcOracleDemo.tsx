@@ -12,15 +12,17 @@ import { ArrowLeft } from "lucide-react";
 import Navigation from "@/components/Navigation";
 
 const VIEWS = [
-  { id: "live_online", label: "Live predictions" },
-  { id: "experiment_review", label: "Experiment review" },
-  { id: "index", label: "Batch backtest" },
-  { id: "live_training", label: "Training curves" },
+  { id: "ab_dashboard", label: "Results" },
+  { id: "live_online", label: "Live desk" },
+  { id: "experiment_review", label: "Experiment lab" },
+  { id: "index", label: "Backtest" },
+  { id: "live_training", label: "Training" },
+  { id: "bet_policy_sim", label: "Bet sim" },
 ] as const;
 
 export default function BtcOracleDemo() {
   const navigate = useNavigate();
-  const [view, setView] = useState<(typeof VIEWS)[number]["id"]>("live_online");
+  const [view, setView] = useState<(typeof VIEWS)[number]["id"]>("ab_dashboard");
 
   return (
     <div className="min-h-screen bg-[#0b0d10] text-slate-100">

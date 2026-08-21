@@ -31,12 +31,16 @@ svg .bar:hover { opacity: .8; }
 </head>
 <body>
 
+<nav class="topnav"><a class="brand" href="ab_dashboard.html">BTC 7PM Oracle</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav here" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="bet_policy_sim.html">Bet sim</a><span class="spacer"></span><span class="tag">live experiment</span></nav>
+
 <main>
 <header>
   <div class="eyebrow">Reinforcement learning · proof of concept</div>
   <h1>BTC 7PM Oracle</h1>
-  <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
-  (next target 7:00 PM PDT Thu), scored with a <strong>volatility-scaled hit band</strong> — within max($5, 0.1·σ_h) of the actual counts as a hit. (The batch runs below predate the band and report the legacy exact-integer spec.)
+  <p class="sub">The batch-training report: the original proof-of-concept runs that
+  seeded the always-on experiment. Live scoring uses a <strong>volatility-scaled
+  hit band</strong> — within max($5, 0.1·σ_h) counts as a hit. (These batch runs
+  predate the band and report the legacy exact-integer spec.)
   Built entirely on open, no-auth data streams.</p>
 </header>
 
@@ -104,7 +108,7 @@ svg .bar:hover { opacity: .8; }
 </section>
 
 <section>
-  <h2>Open data streams (verified 2026-08-20)</h2>
+  <h2>Open data streams (verified 2026-08-21)</h2>
   <div class="scroll"><table>
   <thead><tr><th>Stream</th><th>What it provides</th><th>Status</th></tr></thead>
   <tbody><tr><td>Coinbase Exchange</td><td class="muted">1m OHLCV candles + WebSocket feed (primary)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Kraken</td><td class="muted">1m OHLCV, spreads (cross-check)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Bitstamp</td><td class="muted">1m OHLCV (fallback)</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>OKX</td><td class="muted">funding rate + open interest</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Deribit</td><td class="muted">perpetual / options tickers</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>alternative.me</td><td class="muted">Fear &amp; Greed sentiment index</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>mempool.space</td><td class="muted">fees, mempool congestion</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>blockchain.info</td><td class="muted">hash rate, tx count</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>CoinGecko</td><td class="muted">spot price, market cap</td><td><span class="pill ok">✓ live</span></td></tr><tr><td>Binance spot + futures</td><td class="muted">geo-blocked from build machine</td><td><span class="pill blocked">✕ blocked</span></td></tr><tr><td>Bybit</td><td class="muted">geo-blocked from build machine</td><td><span class="pill blocked">✕ blocked</span></td></tr></tbody></table></div>
@@ -115,7 +119,7 @@ svg .bar:hover { opacity: .8; }
   <div class="rung done"><span class="rung-id">L0</span><div><div class="rung-name">Persistence baseline</div><div class="muted">predict the current price — the bar to clear</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L1</span><div><div class="rung-name">Tabular Q-learning</div><div class="muted">81 states × 21 integer-delta actions, ε-greedy, sparse + shaped rewards</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L2</span><div><div class="rung-name">Linear function approximation</div><div class="muted">continuous features, SGD on Q(s,a) — live as t7</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L3</span><div><div class="rung-name">Small distributional DQN</div><div class="muted">predict the delta distribution, act on its mode — live as t8</div></div><span class="pill ok">✓ built</span></div><div class="rung done"><span class="rung-id">L4</span><div><div class="rung-name">LSTM sequence model</div><div class="muted">raw 1-minute return stream, distributional head — live as t9</div></div><span class="pill ok">✓ built</span></div><div class="rung live"><span class="rung-id">L5</span><div><div class="rung-name">Market & human signals</div><div class="muted">Kalshi prediction-market context (t10) · RLHF human feedback (t11) · kb binary calls on the Kalshi 15-min contract · calibrated-winner meta-arm (cal)</div></div><span class="pill ok">✓ live</span></div>
 </section>
 
-<footer>Generated 2026-08-20 16:22 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
+<footer>Generated 2026-08-21 16:51 PDT from results/metrics.json · data: Coinbase Exchange 1m bars ·
 sentiment: alternative.me Fear &amp; Greed · chronological 80/20 split, no lookahead.</footer>
 </main>
 

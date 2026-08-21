@@ -19,6 +19,10 @@
 </style>
 </head>
 <body>
+
+<nav class="topnav"><a class="brand" href="ab_dashboard.html">BTC 7PM Oracle</a><a class="nav here" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="bet_policy_sim.html">Bet sim</a><span class="spacer"></span><span class="tag">live experiment</span></nav>
+
+
 <main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span> Final deliverable · live evaluation</div>
@@ -54,6 +58,27 @@
     <span><span class="sw" style="background:#199e70"></span>selector model (gated, may skip)</span>
   </div>
   <div id="bankroll"></div>
+</section>
+
+<section>
+  <h2>Binary model race — control vs blend vs logit</h2>
+  <p class="sub small muted">Rolling-60 Brier on identical windows (lower is
+  better; grey dashed = the market itself). Each variant also auto-tunes a
+  confidence threshold targeting 80% precision; coverage is the share of
+  calls confident enough to make.</p>
+  <div class="legend">
+    <span><span class="sw" style="background:#3987e5"></span>kb (control)</span>
+    <span><span class="sw" style="background:#2fb59a"></span>kb2 (market blend)</span>
+    <span><span class="sw" style="background:#d55181"></span>kb3 (logit)</span>
+    <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
+  </div>
+  <div id="kbrace"></div>
+  <div class="scroll"><table id="kbt-tbl">
+    <thead><tr><th>Variant</th><th class="num">Scored</th><th class="num">Accuracy</th>
+      <th class="num">Brier (last 100)</th><th class="num">Prec@0.8 · τ</th>
+      <th class="num">Coverage</th></tr></thead>
+    <tbody><tr><td colspan="6" class="muted">collecting…</td></tr></tbody>
+  </table></div>
 </section>
 
 <section>
@@ -98,29 +123,69 @@ async function jsonl(u) {
   return (await r.text()).split("\n").filter(l => l.trim()).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
 }
 
-function lineSVG(seriesList) {
+function lineSVG(seriesList, opts) {
+  opts = opts || { fmt: v => "$" + v.toFixed(0), baseline: 1000 };
   const W = 900, H = 240, L = 64, R = 16, T = 12, B = 26;
   let xmin = 1/0, xmax = -1/0, ymin = 1/0, ymax = -1/0;
   for (const s of seriesList) for (const [x, y] of s.pts) {
     xmin = Math.min(xmin, x); xmax = Math.max(xmax, x);
     ymin = Math.min(ymin, y); ymax = Math.max(ymax, y); }
   if (!isFinite(xmin)) return '<p class="mini">collecting…</p>';
-  ymin = Math.min(ymin, 1000); ymax = Math.max(ymax, 1000);
+  if (opts.baseline != null) { ymin = Math.min(ymin, opts.baseline); ymax = Math.max(ymax, opts.baseline); }
   const pad = (ymax - ymin) * .08 || 10; ymin -= pad; ymax += pad;
   const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
   const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
   let g = "";
   for (let i = 0; i <= 3; i++) { const v = ymin + (ymax - ymin) * i / 3;
     g += `<line class="gridline" x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}"/>` +
-         `<text x="${L-8}" y="${Y(v)+4}" text-anchor="end">$${v.toFixed(0)}</text>`; }
-  g += `<line x1="${L}" y1="${Y(1000)}" x2="${W-R}" y2="${Y(1000)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>`;
+         `<text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${opts.fmt(v)}</text>`; }
+  if (opts.baseline != null) g += `<line x1="${L}" y1="${Y(opts.baseline)}" x2="${W-R}" y2="${Y(opts.baseline)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>`;
   for (const s of seriesList) {
     g += `<path fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" d="${
       s.pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("")}"/>`;
     const last = s.pts[s.pts.length - 1];
-    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${s.color}"><title>${s.label}: $${last[1].toFixed(0)}</title></circle>`;
+    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${s.color}"><title>${s.label}: ${opts.fmt(last[1])}</title></circle>`;
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="bankroll over time by policy">${g}</svg>`;
+}
+
+function brierRace(kb, st) {
+  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181" };
+  const groups = { kb: [], kb2: [], kb3: [] };
+  for (const r of kb) {
+    const v = r.variant || "kb";
+    if (groups[v] && r.actual != null) groups[v].push(r);
+  }
+  const roll = (rows, key) => {
+    rows.sort((a, b) => a.made_ts - b.made_ts);
+    const pts = [];
+    for (let i = 59; i < rows.length; i += 3) {
+      const win = rows.slice(i - 59, i + 1);
+      pts.push([rows[i].made_ts, win.reduce((a, r) => a + r[key], 0) / win.length]);
+    }
+    return pts;
+  };
+  const series = [];
+  for (const [v, rows] of Object.entries(groups)) {
+    const pts = roll(rows, "brier");
+    if (pts.length > 1) series.push({ label: v, color: COL[v], pts });
+  }
+  const mpts = roll(groups.kb.filter(r => r.mkt_brier != null), "mkt_brier");
+  if (mpts.length > 1) series.push({ label: "market", color: "var(--ink-2)", pts: mpts });
+  document.getElementById("kbrace").innerHTML = series.length
+    ? lineSVG(series, { fmt: v => v.toFixed(2), baseline: 0.25 })
+    : '<p class="mini">collecting…</p>';
+  const t = st.kb_treatments || {};
+  const rowsH = ["kb", "kb2", "kb3"].filter(v => t[v]).map(v => {
+    const s = t[v], p = s.prec80;
+    return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
+      `<td class="num">${s.scored ?? "–"}</td>` +
+      `<td class="num">${s.acc != null ? (100 * s.acc).toFixed(0) + "%" : "–"}</td>` +
+      `<td class="num">${s.brier != null ? s.brier.toFixed(3) : "–"}</td>` +
+      `<td class="num">${p ? (100 * p.precision).toFixed(0) + "% · τ " + p.tau.toFixed(2) : "tuning…"}</td>` +
+      `<td class="num">${p ? (100 * p.coverage).toFixed(0) + "%" : "–"}</td></tr>`;
+  }).join("");
+  if (rowsH) document.querySelector("#kbt-tbl tbody").innerHTML = rowsH;
 }
 
 async function poll() {
@@ -196,6 +261,7 @@ async function poll() {
       { label: "selector", color: "#199e70", pts: B.bk.pts },
     ]);
 
+    try { brierRace(kb, st); } catch {}
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
     const t0 = kb.length ? kb[0].made_ts : Date.now()/1000;

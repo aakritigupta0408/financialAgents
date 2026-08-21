@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import html
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -114,10 +114,6 @@ def main() -> None:
               for n, ev in agents.items()]
 
     pac = ZoneInfo("America/Los_Angeles")
-    target = datetime.now(tz=pac).replace(hour=19, minute=0, second=0, microsecond=0)
-    if target < datetime.now(tz=pac):
-        target += timedelta(days=1)
-    next_target_str = target.strftime("%-I:%M %p %Z %a")
 
     base = agents["persistence-baseline"]
     best_hit = max(((ev["h15"]["all"]["exact_int_hit_rate"],
@@ -251,8 +247,10 @@ svg .bar:hover {{ opacity: .8; }}
 <header>
   <div class="eyebrow">Reinforcement learning · proof of concept</div>
   <h1>BTC 7PM Oracle</h1>
-  <p class="sub">Predict Bitcoin's price at <strong>7:00 &amp; 7:15 PM Pacific</strong>
-  (next target {next_target_str}), scored with a <strong>volatility-scaled hit band</strong> — within max($5, 0.1·σ_h) of the actual counts as a hit. (The batch runs below predate the band and report the legacy exact-integer spec.)
+  <p class="sub">The batch-training report: the original proof-of-concept runs that
+  seeded the always-on experiment. Live scoring uses a <strong>volatility-scaled
+  hit band</strong> — within max($5, 0.1·σ_h) counts as a hit. (These batch runs
+  predate the band and report the legacy exact-integer spec.)
   Built entirely on open, no-auth data streams.</p>
 </header>
 
