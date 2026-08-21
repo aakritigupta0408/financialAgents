@@ -35,12 +35,15 @@ try:
 except (OSError, IndexError, ValueError):
     pass
 
-# "btc_rl.online" is a substring match, so pkill could hit unrelated processes
-# (an editor with the file open, a --once run); pgrep first so we only kill
-# when something actually matches, and accept the residual substring risk.
-if subprocess.run(["pgrep", "-f", "btc_rl.online"],
+# End-anchored pattern: the daemon's command line ends with the module name
+# ("python3 -u -m btc_rl.online"), while shells that merely MENTION it (a
+# monitor loop, an editor, a --once run with flags after) carry trailing
+# text — observed 2026-08-21: the unanchored pattern killed a monitoring
+# shell and confused the liveness check during an outage.
+PAT = r"-m btc_rl\.online$"
+if subprocess.run(["pgrep", "-f", PAT],
                   capture_output=True).returncode == 0:
-    subprocess.run(["pkill", "-f", "btc_rl.online"], check=False)
+    subprocess.run(["pkill", "-f", PAT], check=False)
     time.sleep(2)
 with (ROOT / "results" / "daemon.log").open("a") as out:
     subprocess.Popen([sys.executable, "-u", "-m", "btc_rl.online"],
