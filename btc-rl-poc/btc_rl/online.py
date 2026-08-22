@@ -34,10 +34,11 @@ from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
 from .features import (BOOK_DIM, KALSHI_DIM, LIVE_DIM, LLM_DIM, OFI_DIM,
-                       TREND_DIM, book_feature_vector, compute_features,
-                       discretize, feature_vector, kalshi_feature_vector,
-                       live_feature_vector, llm_feature_vector,
-                       ofi_feature_vector, trend_feature_vector)
+                       TECH_DIM, TREND_DIM, book_feature_vector,
+                       compute_features, discretize, feature_vector,
+                       kalshi_feature_vector, live_feature_vector,
+                       llm_feature_vector, ofi_feature_vector,
+                       tech_feature_vector, trend_feature_vector)
 from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_kalshi_btc15,
@@ -168,7 +169,11 @@ def _ctx_dim(spec: dict) -> int:
             + (BOOK_DIM if spec.get("book") else 0)
             + (LLM_DIM if spec.get("llm") else 0)
             + (OFI_DIM if spec.get("ofi") else 0)
-            + (KALSHI_DIM if spec.get("kalshi") else 0))
+            + (KALSHI_DIM if spec.get("kalshi") else 0)
+            # classic technicals for the online-padding-capable agents
+            # only — t8's torch net input is fixed at its trained dim
+            + (TECH_DIM if spec.get("agent") in ("linucb", "linearq")
+               else 0))
 
 
 def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
@@ -187,6 +192,9 @@ def _context(spec: dict, feat: dict, snap: dict | None) -> list[float]:
         x += ofi_feature_vector(snap)
     if spec.get("kalshi"):
         x += kalshi_feature_vector(snap)
+    if spec.get("agent") in ("linucb", "linearq"):
+        # appended LAST so pre-tech checkpoints align as a weight prefix
+        x += tech_feature_vector(feat)
     return x
 
 
@@ -399,7 +407,7 @@ def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
 
 
 KB_LOGIT_PATH_NAME = "kb_logit.json"
-KB_LOGIT_DIM = 16
+KB_LOGIT_DIM = 24
 KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
 
 
@@ -441,6 +449,27 @@ def _path_features(bars: list[dict], strike: float, close_ts: int,
     return [round(v, 5) for v in pf]
 
 
+def _live_bars(bars: list[dict], live_px: float | None,
+               now_ts: int) -> list[dict]:
+    """Patch the tape so features are LIVE at decision time: exchange
+    candles trail by ~1-2 min, which quietly staled every indicator's
+    current-price term. If the current minute's bucket hasn't arrived,
+    append a synthetic bar at the real-time composite price (volume =
+    trailing average so burst features stay neutral); if it has, refresh
+    its close. Falls back to the raw tape when no live price exists."""
+    if not bars or not live_px:
+        return bars
+    cur = now_ts // 60 * 60
+    out = [dict(b) for b in bars[-70:]]
+    if out[-1]["ts"] >= cur:
+        out[-1]["close"] = live_px
+    else:
+        avg_v = sum(b["volume"] for b in out[-60:]) / min(60, len(out))
+        out.append({"ts": cur, "open": live_px, "high": live_px,
+                    "low": live_px, "close": live_px, "volume": avg_v})
+    return out
+
+
 def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
                        base: float, mins_left: float,
                        k_pup: float | None, pf: list[float]) -> list[float]:
@@ -462,7 +491,17 @@ def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
         feat.get("ret_5m", 0.0) * 1e4 / 30,
         feat.get("ret_15m", 0.0) * 1e4 / 60,
         _m_log_vol(feat),
-    ] + pf
+    ] + pf + [
+        # classic technicals, bounded and centered (all price-relative)
+        (feat.get("rsi_14", 50.0) - 50.0) / 50.0,
+        max(-3.0, min(3.0, feat.get("ema_dist", 0.0) * 1e4 / 10.0)),
+        max(-3.0, min(3.0, feat.get("macd_bp", 0.0) / 5.0)),
+        max(-3.0, min(3.0, feat.get("macd_hist_bp", 0.0) / 3.0)),
+        max(-3.0, min(3.0, feat.get("sma20_gap_bp", 0.0) / 10.0)),
+        max(-2.0, min(2.0, feat.get("bb_z", 0.0))),
+        min(3.0, feat.get("bb_width_bp", 0.0) / 20.0),
+        math.log(max(feat.get("vol_1m_ratio", 1.0), 1e-6)) / 2.0,
+    ]
 
 
 def _m_log_vol(feat: dict) -> float:
@@ -971,18 +1010,24 @@ def _load_bandits(variant: str, horizons: list[int], dim: int,
     path = _bandit_path(variant)
     want_arms = n_arms or len(config.K_FACTORS)  # bandits act on K_FACTORS
     agents = {h: cls(dim, n_arms=want_arms) for h in horizons}
-    ok = lambda d: d["dim"] == dim and d.get("n_arms", want_arms) == want_arms
+    # accept a pre-tech checkpoint (dim - TECH_DIM) and pad it in place —
+    # rejecting it would silently reset the arm's accumulated learning
+    ok = lambda d: (d["dim"] in (dim, dim - TECH_DIM)
+                    and d.get("n_arms", want_arms) == want_arms)
     if path.exists():
         raw = json.loads(path.read_text())
         loaded = {h: cls.from_dict(raw[f"h{h}"]) for h in horizons
                   if f"h{h}" in raw and ok(raw[f"h{h}"])}
         if loaded:
+            for a in loaded.values():
+                a.pad_to(dim)
             agents = loaded
     elif kind == "linearq" and (RESULTS_DIR / "linear_q.json").exists():
         raw = json.loads((RESULTS_DIR / "linear_q.json").read_text())
         for h in horizons:  # warm-start from the 60-day batch weights
             if f"h{h}" in raw and ok(raw[f"h{h}"]):
                 agents[h] = cls.from_dict(raw[f"h{h}"])
+                agents[h].pad_to(dim)
     for a in agents.values():
         if isinstance(a, LinUCBAgent):
             a.alpha = ONLINE_ALPHA
@@ -1449,13 +1494,20 @@ def run(once: bool = False) -> None:
                     if ((variant, slot_ts, spec["horizons"][0]) in made
                             or slot_ts not in by_ts):
                         continue
-                    upto = [b for b in bars if b["ts"] <= slot_ts]
+                    # STRICT <: bucket [slot, slot+60) closes 60s AFTER
+                    # the commit stamp — including it gave backfilled
+                    # rows future information live rows can't have
+                    upto = [b for b in bars if b["ts"] < slot_ts]
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
                     live_slot = slot_ts >= int(started)
                     # a live anchor only exists for the CURRENT slot;
                     # backfilled slots keep the bar-close fallback
                     cur_slot = slot_ts > now_ts - step
+                    if cur_slot and brti:
+                        # features computed through THIS instant: the
+                        # real-time composite becomes the current bar
+                        upto = _live_bars(upto, brti["price"], now_ts)
                     rows = _predict_at(variant, arms[variant], upto, fng,
                                        slot_ts, spec["horizons"], spec=spec,
                                        snap=_nearest_snap(snaps, slot_ts),
@@ -1604,7 +1656,9 @@ def run(once: bool = False) -> None:
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
                     and ("kb", pm_mkt["ticker"], slot1) not in kb_made
                     and k_close_ts - now_ts >= 60):
-                kfeat = compute_features(bars, fng)
+                kbars = _live_bars(bars, brti["price"] if brti else None,
+                                   now_ts)
+                kfeat = compute_features(kbars, fng)
                 base = (brti["price"] if brti else None) or kfeat["price"]
                 mins_left = (k_close_ts - now_ts) / 60
                 p = _kb_p_up(arms, kfeat, snap,

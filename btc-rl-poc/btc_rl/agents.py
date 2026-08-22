@@ -44,10 +44,27 @@ class LinUCBAgent:
         self.np = np
         self.dim = dim
         self.alpha = alpha
+        self.lam = lam
         self.n_arms = n_arms or len(config.ACTION_DELTAS)
         self.A = [np.eye(dim) * lam for _ in range(self.n_arms)]
         self.b = [np.zeros(dim) for _ in range(self.n_arms)]
         self.pulls = [0] * self.n_arms
+
+    def pad_to(self, dim: int) -> None:
+        """Grow the context dimension in place, keeping every learned
+        ridge statistic: old A embeds top-left, new dims start at the
+        ridge prior (lam*I) with zero reward mass — mathematically the
+        same posterior as if the new features had been constant 0."""
+        if dim <= self.dim:
+            return
+        np = self.np
+        for i in range(self.n_arms):
+            A2 = np.eye(dim) * getattr(self, "lam", 1.0)
+            A2[:self.dim, :self.dim] = self.A[i]
+            b2 = np.zeros(dim)
+            b2[:self.dim] = self.b[i]
+            self.A[i], self.b[i] = A2, b2
+        self.dim = dim
 
     def select(self, x: list[float], greedy: bool = False) -> int:
         """UCB selection; greedy=True drops the exploration bonus (for eval)."""
@@ -110,6 +127,16 @@ class LinearQAgent:
         self.w = [np.zeros(dim) for _ in range(self.n_arms)]
         self.pulls = [0] * self.n_arms
         self.rng = __import__("random").Random(seed)
+
+    def pad_to(self, dim: int) -> None:
+        """Grow the context dimension in place: learned weights keep their
+        positions, new features start at zero weight."""
+        if dim <= self.dim:
+            return
+        np = self.np
+        self.w = [np.concatenate([w, np.zeros(dim - self.dim)])
+                  for w in self.w]
+        self.dim = dim
 
     def select(self, x, greedy: bool = False) -> int:
         if not greedy and self.rng.random() < self.epsilon:

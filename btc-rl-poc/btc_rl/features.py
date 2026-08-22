@@ -73,7 +73,52 @@ def compute_features(bars: list[dict], fng: int | None) -> dict:
         "ema_dist": closes[-1] / ema(closes[-60:]) - 1.0,
         "vol_ratio": avg_vol_5 / avg_vol_60 if avg_vol_60 else 1.0,
         "fng": fng if fng is not None else 50,
+        **_technicals(closes, vols, avg_vol_60),
     }
+
+
+def _technicals(closes: list[float], vols: list[float],
+                avg_vol_60: float) -> dict:
+    """Classic indicator block (MACD 12/26/9, SMA20, Bollinger 20/2,
+    1-min volume burst), price-relative so scale-free across regimes.
+    RSI-14 and EMA distance already live in the base dict."""
+    px = closes[-1]
+    seg = closes[-45:]
+    macd_line = [ema(seg[:i + 1], 12) - ema(seg[:i + 1], 26)
+                 for i in range(max(1, len(seg) - 9), len(seg))]
+    macd = macd_line[-1]
+    macd_sig = ema(macd_line, 9)
+    sma20 = sum(closes[-20:]) / min(20, len(closes))
+    std20 = (sum((c - sma20) ** 2 for c in closes[-20:])
+             / min(20, len(closes))) ** 0.5
+    return {
+        "macd_bp": macd / px * 1e4,
+        "macd_hist_bp": (macd - macd_sig) / px * 1e4,
+        "sma20_gap_bp": (px - sma20) / px * 1e4,
+        "bb_z": (px - sma20) / (2 * std20) if std20 > 1e-9 else 0.0,
+        "bb_width_bp": 4 * std20 / px * 1e4,
+        "vol_1m_ratio": (vols[-1] / avg_vol_60) if avg_vol_60 else 1.0,
+    }
+
+
+TECH_DIM = 8
+
+
+def tech_feature_vector(feat: dict) -> list[float]:
+    """Classic-indicator context block (RSI, EMA/SMA gaps, MACD, Bollinger,
+    volume burst) — appended at the END of bandit contexts so pre-tech
+    checkpoints keep their learned weights as an aligned prefix."""
+    import math as _m
+    return [
+        (feat.get("rsi_14", 50.0) - 50.0) / 50.0,
+        max(-3.0, min(3.0, feat.get("ema_dist", 0.0) * 1e4 / 10.0)),
+        max(-3.0, min(3.0, feat.get("macd_bp", 0.0) / 5.0)),
+        max(-3.0, min(3.0, feat.get("macd_hist_bp", 0.0) / 3.0)),
+        max(-3.0, min(3.0, feat.get("sma20_gap_bp", 0.0) / 10.0)),
+        max(-2.0, min(2.0, feat.get("bb_z", 0.0))),
+        min(3.0, feat.get("bb_width_bp", 0.0) / 20.0),
+        _m.log(max(feat.get("vol_1m_ratio", 1.0), 1e-6)) / 2.0,
+    ]
 
 
 def feature_vector(feat: dict) -> list[float]:
