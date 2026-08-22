@@ -1501,15 +1501,16 @@ def run(once: bool = False) -> None:
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
                                    else -b["price_c"], 1)
                 bets_changed = True
-            # 1e-B. SELECTOR-GATED shadow bets (the A/B treatment): same
-            #     instrument and prices, but the bet is placed only when
-            #     the latest kb call clears its precision-tuned confidence
-            #     gate inside the final 8 minutes — windows without a
-            #     confident call are SKIPPED (abstention is the treatment).
+            # 1e-B. SELECTOR-GATED shadow bets (the A/B treatment): the bet
+            #     is placed at the FIRST call that clears the precision-
+            #     tuned confidence gate at a legal price — any point in the
+            #     window (waiting for the final minutes left only priced-
+            #     out favorites); windows with no confident affordable
+            #     call are SKIPPED (abstention is the treatment).
             sel_changed = False
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
                     and pm_mkt["ticker"] not in kb_sel_tickers
-                    and 60 <= k_close_ts - now_ts <= 8 * 60):
+                    and k_close_ts - now_ts >= 60):
                 last_kb = next((r for r in reversed(kb)
                                 if r.get("variant", "kb") == "kb"
                                 and r["ticker"] == pm_mkt["ticker"]), None)

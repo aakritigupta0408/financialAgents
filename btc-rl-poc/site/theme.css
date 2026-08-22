@@ -26,20 +26,21 @@ body { min-height: 100vh; overflow-x: hidden; background: var(--page);
   padding: 40px 20px 96px; }
 main { max-width: 72rem; margin: 0 auto;
   display: flex; flex-direction: column; gap: 18px; }
-/* shared top navigation — one consistent wayfinding system for all pages */
-.topnav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
-  max-width: 72rem; margin: -12px auto 18px; padding: 10px 4px;
+/* shared top navigation — quiet editorial tabs, one system everywhere */
+.topnav { display: flex; align-items: baseline; gap: 22px; flex-wrap: wrap;
+  max-width: 72rem; margin: 0 auto 30px; padding: 2px 4px 0;
   border-bottom: 1px solid var(--border); }
-.topnav .brand { font: italic 500 16px var(--display); color: var(--ink);
-  letter-spacing: .02em; margin-right: 14px; text-decoration: none; }
-.topnav a.nav { font-size: 13px; font-weight: 600; color: var(--muted);
-  text-decoration: none; padding: 5px 11px; border-radius: 7px; }
-.topnav a.nav:hover { color: var(--ink); background: var(--surface-2); }
-.topnav a.nav.here { color: var(--ink); background: var(--surface);
-  border: 1px solid var(--border); }
+.topnav .brand { font: italic 500 19px var(--display); color: var(--ink);
+  letter-spacing: .02em; margin-right: 18px; padding-bottom: 12px;
+  text-decoration: none; }
+.topnav a.nav { font-size: 13.5px; font-weight: 600; color: var(--muted);
+  text-decoration: none; padding: 6px 2px 12px; letter-spacing: .01em;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.topnav a.nav:hover { color: var(--ink-2); }
+.topnav a.nav.here { color: var(--ink); border-bottom-color: var(--up); }
 .topnav .spacer { flex: 1; }
-.topnav .tag { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--good-text); }
+.topnav .tag { font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); padding-bottom: 12px; }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px;
   font-size: 11px; font-weight: 600; text-transform: uppercase;
   letter-spacing: .18em; color: var(--muted); }
