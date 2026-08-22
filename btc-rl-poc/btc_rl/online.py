@@ -1915,7 +1915,10 @@ def run(once: bool = False) -> None:
 
             # 4. status + actual-price series for the charts
             feat = compute_features(bars, fng)
-            recent = [{"ts": b["ts"], "c": b["close"]}
+            # a bucket's close is the price AT ts+60 — stamping it at ts
+            # drew the actual line a minute early on every chart, making
+            # correctly-timed predictions look delayed
+            recent = [{"ts": b["ts"] + 60, "c": b["close"]}
                       for b in bars if b["ts"] >= now_ts - BACKFILL_HOURS * 3600]
             (RESULTS_DIR / "recent_prices.json").write_text(json.dumps(recent))
             STATUS.write_text(json.dumps({

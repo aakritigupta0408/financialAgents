@@ -96,7 +96,7 @@
 
 <section>
   <h2>Binary model race — control vs blend vs logit</h2>
-  <p class="sub small muted">Rolling-60 Brier on identical windows (lower is
+  <p class="sub small muted">Brier rolled over ~10 windows of calls (lower is
   better; grey dashed = the market itself). Each variant also auto-tunes a
   confidence threshold targeting 80% precision; coverage is the share of
   calls confident enough to make.</p>
@@ -199,11 +199,14 @@ function brierRace(kb, st) {
     const v = r.variant || "kb";
     if (groups[v] && r.actual != null) groups[v].push(r);
   }
+  // ~15 per-minute calls per window share one outcome, so the roll must
+  // span many WINDOWS (150 rows ≈ 10) — a rolling-60 was ~4 independent
+  // outcomes and mostly plotted shared-outcome noise
   const roll = (rows, key) => {
     rows.sort((a, b) => a.made_ts - b.made_ts);
     const pts = [];
-    for (let i = 59; i < rows.length; i += 3) {
-      const win = rows.slice(i - 59, i + 1);
+    for (let i = 149; i < rows.length; i += 3) {
+      const win = rows.slice(i - 149, i + 1);
       pts.push([rows[i].made_ts, win.reduce((a, r) => a + r[key], 0) / win.length]);
     }
     return pts;
