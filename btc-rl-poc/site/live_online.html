@@ -194,6 +194,15 @@ details[open] > summary { margin-bottom: 6px; }
 .mascot-bubble.up { color: var(--up); } .mascot-bubble.down { color: var(--down); }
 @media (max-width: 640px) { .card { grid-template-columns: 1fr; gap: 2px; }
   .ticker { gap: 14px; } .t-right { width: 100%; justify-content: flex-start; } }
+.dir-row { display: flex; gap: 3px; align-items: center; flex-wrap: wrap;
+  margin-top: 7px; }
+.dir-lbl { width: 44px; font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; color: var(--muted); }
+.dir-g { font-size: 11px; line-height: 1; padding: 3px 2px;
+  border-radius: 4px; cursor: default; }
+.dir-g.hit { color: var(--up); background: rgba(43,217,126,.10); }
+.dir-g.miss { color: var(--down); background: rgba(255,93,93,.10); }
+.dir-g.pend { color: var(--faint); }
 </style>
 </head>
 <body>
@@ -424,6 +433,19 @@ details[open] > summary { margin-bottom: 6px; }
     </div>
     <div id="ledger-sections"></div>
   </details>
+</section>
+
+<section>
+  <h2>Direction calls — up or down, every slot</h2>
+  <p class="sub muted small">The consensus call's rolling direction accuracy per
+  horizon (48 settled slots ≈ 4 h) against the coin-flip line and the
+  <b>55% goal</b>. Strips show the last 36 calls per horizon
+  (▲ up / ▼ down · green right · red wrong · hollow pending). h15/h30 calls
+  commit every 5 minutes into overlapping outcome windows, so their curves
+  move in correlated steps — judge them over hours, not ticks.</p>
+  <div class="legend" id="dir-legend"></div>
+  <div id="dir-chart"></div>
+  <div id="dir-strips"></div>
 </section>
 
 <section>
@@ -900,6 +922,52 @@ function drawBets(bets) {
     }).join("");
 }
 
+function drawDirection(preds) {
+  const CONS = { 1: "consensus-h1", 5: "consensus",
+                 15: "consensus-h15", 30: "consensus-h30" };
+  const series = [], strips = [];
+  for (const h of [1, 5, 15, 30]) {
+    const rows = preds.filter(p => p.variant === CONS[h]
+      && p.pred !== p.price_now).sort((a, b) => a.target_ts - b.target_ts);
+    const done = rows.filter(p => p.actual != null
+      && p.actual !== p.price_now);
+    const W = 48, pts = [];
+    for (let i = W - 1; i < done.length; i += 2) {
+      const win = done.slice(i - W + 1, i + 1);
+      if (done[i].target_ts < Date.now() / 1000 - 86400) continue;
+      const acc = win.reduce((a, p) => a
+        + ((p.pred > p.price_now) === (p.actual > p.price_now) ? 1 : 0),
+        0) / win.length;
+      pts.push([done[i].target_ts, 100 * acc]);
+    }
+    if (pts.length > 1)
+      series.push({ label: `+${h}m`, color: H_COLOR[h], pts });
+    strips.push(`<div class="dir-row"><span class="dir-lbl">+${h}m</span>` +
+      rows.slice(-36).map(p => {
+        const up = p.pred > p.price_now, pend = p.actual == null;
+        const hit = !pend
+          && ((p.pred > p.price_now) === (p.actual > p.price_now));
+        return `<span class="dir-g ${pend ? "pend" : hit ? "hit" : "miss"}"` +
+          ` title="${fmtTime(p.target_ts)} PT · called ${up ? "UP" : "DOWN"}` +
+          `${pend ? " · pending" : hit ? " · right" : " · wrong"}">` +
+          `${up ? "▲" : "▼"}</span>`;
+      }).join("") + `</div>`);
+  }
+  if (series.length) {
+    const xs = series.flatMap(s => s.pts.map(p => p[0]));
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    series.push({ label: "goal 55%", color: "var(--ink-2)", dash: 1,
+                  pts: [[x0, 55], [x1, 55]] });
+    series.push({ label: "coin flip 50%", color: "var(--faint)", dash: 1,
+                  pts: [[x0, 50], [x1, 50]] });
+  }
+  document.getElementById("dir-legend").innerHTML = series.map(s =>
+    `<span><span class="sw" style="background:${s.color}"></span>${s.label}</span>`).join("");
+  document.getElementById("dir-chart").innerHTML =
+    miniLine(series, { fmt: v => v.toFixed(0) + "%", h: 200 });
+  document.getElementById("dir-strips").innerHTML = strips.join("");
+}
+
 function drawLearning(preds, learnLog) {
   const sc = preds.filter(p => p.variant === "consensus" && p.horizon === 5
     && p.actual != null).sort((a, b) => a.target_ts - b.target_ts);
@@ -998,6 +1066,7 @@ async function poll() {
     latest = { prices, preds };
     draw();
     try { drawLearning(preds, learnLog.slice(-400)); } catch {}
+    try { drawDirection(preds); } catch {}
     renderArmCards(preds);
     document.getElementById("npred").textContent = preds.length.toLocaleString();
 
