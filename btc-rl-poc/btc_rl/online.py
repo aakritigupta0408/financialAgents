@@ -429,6 +429,32 @@ def _m_log_vol(feat: dict) -> float:
     return _m.log(max(feat.get("vol_ratio", 1.0), 1e-6)) / 2
 
 
+SEL_POLICY_NAME = "kb_sel_policy.json"
+
+
+def _maybe_retrain_selector(kb: list[dict], policy: dict | None,
+                            now) -> dict:
+    """Selector policy (per-variant precision-0.8 confidence thresholds)
+    retrains once daily at 19:00 PT and is FROZEN in between, so each day
+    of the A/B runs a fixed, versioned policy."""
+    due_at = now.replace(hour=19, minute=0, second=0, microsecond=0)
+    if now < due_at:
+        due_at -= timedelta(days=1)
+    if policy and policy.get("tuned_ts", 0) >= due_at.timestamp():
+        return policy
+    policy = {"tuned_ts": int(now.timestamp()),
+              "tuned_at": now.isoformat(),
+              "taus": {v: _kb_conf_threshold(kb, v)
+                       for v in ("kb", "kb2", "kb3", "kbf")}}
+    path = RESULTS_DIR / SEL_POLICY_NAME
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(policy))
+    tmp.replace(path)
+    print(f"{now:%H:%M:%S} selector policy (re)trained — frozen until "
+          f"next 19:00 PT")
+    return policy
+
+
 def _kb_conf_threshold(kb: list[dict], variant: str,
                        target: float = 0.8) -> dict | None:
     """Precision-targeted operating point: the smallest confidence
@@ -1073,6 +1099,10 @@ def run(once: bool = False) -> None:
     kb_bet_tickers = {b["ticker"] for b in kb_bets}
     kb_sel_bets = _load_kb_bets(KB_SEL_BET_LOG_NAME)
     kb_sel_tickers = {b["ticker"] for b in kb_sel_bets}
+    try:
+        kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
+    except Exception:
+        kb_policy = None
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -1374,9 +1404,11 @@ def run(once: bool = False) -> None:
                              pm_mkt["strike"], base, mins_left)
                 if p is not None:
                     w = _kb_cal_weights(kb)[_kb_phase(mins_left)]
-                    p_cal = round(0.5 + w * (p - 0.5), 4)
+                    # clamp: a calibration weight >1 can push p past 1.0
+                    p_cal = round(min(0.99, max(0.01, 0.5 + w * (p - 0.5))), 4)
                     bw = _kb_blend_weights(kb)[_kb_phase(mins_left)]
-                    p_blend = (round(bw * p_cal + (1 - bw) * k_pup, 4)
+                    p_blend = (round(min(0.99, max(0.01,
+                               bw * p_cal + (1 - bw) * k_pup)), 4)
                                if k_pup is not None else p_cal)
                     bx = _kb_logit_features(kfeat, snap, pm_mkt["strike"],
                                             base, mins_left, k_pup)
@@ -1395,7 +1427,8 @@ def run(once: bool = False) -> None:
                             ("kb3", p_logit,
                              {"bx": [round(v, 5) for v in bx],
                               "trained": kb_logit.updates})):
-                        tau = _kb_conf_threshold(kb, variant)
+                        tau = (kb_policy.get("taus") or {}).get(variant) \
+                            if kb_policy else None
                         row = {**common, "variant": variant, "p_up": pv,
                                "call": int(pv >= 0.5)}
                         if tau:
@@ -1452,6 +1485,7 @@ def run(once: bool = False) -> None:
             #     edge ever appears, forced entry in the final 3 minutes —
             #     called side if it's under 85c, else the only legal side.
             bets_changed = False
+            sel_mirrored = False
             if (pm_mkt and pm_mkt.get("strike") and k_close_ts
                     and pm_mkt["ticker"] not in kb_bet_tickers
                     and k_close_ts - now_ts >= 60):
@@ -1493,6 +1527,19 @@ def run(once: bool = False) -> None:
                         })
                         kb_bet_tickers.add(pm_mkt["ticker"])
                         bets_changed = True
+                        # SELECTOR = passive filter over this SAME bet:
+                        # the bidding model places it, the selector then
+                        # keeps or skips it — a perfectly paired A/B
+                        # (identical bet, price, timing; pure selection)
+                        lk = next((r for r in reversed(kb)
+                                   if r.get("variant", "kb") == "kb"
+                                   and r["ticker"] == pm_mkt["ticker"]), None)
+                        if (pm_mkt["ticker"] not in kb_sel_tickers
+                                and lk and lk.get("conf") == 1):
+                            kb_sel_bets.append({**kb_bets[-1],
+                                                "gate_tau": lk.get("tau")})
+                            kb_sel_tickers.add(pm_mkt["ticker"])
+                            sel_mirrored = True
             for b in kb_bets:
                 if b["actual"] is not None or now_ts < b["close_ts"]:
                     continue
@@ -1505,37 +1552,9 @@ def run(once: bool = False) -> None:
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
                                    else -b["price_c"], 1)
                 bets_changed = True
-            # 1e-B. SELECTOR-GATED shadow bets (the A/B treatment): the bet
-            #     is placed at the FIRST call that clears the precision-
-            #     tuned confidence gate at a legal price — any point in the
-            #     window (waiting for the final minutes left only priced-
-            #     out favorites); windows with no confident affordable
-            #     call are SKIPPED (abstention is the treatment).
-            sel_changed = False
-            if (pm_mkt and pm_mkt.get("strike") and k_close_ts
-                    and pm_mkt["ticker"] not in kb_sel_tickers
-                    and k_close_ts - now_ts >= 60):
-                last_kb = next((r for r in reversed(kb)
-                                if r.get("variant", "kb") == "kb"
-                                and r["ticker"] == pm_mkt["ticker"]), None)
-                yb2, ya2 = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
-                if (last_kb and last_kb.get("conf") == 1 and yb2 and ya2):
-                    p_sel = last_kb["p_up"]
-                    side = "yes" if p_sel >= 0.5 else "no"
-                    price = ya2 if side == "yes" else 100 - yb2
-                    if price < KB_BET_MAX_PRICE_C:
-                        kb_sel_bets.append({
-                            "ticker": pm_mkt["ticker"], "made_ts": now_ts,
-                            "close_ts": k_close_ts,
-                            "strike": pm_mkt["strike"],
-                            "side": side, "price_c": round(price, 1),
-                            "p_model": p_sel,
-                            "gate_tau": last_kb.get("tau"),
-                            "mins_left": round((k_close_ts - now_ts) / 60, 1),
-                            "actual": None, "win": None, "pnl_c": None,
-                        })
-                        kb_sel_tickers.add(pm_mkt["ticker"])
-                        sel_changed = True
+            # 1e-B. settle the selector's kept bets (entries are mirrored
+            #     from the bidding model at placement time, above)
+            sel_changed = sel_mirrored
             for b in kb_sel_bets:
                 if b["actual"] is not None or now_ts < b["close_ts"]:
                     continue
@@ -1560,6 +1579,7 @@ def run(once: bool = False) -> None:
 
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
+            kb_policy = _maybe_retrain_selector(kb, kb_policy, now)
             hf_rows = _load_hf()  # human views for t11's blended reward
             scored = 0
             for row in ledger:
@@ -1663,6 +1683,9 @@ def run(once: bool = False) -> None:
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),
+                "sel_policy": {"tuned_at": kb_policy.get("tuned_at"),
+                               "taus": kb_policy.get("taus")}
+                              if kb_policy else None,
                 "kb_bets": _kb_bets_summary(kb_bets),
                 "kb_bets_sel": _kb_bets_summary(kb_sel_bets),
                 "human_feedback": {"n": len(hf_rows),

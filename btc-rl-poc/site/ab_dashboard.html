@@ -31,9 +31,12 @@
   window at T-3 minutes — every window called, both classes tracked, no
   abstention. Class baseline to beat: <b>80% precision and 80% recall per
   class</b>. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
-  per window) vs the <b>selector model</b> (bets only when the precision-tuned
-  confidence gate clears; may skip windows). Selector ranking criterion: final
-  bankroll from $1,000 at 2% risked per bet, compounding, fees included.</p>
+  per window) vs the <b>selector model</b> — a passive filter that inspects the
+  very same bet the moment it is placed and keeps or skips it (identical bet,
+  price and timing: pure paired selection). The selector's confidence policy
+  retrains once daily at 7 PM PT and is frozen in between; its bankroll epoch
+  starts at policy go-live. Ranking criterion: final bankroll from $1,000 at
+  2% risked per bet, compounding, fees included.</p>
 </header>
 
 <section>
@@ -295,7 +298,7 @@ async function poll() {
         return `<tr><td>${fmtT(r.close_ts)}</td>` +
           `<td class="num">$${Math.round(r.strike).toLocaleString()}</td>` +
           `<td><span class="pill ${r.call ? "yes" : "no"}">${r.call ? "UP" : "DOWN"}</span></td>` +
-          `<td class="num">${(100 * r.p_up).toFixed(0)}%</td>` +
+          `<td class="num">${Math.min(100, 100 * r.p_up).toFixed(0)}%</td>` +
           `<td class="num">${r.mkt_p_up != null ? (100 * r.mkt_p_up).toFixed(0) + "%" : "–"}</td>` +
           `<td>${oc}</td><td>${res}</td>` +
           `<td class="muted">${r.backfilled ? "derived" : "live"}</td></tr>`;

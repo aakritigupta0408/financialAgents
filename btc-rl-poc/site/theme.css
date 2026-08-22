@@ -119,6 +119,10 @@ details > summary:hover { color: var(--ink); }
 details[open] > summary { margin-bottom: 6px; }
 .mini { font-size: 13px; color: var(--muted); margin-top: 8px;
   font-variant-numeric: tabular-nums; }
+main a { color: var(--series-2); text-decoration: none;
+  border-bottom: 1px solid rgba(57,135,229,.4); }
+main a:hover { color: var(--ink); border-bottom-color: var(--ink); }
+main a.btn, main .topnav a { border-bottom: none; }
 #tip { position: fixed; pointer-events: none; background: var(--ink);
   color: var(--page); font-size: 12.5px; padding: 6px 10px;
   border-radius: 8px; opacity: 0; transition: opacity .1s; z-index: 10;
