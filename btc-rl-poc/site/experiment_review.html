@@ -316,7 +316,7 @@ const ARMS = [
   { key: "t7", variants: ["t7-h1", "t7-h5", "t7-h15", "t7-h30"], color: "#199e70",
     title: "Treatment 7 — L2 linear function approximation (SGD on Q)",
     architecture: "The roadmap's L2 rung: Q(s,a) = w_a·x with one weight vector per volatility-scaled action arm; plain SGD w += lr(r−Q)x, lr 0.01. ε-greedy in batch training, greedy online.",
-    features: "13 bar-derived dims (base 10 + trend 3) — snapshot-free, so batch training and live inference see identical inputs.",
+    features: "13 bar-derived dims (base 10 + trend 3) at batch training; live inference appends an 8-dim technical block (RSI/EMA/MACD/SMA/Bollinger/volume, added Aug 21) onto zero-padded batch weights, so the warm start stays valid while the new signals learn online.",
     reward: "Same prediction reward + direction credit as the bandit treatments.",
     sampling: "Batch: 60 days through yesterday (~217k SGD updates per horizon, chronological 80/20; test MAE within 1–4% of persistence). Online: per-prediction SGD, hourly gated replay, adaptive bias intercept.",
     offline: null },
