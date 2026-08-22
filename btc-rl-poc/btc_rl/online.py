@@ -455,23 +455,43 @@ def _path_features(bars: list[dict], strike: float, close_ts: int,
 
 def _live_bars(bars: list[dict], live_px: float | None,
                now_ts: int) -> list[dict]:
-    """Patch the tape so features are LIVE at decision time: exchange
-    candles trail by ~1-2 min, which quietly staled every indicator's
-    current-price term. If the current minute's bucket hasn't arrived,
-    append a synthetic bar at the real-time composite price (volume =
-    trailing average so burst features stay neutral); if it has, refresh
-    its close. Falls back to the raw tape when no live price exists."""
+    """Patch the tape so features are LIVE at decision time: refresh (or
+    append) the FORMING minute with the real-time composite price
+    (volume = trailing average so burst features stay neutral). Keeps the
+    full history — an earlier 70-bar slice silently zeroed ret_240m.
+    Falls back to the raw tape when no live price exists."""
     if not bars or not live_px:
         return bars
     cur = now_ts // 60 * 60
-    out = [dict(b) for b in bars[-70:]]
-    if out[-1]["ts"] >= cur:
-        out[-1]["close"] = live_px
-    else:
-        avg_v = sum(b["volume"] for b in out[-60:]) / min(60, len(out))
-        out.append({"ts": cur, "open": live_px, "high": live_px,
-                    "low": live_px, "close": live_px, "volume": avg_v})
-    return out
+    if bars[-1]["ts"] >= cur:
+        return bars[:-1] + [dict(bars[-1], close=live_px)]
+    avg_v = sum(b["volume"] for b in bars[-60:]) / min(60, len(bars))
+    return bars + [{"ts": cur, "open": live_px, "high": live_px,
+                    "low": live_px, "close": live_px, "volume": avg_v}]
+
+
+def _merge_synth(bars: list[dict], synth_px: dict[int, float],
+                 now_ts: int) -> list[dict]:
+    """Bridge the exchange candle lag with our own composite samples.
+
+    The candle endpoint can trail the tape by MINUTES (observed 329s),
+    which stalls every slot commit and settle behind it. For each
+    COMPLETE minute after the last fetched candle, synthesize a bar whose
+    close is the last composite sample seen in that minute (carried
+    forward through sampling gaps; volume = trailing average). Real
+    candles replace synth bars on later fetches, since the merge is
+    re-derived from the fresh fetch every loop."""
+    if not bars or not synth_px:
+        return bars
+    cur = now_ts // 60 * 60
+    avg_v = sum(b["volume"] for b in bars[-60:]) / min(60, len(bars))
+    px = bars[-1]["close"]
+    add = []
+    for m in range(bars[-1]["ts"] + 60, cur, 60):
+        px = synth_px.get(m, px)
+        add.append({"ts": m, "open": px, "high": px, "low": px,
+                    "close": px, "volume": avg_v, "synth": True})
+    return bars + add
 
 
 def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
@@ -1339,6 +1359,7 @@ def run(once: bool = False) -> None:
                 else _load_agents(v, spec["horizons"]))
             for v, spec in VARIANTS.items()}
     snaps = _load_snapshots()
+    synth_px: dict[int, float] = {}  # composite samples, minute-keyed
     trades: dict[int, dict] = {}  # rolling taker-flow store (last ~20 min)
     cold_bandits = {v for v, spec in VARIANTS.items()
                     if spec.get("agent") in ("linucb", "linearq", "dqn", "seq")
@@ -1399,6 +1420,15 @@ def run(once: bool = False) -> None:
 
             # 0a. stream a live-feature snapshot (t3's extra context)
             brti = fetch_brti_composite()
+            if brti:
+                # sample the composite every loop; bridge any candle lag
+                # so commits/settles never wait on the exchange feed
+                synth_px[now_ts // 60 * 60] = brti["price"]
+                if len(synth_px) > 240:
+                    for k in sorted(synth_px)[:-240]:
+                        del synth_px[k]
+                bars = _merge_synth(bars, synth_px, now_ts)
+                by_ts = {b["ts"]: b for b in bars}
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
             book = fetch_book_stats()
