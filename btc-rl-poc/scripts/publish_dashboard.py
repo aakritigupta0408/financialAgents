@@ -34,7 +34,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("recent_prices.json", None),
     ("online_status.json", None),
     ("learning_log.jsonl", 1500),
-    ("kalshi_binary_log.jsonl", 1500),
+    ("kalshi_binary_log.jsonl", 6000),
     ("kb_bets.jsonl", None),
     ("kb_bets_sel.jsonl", None),
     ("metrics_history.jsonl", None),
