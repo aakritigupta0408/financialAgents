@@ -32,14 +32,21 @@ def reward(pred_price: float, actual_price: float, shaped: bool,
     HIT_BAND_VOL * sigma_h) so the precision bar scales with the horizon;
     without one the flat HIT_BAND floor applies. (Originally exact-integer
     match, which fired on <1% of predictions — far too sparse to shape
-    learning.) Shaped mode otherwise pays -|error|/scale so the gradient
-    toward the right neighborhood is visible.
+    learning.)
+
+    Shaped mode measures the miss in BAND UNITS (u = |error|/band) and
+    ramps 2-u from +1 at the band edge down to the spec miss value -1 at
+    three bands out: continuous at the boundary, bounded in the spec's
+    [-1, 1] range, and horizon-fair — a dollar penalty made h30 arms
+    MAE-chasers (sigma ~ $300 => every miss ~ -3) while h1 arms
+    hit-chased, i.e. two different objectives from one reward.
     """
-    if abs(pred_price - actual_price) <= (config.HIT_BAND if band is None
-                                          else band):
+    b = config.HIT_BAND if band is None else band
+    u = abs(pred_price - actual_price) / max(b, 1e-9)
+    if u <= 1.0:
         return config.REWARD_HIT
     if shaped:
-        return -abs(pred_price - actual_price) / config.SHAPED_SCALE
+        return max(config.REWARD_MISS, 2.0 - u)
     return config.REWARD_MISS
 
 

@@ -48,7 +48,6 @@ HIT_BAND_VOL = 0.10               # vol-scaled hit band: within
                                   # (exact-integer hits fired <1% — too sparse
                                   # to teach anything)
 REWARD_MISS = -1.0
-SHAPED_SCALE = 100.0              # shaped mode: reward = -|error| / SHAPED_SCALE
 
 # Q-learning hyperparameters.
 ALPHA = 0.1
