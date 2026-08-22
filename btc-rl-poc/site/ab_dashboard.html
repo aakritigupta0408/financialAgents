@@ -109,10 +109,12 @@
   <div id="kbrace"></div>
   <h3 style="margin-top:20px;font:500 16px var(--display)">kb3 online learning curve</h3>
   <p class="sub small muted">The logit learns one SGD step per settled call —
-  rolling-40 accuracy plotted against its cumulative training updates (grey
-  dashed = the market's accuracy on the same calls). Feature set grew
-  12&rarr;16 on Aug&nbsp;21 (barrier/path features) with weights carried over,
-  so learning is continuous, not restarted.</p>
+  rolling accuracy over ~10 windows of calls, plotted against cumulative
+  training updates (grey = the market's accuracy on the same calls; per-minute
+  calls within a window share one outcome, so the roll must span many
+  windows). Feature set grew 12&rarr;16 on Aug&nbsp;21 (barrier/path features)
+  with weights carried over and step size decaying as evidence accumulates —
+  learning is continuous, not restarted.</p>
   <div id="learncurve"></div>
   <div class="scroll"><table id="kbt-tbl">
     <thead><tr><th>Variant</th><th class="num">Scored</th><th class="num">Accuracy</th>
@@ -338,10 +340,13 @@ async function poll() {
     try { brierRace(kb, st); } catch {}
     try {
       // learning curve: rolling-40 accuracy vs cumulative training updates
+      // NOTE: ~15 per-minute calls per window share one outcome, so the
+      // rolling window must span many WINDOWS (~150 rows ≈ 10 windows)
+      // or two adverse windows crater the curve
       const k3 = kb.filter(r => r.variant === "kb3" && r.hit != null
         && r.trained != null).sort((a, b) => a.trained - b.trained);
       if (k3.length >= 20) {
-        const W = 40, ours = [], mkt = [];
+        const W = 150, ours = [], mkt = [];
         for (let i = Math.min(W, k3.length) - 1; i < k3.length; i++) {
           const win = k3.slice(Math.max(0, i - W + 1), i + 1);
           ours.push([k3[i].trained,

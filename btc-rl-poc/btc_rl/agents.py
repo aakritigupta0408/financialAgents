@@ -327,7 +327,11 @@ class BinaryLogit:
     def update(self, x, y: int) -> None:
         xv = self.np.asarray(x)
         p = self.predict(xv)
-        self.w -= self.lr * ((p - y) * xv + self.l2 * self.w)
+        # decaying step: adaptive while young, stable once evidence has
+        # accumulated — a constant lr lets 2-3 surprising windows (whose
+        # ~15 per-minute rows share one outcome) whip the weights around
+        lr = self.lr / (1.0 + self.updates / 400.0)
+        self.w -= lr * ((p - y) * xv + self.l2 * self.w)
         self.updates += 1
 
     def to_dict(self) -> dict:
