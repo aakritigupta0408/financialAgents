@@ -437,12 +437,16 @@ details[open] > summary { margin-bottom: 6px; }
 
 <section>
   <h2>Direction calls — up or down, every slot</h2>
-  <p class="sub muted small">The consensus call's rolling direction accuracy per
-  horizon (48 settled slots ≈ 4 h) against the coin-flip line and the
-  <b>55% goal</b>. Strips show the last 36 calls per horizon
-  (▲ up / ▼ down · green right · red wrong · hollow pending). h15/h30 calls
-  commit every 5 minutes into overlapping outcome windows, so their curves
-  move in correlated steps — judge them over hours, not ticks.</p>
+  <p class="sub muted small">Two direction questions, one chart. The colored
+  lines ask <i>"up or down from the current price?"</i> per horizon (consensus
+  calls, 48 settled slots ≈ 4 h) — minute-scale BTC is near-martingale, so
+  these hover at the coin flip by construction: the honest noise floor. The
+  ivory line asks the well-posed question — <i>"above or below a fixed strike
+  at the window close?"</i> (kb, market-anchored, rolled over ~10 windows) —
+  and that one is predictive. Guides: coin flip 50%, <b>55% goal</b>.
+  Strips show the last 36 calls per horizon (▲ up / ▼ down · green right ·
+  red wrong · hollow pending). h15/h30 calls commit every 5 minutes into
+  overlapping outcome windows, so their curves move in correlated steps.</p>
   <div class="legend" id="dir-legend"></div>
   <div id="dir-chart"></div>
   <div id="dir-strips"></div>
@@ -922,10 +926,25 @@ function drawBets(bets) {
     }).join("");
 }
 
-function drawDirection(preds) {
+function drawDirection(preds, kbRows) {
   const CONS = { 1: "consensus-h1", 5: "consensus",
                  15: "consensus-h15", 30: "consensus-h30" };
   const series = [], strips = [];
+  // the well-posed direction question: up/down vs a FIXED strike at the
+  // window close (kb, market-anchored) — plotted beside the level-sign
+  // curves, which are the martingale noise floor by construction
+  const kbd = (kbRows || []).filter(r => (r.variant || "kb") === "kb"
+    && r.hit != null).sort((a, b) => a.made_ts - b.made_ts);
+  const KW = 150, kpts = [];
+  for (let i = KW - 1; i < kbd.length; i += 3) {
+    if (kbd[i].made_ts < Date.now() / 1000 - 86400) continue;
+    const win = kbd.slice(i - KW + 1, i + 1);
+    kpts.push([kbd[i].made_ts,
+               100 * win.reduce((a, r) => a + r.hit, 0) / win.length]);
+  }
+  if (kpts.length > 1)
+    series.push({ label: "vs strike (kb, 15-min window)",
+                  color: "var(--ink)", pts: kpts });
   for (const h of [1, 5, 15, 30]) {
     const rows = preds.filter(p => p.variant === CONS[h]
       && p.pred !== p.price_now).sort((a, b) => a.target_ts - b.target_ts);
@@ -1066,7 +1085,7 @@ async function poll() {
     latest = { prices, preds };
     draw();
     try { drawLearning(preds, learnLog.slice(-400)); } catch {}
-    try { drawDirection(preds); } catch {}
+    try { drawDirection(preds, kbRows); } catch {}
     renderArmCards(preds);
     document.getElementById("npred").textContent = preds.length.toLocaleString();
 
