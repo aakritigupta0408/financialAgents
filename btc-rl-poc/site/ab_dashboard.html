@@ -107,6 +107,13 @@
     <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
   </div>
   <div id="kbrace"></div>
+  <h3 style="margin-top:20px;font:500 16px var(--display)">kb3 online learning curve</h3>
+  <p class="sub small muted">The logit learns one SGD step per settled call —
+  rolling-40 accuracy plotted against its cumulative training updates (grey
+  dashed = the market's accuracy on the same calls). Feature set grew
+  12&rarr;16 on Aug&nbsp;21 (barrier/path features) with weights carried over,
+  so learning is continuous, not restarted.</p>
+  <div id="learncurve"></div>
   <div class="scroll"><table id="kbt-tbl">
     <thead><tr><th>Variant</th><th class="num">Scored</th><th class="num">Accuracy</th>
       <th class="num">Brier (last 100)</th><th class="num">Prec@0.8 · τ</th>
@@ -329,6 +336,30 @@ async function poll() {
     if (bl) document.querySelector("#bet-ledger tbody").innerHTML = bl;
 
     try { brierRace(kb, st); } catch {}
+    try {
+      // learning curve: rolling-40 accuracy vs cumulative training updates
+      const k3 = kb.filter(r => r.variant === "kb3" && r.hit != null
+        && r.trained != null).sort((a, b) => a.trained - b.trained);
+      if (k3.length >= 20) {
+        const W = 40, ours = [], mkt = [];
+        for (let i = Math.min(W, k3.length) - 1; i < k3.length; i++) {
+          const win = k3.slice(Math.max(0, i - W + 1), i + 1);
+          ours.push([k3[i].trained,
+                     win.reduce((s, r) => s + r.hit, 0) / win.length]);
+          const mw = win.filter(r => r.mkt_p_up != null);
+          if (mw.length) mkt.push([k3[i].trained, mw.reduce((s, r) =>
+            s + ((r.mkt_p_up >= 0.5) === !!r.actual ? 1 : 0), 0) / mw.length]);
+        }
+        const lcSeries = [{ label: "kb3", color: "#d55181", pts: ours }];
+        if (mkt.length > 1) lcSeries.push(
+          { label: "market", color: "var(--ink-2)", pts: mkt });
+        document.getElementById("learncurve").innerHTML =
+          lineSVG(lcSeries, { fmt: v => (100 * v).toFixed(0) + "%" });
+      } else {
+        document.getElementById("learncurve").innerHTML =
+          `<p class="mini">collecting — ${k3.length} settled logit calls; curve appears at 20.</p>`;
+      }
+    } catch {}
 
     // kbf call ledger — the inspectable evidence
     const kbf = kb.filter(r => r.variant === "kbf")

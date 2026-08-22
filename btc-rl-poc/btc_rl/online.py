@@ -399,15 +399,54 @@ def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
 
 
 KB_LOGIT_PATH_NAME = "kb_logit.json"
-KB_LOGIT_DIM = 12
+KB_LOGIT_DIM = 16
 KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
+
+
+def _path_features(bars: list[dict], strike: float, close_ts: int,
+                   now_ts: int, feat: dict, kb: list[dict],
+                   ticker: str) -> list[float]:
+    """Barrier/path structure of THIS window so far — P(close >= strike)
+    is a barrier problem, but a bare distance-to-strike forgets the path.
+    All inputs are at-or-before now (no look-ahead): elapsed window bars,
+    plus the market's own quote drift from our logged per-minute rows.
+    [frac_above-0.5, crossings/4, 3-min price drift z, 3-min quote drift]"""
+    open_ts = close_ts - 900
+    seg = sorted((b for b in bars if open_ts <= b["ts"] < now_ts),
+                 key=lambda b: b["ts"])
+    if seg:
+        above = sum(1 for b in seg if b["close"] >= strike) / len(seg)
+        signs = [b["close"] >= strike for b in seg]
+        crossings = sum(1 for a, c in zip(signs, signs[1:]) if a != c)
+        drift = 0.0
+        if len(seg) >= 4:
+            drift = ((seg[-1]["close"] - seg[-4]["close"])
+                     / _horizon_sigma(feat, 3.0))
+        pf = [above - 0.5, min(crossings, 4) / 4.0,
+              max(-4.0, min(4.0, drift))]
+    else:
+        pf = [0.0, 0.0, 0.0]
+    q_now = q_old = None
+    for r in reversed(kb):
+        if r.get("variant", "kb") != "kb" or r["ticker"] != ticker \
+                or r.get("mkt_p_up") is None:
+            continue
+        if q_now is None:
+            q_now = (r["made_ts"], r["mkt_p_up"])
+        elif q_now[0] - r["made_ts"] >= 170:
+            q_old = r["mkt_p_up"]
+            break
+    pf.append(round(q_now[1] - q_old, 4)
+              if q_now is not None and q_old is not None else 0.0)
+    return [round(v, 5) for v in pf]
 
 
 def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
                        base: float, mins_left: float,
-                       k_pup: float | None) -> list[float]:
+                       k_pup: float | None, pf: list[float]) -> list[float]:
     """Direct binary-task features: the market's own opinion, the physical
-    strike geometry, and the microstructure the t8 path never saw."""
+    strike geometry, the microstructure the t8 path never saw, and the
+    window's barrier/path structure."""
     z0 = (strike - base) / _horizon_sigma(feat, max(mins_left, 1.0))
     s = snap or {}
     return [
@@ -423,7 +462,7 @@ def _kb_logit_features(feat: dict, snap: dict | None, strike: float,
         feat.get("ret_5m", 0.0) * 1e4 / 30,
         feat.get("ret_15m", 0.0) * 1e4 / 60,
         _m_log_vol(feat),
-    ]
+    ] + pf
 
 
 def _m_log_vol(feat: dict) -> float:
@@ -454,7 +493,17 @@ def _sel_predict(w: list[float], x: list[float]) -> float:
 
 
 SEL_TARGET = 0.90   # selector precision target (RA benchmark chase)
-SEL_DIM = 10        # 7 bet features + kb3 centered prob, conf, presence
+SEL_DIM = 15        # 7 bet + 3 kb3 + 5 barrier/path (oriented to side)
+
+
+def _sel_path_feats(pf: list | None, side: str) -> list[float]:
+    """Window path features oriented to the TAKEN side (a window sitting
+    above strike helps 'yes', hurts 'no'): occupancy, whipsaw, 3-min price
+    drift, 3-min market quote drift, presence flag."""
+    if not pf:
+        return [0.0, 0.0, 0.0, 0.0, 0.0]
+    s = 1.0 if side == "yes" else -1.0
+    return [s * pf[0], pf[1], s * pf[2] / 4.0, s * pf[3] * 5.0, 1.0]
 
 
 def _sel_kb3_feats(k3_idx: dict, ticker: str, mins_left: float,
@@ -487,6 +536,7 @@ def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
         x = _sel_features(b["side"], b["price_c"], b["p_model"],
                           b["mins_left"], bool(b.get("forced")))
         x += _sel_kb3_feats(k3_idx, b["ticker"], b["mins_left"], b["side"])
+        x += _sel_path_feats(b.get("pf"), b["side"])
         out.append((x, b["win"], 3.0, b["price_c"], True))
     for r in kb:
         if (r.get("variant", "kb") != "kb" or r.get("hit") is None
@@ -499,6 +549,7 @@ def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
             continue
         x = _sel_features(side, price_c, r["p_up"], r["mins_left"], False)
         x += _sel_kb3_feats(k3_idx, r["ticker"], r["mins_left"], side)
+        x += _sel_path_feats(r.get("pf"), side)
         out.append((x, int(r["hit"]), 1.0, price_c, False))
     return out
 
@@ -1243,7 +1294,13 @@ def run(once: bool = False) -> None:
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
                     if logit_path.exists() else BinaryLogit(KB_LOGIT_DIM))
-        if kb_logit.dim != KB_LOGIT_DIM:
+        if kb_logit.dim < KB_LOGIT_DIM:
+            # feature schema grew: pad with zero weights, KEEP the learned
+            # weights and update counter (continuity of learning)
+            kb_logit.w = kb_logit.np.concatenate(
+                [kb_logit.w, kb_logit.np.zeros(KB_LOGIT_DIM - kb_logit.dim)])
+            kb_logit.dim = KB_LOGIT_DIM
+        elif kb_logit.dim != KB_LOGIT_DIM:
             kb_logit = BinaryLogit(KB_LOGIT_DIM)
     except Exception:
         kb_logit = BinaryLogit(KB_LOGIT_DIM)
@@ -1546,8 +1603,10 @@ def run(once: bool = False) -> None:
                     p_blend = (round(min(0.99, max(0.01,
                                bw * p_cal + (1 - bw) * k_pup)), 4)
                                if k_pup is not None else p_cal)
+                    pf = _path_features(bars, pm_mkt["strike"], k_close_ts,
+                                        now_ts, kfeat, kb, pm_mkt["ticker"])
                     bx = _kb_logit_features(kfeat, snap, pm_mkt["strike"],
-                                            base, mins_left, k_pup)
+                                            base, mins_left, k_pup, pf)
                     p_logit = round(kb_logit.predict(bx), 4)
                     common = {
                         "ticker": pm_mkt["ticker"], "made_ts": slot1,
@@ -1555,6 +1614,7 @@ def run(once: bool = False) -> None:
                         "base": round(base, 2),
                         "mins_left": round(mins_left, 1),
                         "mkt_p_up": k_pup, "actual": None, "hit": None,
+                        "pf": pf,
                     }
                     for variant, pv, extra in (
                             ("kb", p_cal, {"p_raw": p, "cal_w": round(w, 3)}),
@@ -1600,8 +1660,12 @@ def run(once: bool = False) -> None:
                 r["brier"] = round((r["p_up"] - outcome) ** 2, 4)
                 if r.get("mkt_p_up") is not None:
                     r["mkt_brier"] = round((r["mkt_p_up"] - outcome) ** 2, 4)
-                if r.get("bx") and len(r["bx"]) == kb_logit.dim:
-                    kb_logit.update(r["bx"], outcome)
+                if r.get("bx") and len(r["bx"]) <= kb_logit.dim:
+                    # zero-pad rows made under an older, shorter schema so
+                    # their outcomes still train the shared weights
+                    kb_logit.update(r["bx"] + [0.0] * (kb_logit.dim
+                                                       - len(r["bx"])),
+                                    outcome)
                     logit_changed = True
                 kb_changed = True
             if logit_changed:
@@ -1626,9 +1690,10 @@ def run(once: bool = False) -> None:
                     and pm_mkt["ticker"] not in kb_bet_tickers
                     and k_close_ts - now_ts >= 60):
                 yb, ya = pm_mkt.get("yes_bid"), pm_mkt.get("yes_ask")
-                p_now = next((r["p_up"] for r in reversed(kb)
-                              if r["ticker"] == pm_mkt["ticker"]
-                              and r.get("variant", "kb") == "kb"), None)
+                rk_now = next((r for r in reversed(kb)
+                               if r["ticker"] == pm_mkt["ticker"]
+                               and r.get("variant", "kb") == "kb"), None)
+                p_now = rk_now["p_up"] if rk_now else None
                 if p_now is not None and yb and ya:
                     # bet the side the model calls — value-betting the other
                     # side degenerates into buying longshots (calibration
@@ -1659,6 +1724,7 @@ def run(once: bool = False) -> None:
                             "forced": forced and best[2] < KB_BET_EDGE_C,
                             "p_model": p_now,
                             "mins_left": round((k_close_ts - now_ts) / 60, 1),
+                            "pf": rk_now.get("pf"),
                             "actual": None, "win": None, "pnl_c": None,
                         })
                         kb_bet_tickers.add(pm_mkt["ticker"])
@@ -1691,7 +1757,9 @@ def run(once: bool = False) -> None:
                                               bool(nb.get("forced")))
                                 + _sel_kb3_feats(k3i, nb["ticker"],
                                                  nb["mins_left"],
-                                                 nb["side"]))
+                                                 nb["side"])
+                                + _sel_path_feats(nb.get("pf"),
+                                                  nb["side"]))
                             fee = math.ceil(
                                 7.0 * (nb["price_c"] / 100.0)
                                 * (1.0 - nb["price_c"] / 100.0))
