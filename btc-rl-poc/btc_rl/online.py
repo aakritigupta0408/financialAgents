@@ -1535,7 +1535,11 @@ def run(once: bool = False) -> None:
                     first = max(first, (int(started) // step + 1) * step)
                 for slot_ts in range(first, now_ts + 1, step):
                     if ((variant, slot_ts, spec["horizons"][0]) in made
-                            or slot_ts not in by_ts):
+                            # gate on the bucket CLOSING at slot_ts —
+                            # gating on the one STARTING there meant every
+                            # commit ran >=60s late, and the live anchor
+                            # then postdated the stamp (for h1, the target)
+                            or slot_ts - 60 not in by_ts):
                         continue
                     # STRICT <: bucket [slot, slot+60) closes 60s AFTER
                     # the commit stamp — including it gave backfilled
@@ -1764,8 +1768,8 @@ def run(once: bool = False) -> None:
                 # window is bucket close_ts-60, whose close lands exactly at
                 # the close — bar[close_ts] would settle a minute late
                 settle_bar = by_ts.get(r["close_ts"] - 60)
-                if settle_bar is None:
-                    continue
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue  # settle only on authoritative candles
                 outcome = int(settle_bar["close"] >= r["strike"])
                 r["actual"] = outcome
                 r["hit"] = int(r["call"] == outcome)
@@ -1888,8 +1892,8 @@ def run(once: bool = False) -> None:
                 if b["actual"] is not None or now_ts < b["close_ts"]:
                     continue
                 settle_bar = by_ts.get(b["close_ts"] - 60)
-                if settle_bar is None:
-                    continue
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue  # settle only on authoritative candles
                 outcome = int(settle_bar["close"] >= b["strike"])
                 b["actual"] = outcome
                 b["win"] = int((b["side"] == "yes") == bool(outcome))
@@ -1903,8 +1907,8 @@ def run(once: bool = False) -> None:
                 if b["actual"] is not None or now_ts < b["close_ts"]:
                     continue
                 settle_bar = by_ts.get(b["close_ts"] - 60)
-                if settle_bar is None:
-                    continue
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue  # settle only on authoritative candles
                 outcome = int(settle_bar["close"] >= b["strike"])
                 b["actual"] = outcome
                 b["win"] = int((b["side"] == "yes") == bool(outcome))
@@ -1938,8 +1942,8 @@ def run(once: bool = False) -> None:
                 if row["target_ts"] > now_ts:
                     continue
                 bar = by_ts.get(row["target_ts"] - 60)
-                if bar is None:
-                    continue
+                if bar is None or bar.get("synth"):
+                    continue  # settle only on authoritative candles
                 row["actual"] = bar["close"]
                 row["settle_v"] = 2
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high

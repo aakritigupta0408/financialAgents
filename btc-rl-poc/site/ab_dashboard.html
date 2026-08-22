@@ -287,7 +287,10 @@ async function poll() {
 
     // A/B table
     const A = stats(bets), B = stats(sel);
-    const kbWindows = new Set(kb.filter(r => (r.variant||"kb") === "kb").map(r => r.ticker)).size;
+    // skipped = bets the selector actually JUDGED and declined — counting
+    // all historical windows overstated skips by the pre-policy era
+    const judged = bets.filter(b => b.sel_keep != null);
+    const skippedN = judged.filter(b => !b.sel_keep).length;
     const row = (name, sw, s, skipped) =>
       `<tr><td><span class="sw" style="background:${sw}"></span>${name}</td>` +
       `<td class="num">${s.n}</td><td class="num">${skipped}</td>` +
@@ -299,7 +302,7 @@ async function poll() {
       `<td class="num">${((s.bk.final/1000 - 1)*100).toFixed(1)}%</td></tr>`;
     document.querySelector("#ab-tbl tbody").innerHTML =
       row("Bidding (mandatory 1/window)", "#3987e5", A, 0) +
-      row("Selector (gated)", "#199e70", B, Math.max(0, kbWindows - B.n));
+      row("Selector (gated)", "#199e70", B, skippedN);
     // significance: two-proportion z on win rates
     if (A.n >= 10 && B.n >= 10) {
       const p1 = A.w / A.n, p2 = B.w / B.n, p = (A.w + B.w) / (A.n + B.n);
