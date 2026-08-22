@@ -99,11 +99,14 @@ svg .bar:hover { opacity: .8; }
 <section>
   <h2>Reward design</h2>
   <p class="sub muted">The spec reward is honest but nearly silent — it fires on ~0.5% of
-  episodes. The shaped variant keeps the same objective while making the gradient audible.</p>
+  episodes. The shaped variant keeps the same objective while making the gradient
+  audible: misses are measured in band units (u = |error|/band), so every horizon
+  optimizes the same thing, the ramp is continuous at the band edge, and it bottoms
+  out at the spec's own −1.</p>
   <div class="reward-box">
     <div class="reward"><b>+1</b> &nbsp;|pred − actual| ≤ max($5, 0.1·σ_h)</div>
     <div class="reward"><b>−1</b> &nbsp;any other outcome (spec)</div>
-    <div class="reward"><b>−|error| / 100</b> &nbsp;shaped variant on a miss</div>
+    <div class="reward"><b>max(−1, 2 − u)</b> &nbsp;shaped variant on a miss, u = |error| / band</div>
   </div>
 </section>
 

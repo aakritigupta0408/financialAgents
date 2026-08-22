@@ -43,7 +43,8 @@ Meta-arms (reporting layer, never learn):
 ## Reward and learning
 
 Reward per scored prediction: **+1** if within the vol-scaled hit band
-max($5, 0.1σ_h), else **−|error|/100**, plus a **0.1 direction credit** for a
+max($5, 0.1σ_h); a miss ramps **2−u down to −1** (u = |error|/band,
+continuous and horizon-fair), plus a **0.1 direction credit** for a
 correct-sign deviation. Learning runs at two speeds: an immediate update the
 moment a prediction matures, and an hourly gated replay retrain over the last
 24h — a 3h hold-out must not regress or the retrain is reverted. Every retrain
