@@ -232,13 +232,17 @@ BAND_CAP = 200.0               # max published 80%-band width in dollars —
                                # will honestly read below 80%
 
 
-def _cap_band(pred: float, lo: float, hi: float) -> tuple[int, int]:
-    """Shrink a band toward its prediction so hi-lo <= BAND_CAP, keeping
-    the original asymmetry ratio around pred."""
+def _cap_band(pred: float, lo: float, hi: float,
+              horizon: int = 5) -> tuple[int, int]:
+    """Shrink a band toward its prediction, keeping its asymmetry ratio.
+    Horizon-aware cap: $200 at +1/+5m (statistically free there), $400 at
+    +15/+30m — a flat $200 crushed long-horizon coverage to ~43% because
+    honest 80% bands there need $260-330."""
+    cap = BAND_CAP if horizon <= 5 else 2 * BAND_CAP
     width = hi - lo
-    if width <= BAND_CAP:
+    if width <= cap:
         return int(lo), int(hi)
-    k = BAND_CAP / width
+    k = cap / width
     return int(pred - (pred - lo) * k), int(pred + (hi - pred) * k)
 CAL_HORIZONS = (1, 5, 15, 30)  # calibrated-winner meta-arm: every horizon
 CAL_WINDOW = 30                # trailing scored residuals the calibrator sees
@@ -913,13 +917,13 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                     k90 = k
                 cum += pb
             row_extra["lo"], row_extra["hi"] = _cap_band(
-                pred, pred + k10 * sig, pred + k90 * sig)
+                pred, pred + k10 * sig, pred + k90 * sig, horizon)
             row_extra["band_src"] = "native"
         else:
             band = (bands or {}).get((variant, horizon))
             if band:
                 row_extra["lo"], row_extra["hi"] = _cap_band(
-                    pred, pred + band[0], pred + band[1])
+                    pred, pred + band[0], pred + band[1], horizon)
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
@@ -1292,7 +1296,7 @@ def run(once: bool = False) -> None:
                 if cband:
                     crow["lo"], crow["hi"] = _cap_band(
                         crow["pred"], crow["pred"] + cband[0],
-                        crow["pred"] + cband[1])
+                        crow["pred"] + cband[1], hz)
                 ledger.append(crow)
                 new_preds += 1
 
@@ -1336,7 +1340,7 @@ def run(once: bool = False) -> None:
                     if cband:
                         crow["lo"], crow["hi"] = _cap_band(
                             crow["pred"], crow["pred"] + cband[0],
-                            crow["pred"] + cband[1])
+                            crow["pred"] + cband[1], cal_h)
                     ledger.append(crow)
                     new_preds += 1
 
