@@ -432,25 +432,136 @@ def _m_log_vol(feat: dict) -> float:
 SEL_POLICY_NAME = "kb_sel_policy.json"
 
 
-def _maybe_retrain_selector(kb: list[dict], policy: dict | None,
-                            now) -> dict:
-    """Selector policy (per-variant precision-0.8 confidence thresholds)
-    retrains once daily at 19:00 PT and is FROZEN in between, so each day
-    of the A/B runs a fixed, versioned policy."""
+def _sel_features(side: str, price_c: float, p_model: float,
+                  mins_left: float, forced: bool) -> list[float]:
+    """Selector features — every one knowable at the instant the mandatory
+    bet is placed (no fixed T-x anchor, nothing from the future): the taken
+    side's model prob, its entry price, model-vs-price edge, how deep into
+    the window the entry landed, and whether it was a forced entry."""
+    p_side = p_model if side == "yes" else 1.0 - p_model
+    return [1.0, p_side, price_c / 100.0,
+            (100.0 * p_side - price_c) / 100.0,
+            min(max(mins_left, 0.0), 15.0) / 15.0,
+            1.0 if forced else 0.0,
+            1.0 if side == "yes" else 0.0]
+
+
+def _sel_predict(w: list[float], x: list[float]) -> float:
+    z = max(-30.0, min(30.0, sum(wi * xi for wi, xi in zip(w, x))))
+    return 1.0 / (1.0 + math.exp(-z))
+
+
+def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
+    """(features, win, weight, price_c, is_real_bet) samples, leakage-free:
+    every settled real bet (weight 3 — the deployment distribution), plus
+    counterfactual bets derived from settled per-minute kb rows (bet the
+    called side at that minute's market quote; features frozen at that
+    minute, outcome from the window close — standard supervised, no
+    look-ahead)."""
+    out = []
+    for b in bets:
+        if b.get("win") is None:
+            continue
+        out.append((_sel_features(b["side"], b["price_c"], b["p_model"],
+                                  b["mins_left"], bool(b.get("forced"))),
+                    b["win"], 3.0, b["price_c"], True))
+    for r in kb:
+        if (r.get("variant", "kb") != "kb" or r.get("hit") is None
+                or r.get("mkt_p_up") is None):
+            continue
+        side = "yes" if r["call"] else "no"
+        price_c = 100.0 * (r["mkt_p_up"] if side == "yes"
+                           else 1.0 - r["mkt_p_up"])
+        if not 1.0 <= price_c <= 99.0:
+            continue
+        out.append((_sel_features(side, price_c, r["p_up"], r["mins_left"],
+                                  False), int(r["hit"]), 1.0, price_c,
+                    False))
+    return out
+
+
+def _train_sel_model(samples: list[tuple], epochs: int = 40) -> list[float]:
+    """Weighted SGD logistic regression, deterministic (fixed order, decaying
+    lr) so a retrain is reproducible from the same ledgers."""
+    w = [0.0] * 7
+    for ep in range(epochs):
+        lr = 0.2 / (1.0 + 0.15 * ep)
+        for x, y, wt, _, _ in samples:
+            g = (_sel_predict(w, x) - y) * wt * lr
+            for i in range(7):
+                w[i] -= g * x[i]
+    return [round(v, 5) for v in w]
+
+
+def _sel_operating_point(w: list[float], samples: list[tuple],
+                         target: float = 0.8) -> dict:
+    """Tune the keep-threshold theta on settled bets: keep iff predicted
+    win prob >= max(theta, break-even (price+fee)/100). Among thetas with
+    precision >= target pick the max simulated profit; if none reaches the
+    target, best (precision, profit) with met_target=False."""
+    pool = [s for s in samples if s[4]]  # prefer the real-bet distribution
+    if len(pool) < 40:
+        pool = samples
+    scored = []
+    for x, y, _, price_c, _ in pool:
+        fee = math.ceil(7.0 * (price_c / 100.0) * (1.0 - price_c / 100.0))
+        scored.append((_sel_predict(w, x), y, price_c, fee))
+    cands = []
+    for t in range(50, 91):
+        th = t / 100.0
+        kept = [(y, pc, f) for p, y, pc, f in scored
+                if p >= max(th, (pc + f) / 100.0)]
+        if len(kept) < 15:
+            break
+        prec = sum(y for y, _, _ in kept) / len(kept)
+        pnl = sum((100.0 - pc - f) if y else (-pc - f) for y, pc, f in kept)
+        cands.append({"theta": th, "precision": round(prec, 3),
+                      "coverage": round(len(kept) / len(scored), 3),
+                      "profit_c": round(pnl, 1), "n_kept": len(kept)})
+    if not cands:
+        return {"theta": 0.5, "precision": None, "coverage": None,
+                "profit_c": None, "n_kept": 0, "met_target": False}
+    qual = [c for c in cands if c["precision"] >= target]
+    if qual:
+        best = max(qual, key=lambda c: c["profit_c"])
+        return {**best, "met_target": True}
+    best = max(cands, key=lambda c: (c["precision"], c["profit_c"]))
+    return {**best, "met_target": False}
+
+
+def _maybe_retrain_selector(kb: list[dict], bets: list[dict],
+                            policy: dict | None, now) -> dict | None:
+    """Selector = a bet-level EV model: at the instant the bidding model
+    places the mandatory bet (edge strike, closing door, or forced — no
+    fixed T-x), it predicts THAT bet's win probability and keeps the bet
+    iff the prediction clears both the tuned precision-0.8 threshold and
+    the break-even line. Retrains once daily at 19:00 PT and is FROZEN in
+    between (a missing model — e.g. schema upgrade — retrains at once)."""
     due_at = now.replace(hour=19, minute=0, second=0, microsecond=0)
     if now < due_at:
         due_at -= timedelta(days=1)
-    if policy and policy.get("tuned_ts", 0) >= due_at.timestamp():
+    if (policy and policy.get("w")
+            and policy.get("tuned_ts", 0) >= due_at.timestamp()):
         return policy
+    samples = _sel_training_set(kb, bets)
+    if len(samples) < 100:
+        return policy
+    w = _train_sel_model(samples)
+    op = _sel_operating_point(w, samples)
     policy = {"tuned_ts": int(now.timestamp()),
               "tuned_at": now.isoformat(),
+              "kind": "bet_ev_logit", "w": w, **op,
+              "n_train": len(samples),
+              "n_bets": sum(1 for s in samples if s[4]),
               "taus": {v: _kb_conf_threshold(kb, v)
                        for v in ("kb", "kb2", "kb3", "kbf")}}
     path = RESULTS_DIR / SEL_POLICY_NAME
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(policy))
     tmp.replace(path)
-    print(f"{now:%H:%M:%S} selector policy (re)trained — frozen until "
+    print(f"{now:%H:%M:%S} selector bet-EV model (re)trained "
+          f"(n={len(samples)}, theta={policy['theta']}, "
+          f"train precision={policy['precision']}) — frozen until "
           f"next 19:00 PT")
     return policy
 
@@ -1527,19 +1638,35 @@ def run(once: bool = False) -> None:
                         })
                         kb_bet_tickers.add(pm_mkt["ticker"])
                         bets_changed = True
-                        # SELECTOR = passive filter over this SAME bet:
-                        # the bidding model places it, the selector then
-                        # keeps or skips it — a perfectly paired A/B
-                        # (identical bet, price, timing; pure selection)
-                        lk = next((r for r in reversed(kb)
-                                   if r.get("variant", "kb") == "kb"
-                                   and r["ticker"] == pm_mkt["ticker"]), None)
+                        # SELECTOR = same-tick judge of this SAME bet:
+                        # whenever the bidding model strikes (edge, door,
+                        # or forced — no fixed T-x), a bet-level EV model
+                        # scores THIS bet from placement-time features
+                        # only and keeps it iff predicted win prob clears
+                        # both the tuned precision threshold and the
+                        # break-even price+fee. Verdict stamped on the
+                        # control row either way, so skips are auditable.
+                        nb = kb_bets[-1]
                         if (pm_mkt["ticker"] not in kb_sel_tickers
-                                and lk and lk.get("conf") == 1):
-                            kb_sel_bets.append({**kb_bets[-1],
-                                                "gate_tau": lk.get("tau")})
-                            kb_sel_tickers.add(pm_mkt["ticker"])
-                            sel_mirrored = True
+                                and kb_policy and kb_policy.get("w")):
+                            pw = _sel_predict(
+                                kb_policy["w"],
+                                _sel_features(nb["side"], nb["price_c"],
+                                              nb["p_model"],
+                                              nb["mins_left"],
+                                              bool(nb.get("forced"))))
+                            fee = math.ceil(
+                                7.0 * (nb["price_c"] / 100.0)
+                                * (1.0 - nb["price_c"] / 100.0))
+                            keep = pw >= max(
+                                kb_policy.get("theta", 0.5),
+                                (nb["price_c"] + fee) / 100.0)
+                            nb["sel_p_win"] = round(pw, 4)
+                            nb["sel_keep"] = int(keep)
+                            if keep:
+                                kb_sel_bets.append(dict(nb))
+                                kb_sel_tickers.add(pm_mkt["ticker"])
+                                sel_mirrored = True
             for b in kb_bets:
                 if b["actual"] is not None or now_ts < b["close_ts"]:
                     continue
@@ -1579,7 +1706,7 @@ def run(once: bool = False) -> None:
 
             # 2. score matured predictions (all arms alike) and LEARN from
             #    each one: an immediate Q-update on the committed (s, a)
-            kb_policy = _maybe_retrain_selector(kb, kb_policy, now)
+            kb_policy = _maybe_retrain_selector(kb, kb_bets, kb_policy, now)
             hf_rows = _load_hf()  # human views for t11's blended reward
             scored = 0
             for row in ledger:
@@ -1683,8 +1810,10 @@ def run(once: bool = False) -> None:
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),
-                "sel_policy": {"tuned_at": kb_policy.get("tuned_at"),
-                               "taus": kb_policy.get("taus")}
+                "sel_policy": {k: kb_policy.get(k) for k in
+                               ("tuned_at", "kind", "theta", "precision",
+                                "coverage", "profit_c", "n_kept",
+                                "met_target", "n_train", "n_bets", "taus")}
                               if kb_policy else None,
                 "kb_bets": _kb_bets_summary(kb_bets),
                 "kb_bets_sel": _kb_bets_summary(kb_sel_bets),
