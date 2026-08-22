@@ -1071,14 +1071,21 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
                 horizons: list[int], spec: dict | None = None,
                 snap: dict | None = None,
                 bias: dict | None = None,
-                bands: dict | None = None) -> list[dict]:
+                bands: dict | None = None,
+                anchor: float | None = None) -> list[dict]:
     """Greedy (no exploration) integer predictions committed at slot_ts.
 
     Treatment bandits act in vol-scaled units (arm k -> k * sigma_h dollars)
     and get an adaptive-intercept bias correction; the frozen control keeps
     its fixed delta grid, untouched.
+
+    anchor: the LIVE price at commit time (BRTI composite). The last
+    fetched bar close is ~a minute stale at commit, which made every
+    h1 curve trail reality by its whole horizon; models predict a delta,
+    the anchor is bookkeeping — so anchor fresh whenever we can.
     """
     feat = compute_features(bars_upto, fng)
+    anc = float(anchor) if anchor else feat["price"]
     state = discretize(feat)
     spec = spec or {}
     rows = []
@@ -1090,7 +1097,7 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
         if spec.get("agent") == "replay":
             # copy the past chart segment forward, verbatim
             agent = None
-            delta = (int(round(feat["price"] - bars_upto[-1 - horizon]["close"]))
+            delta = (int(round(anc - bars_upto[-1 - horizon]["close"]))
                      if len(bars_upto) > horizon else 0)
         else:
             agent = agents[horizon]
@@ -1115,7 +1122,7 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             adj = int(max(-cap, min(cap, raw_adj)))
             if adj:
                 row_extra["bias_adj"] = adj
-        pred = int(feat["price"] + delta + adj)
+        pred = int(anc + delta + adj)
         if isinstance(agent, DistDQNAgent):
             # native 80% interval from the model's own predicted distribution
             probs = agent.probs(x)
@@ -1140,7 +1147,8 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
         rows.append({
             "variant": variant,
             "made_ts": slot_ts, "target_ts": slot_ts + horizon * 60,
-            "horizon": horizon, "price_now": feat["price"],
+            "horizon": horizon, "price_now": round(anc, 2),
+            "anchor_src": "live" if anchor else "bar",
             "pred": pred, "delta": delta,
             "state": list(state), "actual": None, "abs_err": None, "hit": None,
             **row_extra,
@@ -1445,6 +1453,9 @@ def run(once: bool = False) -> None:
                     if len(upto) < config.LOOKBACK_MIN:
                         continue
                     live_slot = slot_ts >= int(started)
+                    # a live anchor only exists for the CURRENT slot;
+                    # backfilled slots keep the bar-close fallback
+                    cur_slot = slot_ts > now_ts - step
                     rows = _predict_at(variant, arms[variant], upto, fng,
                                        slot_ts, spec["horizons"], spec=spec,
                                        snap=_nearest_snap(snaps, slot_ts),
@@ -1452,7 +1463,10 @@ def run(once: bool = False) -> None:
                                        # built from the ledger as of NOW, so
                                        # they only apply to live commits
                                        bias=bias if live_slot else None,
-                                       bands=bands if live_slot else None)
+                                       bands=bands if live_slot else None,
+                                       anchor=(brti["price"]
+                                               if brti and live_slot
+                                               and cur_slot else None))
                     ledger.extend(rows)
                     made.update((r["variant"], r["made_ts"], r["horizon"])
                                 for r in rows)
@@ -1817,15 +1831,19 @@ def run(once: bool = False) -> None:
             for row in ledger:
                 if row["actual"] is not None:
                     continue
-                # Coinbase buckets are [ts, ts+60): only settle once the
-                # target bucket is COMPLETE, else "actual" is a mid-minute
-                # price that depends on poll phase
-                if row["target_ts"] + 60 > now_ts:
+                # Coinbase buckets are [ts, ts+60): the bucket that CLOSES
+                # exactly at target_ts is [target_ts-60, target_ts) — the
+                # same convention the kb settle uses. Settling on bucket
+                # [target_ts, +60) scored every arm against a price a full
+                # minute AFTER its target (rows carry settle_v=2 once
+                # fixed, for auditability).
+                if row["target_ts"] > now_ts:
                     continue
-                bar = by_ts.get(row["target_ts"])
+                bar = by_ts.get(row["target_ts"] - 60)
                 if bar is None:
                     continue
                 row["actual"] = bar["close"]
+                row["settle_v"] = 2
                 row["err"] = round(row["pred"] - bar["close"], 2)  # + = predicted high
                 row["abs_err"] = abs(row["err"])
                 band = _hit_band(row.get("sigma"))
