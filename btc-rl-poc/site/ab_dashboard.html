@@ -81,6 +81,17 @@
     <span><span class="sw" style="background:#199e70"></span>selector model (gated, may skip)</span>
   </div>
   <div id="bankroll"></div>
+  <h3 style="margin-top:20px;font:500 16px var(--display)">Bet ledger — entry price decides validity</h3>
+  <p class="sub small muted">One row per mandatory bet, newest first. Entries are
+  priced <b>at the ask</b> — the price at which the market actually fills the
+  order into a contract; a side quoted at ≥85¢ is invalid and is never bet.
+  The selector column shows the same-tick verdict on that exact bet.</p>
+  <div class="scroll"><table id="bet-ledger">
+    <thead><tr><th>Window close (PT)</th><th>Side</th><th class="num">Entry (ask)</th>
+      <th class="num">Fee</th><th class="num">Edge</th><th class="num">Min left</th>
+      <th>Trigger</th><th>Selector</th><th>Result</th><th class="num">Net P&amp;L</th></tr></thead>
+    <tbody><tr><td colspan="10" class="muted">loading…</td></tr></tbody>
+  </table></div>
 </section>
 
 <section>
@@ -236,9 +247,20 @@ async function poll() {
         const sig = lo >= 0.8;
         if (!ok) allPass = false;
         if (v == null || n < 30) anyPending = true;
+        // forward look: if the observed rate holds, how many MORE windows
+        // until this metric's 95% lower bound clears 80%?
+        let eta = "";
+        if (ok && !sig && n && kf.n) {
+          let n2 = n;
+          while (n2 < 100000 && wilsonLo(v, n2) < 0.8) n2 = Math.ceil(n2 * 1.05) + 1;
+          const extraW = Math.ceil((n2 - n) * (kf.n / n));
+          eta = (n2 >= 100000 || extraW > 1000)
+            ? " · margin over 80% too thin to certify"
+            : ` · sig in ~${extraW} windows (~${Math.ceil(extraW / 96)}d)`;
+        }
         tiles.push(`<div class="stat"><div class="k">${cls.toUpperCase()} ${label}</div>` +
           `<div class="big2 ${ok ? "target" : "warn"}">${v == null ? "–" : (100*v).toFixed(1) + "%"}</div>` +
-          `<div class="mini">n=${n ?? 0} · 95% LB ${(100*lo).toFixed(0)}%${sig ? " ✓ sig" : ""}</div></div>`);
+          `<div class="mini">n=${n ?? 0} · 95% LB ${(100*lo).toFixed(0)}%${sig ? " ✓ sig" : eta}</div></div>`);
       }
     }
     tiles.push(`<div class="stat"><div class="k">Windows called</div><div class="big2">${kf.n ?? 0}</div><div class="mini">every window, T-3 min</div></div>`);
@@ -283,6 +305,28 @@ async function poll() {
       { label: "bidding", color: "#3987e5", pts: A.bk.pts },
       { label: "selector", color: "#199e70", pts: B.bk.pts },
     ]);
+
+    // bet ledger — entry price (the validity-deciding number) per bet
+    const fmtPT = ts => new Date(ts * 1000).toLocaleString("en-US",
+      { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit", hour12: false });
+    const bl = bets.slice(-25).reverse().map(r => {
+      const p = r.price_c / 100, fee = Math.ceil(7 * p * (1 - p));
+      const trig = r.forced ? "forced" : (r.edge_c >= 3 ? "edge" : "door");
+      const sv = r.sel_keep == null ? '<span class="muted">pre-policy</span>'
+        : (r.sel_keep
+            ? `<span class="pill yes">kept</span> <span class="mini">${(100*r.sel_p_win).toFixed(0)}%</span>`
+            : `<span class="pill miss">skip</span> <span class="mini">${(100*r.sel_p_win).toFixed(0)}%</span>`);
+      const res = r.win == null ? '<span class="pill pending">open</span>'
+        : (r.win ? '<span class="pill hit">✓ win</span>' : '<span class="pill no">✗ loss</span>');
+      const net = r.pnl_c == null ? "–" : ((r.pnl_c - fee) >= 0 ? "+" : "") + (r.pnl_c - fee).toFixed(0) + "¢";
+      return `<tr><td>${fmtPT(r.close_ts)}</td>` +
+        `<td>${r.side.toUpperCase()}</td><td class="num">${r.price_c.toFixed(0)}¢</td>` +
+        `<td class="num">${fee}¢</td><td class="num">${r.edge_c.toFixed(1)}¢</td>` +
+        `<td class="num">${r.mins_left.toFixed(1)}</td><td>${trig}</td>` +
+        `<td>${sv}</td><td>${res}</td><td class="num">${net}</td></tr>`;
+    }).join("");
+    if (bl) document.querySelector("#bet-ledger tbody").innerHTML = bl;
 
     try { brierRace(kb, st); } catch {}
 
