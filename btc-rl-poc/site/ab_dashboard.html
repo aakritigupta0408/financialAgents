@@ -34,7 +34,7 @@
   per window) vs the <b>selector model</b> — a bet-level EV model that judges
   the very same bet in the same tick it is placed (whenever the entry strikes —
   no fixed decision minute, no future information) and keeps it only if its
-  predicted win probability clears both a precision-0.8 threshold and the
+  predicted win probability clears both a precision-0.90 target threshold and the
   break-even price+fee line. It is trained on every settled real bet plus
   counterfactual bets built from settled per-minute quotes, retrains once daily
   at 7 PM PT, and is frozen in between; every mandatory bet carries the
@@ -84,7 +84,7 @@
   <h3 style="margin-top:20px;font:500 16px var(--display)">Bet ledger — entry price decides validity</h3>
   <p class="sub small muted">One row per mandatory bet, newest first. Entries are
   priced <b>at the ask</b> — the price at which the market actually fills the
-  order into a contract; a side quoted at ≥85¢ is invalid and is never bet.
+  order into a contract; a side quoted at ≥80¢ is invalid and is never bet.
   The selector column shows the same-tick verdict on that exact bet.</p>
   <div class="scroll"><table id="bet-ledger">
     <thead><tr><th>Window close (PT)</th><th>Side</th><th class="num">Entry (ask)</th>

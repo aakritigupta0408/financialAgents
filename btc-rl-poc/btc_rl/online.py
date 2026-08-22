@@ -252,7 +252,9 @@ KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
                                # probability row doesn't fit the ledger schema
 KB_MAX_ROWS = 20_000
 KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
-KB_BET_MAX_PRICE_C = 85        # broker rule: entries only below 85 cents
+KB_BET_MAX_PRICE_C = 80        # entries only below 80 cents (fee+spread
+                               # make higher entries -EV; tightened from
+                               # 85 on ledger evidence, 2026-08-21)
 KB_BET_EDGE_C = 3              # edge (cents) that triggers an EARLY strike —
                                # tuned on a leakage-free chronological
                                # backtest (tests/tune_bet_thresholds.py):
@@ -451,20 +453,41 @@ def _sel_predict(w: list[float], x: list[float]) -> float:
     return 1.0 / (1.0 + math.exp(-z))
 
 
+SEL_TARGET = 0.90   # selector precision target (RA benchmark chase)
+SEL_DIM = 10        # 7 bet features + kb3 centered prob, conf, presence
+
+
+def _sel_kb3_feats(k3_idx: dict, ticker: str, mins_left: float,
+                   side: str) -> list[float]:
+    """kb3 (online logit over 12 engineered inputs) prob of the taken side
+    at the same minute — same-timestamp join, no future info. Centered at
+    zero with an explicit presence flag so the majority of rows that
+    predate kb3 contribute nothing (a raw 0.5 default let the kb3 weight
+    drag the global bias down and depress every old prediction)."""
+    p3 = k3_idx.get((ticker, round(mins_left)))
+    if p3 is None:
+        return [0.0, 0.0, 0.0]
+    p3s = p3 if side == "yes" else 1.0 - p3
+    return [p3s - 0.5, abs(p3s - 0.5) * 2.0, 1.0]
+
+
 def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
     """(features, win, weight, price_c, is_real_bet) samples, leakage-free:
     every settled real bet (weight 3 — the deployment distribution), plus
     counterfactual bets derived from settled per-minute kb rows (bet the
     called side at that minute's market quote; features frozen at that
     minute, outcome from the window close — standard supervised, no
-    look-ahead)."""
+    look-ahead). Hindsight enters only through settled outcomes."""
+    k3_idx = {(r["ticker"], round(r["mins_left"])): r["p_up"]
+              for r in kb if r.get("variant") == "kb3"}
     out = []
     for b in bets:
         if b.get("win") is None:
             continue
-        out.append((_sel_features(b["side"], b["price_c"], b["p_model"],
-                                  b["mins_left"], bool(b.get("forced"))),
-                    b["win"], 3.0, b["price_c"], True))
+        x = _sel_features(b["side"], b["price_c"], b["p_model"],
+                          b["mins_left"], bool(b.get("forced")))
+        x += _sel_kb3_feats(k3_idx, b["ticker"], b["mins_left"], b["side"])
+        out.append((x, b["win"], 3.0, b["price_c"], True))
     for r in kb:
         if (r.get("variant", "kb") != "kb" or r.get("hit") is None
                 or r.get("mkt_p_up") is None):
@@ -474,40 +497,42 @@ def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
                            else 1.0 - r["mkt_p_up"])
         if not 1.0 <= price_c <= 99.0:
             continue
-        out.append((_sel_features(side, price_c, r["p_up"], r["mins_left"],
-                                  False), int(r["hit"]), 1.0, price_c,
-                    False))
+        x = _sel_features(side, price_c, r["p_up"], r["mins_left"], False)
+        x += _sel_kb3_feats(k3_idx, r["ticker"], r["mins_left"], side)
+        out.append((x, int(r["hit"]), 1.0, price_c, False))
     return out
 
 
 def _train_sel_model(samples: list[tuple], epochs: int = 40) -> list[float]:
     """Weighted SGD logistic regression, deterministic (fixed order, decaying
     lr) so a retrain is reproducible from the same ledgers."""
-    w = [0.0] * 7
+    d = len(samples[0][0])
+    w = [0.0] * d
     for ep in range(epochs):
         lr = 0.2 / (1.0 + 0.15 * ep)
         for x, y, wt, _, _ in samples:
             g = (_sel_predict(w, x) - y) * wt * lr
-            for i in range(7):
+            for i in range(d):
                 w[i] -= g * x[i]
     return [round(v, 5) for v in w]
 
 
 def _sel_operating_point(w: list[float], samples: list[tuple],
-                         target: float = 0.8) -> dict:
+                         target: float = SEL_TARGET) -> dict:
     """Tune the keep-threshold theta on settled bets: keep iff predicted
     win prob >= max(theta, break-even (price+fee)/100). Among thetas with
     precision >= target pick the max simulated profit; if none reaches the
     target, best (precision, profit) with met_target=False."""
-    pool = [s for s in samples if s[4]]  # prefer the real-bet distribution
-    if len(pool) < 40:
-        pool = samples
+    # scan the FULL pool (real + counterfactual): the real-bet subset is
+    # too small/noisy to place theta, and the validated chronological
+    # backtest (tests/selector93_backtest.py) tuned on the full pool
+    pool = samples
     scored = []
     for x, y, _, price_c, _ in pool:
         fee = math.ceil(7.0 * (price_c / 100.0) * (1.0 - price_c / 100.0))
         scored.append((_sel_predict(w, x), y, price_c, fee))
     cands = []
-    for t in range(50, 91):
+    for t in range(50, 96):
         th = t / 100.0
         kept = [(y, pc, f) for p, y, pc, f in scored
                 if p >= max(th, (pc + f) / 100.0)]
@@ -540,7 +565,7 @@ def _maybe_retrain_selector(kb: list[dict], bets: list[dict],
     due_at = now.replace(hour=19, minute=0, second=0, microsecond=0)
     if now < due_at:
         due_at -= timedelta(days=1)
-    if (policy and policy.get("w")
+    if (policy and len(policy.get("w") or []) == SEL_DIM
             and policy.get("tuned_ts", 0) >= due_at.timestamp()):
         return policy
     samples = _sel_training_set(kb, bets)
@@ -1648,13 +1673,25 @@ def run(once: bool = False) -> None:
                         # control row either way, so skips are auditable.
                         nb = kb_bets[-1]
                         if (pm_mkt["ticker"] not in kb_sel_tickers
-                                and kb_policy and kb_policy.get("w")):
+                                and kb_policy
+                                and len(kb_policy.get("w") or [])
+                                == SEL_DIM):
+                            lk3 = next(
+                                (r for r in reversed(kb)
+                                 if r.get("variant") == "kb3"
+                                 and r["ticker"] == pm_mkt["ticker"]), None)
+                            k3i = ({(nb["ticker"],
+                                     round(nb["mins_left"])): lk3["p_up"]}
+                                   if lk3 else {})
                             pw = _sel_predict(
                                 kb_policy["w"],
                                 _sel_features(nb["side"], nb["price_c"],
                                               nb["p_model"],
                                               nb["mins_left"],
-                                              bool(nb.get("forced"))))
+                                              bool(nb.get("forced")))
+                                + _sel_kb3_feats(k3i, nb["ticker"],
+                                                 nb["mins_left"],
+                                                 nb["side"]))
                             fee = math.ceil(
                                 7.0 * (nb["price_c"] / 100.0)
                                 * (1.0 - nb["price_c"] / 100.0))
