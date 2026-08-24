@@ -1,0 +1,3 @@
+{"ticker": "KXBTC15M-26AUG212000-00", "made_ts": 1787356329, "close_ts": 1787356800, "strike": 78344.82, "side": "no", "price_c": 71.0, "p_model": 0.3265, "gate_tau": 0.58, "mins_left": 7.8, "actual": 0, "win": 1, "pnl_c": 29.0}
+{"ticker": "KXBTC15M-26AUG212015-15", "made_ts": 1787356918, "close_ts": 1787357700, "strike": 78333.09, "side": "yes", "price_c": 70.0, "p_model": 0.6463, "gate_tau": 0.57, "mins_left": 13.0, "actual": 0, "win": 0, "pnl_c": -70.0}
+{"ticker": "KXBTC15M-26AUG212030-30", "made_ts": 1787357760, "close_ts": 1787358600, "strike": 77900.53, "side": "yes", "price_c": 67.0, "p_model": 0.6055, "gate_tau": 0.57, "mins_left": 14.0, "actual": null, "win": null, "pnl_c": null}
