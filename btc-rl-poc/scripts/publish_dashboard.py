@@ -110,6 +110,11 @@ def publish_ghpages() -> None:
 def sync_main() -> None:
     if STAMP.exists() and time.time() - STAMP.stat().st_mtime < MAIN_SYNC_S:
         return
+    # rebase first: the site's own workflows commit to origin/main (e.g.
+    # weekly content refresh), and a plain push then non-fast-forwards
+    # and wedges every hourly sync after it
+    _git(SITE_REPO, "fetch", "-q", "origin", "main", check=False)
+    _git(SITE_REPO, "rebase", "--autostash", "origin/main", check=False)
     copy_bundle(DEST)
     staged = [str(DEST.relative_to(SITE_REPO)),
               "client/pages/BtcOracleDemo.tsx", "client/App.tsx",
