@@ -157,6 +157,30 @@
 </section>
 
 <section>
+  <h2>Evaluation protocol</h2>
+  <p class="sub small muted">The standards every number on this page is held to.</p>
+  <ul class="small" style="color:var(--ink-2);line-height:1.7;margin:10px 0 0 18px">
+    <li><b>Point-in-time only:</b> features freeze at the decision instant
+      (live-anchored, strict bucket bounds); settlement uses the candle closing
+      exactly at the target. Convention changes are stamped on rows
+      (<code>anchor_src</code>, <code>settle_v</code>) — nothing is restated.</li>
+    <li><b>Chronological splits:</b> every offline claim comes from a 70/30
+      time split; thresholds tune on the past and freeze before the future.</li>
+    <li><b>Market as the null:</b> each model is scored against the market's
+      own probability <i>on identical calls</i>; phase-stratified so
+      convergence can't masquerade as skill. Anything that fails this check
+      is retired and says so (kbf).</li>
+    <li><b>Costs in:</b> P&amp;L nets Kalshi's fee formula at ask-side fills;
+      bankrolls compound a fixed 2% risk.</li>
+    <li><b>Uncertainty stated:</b> Wilson 95% lower bounds on every rate,
+      Diebold–Mariano on paired errors, two-proportion z on the A/B.</li>
+    <li><b>Audit trail:</b> every metric recomputes client-side from the
+      published append-only ledgers (git-SHA-stamped in the repo) — nothing
+      on this page is a server-side claim.</li>
+  </ul>
+</section>
+
+<section>
   <h2>Traffic &amp; freshness</h2>
   <div class="statusbar" style="margin-top:12px" id="traffic"><p class="mini">loading…</p></div>
 </section>

@@ -59,6 +59,28 @@ change) is near-unbeatable on price *level*, so MASE ≈ 1 is the ceiling there.
 Real edges live in direction accuracy, interval calibration, and
 market-relative Brier — which is what the evaluation stack actually ranks.
 
+## Limitations (read before citing any headline)
+
+- **Market-adjacent skill.** The binary models beat the 80/80 class baseline
+  at disclosed operating points, but stratified by window phase they track
+  the market's own probability closely — the demonstrated edge is calibrated
+  selection and honest uncertainty, not out-predicting an efficient market.
+- **Days, not months, of live data.** Live evaluation began 2026-08-20;
+  weekend feed outages cost coverage (gaps are visible in the ledgers as
+  missing windows, never altered rows). Wilson lower bounds are reported so
+  small-n claims can't overreach.
+- **Single asset, single venue.** BTC-USD via Coinbase bars + Kalshi
+  15-minute contracts; no cross-asset generalization is claimed.
+- **Paper bets.** Fills are modeled at the quoted ask with Kalshi's fee
+  formula; real execution (queue position, partial fills) is not simulated.
+- **Selector is young.** v1/v2 are scored and retired on the public
+  generations table (v2 subtracted value — stated, not hidden); v3 is
+  collecting. Its claims are training-pool numbers until frozen-day
+  evaluation accumulates.
+- **Single-machine hosting.** The daemon, publisher, and watchdog run on
+  one laptop; the site survives brief outages via the gh-pages snapshot,
+  but data collection does not.
+
 ## Evaluation
 
 - `scripts/evaluate_all.py` — every task, every arm: MAE vs the persistence
