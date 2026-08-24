@@ -412,6 +412,28 @@ def _kb_p_up(arms: dict, feat: dict, snap: dict | None, strike: float,
 
 KB_LOGIT_PATH_NAME = "kb_logit.json"
 KB_LOGIT_DIM = 24
+KB4_LOGIT_PATH_NAME = "kb4_logit.json"
+KB4_DIM = 12
+
+
+def _kb4_features(p_blend: float, p_logit: float, k_pup: float | None,
+                  bx: list[float], pf: list[float],
+                  mins_left: float) -> list[float]:
+    """Stacking context for the kb4 arm: kb2's and kb3's probabilities,
+    their agreement interaction, the market, and the barrier context.
+    kb2 and kb3 are INPUTS ONLY — neither model is modified; kb4 learns
+    when to trust which (e.g. kb2 near the strike early, kb3 when its
+    technicals disagree with the crowd)."""
+    p2c = (p_blend - 0.5) * 2.0
+    p3c = (p_logit - 0.5) * 2.0
+    return [
+        1.0, p2c, p3c,
+        p2c * p3c * 2.0,                       # confident-agreement term
+        (k_pup - 0.5) * 2.0 if k_pup is not None else 0.0,
+        1.0 if k_pup is not None else 0.0,
+        bx[3],                                 # above-strike z (capped)
+        mins_left / 15.0,
+    ] + pf                                     # 4 barrier/path features
 KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
 
 
@@ -1401,6 +1423,14 @@ def run(once: bool = False) -> None:
             kb_logit = BinaryLogit(KB_LOGIT_DIM)
     except Exception:
         kb_logit = BinaryLogit(KB_LOGIT_DIM)
+    kb4_path = RESULTS_DIR / KB4_LOGIT_PATH_NAME
+    try:
+        kb4_logit = (BinaryLogit.from_dict(json.loads(kb4_path.read_text()))
+                     if kb4_path.exists() else BinaryLogit(KB4_DIM))
+        if kb4_logit.dim != KB4_DIM:
+            kb4_logit = BinaryLogit(KB4_DIM)
+    except Exception:
+        kb4_logit = BinaryLogit(KB4_DIM)
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -1742,13 +1772,19 @@ def run(once: bool = False) -> None:
                         "mkt_p_up": k_pup, "actual": None, "hit": None,
                         "pf": pf,
                     }
+                    b4x = _kb4_features(p_blend, p_logit, k_pup, bx, pf,
+                                        mins_left)
+                    p_stack = round(kb4_logit.predict(b4x), 4)
                     for variant, pv, extra in (
                             ("kb", p_cal, {"p_raw": p, "cal_w": round(w, 3)}),
                             ("kb2", p_blend, {"w_mkt": round(bw, 3),
                                               "p_cal": p_cal}),
                             ("kb3", p_logit,
                              {"bx": [round(v, 5) for v in bx],
-                              "trained": kb_logit.updates})):
+                              "trained": kb_logit.updates}),
+                            ("kb4", p_stack,
+                             {"b4x": [round(v, 5) for v in b4x],
+                              "trained": kb4_logit.updates})):
                         tau = (kb_policy.get("taus") or {}).get(variant) \
                             if kb_policy else None
                         row = {**common, "variant": variant, "p_up": pv,
@@ -1793,11 +1829,17 @@ def run(once: bool = False) -> None:
                                                        - len(r["bx"])),
                                     outcome)
                     logit_changed = True
+                if r.get("b4x") and len(r["b4x"]) == kb4_logit.dim:
+                    kb4_logit.update(r["b4x"], outcome)
+                    logit_changed = True
                 kb_changed = True
             if logit_changed:
                 tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
                 tmp.write_text(json.dumps(kb_logit.to_dict()))
                 tmp.replace(RESULTS_DIR / KB_LOGIT_PATH_NAME)
+                tmp4 = (RESULTS_DIR / KB4_LOGIT_PATH_NAME).with_suffix(".tmp4")
+                tmp4.write_text(json.dumps(kb4_logit.to_dict()))
+                tmp4.replace(RESULTS_DIR / KB4_LOGIT_PATH_NAME)
             if kb_changed:
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
@@ -2045,7 +2087,7 @@ def run(once: bool = False) -> None:
                         "brier": s.get("brier"),
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
-                    for v in ("kb", "kb2", "kb3")
+                    for v in ("kb", "kb2", "kb3", "kb4")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),

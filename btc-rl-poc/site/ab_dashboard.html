@@ -127,7 +127,7 @@
 </section>
 
 <section>
-  <h2>Binary model race — control vs blend vs logit</h2>
+  <h2>Binary model race — control vs blend vs logit vs stack</h2>
   <p class="sub small muted">Brier rolled over ~10 windows of calls (lower is
   better; grey dashed = the market itself). Each variant also auto-tunes a
   confidence threshold targeting 80% precision; coverage is the share of
@@ -136,6 +136,7 @@
     <span><span class="sw" style="background:#3987e5"></span>kb (control)</span>
     <span><span class="sw" style="background:#2fb59a"></span>kb2 (market blend)</span>
     <span><span class="sw" style="background:#d55181"></span>kb3 (logit)</span>
+    <span><span class="sw" style="background:#9085e9"></span>kb4 (stack of kb2+kb3, new)</span>
     <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
   </div>
   <div id="kbrace"></div>
@@ -264,8 +265,8 @@ function lineSVG(seriesList, opts) {
 }
 
 function brierRace(kb, st) {
-  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181" };
-  const groups = { kb: [], kb2: [], kb3: [] };
+  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9" };
+  const groups = { kb: [], kb2: [], kb3: [], kb4: [] };
   for (const r of kb) {
     const v = r.variant || "kb";
     if (groups[v] && r.actual != null) groups[v].push(r);
@@ -296,7 +297,7 @@ function brierRace(kb, st) {
         title: "rolling Brier by variant vs market" })
     : '<p class="mini">collecting…</p>';
   const t = st.kb_treatments || {};
-  const rowsH = ["kb", "kb2", "kb3"].filter(v => t[v]).map(v => {
+  const rowsH = ["kb", "kb2", "kb3", "kb4"].filter(v => t[v]).map(v => {
     const s = t[v], p = s.prec80;
     return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
       `<td class="num">${s.scored ?? "–"}</td>` +
