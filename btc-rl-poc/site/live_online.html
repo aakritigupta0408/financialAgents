@@ -860,7 +860,8 @@ function renderArmCards(preds) {
 }
 
 function miniLine(seriesList, opts) {
-  const W = 900, H = opts.h || 190, L = 62, R = 16, T = 10, B = 24;
+  const W = 900, H = opts.h || 190, L = 62, R = 16,
+        T = opts.yl ? 24 : 10, B = opts.xl ? 38 : 24;
   let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
   for (const s2 of seriesList) for (const p2 of s2.pts) {
     xmin = Math.min(xmin, p2[0]); xmax = Math.max(xmax, p2[0]);
@@ -877,9 +878,13 @@ function miniLine(seriesList, opts) {
     g += `<line class="gridline" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>` +
       `<text x="${L - 8}" y="${y + 4}" text-anchor="end">${opts.fmt(v)}</text>`;
   }
-  const stepS = [900, 1800, 3600, 7200].find(x => (xmax - xmin) / x <= 7) || 7200;
+  const stepS = [900, 1800, 3600, 7200, 14400, 43200]
+    .find(x => (xmax - xmin) / x <= 7) || 43200;
+  const tickY = opts.xl ? H - 20 : H - 6;
   for (let ts = Math.ceil(xmin / stepS) * stepS; ts <= xmax; ts += stepS)
-    g += `<text x="${X(ts)}" y="${H - 6}" text-anchor="middle">${fmtTime(ts)}</text>`;
+    g += `<text x="${X(ts)}" y="${tickY}" text-anchor="middle">${fmtTime(ts)}</text>`;
+  if (opts.yl) g += `<text x="${L}" y="14" text-anchor="start" style="font-weight:600">${opts.yl}</text>`;
+  if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">${opts.xl}</text>`;
   if (opts.zero)
     g += `<line x1="${L}" y1="${Y(0)}" x2="${W - R}" y2="${Y(0)}" ` +
       `stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5" stroke-width="1.5"/>`;
@@ -983,7 +988,9 @@ function drawDirection(preds, kbRows) {
   document.getElementById("dir-legend").innerHTML = series.map(s =>
     `<span><span class="sw" style="background:${s.color}"></span>${s.label}</span>`).join("");
   document.getElementById("dir-chart").innerHTML =
-    miniLine(series, { fmt: v => v.toFixed(0) + "%", h: 200 });
+    miniLine(series, { fmt: v => v.toFixed(0) + "%", h: 210,
+      yl: "rolling direction accuracy (48 settled slots)",
+      xl: "target time (PT) · dashed guides: 55% goal, 50% coin flip" });
   document.getElementById("dir-strips").innerHTML = strips.join("");
 }
 
@@ -1018,7 +1025,9 @@ function drawLearning(preds, learnLog) {
      { label: "direction: cumulative P&L of betting the called side",
        color: "#199e70", dash: true, pts: dpts }],
     { fmt: v => (v >= 0 ? "+$" : "−$") + Math.abs(Math.round(v)).toLocaleString(),
-      zero: true, h: 220 });
+      zero: true, h: 230,
+      yl: "cumulative $ (level = vs persistence · direction = $1-per-$ bet)",
+      xl: "target time (PT) · dashed = break-even · dotted ticks = hourly retrains" });
   if (marks.length && svg.startsWith("<svg")) {
     const t0 = pts[0][0], t1 = pts[pts.length - 1][0];
     const extra = marks.filter(ts => ts >= t0 && ts <= t1).map(ts => {

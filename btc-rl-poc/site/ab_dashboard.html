@@ -56,21 +56,28 @@
   market, not predicting.</p>
   <div id="kb2-block" style="margin-top:12px"></div>
   <div id="kb3-block" style="margin-top:16px"></div>
+  <div id="kb2-phase" style="margin-top:14px"></div>
   <p class="mini" id="kbf-note"></p>
 </section>
 
 <section>
-  <h2>Window-close ledger (kbf, retired) — every window, inspectable</h2>
-  <p class="sub muted small">The raw evidence behind the scoreboard: one row per
-  15-minute window — the model's call at T-3 minutes, its probability, the
-  market's, the settled outcome. Rows marked <i>derived</i> were reconstructed
-  deterministically from logged live per-minute calls (same data, disclosed);
-  everything after deployment appends live.</p>
+  <h2>Decision ledger — kb2 &amp; kb3, one locked call per window</h2>
+  <p class="sub muted small">The raw evidence behind the scoreboard: for each
+  window, the model's call at the <b>first minute its confidence cleared the
+  gate</b> — the decision time varies with conviction, never a fixed T-x.
+  Windows where confidence never cleared are marked <i>forced</i> (last call
+  before close; excluded from the gated metrics above). Cross-checkable
+  against results/kalshi_binary_log.jsonl in the repo.</p>
+  <div class="legend">
+    <button class="chip on" id="dl-kb2">kb2</button>
+    <button class="chip" id="dl-kb3">kb3</button>
+  </div>
   <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="kbf-tbl">
-    <thead><tr><th>Window close (PT)</th><th class="num">Strike</th><th>Call</th>
+    <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
+      <th class="num">Locked at</th><th>Mode</th><th>Call</th>
       <th class="num">Our P(up)</th><th class="num">Market P(up)</th>
-      <th>Outcome</th><th>Result</th><th>Source</th></tr></thead>
-    <tbody><tr><td colspan="8" class="muted">loading…</td></tr></tbody>
+      <th>Outcome</th><th>Result</th></tr></thead>
+    <tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody>
   </table></div>
   <p class="mini" id="kbf-tbl-note"></p>
 </section>
@@ -88,7 +95,7 @@
   <h3 style="margin-top:16px;font:500 16px var(--display)">Bankroll — $1,000 start, 2% risked per bet</h3>
   <div class="legend">
     <span><span class="sw" style="background:#3987e5"></span>bidding model (1 bet, mandatory)</span>
-    <span><span class="sw" style="background:#199e70"></span>selector model (gated, may skip)</span>
+    <span><span class="sw" style="background:#199e70"></span>selector v3 — live policy only (gated, may skip)</span>
   </div>
   <div id="bankroll"></div>
   <h3 style="margin-top:20px;font:500 16px var(--display)">Selector generations — every design, scored like kbf</h3>
@@ -192,13 +199,23 @@ async function jsonl(u) {
 }
 
 function lineSVG(seriesList, opts) {
-  opts = opts || { fmt: v => "$" + v.toFixed(0), baseline: 1000 };
-  const W = 900, H = 240, L = 64, R = 16, T = 12, B = 26;
+  opts = opts || {};
+  const fmt = opts.fmt || (v => "$" + v.toFixed(0));
+  const W = 900, H = 250, L = 64, R = 16, T = 16, B = 40;
   let xmin = 1/0, xmax = -1/0, ymin = 1/0, ymax = -1/0;
   for (const s of seriesList) for (const [x, y] of s.pts) {
     xmin = Math.min(xmin, x); xmax = Math.max(xmax, x);
     ymin = Math.min(ymin, y); ymax = Math.max(ymax, y); }
   if (!isFinite(xmin)) return '<p class="mini">collecting…</p>';
+  // x ticks: epoch seconds render as PT time (with the day once the span
+  // crosses midnight — bare clock times are ambiguous over days), else int
+  const multiday = xmax - xmin > 86400;
+  const xfmt = opts.xfmt || (x => x > 1e9
+    ? new Date(x * 1000).toLocaleString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit",
+          minute: "2-digit", hour12: false,
+          ...(multiday ? { month: "short", day: "numeric" } : {}) })
+    : String(Math.round(x)));
   if (opts.baseline != null) { ymin = Math.min(ymin, opts.baseline); ymax = Math.max(ymax, opts.baseline); }
   const pad = (ymax - ymin) * .08 || 10; ymin -= pad; ymax += pad;
   const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
@@ -206,15 +223,19 @@ function lineSVG(seriesList, opts) {
   let g = "";
   for (let i = 0; i <= 3; i++) { const v = ymin + (ymax - ymin) * i / 3;
     g += `<line class="gridline" x1="${L}" y1="${Y(v)}" x2="${W-R}" y2="${Y(v)}"/>` +
-         `<text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${opts.fmt(v)}</text>`; }
+         `<text x="${L-8}" y="${Y(v)+4}" text-anchor="end">${fmt(v)}</text>`; }
+  for (let i = 0; i <= 4; i++) { const x = xmin + (xmax - xmin) * i / 4;
+    g += `<text x="${X(x)}" y="${H-B+16}" text-anchor="middle">${xfmt(x)}</text>`; }
+  if (opts.yl) g += `<text x="${L}" y="${T-4}" text-anchor="start" style="font-weight:600">${opts.yl}</text>`;
+  if (opts.xl) g += `<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle">${opts.xl}</text>`;
   if (opts.baseline != null) g += `<line x1="${L}" y1="${Y(opts.baseline)}" x2="${W-R}" y2="${Y(opts.baseline)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>`;
   for (const s of seriesList) {
     g += `<path fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" d="${
       s.pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("")}"/>`;
     const last = s.pts[s.pts.length - 1];
-    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${s.color}"><title>${s.label}: ${opts.fmt(last[1])}</title></circle>`;
+    g += `<circle cx="${X(last[0])}" cy="${Y(last[1])}" r="4" fill="${s.color}"><title>${s.label}: ${fmt(last[1])}</title></circle>`;
   }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="bankroll over time by policy">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opts.title || "chart"}">${g}</svg>`;
 }
 
 function brierRace(kb, st) {
@@ -244,7 +265,10 @@ function brierRace(kb, st) {
   const mpts = roll(groups.kb.filter(r => r.mkt_brier != null), "mkt_brier");
   if (mpts.length > 1) series.push({ label: "market", color: "var(--ink-2)", pts: mpts });
   document.getElementById("kbrace").innerHTML = series.length
-    ? lineSVG(series, { fmt: v => v.toFixed(2), baseline: 0.25 })
+    ? lineSVG(series, { fmt: v => v.toFixed(2), baseline: 0.25,
+        yl: "rolling Brier (~10 windows of calls; lower is better)",
+        xl: "call time (PT) · dashed = always-50% baseline 0.25",
+        title: "rolling Brier by variant vs market" })
     : '<p class="mini">collecting…</p>';
   const t = st.kb_treatments || {};
   const rowsH = ["kb", "kb2", "kb3"].filter(v => t[v]).map(v => {
@@ -331,6 +355,37 @@ async function poll() {
       "24 features, one SGD step per settled call, lr decay");
     document.getElementById("kb2-block").innerHTML = b2.html;
     document.getElementById("kb3-block").innerHTML = b3.html;
+    // entry-time stratification — the audit a skeptic would run: does the
+    // gate just harvest late-window convergence, and is there any edge
+    // over the market within a phase?
+    try {
+      const rows2 = kb.filter(r => r.variant === "kb2" && r.actual != null);
+      const tau2 = 0.62;
+      const g2 = rows2.filter(r => Math.max(r.p_up, 1 - r.p_up) >= tau2);
+      const ph = [["early >10m", m => m > 10], ["mid 5–10m", m => m >= 5 && m <= 10],
+                  ["late <5m", m => m < 5]];
+      const cells = ph.map(([nm, f]) => {
+        const a = rows2.filter(r => f(r.mins_left)), g = g2.filter(r => f(r.mins_left));
+        if (!g.length) return `<tr><td>${nm}</td><td colspan="4" class="muted">—</td></tr>`;
+        const acc = g.reduce((s, r) => s + r.hit, 0) / g.length;
+        const mk = g.filter(r => r.mkt_p_up != null);
+        const mc = mk.length ? mk.reduce((s, r) =>
+          s + ((r.mkt_p_up >= 0.5) === !!r.actual ? 1 : 0), 0) / mk.length : null;
+        return `<tr><td>${nm}</td><td class="num">${(100 * g.length / a.length).toFixed(0)}%</td>` +
+          `<td class="num">${(100 * acc).toFixed(1)}%</td>` +
+          `<td class="num">${mc == null ? "–" : (100 * mc).toFixed(1) + "%"}</td>` +
+          `<td class="num">${mc == null ? "–" : ((acc - mc) >= 0 ? "+" : "") + (100 * (acc - mc)).toFixed(1)}</td></tr>`;
+      }).join("");
+      document.getElementById("kb2-phase").innerHTML =
+        `<table style="min-width:0;max-width:520px"><thead><tr><th>kb2 by phase</th>` +
+        `<th class="num">Gate cov</th><th class="num">Acc</th>` +
+        `<th class="num">Market</th><th class="num">Edge</th></tr></thead>` +
+        `<tbody>${cells}</tbody></table>` +
+        `<p class="mini">The gate concentrates calls late (confidence is cheap once the ` +
+        `market converges) and within every phase kb2 ≈ market: the deliverable is ` +
+        `calibrated selection at a disclosed operating point, not out-predicting the ` +
+        `market — stated here before anyone has to find it.</p>`;
+    } catch {}
     const v = document.getElementById("verdict");
     if (b2.pass || b3.pass) { v.className = "badge pass"; v.textContent = "above 80/80"; }
     else if (b2.pending && b3.pending) { v.className = "badge pending"; v.textContent = "collecting"; }
@@ -341,10 +396,12 @@ async function poll() {
       "triviality check a fixed-time model fails.";
 
     // A/B table
-    const A = stats(bets), B = stats(sel);
-    // skipped = bets the selector actually JUDGED and declined — counting
-    // all historical windows overstated skips by the pre-policy era
-    const judged = bets.filter(b => b.sel_keep != null);
+    // A/B compares the bidding mandate against the CURRENT selector
+    // policy only (v3) — earlier generations are scored separately in
+    // the generations table; mixing eras in one row misstated the live
+    // policy's record
+    const A = stats(bets), B = stats(sel.filter(b => b.sel_v >= 3));
+    const judged = bets.filter(b => b.sel_keep != null && b.sel_v >= 3);
     const skippedN = judged.filter(b => !b.sel_keep).length;
     const row = (name, sw, s, skipped) =>
       `<tr><td><span class="sw" style="background:${sw}"></span>${name}</td>` +
@@ -357,7 +414,7 @@ async function poll() {
       `<td class="num">${((s.bk.final/1000 - 1)*100).toFixed(1)}%</td></tr>`;
     document.querySelector("#ab-tbl tbody").innerHTML =
       row("Bidding (mandatory 1/window)", "#3987e5", A, 0) +
-      row("Selector (gated)", "#199e70", B, skippedN);
+      row("Selector v3 (live policy)", "#199e70", B, skippedN);
     // significance: two-proportion z on win rates
     if (A.n >= 10 && B.n >= 10) {
       const p1 = A.w / A.n, p2 = B.w / B.n, p = (A.w + B.w) / (A.n + B.n);
@@ -374,7 +431,10 @@ async function poll() {
     document.getElementById("bankroll").innerHTML = lineSVG([
       { label: "bidding", color: "#3987e5", pts: A.bk.pts },
       { label: "selector", color: "#199e70", pts: B.bk.pts },
-    ]);
+    ], { fmt: v => "$" + v.toFixed(0), baseline: 1000,
+         yl: "bankroll ($1,000 start, 2% risked per bet, fees in)",
+         xl: "settlement time (PT) · dashed = starting bankroll",
+         title: "bankroll by policy over settled bets" });
 
     // bet ledger — entry price (the validity-deciding number) per bet
     const fmtPT = ts => new Date(ts * 1000).toLocaleString("en-US",
@@ -461,51 +521,96 @@ async function poll() {
         if (mkt.length > 1) lcSeries.push(
           { label: "market", color: "var(--ink-2)", pts: mkt });
         document.getElementById("learncurve").innerHTML =
-          lineSVG(lcSeries, { fmt: v => (100 * v).toFixed(0) + "%" });
+          `<div class="legend"><span><span class="sw" style="background:#d55181"></span>kb3 rolling accuracy</span>` +
+          `<span><span class="sw" style="background:var(--ink-2)"></span>market on the same calls</span></div>` +
+          lineSVG(lcSeries, { fmt: v => (100 * v).toFixed(0) + "%",
+            xfmt: x => String(Math.round(x)),
+            yl: "rolling accuracy (~10 windows of calls)",
+            xl: "cumulative SGD training updates",
+            title: "kb3 online learning curve vs market" });
       } else {
         document.getElementById("learncurve").innerHTML =
           `<p class="mini">collecting — ${k3.length} settled logit calls; curve appears at 20.</p>`;
       }
     } catch {}
 
-    // kbf call ledger — the inspectable evidence
-    const kbf = kb.filter(r => r.variant === "kbf")
-      .sort((a, b) => b.close_ts - a.close_ts);
-    if (kbf.length) {
-      const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
-        { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
-          hour: "2-digit", minute: "2-digit", hour12: false });
-      document.querySelector("#kbf-tbl tbody").innerHTML = kbf.map(r => {
-        const res = r.actual == null
-          ? '<span class="pill pending">pending</span>'
-          : r.hit ? '<span class="pill hit">✓ hit</span>'
-                  : '<span class="pill miss">✗ miss</span>';
-        const oc = r.actual == null ? "…" : r.actual ? "UP" : "DOWN";
-        return `<tr><td>${fmtT(r.close_ts)}</td>` +
-          `<td class="num">$${Math.round(r.strike).toLocaleString()}</td>` +
-          `<td><span class="pill ${r.call ? "yes" : "no"}">${r.call ? "UP" : "DOWN"}</span></td>` +
-          `<td class="num">${Math.min(100, 100 * r.p_up).toFixed(0)}%</td>` +
-          `<td class="num">${r.mkt_p_up != null ? (100 * r.mkt_p_up).toFixed(0) + "%" : "–"}</td>` +
-          `<td>${oc}</td><td>${res}</td>` +
-          `<td class="muted">${r.backfilled ? "derived" : "live"}</td></tr>`;
-      }).join("");
-      const settled = kbf.filter(r => r.actual != null);
-      const hits = settled.filter(r => r.hit).length;
-      const live = kbf.filter(r => !r.backfilled).length;
-      document.getElementById("kbf-tbl-note").textContent =
-        `${kbf.length} windows (${live} live since deployment, ` +
-        `${kbf.length - live} derived from logged calls) · settled ${settled.length} · ` +
-        `hits ${hits} (${(100 * hits / Math.max(1, settled.length)).toFixed(1)}%) — ` +
-        `cross-checkable against results/kalshi_binary_log.jsonl in the repo`;
+    // decision ledger — kb2/kb3, first gate-clearing call per window
+    const DL_TAU = { kb2: 0.62, kb3: 0.82 };
+    const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
+      { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit", hour12: false });
+    const dlData = {};
+    for (const v2 of ["kb2", "kb3"]) {
+      const byWin = new Map();
+      for (const r of kb) {
+        if (r.variant !== v2) continue;
+        if (!byWin.has(r.ticker)) byWin.set(r.ticker, []);
+        byWin.get(r.ticker).push(r);
+      }
+      const out = [];
+      for (const rs of byWin.values()) {
+        rs.sort((a, b) => b.mins_left - a.mins_left);
+        let pick = rs.find(r =>
+          Math.max(r.p_up, 1 - r.p_up) >= DL_TAU[v2]);
+        const forced = !pick;
+        if (!pick) pick = rs[rs.length - 1];
+        out.push({ ...pick, forced });
+      }
+      out.sort((a, b) => b.close_ts - a.close_ts);
+      dlData[v2] = out;
     }
+    const renderDL = v2 => {
+      const rowsOut = dlData[v2];
+      document.querySelector("#kbf-tbl tbody").innerHTML =
+        rowsOut.map(r => {
+          const res = r.actual == null
+            ? '<span class="pill pending">pending</span>'
+            : r.hit ? '<span class="pill hit">✓ hit</span>'
+                    : '<span class="pill miss">✗ miss</span>';
+          const oc = r.actual == null ? "…" : r.actual ? "UP" : "DOWN";
+          return `<tr><td>${fmtT(r.close_ts)}</td>` +
+            `<td class="num">$${Math.round(r.strike).toLocaleString()}</td>` +
+            `<td class="num">${r.mins_left.toFixed(1)}m</td>` +
+            `<td>${r.forced ? '<span class="pill miss">forced</span>'
+                            : '<span class="pill ok">gated</span>'}</td>` +
+            `<td><span class="pill ${r.call ? "yes" : "no"}">${r.call ? "UP" : "DOWN"}</span></td>` +
+            `<td class="num">${Math.min(100, 100 * r.p_up).toFixed(0)}%</td>` +
+            `<td class="num">${r.mkt_p_up != null ? (100 * r.mkt_p_up).toFixed(0) + "%" : "–"}</td>` +
+            `<td>${oc}</td><td>${res}</td></tr>`;
+        }).join("");
+      const st2 = rowsOut.filter(r => r.actual != null);
+      const hits = st2.filter(r => r.hit).length;
+      const gated = st2.filter(r => !r.forced);
+      const gh = gated.filter(r => r.hit).length;
+      const avgLock = rowsOut.length ? rowsOut.reduce((a, r) =>
+        a + r.mins_left, 0) / rowsOut.length : 0;
+      let note = `${v2}: ${rowsOut.length} windows · settled ${st2.length} · ` +
+        `all locked calls ${hits}/${st2.length} ` +
+        `(${(100 * hits / Math.max(1, st2.length)).toFixed(1)}%) · ` +
+        `gated only ${gh}/${gated.length} ` +
+        `(${(100 * gh / Math.max(1, gated.length)).toFixed(1)}%) · ` +
+        `avg lock ${avgLock.toFixed(1)} min left · gate τ ${DL_TAU[v2]}`;
+      if (v2 === "kb3")
+        note += ` · logit updates ${st.kb_logit_updates ?? "–"} · ` +
+          `24 features, lr decay`;
+      document.getElementById("kbf-tbl-note").textContent = note;
+      document.getElementById("dl-kb2").className =
+        "chip" + (v2 === "kb2" ? " on" : "");
+      document.getElementById("dl-kb3").className =
+        "chip" + (v2 === "kb3" ? " on" : "");
+    };
+    renderDL("kb2");
+    document.getElementById("dl-kb2").onclick = () => renderDL("kb2");
+    document.getElementById("dl-kb3").onclick = () => renderDL("kb3");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
+    const winCount = new Set(kb.map(r => r.ticker)).size;
     const t0 = kb.length ? kb[0].made_ts : Date.now()/1000;
     const days = Math.max(1/24, (Date.now()/1000 - t0) / 86400);
     document.getElementById("traffic").innerHTML = [
       [`${kb.length}`, "binary calls logged"],
       [`${settled}`, "settled"],
-      [`${(kbWindows/days).toFixed(0)}/day`, "windows"],
+      [`${(winCount/days).toFixed(0)}/day`, "windows"],
       [`${(bets.length/days).toFixed(0)}/day`, "bidding bets"],
       [`${(sel.length/days).toFixed(0)}/day`, "selector bets"],
       [`${st.kb_logit_updates ?? 0}`, "kb3 logit updates"],
