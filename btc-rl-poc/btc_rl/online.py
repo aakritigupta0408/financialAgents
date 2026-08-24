@@ -1375,6 +1375,10 @@ def run(once: bool = False) -> None:
             for r in ledger}
     kb = _load_kb()
     kb_made = {(r.get("variant", "kb"), r["ticker"], r["made_ts"]) for r in kb}
+    # kbf dedups on (variant, ticker, 0) at commit time — rebuild that
+    # form too, else every restart re-calls the current window (dupes)
+    kb_made |= {("kbf", r["ticker"], 0) for r in kb
+                if r.get("variant") == "kbf"}
     kb_bets = _load_kb_bets()
     kb_bet_tickers = {b["ticker"] for b in kb_bets}
     kb_sel_bets = _load_kb_bets(KB_SEL_BET_LOG_NAME)

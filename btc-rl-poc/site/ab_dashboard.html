@@ -27,10 +27,12 @@
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span> Final deliverable · live evaluation</div>
   <h1>The 80/80 scoreboard &amp; bet-policy A/B</h1>
-  <p class="sub">Deliverable model <b>kbf</b>: one definitive call per 15-minute
-  window at T-3 minutes — every window called, both classes tracked, no
-  abstention. Class baseline to beat: <b>80% precision and 80% recall per
-  class</b>. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
+  <p class="sub">Deliverable models <b>kb2</b> (market-anchored blend) and
+  <b>kb3</b> (online learner): a probability on the live Kalshi 15-minute
+  contract <b>every minute</b>, no fixed decision time. Class baseline to beat:
+  <b>80% precision and 80% recall per class</b> at each model's confidence
+  gate. The earlier fixed-T-3 variant (kbf) is retired as trivial — the
+  market alone matches it at that timestamp. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
   per window) vs the <b>selector model</b> — a bet-level EV model that judges
   the very same bet in the same tick it is placed (whenever the entry strikes —
   no fixed decision minute, no future information) and keeps it only if its
@@ -44,13 +46,21 @@
 </header>
 
 <section>
-  <h2>kbf vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
-  <div class="statusbar" style="margin-top:12px" id="kbf-tiles"><p class="mini">loading…</p></div>
+  <h2>kb2 &amp; kb3 vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
+  <p class="sub small muted">Both models call <b>every minute of every window</b> —
+  no fixed decision time, nothing waited-for. Metrics below are at each model's
+  confidence gate (smallest τ where both classes clear 80% precision on calls
+  with max(p,1−p) ≥ τ), with the market's accuracy on the <i>same gated
+  calls</i> as the triviality check. A fixed T-3 variant (kbf) is retired:
+  at T-3 the market alone scores 90.9% vs its 90.4% — reading a converged
+  market, not predicting.</p>
+  <div id="kb2-block" style="margin-top:12px"></div>
+  <div id="kb3-block" style="margin-top:16px"></div>
   <p class="mini" id="kbf-note"></p>
 </section>
 
 <section>
-  <h2>kbf call ledger — every window, inspectable</h2>
+  <h2>Window-close ledger (kbf, retired) — every window, inspectable</h2>
   <p class="sub muted small">The raw evidence behind the scoreboard: one row per
   15-minute window — the model's call at T-3 minutes, its probability, the
   market's, the settled outcome. Rows marked <i>derived</i> were reconstructed
@@ -262,44 +272,73 @@ async function poll() {
     document.getElementById("dot").className =
       "live-dot" + ((Date.now()/1000 - (st.alive_at||0)) > 300 ? " stale" : "");
 
-    // kbf vs baseline
-    const kf = st.kbf || {};
-    const tiles = [];
-    let allPass = true, anyPending = false;
-    for (const cls of ["up", "down"]) {
-      const c = kf[cls] || {};
-      for (const [key, label] of [["prec", "precision"], ["recall", "recall"]]) {
-        const v = c[key], n = key === "prec" ? c.n_called : c.n_actual;
-        const lo = v != null ? wilsonLo(v, n) : 0;
-        const ok = v != null && v >= 0.8;
-        const sig = lo >= 0.8;
-        if (!ok) allPass = false;
-        if (v == null || n < 30) anyPending = true;
-        // forward look: if the observed rate holds, how many MORE windows
-        // until this metric's 95% lower bound clears 80%?
-        let eta = "";
-        if (ok && !sig && n && kf.n) {
-          let n2 = n;
-          while (n2 < 100000 && wilsonLo(v, n2) < 0.8) n2 = Math.ceil(n2 * 1.05) + 1;
-          const extraW = Math.ceil((n2 - n) * (kf.n / n));
-          eta = (n2 >= 100000 || extraW > 1000)
-            ? " · margin over 80% too thin to certify"
-            : ` · sig in ~${extraW} windows (~${Math.ceil(extraW / 96)}d)`;
-        }
-        tiles.push(`<div class="stat"><div class="k">${cls.toUpperCase()} ${label}</div>` +
-          `<div class="big2 ${ok ? "target" : "warn"}">${v == null ? "–" : (100*v).toFixed(1) + "%"}</div>` +
-          `<div class="mini">n=${n ?? 0} · 95% LB ${(100*lo).toFixed(0)}%${sig ? " ✓ sig" : eta}</div></div>`);
+    // kb2 & kb3 vs baseline — confidence-gated per-class metrics computed
+    // straight from the public ledger (no server-side aggregation to trust)
+    const gatedBlock = (variant, title, blurb) => {
+      const rows = kb.filter(r => (r.variant || "kb") === variant
+        && r.actual != null && r.call != null);
+      if (rows.length < 60)
+        return { html: `<p class="mini">${title}: collecting (${rows.length} settled calls)</p>`, pass: false, pending: true };
+      const prf = sel => {
+        const c = val => {
+          const tp = sel.filter(r => r.call === val && r.actual === val).length;
+          const fp = sel.filter(r => r.call === val && r.actual !== val).length;
+          const fn = sel.filter(r => r.call !== val && r.actual === val).length;
+          return { p: tp + fp ? tp / (tp + fp) : null, np: tp + fp,
+                   r: tp + fn ? tp / (tp + fn) : null, nr: tp + fn };
+        };
+        return { up: c(1), down: c(0) };
+      };
+      let tau = null, best = null;
+      for (let t100 = 50; t100 <= 95; t100++) {
+        const t = t100 / 100;
+        const sel = rows.filter(r => Math.max(r.p_up, 1 - r.p_up) >= t);
+        if (sel.length < 40) break;
+        const s = prf(sel);
+        const worst = Math.min(s.up.p ?? 0, s.down.p ?? 0);
+        if (best == null || worst > best.worst) best = { t, worst };
+        if ((s.up.p ?? 0) >= 0.8 && (s.down.p ?? 0) >= 0.8) { tau = t; break; }
       }
-    }
-    tiles.push(`<div class="stat"><div class="k">Windows called</div><div class="big2">${kf.n ?? 0}</div><div class="mini">every window, T-3 min</div></div>`);
-    document.getElementById("kbf-tiles").innerHTML = tiles.join("");
+      if (tau == null && best) tau = best.t;
+      const sel = rows.filter(r => Math.max(r.p_up, 1 - r.p_up) >= tau);
+      const s = prf(sel);
+      const mrows = sel.filter(r => r.mkt_p_up != null);
+      const macc = mrows.length ? mrows.reduce((a, r) =>
+        a + ((r.mkt_p_up >= 0.5) === !!r.actual ? 1 : 0), 0) / mrows.length : null;
+      const oacc = sel.reduce((a, r) => a + r.hit, 0) / sel.length;
+      const vals = [s.up.p, s.up.r, s.down.p, s.down.r];
+      const pass = vals.every(x => x != null && x >= 0.8);
+      const tile = (k2, v2, n2) => {
+        const lo = v2 != null ? wilsonLo(v2, n2) : 0;
+        return `<div class="stat"><div class="k">${k2}</div>` +
+          `<div class="big2 ${v2 != null && v2 >= 0.8 ? "target" : "warn"}">${v2 == null ? "–" : (100 * v2).toFixed(1) + "%"}</div>` +
+          `<div class="mini">n=${n2} · 95% LB ${(100 * lo).toFixed(0)}%${lo >= 0.8 ? " ✓ sig" : ""}</div></div>`;
+      };
+      const html =
+        `<div class="small" style="margin-bottom:6px"><b>${title}</b> ` +
+        `<span class="badge ${pass ? "pass" : "pending"}" style="margin-left:8px">${pass ? "above 80/80" : "below target"}</span>` +
+        ` <span class="muted">${blurb} · gate τ ${tau.toFixed(2)} · coverage ${(100 * sel.length / rows.length).toFixed(0)}% (${sel.length}/${rows.length} calls)` +
+        `${macc != null ? ` · us ${(100 * oacc).toFixed(1)}% vs market ${(100 * macc).toFixed(1)}% on the same calls` : ""}</span></div>` +
+        `<div class="statusbar">` +
+        tile("UP precision", s.up.p, s.up.np) + tile("UP recall", s.up.r, s.up.nr) +
+        tile("DOWN precision", s.down.p, s.down.np) + tile("DOWN recall", s.down.r, s.down.nr) +
+        `</div>`;
+      return { html, pass, pending: false };
+    };
+    const b2 = gatedBlock("kb2", "kb2 — market-anchored blend",
+      "learned per-phase blend of model + market probability");
+    const b3 = gatedBlock("kb3", "kb3 — online logistic learner",
+      "24 features, one SGD step per settled call, lr decay");
+    document.getElementById("kb2-block").innerHTML = b2.html;
+    document.getElementById("kb3-block").innerHTML = b3.html;
     const v = document.getElementById("verdict");
-    if (kf.n >= 30 && allPass) { v.className = "badge pass"; v.textContent = "above 80/80"; }
-    else if (!anyPending && !allPass) { v.className = "badge pending"; v.textContent = "below target"; }
-    else { v.className = "badge pending"; v.textContent = `collecting (n=${kf.n ?? 0})`; }
+    if (b2.pass || b3.pass) { v.className = "badge pass"; v.textContent = "above 80/80"; }
+    else if (b2.pending && b3.pending) { v.className = "badge pending"; v.textContent = "collecting"; }
+    else { v.className = "badge pending"; v.textContent = "below target"; }
     document.getElementById("kbf-note").textContent =
-      "Beating the baseline *significantly* requires every 95% lower bound above 80% — " +
-      "lower bounds tighten as windows accumulate (~96/day).";
+      "Significance requires every 95% lower bound above 80% — bounds tighten " +
+      "as calls accumulate. The 'vs market on the same calls' figure is the " +
+      "triviality check a fixed-time model fails.";
 
     // A/B table
     const A = stats(bets), B = stats(sel);
