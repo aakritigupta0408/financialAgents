@@ -47,7 +47,7 @@
 </header>
 
 <section>
-  <h2>kb2 &amp; kb3 vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
+  <h2>kb2, kb3 &amp; kb4 vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
   <p class="sub small muted">Both models call <b>every minute of every window</b> —
   no fixed decision time, nothing waited-for. Metrics below are at each model's
   confidence gate (smallest τ where both classes clear 80% precision on calls
@@ -57,12 +57,13 @@
   market, not predicting.</p>
   <div id="kb2-block" style="margin-top:12px"></div>
   <div id="kb3-block" style="margin-top:16px"></div>
+  <div id="kb4-block" style="margin-top:16px"></div>
   <div id="kb2-phase" style="margin-top:14px"></div>
   <p class="mini" id="kbf-note"></p>
 </section>
 
 <section>
-  <h2>Decision ledger — kb2 &amp; kb3, one locked call per window</h2>
+  <h2>Decision ledger — kb2, kb3 &amp; kb4, one locked call per window</h2>
   <p class="sub muted small">The raw evidence behind the scoreboard: for each
   window, the model's call at the <b>first minute its confidence cleared the
   gate</b> — the decision time varies with conviction, never a fixed T-x.
@@ -72,6 +73,7 @@
   <div class="legend">
     <button class="chip on" id="dl-kb2">kb2</button>
     <button class="chip" id="dl-kb3">kb3</button>
+    <button class="chip" id="dl-kb4">kb4</button>
   </div>
   <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="kbf-tbl">
     <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
@@ -389,8 +391,11 @@ async function poll() {
       "learned per-phase blend of model + market probability");
     const b3 = gatedBlock("kb3", "kb3 — online logistic learner",
       "24 features, one SGD step per settled call, lr decay");
+    const b4 = gatedBlock("kb4", "kb4 — stack of kb2 + kb3 (new)",
+      "learns when to trust which model; parents unchanged");
     document.getElementById("kb2-block").innerHTML = b2.html;
     document.getElementById("kb3-block").innerHTML = b3.html;
+    document.getElementById("kb4-block").innerHTML = b4.html;
     // entry-time stratification — the audit a skeptic would run: does the
     // gate just harvest late-window convergence, and is there any edge
     // over the market within a phase?
@@ -571,12 +576,12 @@ async function poll() {
     } catch {}
 
     // decision ledger — kb2/kb3, first gate-clearing call per window
-    const DL_TAU = { kb2: 0.62, kb3: 0.82 };
+    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62 };
     const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
       { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
         hour: "2-digit", minute: "2-digit", hour12: false });
     const dlData = {};
-    for (const v2 of ["kb2", "kb3"]) {
+    for (const v2 of ["kb2", "kb3", "kb4"]) {
       const byWin = new Map();
       for (const r of kb) {
         if (r.variant !== v2) continue;
@@ -634,10 +639,13 @@ async function poll() {
         "chip" + (v2 === "kb2" ? " on" : "");
       document.getElementById("dl-kb3").className =
         "chip" + (v2 === "kb3" ? " on" : "");
+      document.getElementById("dl-kb4").className =
+        "chip" + (v2 === "kb4" ? " on" : "");
     };
     renderDL("kb2");
     document.getElementById("dl-kb2").onclick = () => renderDL("kb2");
     document.getElementById("dl-kb3").onclick = () => renderDL("kb3");
+    document.getElementById("dl-kb4").onclick = () => renderDL("kb4");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
     const winCount = new Set(kb.map(r => r.ticker)).size;
