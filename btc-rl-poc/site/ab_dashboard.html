@@ -81,6 +81,20 @@
     <span><span class="sw" style="background:#199e70"></span>selector model (gated, may skip)</span>
   </div>
   <div id="bankroll"></div>
+  <h3 style="margin-top:20px;font:500 16px var(--display)">Selector generations — every design, scored like kbf</h3>
+  <p class="sub small muted">Three selector designs have gated the same mandatory
+  bet stream. Each is scored on what it kept vs what it declined — a selector
+  only adds value if its kept bets beat its skipped ones. v1 gated on per-minute
+  call confidence; v2 was a bet-level EV model trained on mid-quote
+  counterfactuals (which taught it to bless 76–79¢ favorites that are −EV at
+  the ask — visible below); v3 trains on ask-adjusted prices.</p>
+  <div class="scroll"><table id="selgen-tbl">
+    <thead><tr><th>Generation</th><th>Design</th><th class="num">Judged</th>
+      <th class="num">Kept</th><th class="num">Kept win</th>
+      <th class="num">Skipped win</th><th class="num">Net P&amp;L (kept)</th>
+      <th>Verdict</th></tr></thead>
+    <tbody><tr><td colspan="8" class="muted">loading…</td></tr></tbody>
+  </table></div>
   <h3 style="margin-top:20px;font:500 16px var(--display)">Bet ledger — entry price decides validity</h3>
   <p class="sub small muted">One row per mandatory bet, newest first. Entries are
   priced <b>at the ask</b> — the price at which the market actually fills the
@@ -237,10 +251,11 @@ function brierRace(kb, st) {
 
 async function poll() {
   try {
-    const [kb, bets, sel, stRes] = await Promise.all([
+    const [kb, bets, sel, pre, stRes] = await Promise.all([
       jsonl("../results/kalshi_binary_log.jsonl"),
       jsonl("../results/kb_bets.jsonl"),
       jsonl("../results/kb_bets_sel.jsonl"),
+      jsonl("../results/kb_bets_sel_prepolicy.jsonl"),
       fetch(bust("../results/online_status.json"), { cache: "no-store" }),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
@@ -343,6 +358,47 @@ async function poll() {
         `<td>${sv}</td><td>${res}</td><td class="num">${net}</td></tr>`;
     }).join("");
     if (bl) document.querySelector("#bet-ledger tbody").innerHTML = bl;
+
+    // selector generations — each design scored on kept vs skipped
+    const gfee = pc => Math.ceil(7 * (pc / 100) * (1 - pc / 100));
+    const gnet = rows => rows.reduce((a, b) => a + b.pnl_c - gfee(b.price_c), 0);
+    const gwr = rows => rows.length
+      ? rows.reduce((a, b) => a + b.win, 0) / rows.length : null;
+    const settledB = bets.filter(b => b.win != null);
+    const v1keep = pre.filter(b => b.win != null);
+    const v1end = sel.length ? Math.min(...sel.map(b => b.made_ts)) : Infinity;
+    const v1start = v1keep.length
+      ? Math.min(...v1keep.map(b => b.made_ts)) : 0;
+    const gens = [
+      ["v1", "τ-confidence gate (per-minute call precision)",
+       settledB.filter(b => b.made_ts >= v1start && b.made_ts < v1end),
+       v1keep],
+      ["v2", "bet-EV logit, mid-priced counterfactual training",
+       settledB.filter(b => b.sel_keep != null && b.sel_v == null),
+       sel.filter(b => b.win != null && b.sel_v == null)],
+      ["v3", "bet-EV logit, ask-adjusted training (live now)",
+       settledB.filter(b => b.sel_keep != null && b.sel_v >= 3),
+       sel.filter(b => b.win != null && b.sel_v >= 3)],
+    ];
+    document.querySelector("#selgen-tbl tbody").innerHTML =
+      gens.map(([g, d, jd, kp]) => {
+        const kept = new Set(kp.map(k => k.ticker));
+        const skipped = jd.filter(b => !kept.has(b.ticker));
+        const kw = gwr(kp), sw = gwr(skipped);
+        const verdict = kp.length < 5
+          ? '<span class="pill pending">collecting</span>'
+          : kw > (sw ?? 0) + 0.05
+            ? '<span class="pill hit">adding value</span>'
+            : kw < (sw ?? 1) - 0.05
+              ? '<span class="pill no">subtracting</span>'
+              : '<span class="pill miss">neutral</span>';
+        return `<tr><td>${g}</td><td class="small">${d}</td>` +
+          `<td class="num">${jd.length}</td><td class="num">${kp.length}</td>` +
+          `<td class="num">${kw == null ? "–" : (100 * kw).toFixed(0) + "%"}</td>` +
+          `<td class="num">${sw == null ? "–" : (100 * sw).toFixed(0) + "%"}</td>` +
+          `<td class="num">${kp.length ? (gnet(kp) / 100).toFixed(2) + "$" : "–"}</td>` +
+          `<td>${verdict}</td></tr>`;
+      }).join("");
 
     try { brierRace(kb, st); } catch {}
     try {

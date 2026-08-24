@@ -557,6 +557,10 @@ def _sel_predict(w: list[float], x: list[float]) -> float:
 
 SEL_TARGET = 0.90   # selector precision target (RA benchmark chase)
 SEL_DIM = 15        # 7 bet + 3 kb3 + 5 barrier/path (oriented to side)
+SEL_CF_ASK_ADJ = 2.5  # counterfactual rows log MID quotes; live bets fill
+                      # at the ASK. Training on mids taught the gate to
+                      # bless 76-79c favorites that are -EV at the ask
+                      # (live: kept 7/80 at 43% vs 51% skipped).
 
 
 def _sel_path_feats(pf: list | None, side: str) -> list[float]:
@@ -607,7 +611,7 @@ def _sel_training_set(kb: list[dict], bets: list[dict]) -> list[tuple]:
             continue
         side = "yes" if r["call"] else "no"
         price_c = 100.0 * (r["mkt_p_up"] if side == "yes"
-                           else 1.0 - r["mkt_p_up"])
+                           else 1.0 - r["mkt_p_up"]) + SEL_CF_ASK_ADJ
         if not 1.0 <= price_c <= 99.0:
             continue
         x = _sel_features(side, price_c, r["p_up"], r["mins_left"], False)
@@ -680,6 +684,7 @@ def _maybe_retrain_selector(kb: list[dict], bets: list[dict],
     if now < due_at:
         due_at -= timedelta(days=1)
     if (policy and len(policy.get("w") or []) == SEL_DIM
+            and policy.get("cf_ask_adj") == SEL_CF_ASK_ADJ
             and policy.get("tuned_ts", 0) >= due_at.timestamp()):
         return policy
     samples = _sel_training_set(kb, bets)
@@ -689,7 +694,8 @@ def _maybe_retrain_selector(kb: list[dict], bets: list[dict],
     op = _sel_operating_point(w, samples)
     policy = {"tuned_ts": int(now.timestamp()),
               "tuned_at": now.isoformat(),
-              "kind": "bet_ev_logit", "w": w, **op,
+              "kind": "bet_ev_logit", "w": w,
+              "cf_ask_adj": SEL_CF_ASK_ADJ, **op,
               "n_train": len(samples),
               "n_bets": sum(1 for s in samples if s[4]),
               "taus": {v: _kb_conf_threshold(kb, v)
@@ -1884,6 +1890,7 @@ def run(once: bool = False) -> None:
                                 (nb["price_c"] + fee) / 100.0)
                             nb["sel_p_win"] = round(pw, 4)
                             nb["sel_keep"] = int(keep)
+                            nb["sel_v"] = 3  # ask-adjusted training era
                             if keep:
                                 kb_sel_bets.append(dict(nb))
                                 kb_sel_tickers.add(pm_mkt["ticker"])
