@@ -26,9 +26,9 @@ MARKER = "btc-oracle data snapshot"
 MAIN_SYNC_S = 3600
 STAMP = ROOT / "results" / ".publish_main_stamp"
 
-PAGES = ["live_online.html", "experiment_review.html",
+PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css",
-         "bet_policy_sim.html", "ab_dashboard.html"]
+         "ab_dashboard.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),

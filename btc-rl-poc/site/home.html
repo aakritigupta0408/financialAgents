@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Home</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px; margin-top: 14px; }
+.card { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px; }
+.card h3 { font: 500 17px var(--display); margin-bottom: 6px; }
+.card .nums { display: flex; gap: 18px; flex-wrap: wrap; margin: 10px 0 8px; }
+.finding { display: flex; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--grid); }
+.finding:last-child { border-bottom: none; }
+.finding .mark { flex: 0 0 auto; width: 22px; text-align: center; }
+.tour td:first-child { white-space: nowrap; font-weight: 600; }
+.hero-thesis { max-width: 74ch; }
+.badge { font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; padding: 4px 12px; border-radius: 999px;
+  vertical-align: 3px; margin-left: 8px; }
+.badge.pass { color: var(--good-text); background: rgba(43,217,126,.12); }
+.badge.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
+</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav here" href="home.html">Home</a>
+  <a class="nav" href="ab_dashboard.html">Results</a>
+  <a class="nav" href="live_online.html">Live desk</a>
+  <a class="nav" href="experiment_review.html">Experiment lab</a>
+  <a class="nav" href="index.html">Backtest</a>
+  <a class="nav" href="live_training.html">Training</a>
+  <span class="spacer"></span>
+  <span class="tag">Live experiment</span>
+</nav>
+<main>
+
+<header>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span>
+    Course project · live since 2026-08-20 · <span id="asof">loading…</span></div>
+  <h1>Can a learning system call Bitcoin's next 15 minutes?</h1>
+  <p class="sub hero-thesis">An always-on experiment: eleven reinforcement-learning
+  arms forecast BTC-USD at +1/+5/+15/+30 minutes while two binary models price the
+  live Kalshi 15-minute contract <b>every minute</b> — scored against the market's
+  own probabilities, with fees in, on public append-only ledgers. The honest
+  headline: at these horizons the market is nearly efficient; the edge this system
+  demonstrates is <b>calibrated probability at disclosed operating points</b> —
+  and it beats the class baseline of 80% precision <i>and</i> 80% recall per class.</p>
+</header>
+
+<section>
+  <h2>Headline results <span class="badge pending" id="verdict">computing…</span></h2>
+  <div class="cards">
+    <div class="card">
+      <h3>The deliverable — kb2</h3>
+      <p class="small muted">Market-anchored blend, a probability every minute,
+      confidence-gated. All four class metrics vs the 80/80 baseline:</p>
+      <div class="nums" id="kb2-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb2-sub"></p>
+      <a href="ab_dashboard.html" class="small">Full scoreboard, phase audit &amp; decision ledger →</a>
+    </div>
+    <div class="card">
+      <h3>The learner — kb3</h3>
+      <p class="small muted">Online logistic, 24 features, one SGD step per settled
+      call — the learning-curve arm:</p>
+      <div class="nums" id="kb3-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb3-sub"></p>
+      <a href="ab_dashboard.html" class="small">Learning curve vs the market →</a>
+    </div>
+    <div class="card">
+      <h3>The bet-policy A/B</h3>
+      <p class="small muted">A mandatory one-bet-per-window bidder vs a selector
+      that judges the same bet at placement — three policy generations, each
+      scored on kept-vs-skipped:</p>
+      <div class="nums" id="ab-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="ab-sub"></p>
+      <a href="ab_dashboard.html" class="small">Generations table &amp; bet ledger →</a>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>What we disproved — and published anyway</h2>
+  <p class="sub small muted">Negative results are results. Every claim below is
+  measured in the repo and stated on the dashboards.</p>
+  <div style="margin-top:8px">
+    <div class="finding"><span class="mark">✗</span><span class="small">
+      <b>A fixed-time caller is trivial.</b> Our first deliverable (kbf, one call
+      at T-3 minutes, 90.4% accurate) was retired when we measured the market
+      alone at the same instant: 90.9%. Its replacement locks a call the first
+      minute confidence clears a gate — average lock 11+ minutes out.</span></div>
+    <div class="finding"><span class="mark">✗</span><span class="small">
+      <b>Minute-scale direction from price alone is a coin flip.</b> The sign of
+      MAE-optimal level forecasts runs 48–54% across all arms — the martingale
+      floor, shown live on the direction chart. Skill exists only against fixed
+      strikes with market anchoring.</span></div>
+    <div class="finding"><span class="mark">✗</span><span class="small">
+      <b>Selector v2 subtracted value.</b> Trained on mid-quote counterfactuals but
+      deployed against ask fills, it kept 76–79¢ favorites that were −EV: 43% on
+      kept bets vs 51% on its skips. Diagnosed (mid-vs-ask bias), retired on the
+      public generations table; v3 trains on ask-adjusted prices.</span></div>
+    <div class="finding"><span class="mark">✗</span><span class="small">
+      <b>The mandatory bet mandate is −EV.</b> Forced entries plus fees put the
+      always-bet policy under water — measured on 180+ real-priced paper bets;
+      it is the motivation for selection, kept as the honest control.</span></div>
+    <div class="finding"><span class="mark">✓</span><span class="small">
+      <b>What survives:</b> calibrated per-minute probabilities above 80/80 at
+      disclosed coverage, decision times that vary with conviction, and an
+      evaluation protocol (point-in-time, chronological, market-as-null,
+      costs-in) that every number on these pages is held to.</span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Guided tour</h2>
+  <div class="scroll"><table class="tour">
+    <thead><tr><th>Page</th><th>What you'll find</th></tr></thead>
+    <tbody>
+      <tr><td><a href="ab_dashboard.html">Results</a></td>
+        <td>The 80/80 scoreboard with per-class Wilson bounds, the entry-time
+        phase audit, kb2/kb3 decision ledger, selector generations, bet ledger
+        with ask-priced entries, evaluation protocol.</td></tr>
+      <tr><td><a href="live_online.html">Live desk</a></td>
+        <td>Real-time predictions vs actual per horizon with calibrated 80%
+        bands, the direction-calls chart (noise floor vs strike-anchored skill),
+        winner's circle, one-bet tape.</td></tr>
+      <tr><td><a href="experiment_review.html">Experiment lab</a></td>
+        <td>Arm-by-arm scorecards (MASE, Diebold–Mariano, pinball, BSS),
+        reliability diagram, retrain-gate timeline, architecture notes.</td></tr>
+      <tr><td><a href="index.html">Backtest</a></td>
+        <td>The 120-day offline report that seeded the arms — and the noise-floor
+        finding that shaped the whole design.</td></tr>
+      <tr><td><a href="live_training.html">Training</a></td>
+        <td>Batch training curves and the hourly gated-retrain strip (a 3h
+        hold-out must not regress or the retrain reverts).</td></tr>
+    </tbody>
+  </table></div>
+  <p class="mini" style="margin-top:10px">Everything recomputes client-side from
+  append-only, git-SHA-stamped ledgers published beside these pages — the repo's
+  <code>results/</code> directory is the single source of truth.</p>
+</section>
+
+<footer>BTC 7PM Oracle · NYU Deep Learning course project · data: Coinbase,
+Kalshi, OKX, Deribit (public, no-auth) · paper trading only — not financial
+advice</footer>
+</main>
+
+<script>
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" +
+  (Math.floor(Date.now() / 30000) * 30);
+async function jsonl(path) {
+  try {
+    const r = await fetch(bust(path), { cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.text()).trim().split("\n").map(l => {
+      try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+  } catch { return []; }
+}
+const wilsonLo = (p, n) => { if (!n) return 0; const z = 1.96;
+  const d = 1 + z * z / n, c = p + z * z / (2 * n),
+    s = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
+  return (c - s) / d; };
+
+function gated(rows) {
+  const prf = sel => {
+    const c = val => {
+      const tp = sel.filter(r => r.call === val && r.actual === val).length;
+      const fp = sel.filter(r => r.call === val && r.actual !== val).length;
+      const fn = sel.filter(r => r.call !== val && r.actual === val).length;
+      return { p: tp + fp ? tp / (tp + fp) : null,
+               r: tp + fn ? tp / (tp + fn) : null };
+    };
+    return { up: c(1), down: c(0) };
+  };
+  let tau = null, best = null;
+  for (let t100 = 50; t100 <= 95; t100++) {
+    const t = t100 / 100;
+    const sel = rows.filter(r => Math.max(r.p_up, 1 - r.p_up) >= t);
+    if (sel.length < 40) break;
+    const s = prf(sel);
+    const worst = Math.min(s.up.p ?? 0, s.down.p ?? 0);
+    if (best == null || worst > best.worst) best = { t, worst };
+    if ((s.up.p ?? 0) >= .8 && (s.down.p ?? 0) >= .8) { tau = t; break; }
+  }
+  if (tau == null && best) tau = best.t;
+  const sel = rows.filter(r => Math.max(r.p_up, 1 - r.p_up) >= tau);
+  return { tau, sel, ...prf(sel), cov: sel.length / rows.length };
+}
+const numEl = (label, v) =>
+  `<span class="stat"><span class="k">${label}</span><br>` +
+  `<span class="bignum" style="color:${v != null && v >= .8 ? "var(--good-text)" : "var(--down)"}">${v == null ? "–" : (100 * v).toFixed(1) + "%"}</span></span>`;
+
+async function boot() {
+  const [kb, bets, sel, st] = await Promise.all([
+    jsonl("../results/kalshi_binary_log.jsonl"),
+    jsonl("../results/kb_bets.jsonl"),
+    jsonl("../results/kb_bets_sel.jsonl"),
+    fetch(bust("../results/online_status.json"), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : {}).catch(() => ({})),
+  ]);
+  const stale = (Date.now() / 1000 - (st.alive_at || 0)) > 300;
+  document.getElementById("dot").className = "live-dot" + (stale ? " stale" : "");
+  document.getElementById("asof").textContent = st.alive_at
+    ? "updated " + new Date(st.alive_at * 1000).toLocaleTimeString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
+          hour12: false }) + " PT" : "status unavailable";
+  let pass2 = false;
+  for (const [v, numsId, subId] of [["kb2", "kb2-nums", "kb2-sub"],
+                                    ["kb3", "kb3-nums", "kb3-sub"]]) {
+    const rows = kb.filter(r => r.variant === v && r.actual != null
+      && r.call != null);
+    if (rows.length < 60) continue;
+    const g = gated(rows);
+    const vals = [["UP prec", g.up.p], ["UP rec", g.up.r],
+                  ["DOWN prec", g.down.p], ["DOWN rec", g.down.r]];
+    document.getElementById(numsId).innerHTML =
+      vals.map(([l, x]) => numEl(l, x)).join("");
+    const ok = vals.every(([, x]) => x != null && x >= .8);
+    if (v === "kb2") pass2 = ok;
+    document.getElementById(subId).textContent =
+      `${ok ? "above" : "below"} 80/80 · gate τ ${g.tau.toFixed(2)} · ` +
+      `coverage ${(100 * g.cov).toFixed(0)}% of ${rows.length} settled calls`;
+  }
+  const v3 = sel.filter(b => b.sel_v >= 3 && b.win != null);
+  const judged = bets.filter(b => b.sel_keep != null && b.sel_v >= 3
+    && b.win != null);
+  const skips = judged.filter(b => !b.sel_keep);
+  const wr = x => x.length
+    ? (100 * x.reduce((a, b) => a + b.win, 0) / x.length).toFixed(0) + "%" : "–";
+  document.getElementById("ab-nums").innerHTML =
+    `<span class="stat"><span class="k">kept (v3)</span><br><span class="bignum">${v3.length}</span></span>` +
+    `<span class="stat"><span class="k">kept win</span><br><span class="bignum">${wr(v3)}</span></span>` +
+    `<span class="stat"><span class="k">skipped win</span><br><span class="bignum">${wr(skips)}</span></span>` +
+    `<span class="stat"><span class="k">bidder bets</span><br><span class="bignum">${bets.filter(b => b.win != null).length}</span></span>`;
+  document.getElementById("ab-sub").textContent =
+    "a selector adds value only if kept beats skipped — v1/v2 verdicts on the Results page";
+  const vd = document.getElementById("verdict");
+  vd.className = "badge " + (pass2 ? "pass" : "pending");
+  vd.textContent = pass2 ? "kb2 above 80/80" : "collecting";
+}
+boot();
+setInterval(boot, 60000);
+</script>
+</body>
+</html>
