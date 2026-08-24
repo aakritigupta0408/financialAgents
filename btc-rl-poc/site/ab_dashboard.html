@@ -363,6 +363,16 @@ async function poll() {
           `<div class="big2 ${v2 != null && v2 >= 0.8 ? "target" : "warn"}">${v2 == null ? "–" : (100 * v2).toFixed(1) + "%"}</div>` +
           `<div class="mini">n=${n2} · 95% LB ${(100 * lo).toFixed(0)}%${lo >= 0.8 ? " ✓ sig" : ""}</div></div>`;
       };
+      const tu = sel.filter(r => r.call === 1 && r.actual === 1).length;
+      const fu = sel.filter(r => r.call === 1 && r.actual === 0).length;
+      const td = sel.filter(r => r.call === 0 && r.actual === 0).length;
+      const fd = sel.filter(r => r.call === 0 && r.actual === 1).length;
+      const confLine =
+        `<p class="mini" style="margin-top:6px">confusion (gated): ` +
+        `<span style="color:var(--good-text)">true up ${tu}</span> · ` +
+        `<span style="color:var(--down)">false up ${fu}</span> · ` +
+        `<span style="color:var(--good-text)">true down ${td}</span> · ` +
+        `<span style="color:var(--down)">false down ${fd}</span></p>`;
       const html =
         `<div class="small" style="margin-bottom:6px"><b>${title}</b> ` +
         `<span class="badge ${pass ? "pass" : "pending"}" style="margin-left:8px">${pass ? "above 80/80" : "below target"}</span>` +
@@ -371,7 +381,7 @@ async function poll() {
         `<div class="statusbar">` +
         tile("UP precision", s.up.p, s.up.np) + tile("UP recall", s.up.r, s.up.nr) +
         tile("DOWN precision", s.down.p, s.down.np) + tile("DOWN recall", s.down.r, s.down.nr) +
-        `</div>`;
+        `</div>` + confLine;
       return { html, pass, pending: false };
     };
     const b2 = gatedBlock("kb2", "kb2 — market-anchored blend",
