@@ -823,15 +823,21 @@ async function poll() {
     document.getElementById("dl-kb8").onclick = () => renderDL("kb8");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
-    const winCount = new Set(kb.map(r => r.ticker)).size;
-    const t0 = kb.length ? kb[0].made_ts : Date.now()/1000;
-    const days = Math.max(1/24, (Date.now()/1000 - t0) / 86400);
+    // freshness = the LAST 24h, not a lifetime mean (a lifetime average
+    // permanently wears the pre-watchdog 37h outage of 08-22/23; the
+    // steady state since is ~90 of 96 possible windows/day)
+    const cut24 = Date.now() / 1000 - 86400;
+    const win24 = new Set(kb.filter(r => r.made_ts >= cut24)
+      .map(r => r.ticker)).size;
+    const bets24 = bets.filter(b => b.made_ts >= cut24).length;
+    const sel24 = sel.filter(b => b.made_ts >= cut24).length;
     document.getElementById("traffic").innerHTML = [
       [`${kb.length}`, "binary calls logged"],
       [`${settled}`, "settled"],
-      [`${(winCount/days).toFixed(0)}/day`, "windows"],
-      [`${(bets.length/days).toFixed(0)}/day`, "bidding bets"],
-      [`${(sel.length/days).toFixed(0)}/day`, "selector bets"],
+      [`${win24}<span class="muted" style="font-size:13px">/96</span>`,
+       "windows, last 24h"],
+      [`${bets24}`, "bidding bets, last 24h"],
+      [`${sel24}`, "selector bets, last 24h"],
       [`${st.kb_logit_updates ?? 0}`, "kb3 logit updates"],
     ].map(([val, l]) => `<div class="stat"><div class="k">${l}</div><div class="big2">${val}</div></div>`).join("");
 
