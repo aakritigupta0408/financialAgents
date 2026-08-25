@@ -286,11 +286,13 @@ PT2_LOG_NAME = "pt2_trades.jsonl"
 # The threshold stays FROZEN; version changes are dated in NOTES.md.
 PT3_LOG_NAME = "pt3_trades.jsonl"
 PT3_TAU = 0.77
-# Trader 4, the ALL-IN (2026-08-25): 100% of capital on every leader
-# entry, capped only by ~$500 near-touch depth ("until depth saturation
-# is achieved"). The living demonstration of why bet sizing exists: one
-# settled loss takes essentially everything staked.
+# Trader 4, the GAMBLER (2026-08-25; amended same day from 100% to 33%
+# before any meaningful history): 33% of capital on every leader entry,
+# capped by ~$500 near-touch depth. ~1.6x full Kelly at the desk's
+# typical 75c asks — wild swings, deep drawdowns, but never a one-bet
+# bust. The aggressive end of the sizing curriculum.
 PT4_LOG_NAME = "pt4_trades.jsonl"
+PT4_FRAC = 0.33
 PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
@@ -2307,11 +2309,12 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt3_bankroll_c,
                                             })
                                             pt3_tickers.add(pm_mkt["ticker"])
-                                    # Trader 4, the ALL-IN: everything,
-                                    # every leader entry, to the $500
+                                    # Trader 4, the GAMBLER: 33% of
+                                    # capital per entry, to the $500
                                     # depth-saturation ceiling
                                     if pm_mkt["ticker"] not in pt4_tickers:
-                                        st4cap = min(pt4_bankroll_c,
+                                        st4cap = min(int(PT4_FRAC
+                                                     * pt4_bankroll_c),
                                                      PT4_CAP_C)
                                         nc4 = int(st4cap // (askp + feep))
                                         if nc4 >= 1:

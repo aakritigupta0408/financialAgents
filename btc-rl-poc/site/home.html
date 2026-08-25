@@ -179,9 +179,10 @@
   (the arm leading its last 10 settled decisions), risking at most 10% of
   funds. 🪜 <b>The Ladder</b> mirrors every trade uncapped and banks $1k at
   $11k, then ×10. 🧘 <b>The Disciplined</b> takes any desk entry only at
-  ≥77% confidence. 🎲 <b>The All-In</b> stakes 100% of his capital on
-  every entry, capped only by ~$500 market depth — the control group
-  for bet sizing. Reviewed at end of day. Nothing is ever purchased.</p>
+  ≥77% confidence. 🎲 <b>The Gambler</b> stakes 33% of his capital on
+  every entry (about 1.6× Kelly at these asks), capped by ~$500 market
+  depth — the aggressive end of the sizing curriculum. Reviewed at end
+  of day. Nothing is ever purchased.</p>
   <div class="trader-roster" id="desk-roster"></div>
   <div id="desk-head" style="margin-top:10px"></div>
   <p class="mini" id="desk-ladder"></p>
@@ -1068,7 +1069,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     ["Follower", "#2461b8", mkSeries(pt, false), ""],
     ["Ladder", "#8f6000", mkSeries(pt2 || [], true), "6 5"],
     ["Disciplined", "#0d7a4e", mkSeries(pt3d || [], false), ""],
-    ["All-In", "#b84343", mkSeries(pt4d || [], false), ""],
+    ["Gambler", "#b84343", mkSeries(pt4d || [], false), ""],
   ].filter(s => s[2].length >= 2);
   if (!SER.length) {
     cv.innerHTML = '<p class="mini">the equity race begins with the ' +
@@ -1176,7 +1177,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     `<table style="min-width:0"><thead><tr><th>entry</th>` +
     `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
     `<th class="num">ladder size</th>` +
-    `<th class="num">all-in size</th>` +
+    `<th class="num">gambler size</th>` +
     `<th class="num">stake</th><th class="num">result</th></tr>` +
     `</thead><tbody>${rowsH ||
       `<tr><td colspan="8" class="mini">no bids yet — the desk enters ` +
@@ -1287,13 +1288,13 @@ function drawRoster(pt, pt2, pt3, kb, pt4) {
       `takes any desk entry at ≥77% confidence (v2) · record ${c.wins}/` +
       `${c.s.length} · most windows he simply watches`,
       c.series, "#0d7a4e") +
-    card("t4", "🎲", "The All-In", bank4, g4.dp,
+    card("t4", "🎲", "The Gambler", bank4, g4.dp,
       (bank4 < 500
-        ? `<b style="color:var(--down)">BUSTED</b> — one loss takes ` +
-          `everything staked · record ${g4.wins}/${g4.s.length}`
-        : `100% of capital on every leader entry, capped only by ~$500 ` +
-          `depth · record ${g4.wins}/${g4.s.length} · survival odds ` +
-          `fall every bet`),
+        ? `<b style="color:var(--down)">BUSTED</b> · record ` +
+          `${g4.wins}/${g4.s.length}`
+        : `33% of capital on every leader entry (~1.6× Kelly), capped ` +
+          `at $500 depth · record ${g4.wins}/${g4.s.length} · three ` +
+          `losses in a row = −70%`),
       g4.series, "#b84343");
   // count-up animation on the three balances
   try {
