@@ -23,21 +23,39 @@
   vertical-align: 3px; margin-left: 8px; }
 .badge.pass { color: var(--good-text); background: rgba(43,217,126,.12); }
 .badge.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
-.sig-verdict { font: 650 34px/1.15 var(--display); margin: 10px 0 4px; }
-.sig-verdict.buy { color: var(--good-text); }
-.sig-verdict.aside { color: var(--ink-2); }
-.sig-cols { display: grid; grid-template-columns: 1fr 1fr;
-  gap: 8px 26px; margin-top: 12px; }
-@media (max-width: 760px) { .sig-cols { grid-template-columns: 1fr; } }
-.ev { display: flex; gap: 9px; padding: 5px 0; font-size: 13.5px;
-  color: var(--ink-2); border-bottom: 1px solid var(--grid); }
-.ev .m { flex: 0 0 auto; width: 16px; text-align: center; }
-.ev.for .m { color: var(--good-text); } .ev.against .m { color: var(--down); }
-.sig-econ { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 12px; }
 .paper-tag { font-size: 10px; font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--series-4);
   border: 1px solid rgba(201,133,0,.4); border-radius: 6px;
   padding: 3px 9px; }
+.price-head { display: flex; align-items: baseline; gap: 16px;
+  flex-wrap: wrap; margin-bottom: 4px; }
+.price-big { font: 650 42px/1 var(--display); letter-spacing: .01em;
+  font-variant-numeric: tabular-nums; }
+.price-chg { font-weight: 650; font-variant-numeric: tabular-nums; }
+.price-chg.up { color: var(--up); } .price-chg.down { color: var(--down); }
+#px-chart path.line { stroke-dasharray: 3200; stroke-dashoffset: 3200;
+  animation: drawline 1.8s ease-out forwards; }
+@keyframes drawline { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  #px-chart path.line { animation: none; stroke-dashoffset: 0; } }
+.disc { border: 1px solid rgba(201,133,0,.35);
+  background: rgba(201,133,0,.07); border-radius: 10px;
+  padding: 10px 14px; font-size: 12.5px; color: var(--ink-2);
+  margin: 14px 0 4px; }
+.chat { display: flex; flex-direction: column; gap: 12px;
+  margin-top: 12px; max-width: 780px; }
+.msg { display: flex; gap: 12px; }
+.avatar { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; letter-spacing: .04em; }
+.avatar.model { background: rgba(43,217,126,.14); color: var(--good-text); }
+.avatar.mle { background: rgba(57,135,229,.14); color: var(--series-2); }
+.avatar.quant { background: rgba(213,81,129,.14); color: var(--series-3); }
+.msg .who { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+.msg .bubble { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 4px 14px 14px 14px; padding: 10px 14px;
+  font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
 </style>
 </head>
 <body>
@@ -68,17 +86,17 @@
 </header>
 
 <section>
-  <h2>The live signal — what the system would do right now
-    <span class="paper-tag">paper · research demo</span></h2>
-  <p class="sub small muted">The decision layer, live: kb2's current probability
-  on the open Kalshi window is held against a <b>bet-grade gate</b> — a
-  precision-first threshold that depends on window phase (early calls need
-  near-certainty, late calls less) and backs off during session-open hours
-  where misses cluster. When the gate clears, this panel shows the exact
-  paper order, its economics, and every piece of evidence for and against —
-  the same auditable ledger data as everywhere else. No real orders are
-  placed; this is how the research would be <i>used</i>.</p>
-  <div id="sig-card"><p class="mini">reading the live window…</p></div>
+  <h2>The tape &amp; the desk — how this research would be used
+    <span class="paper-tag">educational · paper only · not financial advice</span></h2>
+  <div id="px-head"></div>
+  <div id="px-chart"><p class="mini">loading the tape…</p></div>
+  <p class="mini" id="px-note"></p>
+  <div class="disc"><b>This is a university research project.</b> Every "entry"
+  below is a simulated paper decision the model logs for its own evaluation —
+  the personas are visualizations of the project's engineering log and its
+  internal critique. Nothing on this page is financial advice, a
+  recommendation, or a solicitation to buy or sell anything, ever.</div>
+  <div class="chat" id="desk-chat"><p class="mini">reading the live window…</p></div>
 </section>
 
 <section>
@@ -230,7 +248,7 @@ function gateTau(minsLeft, hour) {
   return Math.min(tau, 0.97);
 }
 function drawSignal(kb, bets, st) {
-  const el = document.getElementById("sig-card");
+  const el = document.getElementById("desk-chat");
   const k2 = kb.filter(r => r.variant === "kb2");
   const r = k2[k2.length - 1];
   const now = Date.now() / 1000;
@@ -282,9 +300,10 @@ function drawSignal(kb, bets, st) {
     push((r.mkt_p_up >= 0.5) === (r.call === 1),
       `the market prices ${(100 * r.mkt_p_up).toFixed(0)}% — ` +
       `${(r.mkt_p_up >= 0.5) === (r.call === 1) ? "agrees" : "the crowd is on the other side"}`);
+  let occSide = null;
   if (r.pf && r.pf.length >= 1) {
     const occ = r.pf[0] + 0.5;  // fraction of window spent above strike
-    const occSide = r.call ? occ : 1 - occ;
+    occSide = r.call ? occ : 1 - occ;
     push(occSide >= 0.5, `price has spent ${(100 * occSide).toFixed(0)}% of ` +
       `this window on the called side of the strike`);
   }
@@ -302,47 +321,143 @@ function drawSignal(kb, bets, st) {
   const fmtC = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
     { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
       hour12: false });
-  const verdict = graded
-    ? `<div class="sig-verdict buy">BUY ${side}${ask != null ? " @ " + ask + "¢" : ""}</div>`
-    : `<div class="sig-verdict aside">STAND ASIDE</div>`;
-  const econ = !graded
-    ? `<p class="small muted" style="margin-top:6px">confidence ${(100 * conf).toFixed(0)}% is below the
-       ${(100 * tau).toFixed(0)}% bar this situation demands — the discipline IS the edge:
-       historically, sub-gate calls in this phase run near coin-flip.</p>`
-    : ask == null
-      ? `<p class="small muted" style="margin-top:6px">signal is bet-grade; the live quote is
-         unavailable this second — entry would be at the current ask.</p>`
-      : `<div class="sig-econ">
-        <span class="stat"><span class="k">entry (ask)</span><br><span class="bignum">${ask}¢</span></span>
-        <span class="stat"><span class="k">fee</span><br><span class="bignum">${fee}¢</span></span>
-        <span class="stat"><span class="k">break-even</span><br><span class="bignum">${breakeven}%</span></span>
-        <span class="stat"><span class="k">model P</span><br><span class="bignum">${(100 * conf).toFixed(0)}%</span></span>
-        <span class="stat"><span class="k">paper size</span><br><span class="bignum">2% of bankroll</span></span>
-      </div>`;
-  const fors = ev.filter(e => e.ok), against = ev.filter(e => !e.ok);
-  el.innerHTML =
-    `<p class="mini">window closes ${fmtC(r.close_ts)} PT · strike $${Math.round(r.strike).toLocaleString()} ·
-      call made ${fmtC(r.made_ts)} PT (${r.mins_left.toFixed(1)} min left)</p>` +
-    verdict + econ +
-    `<div class="sig-cols"><div><p class="small" style="font-weight:600;margin-bottom:4px">Evidence for</p>` +
-    (fors.map(e => `<div class="ev for"><span class="m">✓</span><span>${e.text}</span></div>`).join("") || '<p class="mini">none</p>') +
-    `</div><div><p class="small" style="font-weight:600;margin-bottom:4px">Evidence against / risk</p>` +
-    (against.map(e => `<div class="ev against"><span class="m">✗</span><span>${e.text}</span></div>`).join("") || '<p class="mini">none</p>') +
-    `</div></div>`;
+  const msg = (cls, who, text) =>
+    `<div class="msg"><div class="avatar ${cls}">` +
+    `${cls === "model" ? "◎" : cls === "mle" ? "ML" : "QX"}</div>` +
+    `<div><div class="who">${who} · ${fmtC(r.made_ts)} PT</div>` +
+    `<div class="bubble">${text}</div></div></div>`;
+  const msgs = [];
+  msgs.push(msg("model", "oracle — the model's paper log", graded
+    ? `On the ${fmtC(r.close_ts)} PT window I would log a paper ${side} entry` +
+      (ask != null ? ` at the ${ask}¢ ask (fee ${fee}¢, break-even ${breakeven}%)` : "") +
+      ` — my confidence is ${(100 * conf).toFixed(0)}% against the ` +
+      `${(100 * tau).toFixed(0)}% bar I hold ${phase}-window calls to. ` +
+      `Simulated size: 2% of the paper bankroll. This is a log entry, not advice.`
+    : `I'm standing aside on the ${fmtC(r.close_ts)} PT window — ` +
+      `${(100 * conf).toFixed(0)}% doesn't clear the ${(100 * tau).toFixed(0)}% ` +
+      `bar for a ${phase}-window call. Historically, most of my losses came ` +
+      `from acting on moments exactly like this one.`));
+  const mleBits = [];
+  if (alikeP != null)
+    mleBits.push(`this cohort (${phase}-window, ≥${(100 * tau).toFixed(0)}% ` +
+      `confident, same side) settled correct ${(100 * alikeP).toFixed(1)}% ` +
+      `of the time (n=${alike.length})`);
+  if (k3) mleBits.push(`kb3's independent 24-feature read is ` +
+    `${(100 * k3.p_up).toFixed(0)}% — it ` +
+    `${(k3.p_up >= .5) === (r.call === 1) ? "agrees" : "disagrees"}`);
+  if (k4) mleBits.push(`the kb4 stack sits at ${(100 * k4.p_up).toFixed(0)}%`);
+  msgs.push(msg("mle", "the MLE — engineering log",
+    `Cohort check: ${mleBits.join("; ")}. The phase-dependent bar exists ` +
+    `because flat-threshold early calls ran 68–72% precise — the ` +
+    `precision-coverage frontier says accuracy is bought by abstaining ` +
+    `where confidence is cheap.`));
+  const qBits = [];
+  if (r.mkt_p_up != null && (r.mkt_p_up >= .5) === (r.call === 1))
+    qBits.push(`The market already prices ${(100 * r.mkt_p_up).toFixed(0)}% — ` +
+      `this call buys calibration, not informational edge; of the model's ` +
+      `276 confident misses, 275 were shared with the crowd, so when the ` +
+      `market is wrong here, so is the model`);
+  if (r.mkt_p_up != null && (r.mkt_p_up >= .5) !== (r.call === 1))
+    qBits.push(`It's fading the crowd (market says ` +
+      `${(100 * r.mkt_p_up).toFixed(0)}%) — it almost never does that, ` +
+      `treat this call as an outlier`);
+  if (HOT_HOURS.includes(hour))
+    qBits.push(`session-open hour: confident calls historically run ~15 ` +
+      `points less precise, the raised bar is earned`);
+  if (occSide != null && occSide < 0.5)
+    qBits.push(`price has spent ${(100 * (1 - occSide)).toFixed(0)}% of this ` +
+      `window on the OTHER side of the strike — the barrier evidence leans ` +
+      `against the call`);
+  if (phase === "early")
+    qBits.push(`twelve-plus minutes out this contract is close to a coin ` +
+      `flip no matter who's calling it`);
+  qBits.push(`and the ledger's standing lesson: the always-bet variant ` +
+    `loses to fees — selection discipline is the entire game here`);
+  msgs.push(msg("quant", "the quant — critique",
+    qBits.join(". ") + "."));
+  el.innerHTML = msgs.join("");
+}
+
+function drawTape(prices, st, r, bets) {
+  const head = document.getElementById("px-head"),
+        box = document.getElementById("px-chart");
+  if (!prices || prices.length < 10) return;
+  const t1 = prices[prices.length - 1].ts;
+  const pts = prices.filter(p => p.ts >= t1 - 3 * 3600);
+  const last = pts[pts.length - 1].c, ago = pts[0].c;
+  const chg = last - ago, pct = chg / ago * 100, up = chg >= 0;
+  head.innerHTML = `<div class="price-head">` +
+    `<span class="price-big">$${last.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>` +
+    `<span class="price-chg ${up ? "up" : "down"}">${up ? "▲" : "▼"} ` +
+    `$${Math.abs(chg).toFixed(0)} (${pct.toFixed(2)}%) past 3h</span>` +
+    `<span class="mini">BTC-USD · minute closes + live composite</span></div>`;
+  const W = 900, H = 260, L = 8, R = 8, T = 12, B = 22;
+  const xmin = pts[0].ts, xmax = t1;
+  let ymin = Infinity, ymax = -Infinity;
+  for (const p of pts) { ymin = Math.min(ymin, p.c); ymax = Math.max(ymax, p.c); }
+  if (r && r.strike) { ymin = Math.min(ymin, r.strike); ymax = Math.max(ymax, r.strike); }
+  const pad = (ymax - ymin) * .08 || 10; ymin -= pad; ymax += pad;
+  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
+  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
+  const d = pts.map((p, i) =>
+    `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("");
+  const col = up ? "var(--up)" : "var(--down)";
+  let g = `<defs><linearGradient id="pxg" x1="0" y1="0" x2="0" y2="1">` +
+    `<stop offset="0" stop-color="${up ? "rgba(43,217,126,.22)" : "rgba(255,93,93,.22)"}"/>` +
+    `<stop offset="1" stop-color="rgba(0,0,0,0)"/></linearGradient></defs>`;
+  g += `<path d="${d}L${X(xmax).toFixed(1)},${H - B}L${X(xmin).toFixed(1)},${H - B}Z" fill="url(#pxg)"/>`;
+  g += `<path class="line" d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  for (let ts = Math.ceil(xmin / 1800) * 1800; ts <= xmax; ts += 1800)
+    g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle" style="font-size:10.5px">` +
+      new Date(ts * 1000).toLocaleTimeString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit",
+          minute: "2-digit", hour12: false }) + `</text>`;
+  if (r && r.strike && r.close_ts >= xmin) {
+    g += `<line x1="${X(Math.max(xmin, r.close_ts - 900))}" x2="${W - R}" ` +
+      `y1="${Y(r.strike)}" y2="${Y(r.strike)}" stroke="var(--series-4)" ` +
+      `stroke-dasharray="5 5" stroke-width="1.4"/>` +
+      `<text x="${W - R}" y="${Y(r.strike) - 6}" text-anchor="end" ` +
+      `style="fill:var(--series-4)">window strike $${Math.round(r.strike).toLocaleString()}</text>`;
+  }
+  const priceAt = ts => {
+    let best = pts[0];
+    for (const p of pts)
+      if (Math.abs(p.ts - ts) < Math.abs(best.ts - ts)) best = p;
+    return best.c;
+  };
+  for (const b of bets.filter(b => b.made_ts >= xmin && b.win != null))
+    g += `<circle cx="${X(b.made_ts)}" cy="${Y(priceAt(b.made_ts))}" r="4.5" ` +
+      `fill="${b.win ? "var(--up)" : "var(--down)"}" stroke="var(--page)" ` +
+      `stroke-width="1.5"><title>paper ${b.side.toUpperCase()} @ ` +
+      `${b.price_c}¢ · ${b.win ? "won" : "lost"} ` +
+      `${(b.pnl_c >= 0 ? "+" : "") + b.pnl_c}¢</title></circle>`;
+  g += `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}">` +
+    `<animate attributeName="r" values="3;6;3" dur="1.6s" repeatCount="indefinite"/></circle>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" ` +
+    `aria-label="BTC price last 3 hours with the model's settled paper entries">${g}</svg>`;
+  document.getElementById("px-note").textContent =
+    "dots = the mandatory bidder's settled paper entries (green won, red " +
+    "lost) · hover a dot for the fill · dashed = the open window's strike";
 }
 
 async function boot() {
-  const [kb, bets, sel, st] = await Promise.all([
+  const [kb, bets, sel, prices, st] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
+    fetch(bust("../results/recent_prices.json"), { cache: "no-store" })
+      .then(r => r.ok ? r.json() : []).catch(() => []),
     fetch(bust("../results/online_status.json"), { cache: "no-store" })
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
   ]);
   try { drawSignal(kb, bets, st); } catch (e) {
-    document.getElementById("sig-card").innerHTML =
-      '<p class="mini">signal unavailable</p>';
+    document.getElementById("desk-chat").innerHTML =
+      '<p class="mini">desk commentary unavailable</p>';
   }
+  try {
+    const k2r = kb.filter(x => x.variant === "kb2").slice(-1)[0];
+    drawTape(prices, st, k2r, bets);
+  } catch (e) {}
   const stale = (Date.now() / 1000 - (st.alive_at || 0)) > 300;
   document.getElementById("dot").className = "live-dot" + (stale ? " stale" : "");
   document.getElementById("asof").textContent = st.alive_at
