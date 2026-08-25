@@ -383,39 +383,38 @@ async function poll() {
         `<span style="color:var(--down)">false up ${fu}</span> · ` +
         `<span style="color:var(--good-text)">true down ${td}</span> · ` +
         `<span style="color:var(--down)">false down ${fd}</span></p>`;
-      // second operating point per user spec: MAX precision subject to
-      // GLOBAL per-class recall >= 60% (of all settled actuals, gated or
-      // not — stricter denominator than the headline's within-gate
-      // recall). Additive display; the model is unchanged.
+      // second operating point: P95 — both class precisions >= 95%,
+      // no recall constraint. Shipped with its two honest footnotes:
+      // the market matches it on the same calls, and ~none of them are
+      // biddable (certainty is priced out) — a calibration showcase,
+      // not a trading edge. Additive display; model unchanged.
       let p90line = "";
-      {
-        const nu = rows.filter(r => r.actual === 1).length;
-        const nd = rows.length - nu;
-        let best = null;
-        for (let t60 = 50; t60 <= 99; t60++) {
-          const s6 = rows.filter(r =>
-            Math.max(r.p_up, 1 - r.p_up) >= t60 / 100);
-          if (s6.length < 40) break;
-          const tu = s6.filter(r => r.call === 1 && r.actual === 1).length;
-          const fu = s6.filter(r => r.call === 1 && r.actual === 0).length;
-          const td = s6.filter(r => r.call === 0 && r.actual === 0).length;
-          const fd = s6.filter(r => r.call === 0 && r.actual === 1).length;
-          const ru = tu / Math.max(1, nu), rd = td / Math.max(1, nd);
-          if (ru < 0.6 || rd < 0.6) break;
-          best = { tau: t60 / 100, pu: tu / Math.max(1, tu + fu),
-                   pd: td / Math.max(1, td + fd), ru, rd,
-                   cov: s6.length / rows.length };
-        }
-        if (best)
+      for (let t95 = Math.round(tau * 100); t95 <= 99; t95++) {
+        const s9 = rows.filter(r =>
+          Math.max(r.p_up, 1 - r.p_up) >= t95 / 100);
+        if (s9.length < 40) break;
+        const un = s9.filter(r => r.call === 1),
+              dn = s9.filter(r => r.call === 0);
+        const pu = un.reduce((a, r) => a + r.hit, 0) / Math.max(1, un.length);
+        const pd = dn.reduce((a, r) => a + r.hit, 0) / Math.max(1, dn.length);
+        if (pu >= 0.95 && pd >= 0.95) {
+          const mk = s9.filter(r => r.mkt_p_up != null);
+          const ma = mk.reduce((a, r) =>
+            a + ((r.mkt_p_up >= .5) === !!r.actual ? 1 : 0), 0) /
+            Math.max(1, mk.length);
+          const bid = s9.filter(r => r.mkt_p_up != null && r.mins_left <= 10
+            && (100 * (r.call ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5) < 80).length;
           p90line = `<p class="mini" style="margin-top:4px">` +
-            `<b>recall-floor gate (R60):</b> max precision holding GLOBAL ` +
-            `recall ≥ 60% per class → τ ${best.tau.toFixed(2)}: ` +
-            `UP ${(100 * best.pu).toFixed(1)}% · DOWN ` +
-            `${(100 * best.pd).toFixed(1)}% precision · recall ` +
-            `${(100 * best.ru).toFixed(0)}/${(100 * best.rd).toFixed(0)} · ` +
-            `coverage ${(100 * best.cov).toFixed(0)}% (global recall counts ` +
-            `every settled minute, a stricter denominator than the ` +
-            `within-gate recall above)</p>`;
+            `<b>certainty gate (P95, no recall floor):</b> τ ` +
+            `${(t95 / 100).toFixed(2)} → UP ${(100 * pu).toFixed(1)}% · ` +
+            `DOWN ${(100 * pd).toFixed(1)}% precision · coverage ` +
+            `${(100 * s9.length / rows.length).toFixed(0)}% (LB ` +
+            `${(100 * wilsonLo(pu, un.length)).toFixed(0)}/` +
+            `${(100 * wilsonLo(pd, dn.length)).toFixed(0)}) · market on the ` +
+            `same calls ${(100 * ma).toFixed(1)}% · biddable ${bid}/${s9.length} — ` +
+            `certainty is priced out: a calibration showcase, not an edge</p>`;
+          break;
+        }
       }
       const html =
         `<div class="small" style="margin-bottom:6px"><b>${title}</b> ` +
