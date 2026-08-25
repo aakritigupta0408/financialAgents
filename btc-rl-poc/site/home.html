@@ -1184,7 +1184,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
     `<th class="num">ladder size</th>` +
     `<th class="num">gambler size</th>` +
-    `<th class="num">stake</th><th class="num">result</th></tr>` +
+    `<th class="num">follower stake</th>` +
+    `<th class="num">follower result</th></tr>` +
     `</thead><tbody>${rowsH ||
       `<tr><td colspan="8" class="mini">no bids yet — the desk enters ` +
       `only when the leader clears its gate on a biddable window ` +
@@ -1198,7 +1199,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
   }
   const days = Object.entries(byd).slice(-3);
   document.getElementById("desk-eod").innerHTML = days.length
-    ? "EOD review: " + days.map(([dk, [n2, w2, p2]]) =>
+    ? "EOD review (follower): " + days.map(([dk, [n2, w2, p2]]) =>
         `${dk} — ${n2} trades, ${w2} wins, <b style="color:${p2 >= 0
           ? "var(--good-text)" : "var(--down)"}">${money(p2)}</b>`)
         .join(" · ")
