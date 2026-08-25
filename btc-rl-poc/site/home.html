@@ -56,6 +56,17 @@
 .msg .bubble { background: var(--surface-2); border: 1px solid var(--border);
   border-radius: 4px 14px 14px 14px; padding: 10px 14px;
   font-size: 13.5px; line-height: 1.6; color: var(--ink-2); }
+.tape-row { display: flex; gap: 20px; align-items: flex-start;
+  flex-wrap: wrap; justify-content: space-between; }
+.bid-card { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 16px; display: flex; gap: 14px;
+  align-items: center; min-width: 300px; }
+.bid-card .ring { flex: 0 0 54px; }
+.bid-meta { font-size: 12.5px; color: var(--ink-2); line-height: 1.55; }
+.bid-meta .side { font-weight: 750; font-size: 15px; }
+.bid-meta .side.yes { color: var(--good-text); }
+.bid-meta .side.no { color: var(--down); }
+.sparkline { margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -83,14 +94,15 @@
 <section>
   <h2>The tape &amp; the desk — how this research would be used
     <span class="paper-tag">educational · paper only · not financial advice</span></h2>
-  <div id="px-head"></div>
+  <div class="tape-row">
+    <div id="px-head"></div>
+    <div class="bid-card" id="bid-card"><p class="mini">no open paper bet</p></div>
+  </div>
   <div id="px-chart"><p class="mini">loading the tape…</p></div>
   <p class="mini" id="px-note"></p>
-  <div class="disc"><b>This is a university research project.</b> Every "entry"
-  below is a simulated paper decision the model logs for its own evaluation —
-  the personas are visualizations of the project's engineering log and its
-  internal critique. Nothing on this page is financial advice, a
-  recommendation, or a solicitation to buy or sell anything, ever.</div>
+  <div class="disc"><b>University research project</b> — simulated paper
+  decisions for model evaluation only; not financial advice, never a
+  recommendation to buy or sell anything.</div>
   <div class="chat" id="desk-chat"><p class="mini">reading the live window…</p></div>
 </section>
 
@@ -190,6 +202,30 @@ function gated(rows) {
   if (tau == null && best) tau = best.t;
   const sel = rows.filter(r => Math.max(r.p_up, 1 - r.p_up) >= tau);
   return { tau, sel, ...prf(sel), cov: sel.length / rows.length };
+}
+function spark(vals, good) {
+  if (!vals || vals.length < 2) return "";
+  const W = 130, H = 26, n = vals.length;
+  let mn = Math.min(...vals), mx = Math.max(...vals);
+  const pad = (mx - mn) * .15 || .02; mn -= pad; mx += pad;
+  const X = i => 2 + i / (n - 1) * (W - 4);
+  const Y = v => 2 + (1 - (v - mn) / (mx - mn)) * (H - 4);
+  const d = vals.map((v, i) => `${i ? "L" : "M"}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join("");
+  const y80 = (0.8 >= mn && 0.8 <= mx) ? `<line x1="2" x2="${W-2}" y1="${Y(.8)}" y2="${Y(.8)}" stroke="var(--faint)" stroke-dasharray="3 3" stroke-width="1"/>` : "";
+  return `<svg class="sparkline" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${y80}` +
+    `<path d="${d}" fill="none" stroke="${good ? "var(--good-text)" : "var(--down)"}" stroke-width="1.8"/>` +
+    `<circle cx="${X(n-1)}" cy="${Y(vals[n-1])}" r="2.5" fill="${good ? "var(--good-text)" : "var(--down)"}"/></svg>`;
+}
+function dailyGatedAcc(rows, tau) {
+  const byDay = {};
+  for (const q of rows) {
+    if (q.actual == null || Math.max(q.p_up, 1 - q.p_up) < tau) continue;
+    const d = new Date(q.made_ts * 1000).toLocaleDateString("en-US",
+      { timeZone: "America/Los_Angeles" });
+    (byDay[d] = byDay[d] || []).push(q.hit);
+  }
+  return Object.keys(byDay).sort(k => k).map(k =>
+    byDay[k].reduce((a, b) => a + b, 0) / byDay[k].length);
 }
 const numEl = (label, v) =>
   `<span class="stat"><span class="k">${label}</span><br>` +
@@ -310,12 +346,10 @@ function drawSignal(kb, bets, st) {
     `${(k3.p_up >= .5) === (r.call === 1) ? "agrees" : "disagrees"}`);
   if (k4) mleBits.push(`the kb4 stack sits at ${(100 * k4.p_up).toFixed(0)}%`);
   msgs.push(msg("mle", "the MLE — engineering log",
-    `Cohort check: ${mleBits.join("; ")}. The phase-dependent bar exists ` +
+    `${mleBits.slice(0, 2).join("; ")}.` +
     (earlyPrec != null
-      ? `because flat-threshold early calls run ${(100 * earlyPrec).toFixed(0)}% precise on the live ledger — `
-      : `because early confidence is unreliable — `) +
-    `the precision-coverage frontier says accuracy is bought by ` +
-    `abstaining where confidence is cheap.`));
+      ? ` Early calls run ${(100 * earlyPrec).toFixed(0)}% at a flat bar — hence the phase gate.`
+      : "")));
   const qBits = [];
   if (r.mkt_p_up != null && (r.mkt_p_up >= .5) === (r.call === 1))
     qBits.push(`The market already prices ${(100 * r.mkt_p_up).toFixed(0)}% — ` +
@@ -340,16 +374,56 @@ function drawSignal(kb, bets, st) {
   qBits.push(`and the ledger's standing lesson: the always-bet variant ` +
     `loses to fees — selection discipline is the entire game here`);
   msgs.push(msg("quant", "the quant — critique",
-    qBits.join(". ") + "."));
+    qBits.slice(0, 2).join(". ") + "."));
   el.innerHTML = msgs.join("");
 }
 
+let bidTimer = null;
+function drawBid(bets, st) {
+  const el = document.getElementById("bid-card");
+  const open = bets.filter(b => b.actual == null).slice(-1)[0];
+  if (bidTimer) { clearInterval(bidTimer); bidTimer = null; }
+  if (!open || open.close_ts * 1000 < Date.now()) {
+    el.innerHTML = '<p class="mini">no open paper bet — the bidder strikes ' +
+      'on edge, door, or forced entry each window</p>';
+    return;
+  }
+  const sel = open.sel_keep == null ? ""
+    : open.sel_keep
+      ? ` · selector <span style="color:var(--good-text)">kept</span> ${(100 * open.sel_p_win).toFixed(0)}%`
+      : ` · selector <span style="color:var(--down)">skipped</span> ${(100 * open.sel_p_win).toFixed(0)}%`;
+  const render = () => {
+    const left = Math.max(0, open.close_ts - Date.now() / 1000);
+    const frac = Math.min(1, Math.max(0, left / 900));
+    const C = 2 * Math.PI * 22;
+    el.innerHTML =
+      `<svg class="ring" viewBox="0 0 54 54">` +
+      `<circle cx="27" cy="27" r="22" fill="none" stroke="var(--grid)" stroke-width="5"/>` +
+      `<circle cx="27" cy="27" r="22" fill="none" stroke="var(--series-4)" stroke-width="5" ` +
+      `stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - frac)}" ` +
+      `transform="rotate(-90 27 27)"/>` +
+      `<text x="27" y="31" text-anchor="middle" style="font-size:12px;fill:var(--ink)">${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, "0")}</text></svg>` +
+      `<div class="bid-meta"><span class="k" style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">open paper bet</span><br>` +
+      `<span class="side ${open.side}">${open.side.toUpperCase()}</span> @ ${open.price_c}¢ ask` +
+      ` · edge ${open.edge_c > 0 ? "+" : ""}${open.edge_c}¢${sel}<br>` +
+      `<span class="mini">window closes ${new Date(open.close_ts * 1000).toLocaleTimeString("en-US", { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", hour12: false })} PT · simulated only</span></div>`;
+  };
+  render();
+  bidTimer = setInterval(render, 1000);
+}
+
+let tapeDrawn = false;
 function drawTape(prices, st, r, bets) {
   const head = document.getElementById("px-head"),
         box = document.getElementById("px-chart");
   if (!prices || prices.length < 10) return;
-  const t1 = prices[prices.length - 1].ts;
-  const pts = prices.filter(p => p.ts >= t1 - 3 * 3600);
+  let series = prices.slice();
+  // live composite as the final point so the tape moves between closes
+  if (st && st.brti && st.brti.price && st.alive_at
+      && st.alive_at > series[series.length - 1].ts)
+    series = series.concat([{ ts: st.alive_at, c: st.brti.price }]);
+  const t1 = series[series.length - 1].ts;
+  const pts = series.filter(p => p.ts >= t1 - 3 * 3600);
   const last = pts[pts.length - 1].c, ago = pts[0].c;
   const chg = last - ago, pct = chg / ago * 100, up = chg >= 0;
   head.innerHTML = `<div class="price-head">` +
@@ -372,7 +446,7 @@ function drawTape(prices, st, r, bets) {
     `<stop offset="0" stop-color="${up ? "rgba(43,217,126,.22)" : "rgba(255,93,93,.22)"}"/>` +
     `<stop offset="1" stop-color="rgba(0,0,0,0)"/></linearGradient></defs>`;
   g += `<path d="${d}L${X(xmax).toFixed(1)},${H - B}L${X(xmin).toFixed(1)},${H - B}Z" fill="url(#pxg)"/>`;
-  g += `<path class="line" d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
+  g += `<path class="${tapeDrawn ? "" : "line"}" d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
   for (let ts = Math.ceil(xmin / 1800) * 1800; ts <= xmax; ts += 1800)
     g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle" style="font-size:10.5px">` +
       new Date(ts * 1000).toLocaleTimeString("en-US",
@@ -399,8 +473,41 @@ function drawTape(prices, st, r, bets) {
       `${(b.pnl_c >= 0 ? "+" : "") + b.pnl_c}¢</title></circle>`;
   g += `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}">` +
     `<animate attributeName="r" values="3;6;3" dur="1.6s" repeatCount="indefinite"/></circle>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" ` +
+  const open = bets.filter(b => b.actual == null && b.made_ts >= xmin)
+    .slice(-1)[0];
+  if (open)
+    g += `<circle cx="${X(open.made_ts)}" cy="${Y(priceAt(open.made_ts))}" ` +
+      `r="6" fill="none" stroke="var(--series-4)" stroke-width="2">` +
+      `<animate attributeName="r" values="5;8;5" dur="1.6s" ` +
+      `repeatCount="indefinite"/></circle>`;
+  box.innerHTML = `<svg id="px-svg" viewBox="0 0 ${W} ${H}" role="img" ` +
     `aria-label="BTC price last 3 hours with the model's settled paper entries">${g}</svg>`;
+  tapeDrawn = true;
+  // crosshair tooltip (reuses the fixed #tip element pattern)
+  const svg = document.getElementById("px-svg");
+  let tip = document.getElementById("tip");
+  if (!tip) {
+    tip = document.createElement("div");
+    tip.id = "tip";
+    document.body.appendChild(tip);
+  }
+  svg.onmousemove = e => {
+    const rect = svg.getBoundingClientRect();
+    const fx = (e.clientX - rect.left) / rect.width * W;
+    const ts = xmin + (fx - L) / (W - L - R) * (xmax - xmin);
+    let best = pts[0];
+    for (const q of pts)
+      if (Math.abs(q.ts - ts) < Math.abs(best.ts - ts)) best = q;
+    tip.textContent = `$${best.c.toLocaleString(undefined,
+      { maximumFractionDigits: 0 })} · ` +
+      new Date(best.ts * 1000).toLocaleTimeString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit",
+          minute: "2-digit", hour12: false }) + " PT";
+    tip.style.left = (e.clientX + 14) + "px";
+    tip.style.top = (e.clientY - 10) + "px";
+    tip.style.opacity = 1;
+  };
+  svg.onmouseleave = () => { tip.style.opacity = 0; };
   document.getElementById("px-note").textContent =
     "dots = the mandatory bidder's settled paper entries (green won, red " +
     "lost) · hover a dot for the fill · dashed = the open window's strike";
@@ -424,6 +531,7 @@ async function boot() {
     const k2r = kb.filter(x => x.variant === "kb2").slice(-1)[0];
     drawTape(prices, st, k2r, bets);
   } catch (e) {}
+  try { drawBid(bets, st); } catch (e) {}
   const stale = (Date.now() / 1000 - (st.alive_at || 0)) > 300;
   document.getElementById("dot").className = "live-dot" + (stale ? " stale" : "");
   document.getElementById("asof").textContent = st.alive_at
@@ -443,9 +551,11 @@ async function boot() {
       vals.map(([l, x]) => numEl(l, x)).join("");
     const ok = vals.every(([, x]) => x != null && x >= .8);
     if (v === "kb2") pass2 = ok;
-    document.getElementById(subId).textContent =
+    const days = dailyGatedAcc(rows, g.tau);
+    document.getElementById(subId).innerHTML =
       `${ok ? "above" : "below"} 80/80 · gate τ ${g.tau.toFixed(2)} · ` +
-      `coverage ${(100 * g.cov).toFixed(0)}% of ${rows.length} settled calls`;
+      `coverage ${(100 * g.cov).toFixed(0)}% of ${rows.length} settled calls` +
+      `<br>${spark(days, ok)} <span class="mini">gated accuracy by day · dashed = 80%</span>`;
   }
   const v3 = sel.filter(b => b.sel_v >= 3 && b.win != null);
   const judged = bets.filter(b => b.sel_keep != null && b.sel_v >= 3
