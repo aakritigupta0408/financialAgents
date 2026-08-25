@@ -43,7 +43,8 @@ from .llm_sentiment import sentiment_snapshot
 from .sources import (fetch_book_stats, fetch_brti_composite,
                       fetch_kalshi_btc15,
                       fetch_deribit_mark, fetch_fear_greed, fetch_mempool_fee,
-                      fetch_okx_funding_rate, fetch_range, fetch_recent_trades)
+                      fetch_okx_funding_rate, fetch_okx_swap_lead,
+                      fetch_range, fetch_recent_trades)
 
 FEATURE_DIM = 10  # len(feature_vector(...)) — intercept + 9 signals
 SNAP_FILE_NAME = "live_snapshots.jsonl"  # streamed-feature history — feeds
@@ -1538,6 +1539,8 @@ def run(once: bool = False) -> None:
                 "spread_bp": book["spread_bp"] if book else None,
                 "k_pup": k_pup, "k_dist_bp": k_dist_bp,
                 "k_tleft": k_tleft, "k_spread": k_spread,
+                # kb6 groundwork: perp lead-lag, logged for future arms
+                **fetch_okx_swap_lead(spot),
             }
             for t in fetch_recent_trades():   # order-flow store (t6)
                 trades[t["id"]] = t

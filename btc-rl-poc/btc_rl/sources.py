@@ -126,6 +126,36 @@ def fetch_okx_funding_rate() -> float | None:
         return None
 
 
+_okx_last: list = []   # (ts, last) samples for lead-lag momentum
+
+
+def fetch_okx_swap_lead(spot: float | None) -> dict:
+    """OKX BTC-USDT-SWAP last price vs spot: the perp LEADS spot at
+    second-to-minute scale, so its gap and short momentum are decision-
+    time features spot-only models can't have (kb6 groundwork — logged
+    now, consumed by future arms only)."""
+    try:
+        resp = _session.get(
+            "https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP",
+            timeout=10)
+        resp.raise_for_status()
+        last = float(resp.json()["data"][0]["last"])
+    except Exception:
+        return {"perp_gap_bp": None, "perp_mom_bp": None}
+    import time as _t
+    now = _t.time()
+    _okx_last.append((now, last))
+    while _okx_last and _okx_last[0][0] < now - 180:
+        _okx_last.pop(0)
+    old = next((v for ts0, v in _okx_last if ts0 <= now - 55), None)
+    return {
+        "perp_gap_bp": round((last - spot) / spot * 1e4, 2)
+                       if spot else None,
+        "perp_mom_bp": round((last - old) / old * 1e4, 2)
+                       if old else None,
+    }
+
+
 def fetch_deribit_mark() -> float | None:
     """Deribit BTC-PERPETUAL mark price (for perp-vs-spot basis)."""
     try:
