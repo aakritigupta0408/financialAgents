@@ -385,7 +385,7 @@ async function poll() {
         tile("UP precision", s.up.p, s.up.np) + tile("UP recall", s.up.r, s.up.nr) +
         tile("DOWN precision", s.down.p, s.down.np) + tile("DOWN recall", s.down.r, s.down.nr) +
         `</div>` + confLine;
-      return { html, pass, pending: false };
+      return { html, pass, pending: false, tau };
     };
     const b2 = gatedBlock("kb2", "kb2 — market-anchored blend",
       "learned per-phase blend of model + market probability");
@@ -401,7 +401,9 @@ async function poll() {
     // over the market within a phase?
     try {
       const rows2 = kb.filter(r => r.variant === "kb2" && r.actual != null);
-      const tau2 = 0.62;
+      // use the SAME auto-tuned gate as the scoreboard block above, so
+      // "gated" means one thing on this page (falls back to 0.62)
+      const tau2 = (b2 && b2.tau) || 0.62;
       const g2 = rows2.filter(r => Math.max(r.p_up, 1 - r.p_up) >= tau2);
       const ph = [["early >10m", m => m > 10], ["mid 5–10m", m => m >= 5 && m <= 10],
                   ["late <5m", m => m < 5]];
