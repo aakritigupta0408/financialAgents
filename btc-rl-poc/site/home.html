@@ -128,6 +128,7 @@
   Reviewed at end of day. Nothing is ever purchased.</p>
   <div id="desk-head" style="margin-top:10px"></div>
   <p class="mini" id="desk-ladder"></p>
+  <div id="desk2-feed"></div>
   <div id="desk-curve"></div>
   <div class="scroll" id="desk-trades" style="margin-top:10px"></div>
   <p class="mini" id="desk-eod"></p>
@@ -888,7 +889,7 @@ function drawDesk(pt, kb, pt2) {
     .toLocaleString("en-US", { minimumFractionDigits: 2,
                                maximumFractionDigits: 2 });
   const dayKey = ts => new Date(ts * 1000)
-    .toLocaleDateString("en-US", { timeZone: "America/New_York" });
+    .toLocaleDateString("en-US", { timeZone: "America/Los_Angeles" });
   const today = dayKey(Date.now() / 1000);
   const dpnl = settled.filter(t => dayKey(t.close_ts) === today)
     .reduce((a, t) => a + t.pnl_c, 0);
@@ -955,7 +956,39 @@ function drawDesk(pt, kb, pt2) {
       `<b>${money(worth2)}</b> (banked ${money(banked2)} · playing ` +
       `${money(worth2 - banked2)}) · level ${money(level2)}, bid limit ` +
       `${money(Math.floor((worth2 - banked2) * 0.10))} · same entries, ` +
-      `sized to his own 10% — banks $1k at $11k, then ×10`;
+      `sized to his own 10%, UNCAPPED (paper fills at the ask) — banks ` +
+      `$1k at $11k, then $10k at $110k, ×10`;
+    // his own ticket feed — the compounding is the show: watch the
+    // contract counts grow as the bankroll climbs the ladder
+    const feed = document.getElementById("desk2-feed");
+    if (feed && pt2 && pt2.length) {
+      const fT3 = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+        { timeZone: "America/Los_Angeles", hour: "2-digit",
+          minute: "2-digit", hour12: false }) + " PT";
+      feed.innerHTML = `<div style="margin-top:6px">` +
+        pt2.slice(-4).reverse().map(t => {
+          const buy = t.side === "yes";
+          const status = t.actual == null
+            ? `<span class="badge pending">OPEN · settles ` +
+              `${fT3(t.close_ts)}</span>`
+            : t.win
+              ? `<span class="badge pass">WON +${money(t.pnl_c)}</span>`
+              : `<span class="badge" style="background:` +
+                `rgba(230,80,80,.15);color:var(--down)">LOST ` +
+                `${money(t.pnl_c)}</span>`;
+          return `<div class="card" style="max-width:430px;` +
+            `padding:8px 14px;margin-top:6px">` +
+            `<div style="display:flex;justify-content:space-between;` +
+            `align-items:center;gap:10px">` +
+            `<b style="font-size:13px;color:${buy
+              ? "var(--good-text)" : "var(--down)"}">BUY ` +
+            `${t.side.toUpperCase()}</b>${status}</div>` +
+            `<div class="mini">BTC ≥ $${Math.round(t.strike)
+              .toLocaleString()} · <b>${t.contracts} contracts @ ` +
+            `${t.ask_c}¢</b> = ${money(t.stake_c)} · leader ` +
+            `${t.leader} · banked ${money(t.banked_c || 0)}</div></div>`;
+        }).join("") + `</div>`;
+    }
   } catch (e) {}
   const cv = document.getElementById("desk-curve");
   if (!settled.length) {
@@ -992,11 +1025,8 @@ function drawDesk(pt, kb, pt2) {
       `opacity="0.55">low ${money(ylo)}</text></svg>`;
   }
   const fT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
-    { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit",
-      hour12: false }) + " ET · " +
-    new Date(ts * 1000).toLocaleTimeString("en-IN",
-    { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit",
-      hour12: false }) + " IST";
+    { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
+      hour12: false }) + " PT";
   const p2byT = {};
   for (const t of (pt2 || [])) p2byT[t.ticker] = t;
   const rowsH = pt.slice(-8).reverse().map(t => {
@@ -1056,8 +1086,8 @@ function drawDesk3(pt3, kb) {
   const bank = START + settled.reduce((a, t) => a + t.pnl_c, 0);
   const wins = settled.reduce((a, t) => a + t.win, 0);
   const fT2 = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
-    { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit",
-      hour12: false }) + " ET";
+    { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
+      hour12: false }) + " PT";
   const ticket = (t, big) => {
     const buy = t.side === "yes";
     const status = t.actual == null
