@@ -99,6 +99,11 @@
 #desk-curve path.eq { stroke-dasharray: 2400; stroke-dashoffset: 2400;
   animation: drawline 1.6s ease-out forwards; }
 .eq-dot { animation: pulse-open 2s ease-in-out infinite; }
+.flowline { stroke-dasharray: 6 6; animation: flowdash 1s linear infinite; }
+@keyframes flowdash { to { stroke-dashoffset: -12; } }
+#tm-flow .fnode { animation: rise .6s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .flowline, #tm-flow .fnode { animation: none; } }
 @media (prefers-reduced-motion: reduce) {
   .tkt, .badge.pending, .eq-dot { animation: none; }
   #desk-curve path.eq { animation: none; stroke-dashoffset: 0; }
@@ -151,9 +156,17 @@
   how long to turn a starting bankroll into $2M — and what's the minimum
   capital? Computed live from the ledger, with the honest three-regime answer.</p>
   <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
-  <div class="scroll" id="tm-table" style="margin-top:12px"></div>
-  <div class="scroll" id="tm-ladder" style="margin-top:12px"></div>
-  <div class="scroll" id="tm-winner" style="margin-top:12px"></div>
+  <p class="small" id="tm-answer" style="margin-top:14px"></p>
+  <div id="tm-flow"></div>
+  <details style="margin-top:12px"><summary>Simulation 1 — trade LOUD vs
+    trade QUIETLY (what detection does to an edge)</summary>
+    <div class="scroll" id="tm-table"></div></details>
+  <details style="margin-top:8px"><summary>Simulation 2 — the ladder plan
+    (bank $1k at $11k, play $10k, ×10)</summary>
+    <div class="scroll" id="tm-ladder"></div></details>
+  <details open style="margin-top:8px"><summary>Simulation 3 — the
+    disciplined policy (the live candidate)</summary>
+    <div class="scroll" id="tm-winner"></div></details>
   <p class="mini" id="tm-verdict"></p>
 </section>
 
@@ -234,8 +247,8 @@
       <p class="mini">✗ passive maker fills at 1-min speed — adversely selected <span class="muted">· closed 08-24</span></p></div>
     <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">69.8% <span class="muted">&lt;</span> 73.0%</div>
       <p class="mini">✗ bigger foundation model (Bolt-base, Chronos-2 + covariates) vs frozen kb7 — tie or worse, kb9 not launched <span class="muted">· closed 08-25</span></p></div>
-    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">$1,000 → $103</div>
-      <p class="mini">✗ follow-the-leader desk, 4 replayed days — adverse selection at the ask <span class="muted">· replay 08-25</span></p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px" id="disp-desk-num">$1,000 → $103</div>
+      <p class="mini" id="disp-desk-sub">? follow-the-leader: the replay said ruin — the live desk is now the controlling test</p></div>
   </div>
   <p class="mini" style="margin-top:8px">closed experiments — numbers frozen at retirement (dated), reproducible from the repo; everything else on this page recomputes every 15 s · details on <a href="ab_dashboard.html">Results</a></p>
 </section>
@@ -903,6 +916,72 @@ function drawTwoMillion(kb) {
       `tier's win rate — it updates live above and gets a pre-registered ` +
       `Conviction Book stream before anything more is claimed · ` +
       `simulated research, not advice</p>`;
+    // ---- the answer in one line + the math as an animated pipeline ----
+    const ansEl = document.getElementById("tm-answer");
+    const flowEl = document.getElementById("tm-flow");
+    if (eSel != null && eSel > 0 && ansEl && flowEl) {
+      const dailyF = WD * FSEL * CAP * eSel * 0.5;
+      const daily9 = WD * FSEL * 9000 * eSel * 0.5;
+      ansEl.innerHTML =
+        `<b>The answer, in one line:</b> betting <i>everything</i> loses — ` +
+        `every arm's all-entries edge is negative at real asks (tiles ` +
+        `above) — so $2M by brute force is <b>never</b>. The one live ` +
+        `route is <b>selectivity</b>: the disciplined tier is running ` +
+        `<b>${wsum}/${top.length}</b> across ${wn} windows ` +
+        `(+${(100 * eSel).toFixed(1)}%/$1). <b>If</b> that survives more ` +
+        `windows, the pipeline below is the whole calculation:`;
+      const node = (x, big, l1, l2, col) =>
+        `<g class="fnode"><rect x="${x}" y="34" width="142" height="66" ` +
+        `rx="12" fill="var(--surface-2)" stroke="var(--border)"/>` +
+        `<text x="${x + 71}" y="62" text-anchor="middle" font-size="17" ` +
+        `font-weight="700" fill="${col || "var(--ink)"}">${big}</text>` +
+        `<text x="${x + 71}" y="78" text-anchor="middle" font-size="8.5" ` +
+        `fill="currentColor" opacity=".6">${l1}</text>` +
+        `<text x="${x + 71}" y="90" text-anchor="middle" font-size="8.5" ` +
+        `fill="currentColor" opacity=".6">${l2}</text></g>`;
+      const op = (x, sym) =>
+        `<line class="flowline" x1="${x}" x2="${x + 22}" y1="67" y2="67" ` +
+        `stroke="currentColor" stroke-opacity=".45" stroke-width="1.5"/>` +
+        `<text x="${x + 11}" y="58" text-anchor="middle" font-size="13" ` +
+        `font-weight="700" fill="currentColor" opacity=".6">${sym}</text>`;
+      flowEl.innerHTML =
+        `<svg viewBox="0 0 985 152" style="width:100%;margin-top:6px" ` +
+        `role="img" aria-label="the $2M math pipeline">` +
+        `<title>edge × stake × windows × detection = dollars per day → ` +
+        `time to $2M</title>` +
+        node(0, `+${(100 * eSel).toFixed(1)}%`,
+          "edge per $1 staked", "selective tier · live") +
+        op(146, "×") +
+        node(172, `$${Math.round(FSEL * CAP)}`,
+          "stake per window", `${(100 * XSTAR).toFixed(0)}% of $${CAP} depth`) +
+        op(318, "×") +
+        node(344, `${WD.toFixed(0)}/day`,
+          "windows that qualify", "confidence ≥ 77%") +
+        op(490, "×") +
+        node(516, "½", "detection tax", "trade quietly, keep half") +
+        op(662, "=") +
+        node(688, `$${Math.round(dailyF)}/day`,
+          "sustainable extraction", "at proven depth", "var(--good-text)") +
+        op(834, "→") +
+        node(843, `${fdys(2e6 / dailyF)}`,
+          "to $2,000,000", "$2M ÷ $/day", "var(--good-text)") +
+        `<text x="0" y="128" font-size="10.5" fill="currentColor" ` +
+        `opacity=".65">same pipeline, other worlds:  measured ~$9k depth ` +
+        `→ <tspan font-weight="700">$${Math.round(daily9).toLocaleString()}` +
+        `/day → ${fdys(2e6 / daily9)}</tspan>   ·   paper / class world ` +
+        `(no depth cap, no adversary) → <tspan font-weight="700">` +
+        `${paperD}</tspan></text>` +
+        `<text x="0" y="146" font-size="10.5" fill="currentColor" ` +
+        `opacity=".5">every number is live — the tier's win rate moves ` +
+        `this whole chain · simulated research, not advice</text></svg>`;
+    } else if (ansEl) {
+      ansEl.innerHTML = `<b>The answer, in one line:</b> every measured ` +
+        `edge — including the selective tier right now — is at or below ` +
+        `break-even at real asks, so the honest time-to-$2M is ` +
+        `<b>never</b> until a win rate clears ~75% on biddable entries. ` +
+        `The simulations below show what changes if one does.`;
+      if (flowEl) flowEl.innerHTML = "";
+    }
   } catch (e) {}
   document.getElementById("tm-verdict").innerHTML =
     `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
@@ -1143,6 +1222,22 @@ function drawRoster(pt, pt2, pt3, kb) {
     `<div class="tname">${name}</div>` +
     `<div class="tbank">${money(bal)}</div>${delta(dp)}` +
     `<div class="tmeta">${meta}</div>${spark(series, col)}</div>`;
+  // the disproved wall's desk tile is a LIVE contest: replay prediction
+  // vs the actual follower — updated here so it can never go stale
+  try {
+    const dn = document.getElementById("disp-desk-num");
+    const ds = document.getElementById("disp-desk-sub");
+    if (dn && a.s.length) {
+      dn.textContent = `$103 vs ${money(bank1)}`;
+      const beat = bank1 > 10300;
+      ds.innerHTML = `${beat ? "?" : "✗"} follow-the-leader — replay ` +
+        `(approx asks, 4 days) predicted ruin at $103; the LIVE desk ` +
+        `is the controlling test: <b>${money(bank1)}</b> after ` +
+        `${a.s.length} trades${beat
+          ? " — replay currently contradicted, verdict pending"
+          : " — tracking the replay"}`;
+    }
+  } catch (e) {}
   el.innerHTML =
     card("t1", "🎯", "The Follower", bank1, a.dp,
       `rides the hot hand — always the arm leading its last 10 ` +
