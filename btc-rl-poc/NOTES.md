@@ -11,6 +11,15 @@ the score is (win - q). Test: mean excess score > 0, t-test CLUSTERED
 BY DAY. The market price absorbs shared outcome variance, so this
 reaches a verdict with fewer windows than the raw win-rate test.
 
+RESULT (same day): Method B replay, 663 entered windows across 15
+days, real asks: 493/663 = 74.4% vs avg cost 71.8c -> EV +3.6%/$1
+(Wilson LB 71.5%); Method A clustered t = 0.85, NOT significant. The
+live tier's 20/22 (+21%/$1) does NOT generalize — thin-sample
+optimism, the shared-outcome lesson at 30x scale. Honest posture: the
+tier's durable edge is small-positive and unproven; the live stream
+continues under the frozen rule and both numbers are shown, labeled,
+never merged.
+
 METHOD B — REPLAY over the mined history (corroboration, labeled
 replay, never merged with the live stream): apply the identical frozen
 tier rule (kb7 conf >= 0.77, first qualifying minute, real bid/ask
