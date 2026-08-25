@@ -197,8 +197,12 @@
       own probability <i>on identical calls</i>; phase-stratified so
       convergence can't masquerade as skill. Anything that fails this check
       is retired and says so (kbf).</li>
-    <li><b>Costs in:</b> P&amp;L nets Kalshi's fee formula at ask-side fills;
-      bankrolls compound a fixed 2% risk.</li>
+    <li><b>Costs in:</b> P&amp;L nets Kalshi's trading fee
+      (⌈7%·price·(1−price)⌉ per contract, ~2¢ at a 65¢ entry) at ask-side
+      fills; bankrolls compound a fixed 2% risk. Kalshi direct charges no
+      commission beyond this; routing via a broker (e.g. Robinhood,
+      $0.01/contract) would cost roughly another 1.5% per $1 at typical
+      entries — not modeled, disclosed here.</li>
     <li><b>Uncertainty stated:</b> Wilson 95% lower bounds on every rate,
       Diebold–Mariano on paired errors, two-proportion z on the A/B.</li>
     <li><b>Audit trail:</b> every metric recomputes client-side from the
