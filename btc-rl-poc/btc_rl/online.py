@@ -2244,9 +2244,19 @@ def run(once: bool = False) -> None:
                                 feep = math.ceil(
                                     7 * (askp / 100) * (1 - askp / 100))
                                 if 5 <= askp < 80:
+                                    # ONE depth ceiling for the whole
+                                    # desk: live near-touch book on the
+                                    # side being lifted, $500 fallback
+                                    # when the book is dark
+                                    dside = (pm_mkt.get("depth_no")
+                                             if syp else
+                                             pm_mkt.get("depth_yes"))
+                                    dcap = (int(dside * askp)
+                                            if dside else PT4_CAP_C)
                                     base_row = {
                                         "ticker": pm_mkt["ticker"],
                                         "made_ts": now_ts,
+                                        "depth_cap_c": dcap,
                                         "close_ts": k_close_ts,
                                         "strike": pm_mkt["strike"],
                                         "side": "yes" if syp else "no",
@@ -2262,7 +2272,9 @@ def run(once: bool = False) -> None:
                                         "pnl_c": None,
                                     }
                                     if pm_mkt["ticker"] not in pt_tickers:
-                                        ncon = int((PT_FRAC * pt_bankroll_c)
+                                        ncon = int(min(PT_FRAC
+                                                       * pt_bankroll_c,
+                                                       dcap)
                                                    // (askp + feep))
                                         if ncon >= 1:
                                             stake = int(ncon * (askp + feep))
@@ -2275,7 +2287,9 @@ def run(once: bool = False) -> None:
                                             })
                                             pt_tickers.add(pm_mkt["ticker"])
                                     if pm_mkt["ticker"] not in pt2_tickers:
-                                        nc2 = int((PT_FRAC * pt2_bankroll_c)
+                                        nc2 = int(min(PT_FRAC
+                                                      * pt2_bankroll_c,
+                                                      dcap)
                                                   // (askp + feep))
                                         if nc2 >= 1:
                                             st2 = int(nc2 * (askp + feep))
@@ -2295,7 +2309,9 @@ def run(once: bool = False) -> None:
                                     if (pm_mkt["ticker"] not in pt3_tickers
                                             and base_row["p_arm"]
                                             >= PT3_TAU):
-                                        nc3 = int((PT_FRAC * pt3_bankroll_c)
+                                        nc3 = int(min(PT_FRAC
+                                                      * pt3_bankroll_c,
+                                                      dcap)
                                                   // (askp + feep))
                                         if nc3 >= 1:
                                             st3 = int(nc3 * (askp + feep))
@@ -2316,11 +2332,6 @@ def run(once: bool = False) -> None:
                                     # NO book and vice versa); $500
                                     # fallback only if the book is dark
                                     if pm_mkt["ticker"] not in pt4_tickers:
-                                        dside = (pm_mkt.get("depth_no")
-                                                 if syp else
-                                                 pm_mkt.get("depth_yes"))
-                                        dcap = (int(dside * askp)
-                                                if dside else PT4_CAP_C)
                                         st4cap = min(int(PT4_FRAC
                                                      * pt4_bankroll_c),
                                                      dcap)
@@ -2355,7 +2366,12 @@ def run(once: bool = False) -> None:
                             fee3 = math.ceil(
                                 7 * (ask3 / 100) * (1 - ask3 / 100))
                             if 5 <= ask3 < 80:
-                                nc3 = int((PT_FRAC * pt3_bankroll_c)
+                                d3 = (pm_mkt.get("depth_no") if sy3
+                                      else pm_mkt.get("depth_yes"))
+                                dcap3 = (int(d3 * ask3) if d3
+                                         else PT4_CAP_C)
+                                nc3 = int(min(PT_FRAC * pt3_bankroll_c,
+                                              dcap3)
                                           // (ask3 + fee3))
                                 if nc3 >= 1:
                                     st3 = int(nc3 * (ask3 + fee3))
