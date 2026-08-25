@@ -363,7 +363,7 @@ const ARMS = [
     reward: "Scored for accuracy only — never learns.",
     sampling: "Emitted live only (no backfill — the residual window is built from the ledger as of now); scored like any predictor.",
     offline: null },
-  { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#f2efe6",
+  { key: "agg", variants: ["consensus", "consensus-h1", "consensus-h15", "consensus-h30"], color: "#2a3342",
     title: "Consensus — median poll (our headline +5 min call)",
     architecture: "No learning: at each 5-min slot, at all four horizons, it polls ctl, rp, t2, t6, t7 and t8 plus persistence (the current price), drops the voter with the worst trailing MAE (last 50 scored rows, once at least 3 voters have history), and takes the median of the rest. Robust to any single model's bad slot; the +5m poll is our headline call.",
     features: "Its voters.", reward: "Scored for accuracy only — never learns.",
@@ -483,9 +483,7 @@ function groupedChart(preds) {
       g += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}" ` +
         `height="${(H - B - y).toFixed(1)}" rx="5" fill="${b.color}" fill-opacity="0.9">` +
         `<title>${b.key} +${grp.h}m — MAE $${Math.round(b.mae)} (n=${b.n})` +
-        `${sig ? " — significantly worse than control" : ""}</title></rect>` +
-        `<text x="${(x + bw / 2 - 2).toFixed(1)}" y="${(y - 5).toFixed(1)}" ` +
-        `text-anchor="middle" style="fill:#cbd5e1;font-size:10.5px">$${Math.round(b.mae)}</text>`;
+        `${sig ? " — significantly worse than control" : ""}</title></rect>`;
       if (sig)
         g += `<text x="${(x + bw / 2 - 2).toFixed(1)}" y="${H - B + 14}" ` +
           `text-anchor="middle" style="fill:#f87171;font-size:11px">▼</text>`;
@@ -495,10 +493,10 @@ function groupedChart(preds) {
       g += `<line x1="${x0 - 4}" y1="${fy.toFixed(1)}" x2="${(x0 + gw - 24).toFixed(1)}" y2="${fy.toFixed(1)}" ` +
         `stroke="rgba(22,32,44,.65)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
         `<text x="${(x0 + gw - 24).toFixed(1)}" y="${(fy - 5).toFixed(1)}" text-anchor="end" ` +
-        `style="fill:#e2e8f0;font-size:10.5px">floor $${Math.round(grp.floor)}</text>`;
+        `style="fill:rgba(22,32,44,.75);font-size:10.5px;font-weight:700">floor $${Math.round(grp.floor)}</text>`;
     }
     g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 30}" ` +
-      `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
+      `text-anchor="middle" style="fill:#16202c;font-weight:700">+${grp.h} min</text>`;
   });
   g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(22,32,44,.22)"/>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE, all arms and horizons">${g}</svg>`;
@@ -553,7 +551,7 @@ function pctChart(preds, metric, refs, label) {
         `<title>${b.key} +${grp.h}m: ${b.v.toFixed(0)}% (n=${b.n})</title></rect>`;
     });
     g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 26}" ` +
-      `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
+      `text-anchor="middle" style="fill:#16202c;font-weight:700">+${grp.h} min</text>`;
   });
   g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(22,32,44,.22)"/>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${g}</svg>`;

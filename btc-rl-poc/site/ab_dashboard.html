@@ -35,7 +35,8 @@
   anchor deliverable <b>kb2</b> (market-anchored blend) to <b>kb7</b>
   (zero-shot foundation model) and <b>kb8</b> (kb7 × market, learned live).
   Class baseline: <b>80% precision and 80% recall per class</b> at each
-  arm's disclosed confidence gate; kb2, kb4 and kb7 currently clear it.
+  arm's disclosed confidence gate — the status badges below recompute
+  live and are the authority on who clears it right now.
   The fixed-T-3 variant (kbf) is retired as trivial — the market alone
   matches it at that timestamp. The live trading story — four paper
   traders with distinct sizing disciplines — lives on the
@@ -564,9 +565,15 @@ async function poll() {
         `market — stated here before anyone has to find it.</p>`;
     } catch {}
     const v = document.getElementById("verdict");
-    if (b2.pass || b3.pass) { v.className = "badge pass"; v.textContent = "above 80/80"; }
-    else if (b2.pending && b3.pending) { v.className = "badge pending"; v.textContent = "collecting"; }
-    else { v.className = "badge pending"; v.textContent = "below target"; }
+    try {
+      const nAbove = Object.values(blocks)
+        .filter(b => b && b.pass).length;
+      if (nAbove > 0) { v.className = "badge pass";
+        v.textContent = `${nAbove} arm${nAbove > 1 ? "s" : ""} above 80/80`; }
+      else { v.className = "badge pending"; v.textContent = "collecting"; }
+    } catch {
+      v.className = "badge pending"; v.textContent = "collecting";
+    }
     document.getElementById("kbf-note").textContent =
       "Significance requires every 95% lower bound above 80% — bounds tighten " +
       "as calls accumulate. The 'vs market on the same calls' figure is the " +
