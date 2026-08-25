@@ -115,6 +115,7 @@
   <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
   <div class="scroll" id="tm-table" style="margin-top:12px"></div>
   <div class="scroll" id="tm-ladder" style="margin-top:12px"></div>
+  <div class="scroll" id="tm-winner" style="margin-top:12px"></div>
   <p class="mini" id="tm-verdict"></p>
 </section>
 
@@ -796,6 +797,72 @@ function drawTwoMillion(kb) {
     `is the whole gap between the two right-hand columns · banking ` +
     `locks profits out of drawdown reach either way · simulated ` +
     `research, not advice</p>`;
+  // THE DISCIPLINED TRADER — every measured lesson combined:
+  // (1) selectivity: bid ONLY kb7's top-confidence windows (~44% of
+  //     qualifying — the tier where the ledger's edge concentrates)
+  // (2) stealth sizing: total take = x* (25%) of depth, so per traded
+  //     window stake = x*/0.44 ~ 57% of near-touch depth, keep half
+  //     the edge (Kyle optimum)
+  // (3) one bid per window, ladder banking for drawdown protection
+  try {
+    const ke = [];
+    for (const r of kb) {
+      if (r.variant !== "kb7" || r.actual == null || r.mkt_p_up == null
+          || r.mins_left > 10
+          || Math.max(r.p_up, 1 - r.p_up) < 0.64) continue;
+      const a4 = 100 * (r.call ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
+      if (a4 < 5 || a4 >= 80) continue;
+      const f4 = Math.ceil(7 * (a4 / 100) * (1 - a4 / 100));
+      ke.push([Math.max(r.p_up, 1 - r.p_up), r.hit, a4 + f4, r.ticker]);
+    }
+    ke.sort((a, b) => b[0] - a[0]);
+    const top = ke.slice(0, Math.ceil(ke.length * 0.44));
+    const wn = new Set(top.map(x => x[3])).size;
+    const wsum = top.reduce((a, x) => a + x[1], 0);
+    const cost = top.reduce((a, x) => a + x[2], 0) / Math.max(1, top.length);
+    const eSel = top.length
+      ? ((wsum / top.length) * 100 - cost) / cost : null;
+    const QSEL = 0.44, WD = BETS_D * QSEL;          // ~13 windows/day
+    const FSEL = XSTAR / QSEL;                       // ~57% of depth
+    const row = (name, D2) => {
+      if (eSel == null || eSel <= 0)
+        return `<tr><td>${name}</td><td class="num">–</td>` +
+          `<td class="num">never</td><td class="num">never</td></tr>`;
+      const daily = WD * FSEL * D2 * eSel * 0.5;
+      return `<tr><td>${name}</td>` +
+        `<td class="num">$${Math.round(FSEL * D2).toLocaleString()}</td>` +
+        `<td class="num">$${Math.round(daily).toLocaleString()}</td>` +
+        `<td class="num">${fdys(2e6 / daily)}</td></tr>`;
+    };
+    const paperD = eSel != null && eSel > 0
+      ? fdys(Math.log(2e6 / 1e3) / (WD * Math.log(1 + 0.10 * eSel)))
+      : "never";
+    document.getElementById("tm-winner").innerHTML =
+      `<p class="small" style="margin:6px 0 4px"><b>The disciplined ` +
+      `trader — the winning policy</b> <span class="muted">— bids only ` +
+      `kb7's top-confidence windows (~${WD.toFixed(0)}/day), sized so ` +
+      `total take = the stealth optimum (${(100 * XSTAR).toFixed(0)}% ` +
+      `of depth), one bid per window, ladder banking</span></p>` +
+      `<p class="mini">selective tier measured live: ${wsum}/${top.length}` +
+      ` entries won across ${wn} windows · EV ` +
+      `${eSel == null ? "–" : (100 * eSel).toFixed(1) + "%"}/$1 at avg ` +
+      `cost ${cost.toFixed(0)}¢ — thin sample, pre-registration pending` +
+      `</p>` +
+      `<table style="min-width:0;max-width:640px"><thead><tr>` +
+      `<th>depth world</th><th class="num">stake/window</th>` +
+      `<th class="num">$/day</th><th class="num">$2M</th></tr></thead>` +
+      `<tbody>` +
+      row(`conservative floor ($${CAP}/window)`, CAP) +
+      row(`measured near-touch (~$9k, units audit pending)`, 9000) +
+      `<tr><td>paper · class world (no adversary, compounding)</td>` +
+      `<td class="num">10% of bankroll</td><td class="num">—</td>` +
+      `<td class="num">${paperD}</td></tr>` +
+      `</tbody></table>` +
+      `<p class="mini">the one number this stands on is the selective ` +
+      `tier's win rate — it updates live above and gets a pre-registered ` +
+      `Conviction Book stream before anything more is claimed · ` +
+      `simulated research, not advice</p>`;
+  } catch (e) {}
   document.getElementById("tm-verdict").innerHTML =
     `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
     `(any real positive edge, compounding uncapped) · <b>~years</b> ` +
