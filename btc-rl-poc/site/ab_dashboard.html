@@ -383,6 +383,40 @@ async function poll() {
         `<span style="color:var(--down)">false up ${fu}</span> · ` +
         `<span style="color:var(--good-text)">true down ${td}</span> · ` +
         `<span style="color:var(--down)">false down ${fd}</span></p>`;
+      // second operating point per user spec: MAX precision subject to
+      // GLOBAL per-class recall >= 60% (of all settled actuals, gated or
+      // not — stricter denominator than the headline's within-gate
+      // recall). Additive display; the model is unchanged.
+      let p90line = "";
+      {
+        const nu = rows.filter(r => r.actual === 1).length;
+        const nd = rows.length - nu;
+        let best = null;
+        for (let t60 = 50; t60 <= 99; t60++) {
+          const s6 = rows.filter(r =>
+            Math.max(r.p_up, 1 - r.p_up) >= t60 / 100);
+          if (s6.length < 40) break;
+          const tu = s6.filter(r => r.call === 1 && r.actual === 1).length;
+          const fu = s6.filter(r => r.call === 1 && r.actual === 0).length;
+          const td = s6.filter(r => r.call === 0 && r.actual === 0).length;
+          const fd = s6.filter(r => r.call === 0 && r.actual === 1).length;
+          const ru = tu / Math.max(1, nu), rd = td / Math.max(1, nd);
+          if (ru < 0.6 || rd < 0.6) break;
+          best = { tau: t60 / 100, pu: tu / Math.max(1, tu + fu),
+                   pd: td / Math.max(1, td + fd), ru, rd,
+                   cov: s6.length / rows.length };
+        }
+        if (best)
+          p90line = `<p class="mini" style="margin-top:4px">` +
+            `<b>recall-floor gate (R60):</b> max precision holding GLOBAL ` +
+            `recall ≥ 60% per class → τ ${best.tau.toFixed(2)}: ` +
+            `UP ${(100 * best.pu).toFixed(1)}% · DOWN ` +
+            `${(100 * best.pd).toFixed(1)}% precision · recall ` +
+            `${(100 * best.ru).toFixed(0)}/${(100 * best.rd).toFixed(0)} · ` +
+            `coverage ${(100 * best.cov).toFixed(0)}% (global recall counts ` +
+            `every settled minute, a stricter denominator than the ` +
+            `within-gate recall above)</p>`;
+      }
       const html =
         `<div class="small" style="margin-bottom:6px"><b>${title}</b> ` +
         `<span class="badge ${pass ? "pass" : "pending"}" style="margin-left:8px">${pass ? "above 80/80" : "below target"}</span>` +
@@ -391,7 +425,7 @@ async function poll() {
         `<div class="statusbar">` +
         tile("UP precision", s.up.p, s.up.np) + tile("UP recall", s.up.r, s.up.nr) +
         tile("DOWN precision", s.down.p, s.down.np) + tile("DOWN recall", s.down.r, s.down.nr) +
-        `</div>` + confLine;
+        `</div>` + confLine + p90line;
       return { html, pass, pending: false, tau };
     };
     const b2 = gatedBlock("kb2", "kb2 — market-anchored blend",
