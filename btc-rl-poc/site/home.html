@@ -1070,15 +1070,20 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     ["Ladder", "#8f6000", mkSeries(pt2 || [], true), "6 5"],
     ["Disciplined", "#0d7a4e", mkSeries(pt3d || [], false), ""],
     ["Gambler", "#b84343", mkSeries(pt4d || [], false), ""],
-  ].filter(s => s[2].length >= 2);
-  if (!SER.length) {
+  ];
+  const withData = SER.filter(s => s[2].length >= 2);
+  if (!withData.length) {
     cv.innerHTML = '<p class="mini">the equity race begins with the ' +
       'first settled trade</p>';
   } else {
-    const allx = SER.flatMap(s => s[2].map(p => p[0]));
+    const allx = withData.flatMap(s => s[2].map(p => p[0]));
     const x0 = Math.min(...allx), x1 = Math.max(...allx);
-    for (const s of SER)   // every trader starts the race at the start
-      if (s[2][0][0] > x0) s[2].unshift([x0, START]);
+    // every trader is on the chart from the start — a newborn with no
+    // settles yet is honestly FLAT at $1,000 until his first result
+    for (const s of SER) {
+      if (!s[2].length) s[2] = [[x0, START], [x1, START]];
+      else if (s[2][0][0] > x0) s[2].unshift([x0, START]);
+    }
     const W = 960, H = 220, PL = 58, PR = 16, TT = 14, PB = 26;
     const ally = SER.flatMap(s => s[2].map(p => p[1])).concat([START]);
     // round-dollar gridlines: pick a nice step, pad domain to it
