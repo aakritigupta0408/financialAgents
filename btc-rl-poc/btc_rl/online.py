@@ -2310,12 +2310,20 @@ def run(once: bool = False) -> None:
                                             })
                                             pt3_tickers.add(pm_mkt["ticker"])
                                     # Trader 4, the GAMBLER: 33% of
-                                    # capital per entry, to the $500
-                                    # depth-saturation ceiling
+                                    # capital per entry, capped by the
+                                    # LIVE near-touch depth on the side
+                                    # he lifts (buying YES consumes the
+                                    # NO book and vice versa); $500
+                                    # fallback only if the book is dark
                                     if pm_mkt["ticker"] not in pt4_tickers:
+                                        dside = (pm_mkt.get("depth_no")
+                                                 if syp else
+                                                 pm_mkt.get("depth_yes"))
+                                        dcap = (int(dside * askp)
+                                                if dside else PT4_CAP_C)
                                         st4cap = min(int(PT4_FRAC
                                                      * pt4_bankroll_c),
-                                                     PT4_CAP_C)
+                                                     dcap)
                                         nc4 = int(st4cap // (askp + feep))
                                         if nc4 >= 1:
                                             st4 = int(nc4 * (askp + feep))
@@ -2324,6 +2332,7 @@ def run(once: bool = False) -> None:
                                                 **base_row,
                                                 "contracts": nc4,
                                                 "stake_c": st4,
+                                                "depth_cap_c": dcap,
                                                 "bankroll_c": pt4_bankroll_c,
                                             })
                                             pt4_tickers.add(pm_mkt["ticker"])
