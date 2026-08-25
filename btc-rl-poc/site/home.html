@@ -216,7 +216,7 @@
       <h3>The bet-policy A/B</h3>
       <div class="nums" id="ab-nums"><span class="mini">loading…</span></div>
       <p class="mini" id="ab-sub"></p>
-      <a href="ab_dashboard.html" class="small">Generations table &amp; bet ledger →</a>
+      <a href="ab_dashboard.html" class="small">Full scoreboard →</a>
     </div>
     <div class="card">
       <h3>The stack — kb4</h3>
@@ -229,6 +229,12 @@
       <div class="nums" id="kb7-nums"><span class="mini">loading…</span></div>
       <p class="mini" id="kb7-sub"></p>
       <a href="ab_dashboard.html" class="small">Zero-shot Chronos, frozen →</a>
+    </div>
+    <div class="card">
+      <h3>The second family — kb9</h3>
+      <div class="nums" id="kb9-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb9-sub"></p>
+      <a href="ab_dashboard.html" class="small">TimesFM 2.5, frozen — launched for disagreement, not as an upgrade →</a>
     </div>
     <div class="card">
       <h3>The fusion — kb8</h3>
@@ -1577,7 +1583,8 @@ async function boot() {
                                     ["kb3", "kb3-nums", "kb3-sub"],
                                     ["kb4", "kb4-nums", "kb4-sub"],
                                     ["kb7", "kb7-nums", "kb7-sub"],
-                                    ["kb8", "kb8-nums", "kb8-sub"]]) {
+                                    ["kb8", "kb8-nums", "kb8-sub"],
+                                    ["kb9", "kb9-nums", "kb9-sub"]]) {
     const rows = kb.filter(r => r.variant === v && r.actual != null
       && r.call != null);
     if (rows.length < 60) {

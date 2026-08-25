@@ -29,7 +29,7 @@
 <main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span> Final deliverable · live evaluation</div>
-  <h1>The 80/80 scoreboard &amp; bet-policy A/B</h1>
+  <h1>The 80/80 scoreboard</h1>
   <p class="sub"><b>Eight live arms</b> put a probability on the Kalshi
   15-minute contract <b>every minute</b>, no fixed decision time — from the
   anchor deliverable <b>kb2</b> (market-anchored blend) to <b>kb7</b>
@@ -37,17 +37,9 @@
   Class baseline: <b>80% precision and 80% recall per class</b> at each
   arm's disclosed confidence gate; kb2, kb4 and kb7 currently clear it.
   The fixed-T-3 variant (kbf) is retired as trivial — the market alone
-  matches it at that timestamp. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
-  per window) vs the <b>selector model</b> — a bet-level EV model that judges
-  the very same bet in the same tick it is placed (whenever the entry strikes —
-  no fixed decision minute, no future information) and keeps it only if its
-  predicted win probability clears both a precision-0.90 target threshold and the
-  break-even price+fee line. It is trained on every settled real bet plus
-  counterfactual bets built from settled per-minute quotes, retrains once daily
-  at 7 PM PT, and is frozen in between; every mandatory bet carries the
-  selector's keep/skip verdict and score, so skips are auditable. Bankroll
-  epoch starts at policy go-live. Ranking criterion: final bankroll from
-  $1,000 at 2% risked per bet, compounding, fees included.</p>
+  matches it at that timestamp. The live trading story — four paper
+  traders with distinct sizing disciplines — lives on the
+  <a href="home.html">Home</a> desk.</p>
 </header>
 
 <section>
@@ -92,6 +84,7 @@
     <button class="chip" id="dl-kb6">kb6</button>
     <button class="chip" id="dl-kb7">kb7</button>
     <button class="chip" id="dl-kb8">kb8</button>
+    <button class="chip" id="dl-kb9">kb9</button>
   </div>
   <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="kbf-tbl">
     <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
@@ -104,7 +97,11 @@
   <p class="mini" id="kbf-tbl-note"></p>
 </section>
 
-<section>
+<!-- A/B bidding-vs-selector section hidden 2026-08-25 per project
+     decision (legacy experiment; the desk traders now carry the trading
+     story). Data collection and ledgers continue unchanged; JS still
+     fills these nodes so nothing downstream breaks. -->
+<section style="display:none">
   <h2>A/B — bidding model vs selector model</h2>
   <div class="scroll"><table id="ab-tbl">
     <thead><tr><th>Policy</th><th class="num">Bets</th><th class="num">Skipped windows</th>
@@ -162,6 +159,7 @@
     <span><span class="sw" style="background:#8f6000"></span>kb6 (fast information: perp lead, tape, whale flow)</span>
     <span><span class="sw" style="background:#0d7a4e"></span>kb7 (zero-shot foundation model, frozen)</span>
     <span><span class="sw" style="background:#667283"></span>kb8 (kb7 × market log-pool, learned live)</span>
+    <span><span class="sw" style="background:#b84343"></span>kb9 (TimesFM 2.5, frozen — second foundation family)</span>
     <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
   </div>
   <div id="kbrace"></div>
@@ -294,8 +292,8 @@ function lineSVG(seriesList, opts) {
 }
 
 function brierRace(kb, st) {
-  const COL = { kb: "#2461b8", kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7", kb5: "#bc4514", kb6: "#8f6000", kb7: "#0d7a4e", kb8: "#667283" };
-  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [], kb6: [], kb7: [], kb8: [] };
+  const COL = { kb: "#2461b8", kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7", kb5: "#bc4514", kb6: "#8f6000", kb7: "#0d7a4e", kb8: "#667283", kb9: "#b84343" };
+  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [], kb6: [], kb7: [], kb8: [], kb9: [] };
   for (const r of kb) {
     const v = r.variant || "kb";
     if (groups[v] && r.actual != null) groups[v].push(r);
@@ -326,7 +324,7 @@ function brierRace(kb, st) {
         title: "rolling Brier by variant vs market" })
     : '<p class="mini">collecting…</p>';
   const t = st.kb_treatments || {};
-  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8"].filter(v => t[v]).map(v => {
+  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8", "kb9"].filter(v => t[v]).map(v => {
     const s = t[v], p = s.prec80;
     return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
       `<td class="num">${s.scored ?? "–"}</td>` +
@@ -460,6 +458,7 @@ async function poll() {
       ["kb6", "fast information", "perp lead, tape, whale flow, OI delta"],
       ["kb7", "zero-shot foundation model (frozen)", "Chronos-Bolt read at the strike"],
       ["kb8", "kb7 × market log-pool", "learns to fuse kb7's signal with the market"],
+      ["kb9", "second foundation family (TimesFM 2.5, frozen)", "decorrelated treatment — tied kb7 on the gauntlet, launched for disagreement value"],
     ];
     const blocks = {};
     for (const [v2, title, blurb] of ARMS_META)
@@ -491,7 +490,7 @@ async function poll() {
     // league table
     const LCOL = { kb: "#2461b8", kb2: "#0b7d8a", kb3: "#b43a6e",
                    kb4: "#5f50c7", kb6: "#8f6000", kb7: "#0d7a4e",
-                   kb8: "#667283" };
+                   kb8: "#667283", kb9: "#b84343" };
     const fmtPR = (a, b) => (a == null ? "–" : (100 * a).toFixed(0)) + "/" +
       (b == null ? "–" : (100 * b).toFixed(0));
     const lrows = [];
@@ -715,12 +714,12 @@ async function poll() {
     } catch {}
 
     // decision ledger — kb2/kb3, first gate-clearing call per window
-    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62, kb5: null, kb6: 0.62, kb7: 0.62, kb8: 0.62 };
+    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62, kb5: null, kb6: 0.62, kb7: 0.62, kb8: 0.62, kb9: 0.62 };
     const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
       { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
         hour: "2-digit", minute: "2-digit", hour12: false });
     const dlData = {};
-    for (const v2 of ["kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8"]) {
+    for (const v2 of ["kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8", "kb9"]) {
       const byWin = new Map();
       for (const r of kb) {
         if (r.variant !== v2) continue;
@@ -816,6 +815,8 @@ async function poll() {
         "chip" + (v2 === "kb7" ? " on" : "");
       document.getElementById("dl-kb8").className =
         "chip" + (v2 === "kb8" ? " on" : "");
+      document.getElementById("dl-kb9").className =
+        "chip" + (v2 === "kb9" ? " on" : "");
     };
     renderDL("kb2");
     document.getElementById("dl-kb2").onclick = () => renderDL("kb2");
@@ -825,6 +826,7 @@ async function poll() {
     document.getElementById("dl-kb6").onclick = () => renderDL("kb6");
     document.getElementById("dl-kb7").onclick = () => renderDL("kb7");
     document.getElementById("dl-kb8").onclick = () => renderDL("kb8");
+    document.getElementById("dl-kb9").onclick = () => renderDL("kb9");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
     // freshness = the LAST 24h, not a lifetime mean (a lifetime average

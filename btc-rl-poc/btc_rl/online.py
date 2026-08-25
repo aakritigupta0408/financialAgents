@@ -547,6 +547,53 @@ def _chronos_p_up(closes: list[float], strike: float,
         return None
 
 
+_TIMESFM = None      # lazy singleton; ~15s first load, ~0.1s/predict
+
+
+def _timesfm_p_up(closes: list[float], strike: float,
+                  horizon: int):
+    """kb9: zero-shot P(close >= strike) from TimesFM 2.5 (200M),
+    Google's time-series foundation model — the SECOND model family,
+    launched as a decorrelated treatment (it TIED kb7 on the
+    pre-registered gauntlet, t=+0.67; that record stands). Same decile
+    readout at the strike as kb7. Returns (p, w80, lo, hi) or None."""
+    global _TIMESFM
+    try:
+        if _TIMESFM is None:
+            import timesfm as _tf
+            _TIMESFM = _tf.TimesFM_2p5_200M_torch.from_pretrained(
+                "google/timesfm-2.5-200m-pytorch")
+            _TIMESFM.compile(_tf.ForecastConfig(
+                max_context=1024, max_horizon=16, normalize_inputs=True,
+                use_continuous_quantile_head=True,
+                fix_quantile_crossing=True))
+        import numpy as _np
+        _, qt = _TIMESFM.forecast(
+            horizon=max(1, horizon),
+            inputs=[_np.array(closes[-1024:], dtype=_np.float32)])
+        q = _np.asarray(qt)[0, max(1, horizon) - 1]
+        vals = sorted(float(x) for x in (q[1:10] if q.shape[-1] >= 10
+                                         else q))
+        qs = [i / 10 for i in range(1, 10)]
+        if strike <= vals[0]:
+            pr = 0.95
+        elif strike >= vals[-1]:
+            pr = 0.05
+        else:
+            pr = 0.5
+            for i in range(len(vals) - 1):
+                if vals[i] <= strike <= vals[i + 1]:
+                    frac = ((strike - vals[i]) / (vals[i + 1] - vals[i])
+                            if vals[i + 1] > vals[i] else 0.5)
+                    pr = 1.0 - (qs[i] + frac * (qs[i + 1] - qs[i]))
+                    break
+        return (round(min(.95, max(.05, pr)), 4),
+                round(vals[-1] - vals[0], 1),
+                round(vals[0], 1), round(vals[-1], 1))
+    except Exception:
+        return None
+
+
 KB6_LOGIT_PATH_NAME = "kb6_logit.json"
 KB6_DIM = 12
 
@@ -2166,6 +2213,27 @@ def run(once: bool = False) -> None:
                                                "trained": kb8_logit.updates})
                                     kb_made.add(("kb8", pm_mkt["ticker"],
                                                  slot1))
+                            # kb9 — second foundation family (TimesFM
+                            # 2.5, frozen zero-shot): launched as a
+                            # DECORRELATED treatment, not an upgrade —
+                            # it tied kb7 on the gauntlet and that
+                            # record stands on the disproved wall
+                            if ("kb9", pm_mkt["ticker"], slot1) \
+                                    not in kb_made:
+                                fm9 = _timesfm_p_up(
+                                    [b["close"] for b in kbars],
+                                    pm_mkt["strike"],
+                                    int(max(1, round(mins_left))))
+                                if fm9:
+                                    p9, w9, ql9, qh9 = fm9
+                                    kb.append({**common, "variant": "kb9",
+                                               "p_up": p9,
+                                               "call": int(p9 >= 0.5),
+                                               "q80_w": w9,
+                                               "q80_lo": ql9,
+                                               "q80_hi": qh9})
+                                    kb_made.add(("kb9", pm_mkt["ticker"],
+                                                 slot1))
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the
@@ -2825,7 +2893,7 @@ def run(once: bool = False) -> None:
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
                     for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb6",
-                              "kb7", "kb8")
+                              "kb7", "kb8", "kb9")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),

@@ -1,5 +1,18 @@
 # Research log
 
+## 2026-08-25 — kb9 LAUNCHED as second foundation family (not an upgrade)
+
+TimesFM 2.5 (200M, frozen zero-shot) goes live as kb9 — explicitly NOT
+as a kb7 upgrade: it TIED the gauntlet (t=+0.67) and that negative
+stands on the disproved wall. Launch rationale, registered here: a
+second model FAMILY gives (a) live decorrelation/disagreement data vs
+kb7, (b) native quantile intervals from an independent architecture,
+(c) fusion fuel for a future stack (as kb7 fed kb8). Same readout
+convention as kb7 (deciles at the strike), frozen, no training, no
+Conviction Book stream. kb7 byte-untouched. Also: legacy A/B
+bidding-vs-selector section hidden on Results per project decision
+(logging continues; the four desk traders carry the trading story).
+
 ## 2026-08-25 — kb9 round 2: TimesFM + fine-tuning — the axis is exhausted
 
 Same pre-registered gate as round 1 (window-clustered paired Brier
