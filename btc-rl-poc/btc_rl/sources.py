@@ -237,6 +237,13 @@ def fetch_kalshi_btc15() -> dict | None:
         if not ms:
             return None
         m = ms[0]
+        try:
+            m["volume"] = float(m.get("volume")
+                                or m.get("volume_fp") or 0) or None
+            m["oi"] = float(m.get("open_interest")
+                            or m.get("open_interest_fp") or 0) or None
+        except (TypeError, ValueError):
+            m["volume"] = m["oi"] = None
         yes_bid, yes_ask = m.get("yes_bid"), m.get("yes_ask")
         if not yes_bid or not yes_ask:
             # markets endpoint often carries no quotes — derive the touch

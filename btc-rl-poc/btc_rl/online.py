@@ -310,6 +310,29 @@ def _hit_band(sigma: float | None) -> float:
     return max(config.HIT_BAND, config.HIT_BAND_VOL * sigma)
 
 
+def _flow_stats(trades: dict, now_ts: int,
+                whale_btc: float = 2.0) -> dict:
+    """Tape flow & volume from the live trades store (logged for future
+    arms): taker buy/sell imbalance and traded volume at 1/5/15 min, plus
+    WHALE prints — aggressive trades >= whale_btc BTC, the public proxy
+    for institutional flow (count and signed net over 15 min)."""
+    out = {}
+    for lbl, secs in (("1m", 60), ("5m", 300), ("15m", 900)):
+        b = sum(t["size"] for t in trades.values()
+                if t["taker_buy"] and t["ts"] >= now_ts - secs)
+        v = sum(t["size"] for t in trades.values()
+                if not t["taker_buy"] and t["ts"] >= now_ts - secs)
+        out[f"tape_imb_{lbl}"] = (round((b - v) / (b + v), 4)
+                                  if b + v > 0 else None)
+        out[f"tape_vol_{lbl}"] = round(b + v, 3)
+    wh = [t for t in trades.values()
+          if t["size"] >= whale_btc and t["ts"] >= now_ts - 900]
+    out["whale_n_15m"] = len(wh)
+    out["whale_net_15m"] = round(sum(
+        t["size"] * (1 if t["taker_buy"] else -1) for t in wh), 3)
+    return out
+
+
 def _bandit_reward(pred: float, actual: float, price_now: float,
                    delta: int, band: float | None = None) -> float:
     """Prediction reward + direction credit for correct-sign deviations."""
@@ -415,6 +438,47 @@ KB_LOGIT_PATH_NAME = "kb_logit.json"
 KB_LOGIT_DIM = 24
 KB4_LOGIT_PATH_NAME = "kb4_logit.json"
 KB4_DIM = 12
+_CHRONOS = None      # lazy singleton; ~10s first load, 0.05s/predict
+
+
+def _chronos_p_up(closes: list[float], strike: float,
+                  horizon: int) -> tuple[float, float] | None:
+    """kb7-fm: zero-shot P(close >= strike at horizon) from a pretrained
+    time-series foundation model (Chronos-Bolt small). Quantiles [.1-.9]
+    of the forecast at the window close, monotone-interpolated at the
+    strike. Decision-time inputs only. Returns (p_up, q80_width)."""
+    global _CHRONOS
+    try:
+        if _CHRONOS is None:
+            import torch
+            from chronos import BaseChronosPipeline
+            _CHRONOS = BaseChronosPipeline.from_pretrained(
+                "amazon/chronos-bolt-small", device_map="cpu",
+                torch_dtype=torch.float32)
+        import torch
+        ctx = torch.tensor(closes[-512:], dtype=torch.float32).unsqueeze(0)
+        qs = [i / 10 for i in range(1, 10)]
+        q, _ = _CHRONOS.predict_quantiles(
+            ctx, prediction_length=max(1, horizon), quantile_levels=qs)
+        vals = [float(x) for x in q[0, -1]]
+        if strike <= vals[0]:
+            pr = 0.95
+        elif strike >= vals[-1]:
+            pr = 0.05
+        else:
+            pr = 0.5
+            for i in range(len(vals) - 1):
+                if vals[i] <= strike <= vals[i + 1]:
+                    frac = ((strike - vals[i]) / (vals[i + 1] - vals[i])
+                            if vals[i + 1] > vals[i] else 0.5)
+                    pr = 1.0 - (qs[i] + frac * (qs[i + 1] - qs[i]))
+                    break
+        return (round(min(.95, max(.05, pr)), 4),
+                round(vals[-1] - vals[0], 1))
+    except Exception:
+        return None
+
+
 KB5_LOGIT_PATH_NAME = "kb5_logit.json"
 KB5_DIM = 14
 KB5_BE_MARGIN = 3.0   # confident-entry bar: p_hat*100 >= cost + margin
@@ -1414,6 +1478,7 @@ def run(once: bool = False) -> None:
             for v, spec in VARIANTS.items()}
     snaps = _load_snapshots()
     synth_px: dict[int, float] = {}  # composite samples, minute-keyed
+    k_flow_prev: dict[str, tuple] = {}  # per-ticker (volume, oi) last poll
     trades: dict[int, dict] = {}  # rolling taker-flow store (last ~20 min)
     cold_bandits = {v for v, spec in VARIANTS.items()
                     if spec.get("agent") in ("linucb", "linearq", "dqn", "seq")
@@ -1547,6 +1612,18 @@ def run(once: bool = False) -> None:
             trades = {i: t for i, t in trades.items()
                       if t["ts"] >= now_ts - 1200}
             snap.update(_ofi_stats(trades, now_ts))
+            snap.update(_flow_stats(trades, now_ts))
+            if pm_mkt:
+                kv, ko = pm_mkt.get("volume"), pm_mkt.get("oi")
+                prev = k_flow_prev.get(pm_mkt["ticker"])
+                snap["k_vol"], snap["k_oi"] = kv, ko
+                snap["k_vol_d"] = (round(kv - prev[0], 2)
+                                   if prev and kv is not None
+                                   and prev[0] is not None else None)
+                snap["k_oi_d"] = (round(ko - prev[1], 2)
+                                  if prev and ko is not None
+                                  and prev[1] is not None else None)
+                k_flow_prev = {pm_mkt["ticker"]: (kv, ko)}
             try:  # frozen crypto-LLM reads the news tape (cached per headline)
                 senti = sentiment_snapshot()
             except Exception:
@@ -1831,6 +1908,22 @@ def run(once: bool = False) -> None:
                         row.update(extra)
                         kb.append(row)
                         kb_made.add((variant, pm_mkt["ticker"], slot1))
+                    # kb7-fm — zero-shot foundation-model arm (Chronos
+                    # Bolt): the LLM-timeseries direction, run against
+                    # our ladder. No training, no state; a pretrained
+                    # forecaster's distribution read at the strike.
+                    if ("kb7", pm_mkt["ticker"], slot1) not in kb_made:
+                        fm = _chronos_p_up(
+                            [b["close"] for b in kbars],
+                            pm_mkt["strike"],
+                            int(max(1, round(mins_left))))
+                        if fm:
+                            p7, w80 = fm
+                            kb.append({**common, "variant": "kb7",
+                                       "p_up": p7,
+                                       "call": int(p7 >= 0.5),
+                                       "q80_w": w80})
+                            kb_made.add(("kb7", pm_mkt["ticker"], slot1))
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the
@@ -2165,7 +2258,7 @@ def run(once: bool = False) -> None:
                         "brier": s.get("brier"),
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
-                    for v in ("kb", "kb2", "kb3", "kb4", "kb5")
+                    for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb7")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),
