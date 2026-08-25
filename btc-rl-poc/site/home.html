@@ -380,15 +380,12 @@ function drawSignal(kb, bets, st) {
     `<div class="bubble">${text}</div></div></div>`;
   const msgs = [];
   msgs.push(msg("model", "oracle — the model's paper log", graded
-    ? `On the ${fmtC(r.close_ts)} PT window I would log a paper ${side} entry` +
-      (ask != null ? ` at the ${ask}¢ ask (fee ${fee}¢, break-even ${breakeven}%)` : "") +
-      ` — my confidence is ${(100 * conf).toFixed(0)}% against the ` +
-      `${(100 * tau).toFixed(0)}% bar I hold ${phase}-window calls to. ` +
-      `Simulated size: 2% of the paper bankroll. This is a log entry, not advice.`
-    : `I'm standing aside on the ${fmtC(r.close_ts)} PT window — ` +
-      `${(100 * conf).toFixed(0)}% doesn't clear the ${(100 * tau).toFixed(0)}% ` +
-      `bar for a ${phase}-window call. Historically, most of my losses came ` +
-      `from acting on moments exactly like this one.`));
+    ? `Paper ${side} on the ${fmtC(r.close_ts)} PT window` +
+      (ask != null ? ` at ${ask}¢` : "") +
+      ` — ${(100 * conf).toFixed(0)}% vs my ${(100 * tau).toFixed(0)}% bar. ` +
+      `Not advice.`
+    : `Standing aside — ${(100 * conf).toFixed(0)}% vs the ` +
+      `${(100 * tau).toFixed(0)}% ${phase}-window bar.`));
   const mleBits = [];
   if (alikeP != null)
     mleBits.push(`this cohort (${phase}-window, ≥${(100 * tau).toFixed(0)}% ` +
