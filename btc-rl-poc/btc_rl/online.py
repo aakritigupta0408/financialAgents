@@ -286,6 +286,12 @@ PT2_LOG_NAME = "pt2_trades.jsonl"
 # The threshold stays FROZEN; version changes are dated in NOTES.md.
 PT3_LOG_NAME = "pt3_trades.jsonl"
 PT3_TAU = 0.77
+# Trader 4, the ALL-IN (2026-08-25): 100% of capital on every leader
+# entry, capped only by ~$500 near-touch depth ("until depth saturation
+# is achieved"). The living demonstration of why bet sizing exists: one
+# settled loss takes essentially everything staked.
+PT4_LOG_NAME = "pt4_trades.jsonl"
+PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
@@ -1649,6 +1655,11 @@ def run(once: bool = False) -> None:
     pt3_bankroll_c = PT_START_BANKROLL_C \
         + sum(t["pnl_c"] for t in pt3_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
+    pt4_trades = _load_kb_bets(PT4_LOG_NAME)
+    pt4_tickers = {t["ticker"] for t in pt4_trades}
+    pt4_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt4_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt4_trades if t.get("actual") is None)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2296,6 +2307,23 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt3_bankroll_c,
                                             })
                                             pt3_tickers.add(pm_mkt["ticker"])
+                                    # Trader 4, the ALL-IN: everything,
+                                    # every leader entry, to the $500
+                                    # depth-saturation ceiling
+                                    if pm_mkt["ticker"] not in pt4_tickers:
+                                        st4cap = min(pt4_bankroll_c,
+                                                     PT4_CAP_C)
+                                        nc4 = int(st4cap // (askp + feep))
+                                        if nc4 >= 1:
+                                            st4 = int(nc4 * (askp + feep))
+                                            pt4_bankroll_c -= st4
+                                            pt4_trades.append({
+                                                **base_row,
+                                                "contracts": nc4,
+                                                "stake_c": st4,
+                                                "bankroll_c": pt4_bankroll_c,
+                                            })
+                                            pt4_tickers.add(pm_mkt["ticker"])
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
@@ -2623,6 +2651,28 @@ def run(once: bool = False) -> None:
                 tmp3t.write_text("".join(json.dumps(t) + "\n"
                                          for t in pt3_trades))
                 tmp3t.replace(RESULTS_DIR / PT3_LOG_NAME)
+            pt4_changed = False
+            for t in pt4_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt4_bankroll_c += payout
+                t["bankroll_c"] = pt4_bankroll_c
+                pt4_changed = True
+            if pt4_changed or (pt4_trades
+                               and pt4_trades[-1]["actual"] is None
+                               and pt4_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp4t = (RESULTS_DIR / PT4_LOG_NAME).with_suffix(".tmp4t")
+                tmp4t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt4_trades))
+                tmp4t.replace(RESULTS_DIR / PT4_LOG_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

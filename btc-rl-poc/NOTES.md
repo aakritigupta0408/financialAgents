@@ -1,5 +1,16 @@
 # Research log
 
+## 2026-08-25 — trader 4, the ALL-IN (registered at launch)
+
+100% of capital on every leader entry (follower's 0.62 gate), stake
+capped only by the ~$500 depth-saturation ceiling. The bet-sizing
+control group: expected to bust with probability -> 1 (survival =
+p^n), and however long he shines first, one settled loss takes
+everything staked. Same window pool as the follower so the pair
+isolates SIZING as the only variable. Also: page slowness fixed —
+"no-store" was re-downloading ~4.5MB of ledgers every 15 s; heavy
+files now cache in 60 s buckets.
+
 ## 2026-08-25 (later) — pt3 policy v2, stamped
 
 Amendment, same day, before 10 settled trades: the disciplined trader

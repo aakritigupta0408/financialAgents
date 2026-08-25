@@ -42,6 +42,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("pt_trades.jsonl", None),
     ("pt2_trades.jsonl", None),
     ("pt3_trades.jsonl", None),
+    ("pt4_trades.jsonl", None),
     ("metrics_history.jsonl", None),
     ("metrics.json", None),
     ("training_progress.jsonl", None),
