@@ -4,21 +4,24 @@
    Source of truth extracted from live_online.html's system. */
 * { box-sizing: border-box; margin: 0; }
 :root {
-  --page: #0b0d10; --surface: #12151b; --surface-2: #191d25;
-  --ink: #f2efe6; --ink-2: #b3afa2; --muted: #837f74; --faint: #5d5a51;
-  --grid: rgba(255,255,255,.05); --axis: rgba(255,255,255,.18);
-  --border: rgba(255,255,255,.07);
+  /* light "brokerage statement" palette — clean paper, dark ink.
+     (the original near-black terminal read as shady; research should
+     look like a research report) */
+  --page: #f3f5f8; --surface: #ffffff; --surface-2: #f7f8fb;
+  --ink: #16202c; --ink-2: #46536a; --muted: #77839a; --faint: #a6afc0;
+  --grid: rgba(22,32,44,.06); --axis: rgba(22,32,44,.28);
+  --border: rgba(22,32,44,.11);
   --display: Didot, "Didot LT STD", "Bodoni 72", "Bodoni MT",
              "Iowan Old Style", Georgia, serif;
-  /* categorical arm palette — validated (CVD + contrast) for dark surface;
-     baselines are neutral by design: ctl = series-1 gray, rp = faint */
-  --series-1: #aeb6c2; --series-2: #3987e5; --series-3: #d55181;
-  --series-4: #c98500; --series-5: #2fb59a; --series-6: #d95926;
-  --series-7: #199e70; --series-8: #008300; --series-9: #9085e9;
-  --series-10: #e66767;
+  /* categorical arm palette — re-stepped darker for the light surface
+     (validated: CVD-separated, contrast vs white) */
+  --series-1: #667283; --series-2: #2461b8; --series-3: #b43a6e;
+  --series-4: #8f6000; --series-5: #0b7d8a; --series-6: #bc4514;
+  --series-7: #0d7a4e; --series-8: #226b22; --series-9: #5f50c7;
+  --series-10: #b84343;
   /* reserved status colors — up/down/good/bad only, never a series */
-  --up: #2bd97e; --down: #ff5d5d;
-  --good: #2bd97e; --good-text: #5fe8a0; --critical: #ff5d5d;
+  --up: #0c8a4d; --down: #d13c3c;
+  --good: #0c8a4d; --good-text: #0c8a4d; --critical: #d13c3c;
 }
 body { min-height: 100vh; overflow-x: hidden; background: var(--page);
   color: var(--ink);
