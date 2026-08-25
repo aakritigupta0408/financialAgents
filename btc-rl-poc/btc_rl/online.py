@@ -277,11 +277,13 @@ PT_LOG_NAME = "pt_trades.jsonl"
 # keeps playing with 10x, and the level itself scales x10. His 10% bid
 # limit therefore steps $100 -> $1,000 -> $10,000 as he climbs.
 PT2_LOG_NAME = "pt2_trades.jsonl"
-# Trader 3, the DISCIPLINED (pre-registered 2026-08-25): bids ONLY when
-# kb7's confidence >= 0.77 — the measured top-44% tier of its biddable
-# entries (17/18 wins at registration; thin n, hence this live test).
-# One bid per window, 10% of funds, real ask + fee, ask 5-80c. The
-# threshold is FROZEN here; changing it invalidates the track record.
+# Trader 3, the DISCIPLINED. Policy v1 (pre-registered 2026-08-25):
+# bids ONLY when kb7's confidence >= 0.77 — the measured top-44% tier
+# of its biddable entries. Policy v2 (2026-08-25, stamped pv:2 on
+# rows): ALSO takes the follower's leader-based entry when the LEADER's
+# confidence clears the same 0.77 bar (the follower himself enters at
+# 0.62). One bid per window, 10% of funds, real ask + fee, ask 5-80c.
+# The threshold stays FROZEN; version changes are dated in NOTES.md.
 PT3_LOG_NAME = "pt3_trades.jsonl"
 PT3_TAU = 0.77
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
@@ -2274,6 +2276,26 @@ def run(once: bool = False) -> None:
                                                 "level_c": pt2_level_c,
                                             })
                                             pt2_tickers.add(pm_mkt["ticker"])
+                                    # disciplined policy v2: the same
+                                    # leader entry, but only at his own
+                                    # higher 0.77 confidence bar
+                                    if (pm_mkt["ticker"] not in pt3_tickers
+                                            and base_row["p_arm"]
+                                            >= PT3_TAU):
+                                        nc3 = int((PT_FRAC * pt3_bankroll_c)
+                                                  // (askp + feep))
+                                        if nc3 >= 1:
+                                            st3 = int(nc3 * (askp + feep))
+                                            pt3_bankroll_c -= st3
+                                            pt3_trades.append({
+                                                **base_row,
+                                                "contracts": nc3,
+                                                "stake_c": st3,
+                                                "src": "leader",
+                                                "pv": 2,
+                                                "bankroll_c": pt3_bankroll_c,
+                                            })
+                                            pt3_tickers.add(pm_mkt["ticker"])
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
@@ -2312,6 +2334,7 @@ def run(once: bool = False) -> None:
                                             k7r["p_up"],
                                             1 - k7r["p_up"]), 4),
                                         "mins_left": round(mins_left, 1),
+                                        "src": "kb7", "pv": 2,
                                         "actual": None, "win": None,
                                         "pnl_c": None,
                                         "bankroll_c": pt3_bankroll_c,

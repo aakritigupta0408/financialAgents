@@ -1,5 +1,15 @@
 # Research log
 
+## 2026-08-25 (later) — pt3 policy v2, stamped
+
+Amendment, same day, before 10 settled trades: the disciplined trader
+ALSO takes the follower's leader-based entry when the LEADER's
+confidence >= 0.77 (the follower enters at 0.62; the disciplined bar
+stays 0.77 everywhere). kb7-source entries unchanged. Rows stamped
+src (kb7|leader) + pv:2 — v1 rows are the unstamped ones. Rationale:
+same trade pool as the desk twins, stricter admission — selectivity
+applied to every stream, not just kb7's.
+
 ## 2026-08-25 — PRE-REGISTRATION: the disciplined trader (pt3)
 
 Frozen before any trade: bids ONLY when kb7's same-minute confidence

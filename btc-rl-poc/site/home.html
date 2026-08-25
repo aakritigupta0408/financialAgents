@@ -1155,7 +1155,7 @@ function drawRoster(pt, pt2, pt3, kb) {
         : `first rung: bank $1k on reaching $11k, then ×10`),
       b.series, "#8f6000") +
     card("t3", "🧘", "The Disciplined", bank3, c.dp,
-      `waits for kb7 ≥ 77% (pre-registered) · record ${c.wins}/` +
+      `takes any desk entry at ≥77% confidence (v2) · record ${c.wins}/` +
       `${c.s.length} · most windows he simply watches`,
       c.series, "#0d7a4e");
   // count-up animation on the three balances
@@ -1217,7 +1217,8 @@ function drawDesk3(pt3, kb) {
       `$${Math.round(t.strike).toLocaleString()} · ` +
       `<b>${t.contracts} contracts @ ${t.ask_c}¢</b></div>` +
       `<div class="mini">est. cost ${money(t.stake_c)} incl. ` +
-      `${money(t.fee_c * t.contracts)} fees · kb7 confidence ` +
+      `${money(t.fee_c * t.contracts)} fees · ` +
+      `${t.src === "leader" ? (t.leader || "leader") : "kb7"} confidence ` +
       `${(100 * t.p_arm).toFixed(0)}% · placed ${fT2(t.made_ts)}</div>` +
       `</div>`;
   };
@@ -1292,10 +1293,10 @@ function drawDesk3(pt3, kb) {
   const skN = skips.length;
   el.innerHTML =
     `<p class="small"><b>The disciplined trader — live</b> ` +
-    `<span class="paper-tag">pre-registered · kb7 ≥ 77% only · ` +
-    `simulated · not advice</span><br><span class="mini">bids only the ` +
-    `top-confidence tier the ledger says carries the edge · 10% of ` +
-    `funds · bankroll <b>${money(bank)}</b> · record ${wins}/` +
+    `<span class="paper-tag">policy v2 · kb7 or leader at ≥ 77% · ` +
+    `simulated · not advice</span><br><span class="mini">same trade pool ` +
+    `as the twins, stricter admission — any entry needs 77% confidence ` +
+    `(the follower takes 62%) · 10% of funds · bankroll <b>${money(bank)}</b> · record ${wins}/` +
     `${settled.length}${open.length ? " · 1 open" : ""} · ` +
     `<b>${skN}</b> windows skipped</span></p>` +
     (latest ? ticket(latest, true)
