@@ -475,7 +475,8 @@ def _chronos_p_up(closes: list[float], strike: float,
                     pr = 1.0 - (qs[i] + frac * (qs[i + 1] - qs[i]))
                     break
         return (round(min(.95, max(.05, pr)), 4),
-                round(vals[-1] - vals[0], 1))
+                round(vals[-1] - vals[0], 1),
+                round(vals[0], 1), round(vals[-1], 1))
     except Exception:
         return None
 
@@ -1967,11 +1968,12 @@ def run(once: bool = False) -> None:
                             pm_mkt["strike"],
                             int(max(1, round(mins_left))))
                         if fm:
-                            p7, w80 = fm
+                            p7, w80, qlo, qhi = fm
                             kb.append({**common, "variant": "kb7",
                                        "p_up": p7,
                                        "call": int(p7 >= 0.5),
-                                       "q80_w": w80})
+                                       "q80_w": w80,
+                                       "q80_lo": qlo, "q80_hi": qhi})
                             kb_made.add(("kb7", pm_mkt["ticker"], slot1))
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
