@@ -314,11 +314,12 @@ function brierRace(kb, st) {
 
 async function poll() {
   try {
-    const [kb, bets, sel, pre, stRes] = await Promise.all([
+    const [kb, bets, sel, pre, pb, stRes] = await Promise.all([
       jsonl("../results/kalshi_binary_log.jsonl"),
       jsonl("../results/kb_bets.jsonl"),
       jsonl("../results/kb_bets_sel.jsonl"),
       jsonl("../results/kb_bets_sel_prepolicy.jsonl"),
+      jsonl("../results/pb_bets.jsonl"),
       fetch(bust("../results/online_status.json"), { cache: "no-store" }),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
@@ -458,7 +459,9 @@ async function poll() {
       `<td class="num">${((s.bk.final/1000 - 1)*100).toFixed(1)}%</td></tr>`;
     document.querySelector("#ab-tbl tbody").innerHTML =
       row("Bidding (mandatory 1/window)", "#3987e5", A, 0) +
-      row("Selector v3 (live policy)", "#199e70", B, skippedN);
+      row("Selector v3 (live policy)", "#199e70", B, skippedN) +
+      row("Conviction Book (kb5-gated, +EV only)", "#d95926",
+          stats(pb), 0);
     // significance: two-proportion z on win rates
     if (A.n >= 10 && B.n >= 10) {
       const p1 = A.w / A.n, p2 = B.w / B.n, p = (A.w + B.w) / (A.n + B.n);
@@ -513,10 +516,10 @@ async function poll() {
     const v1start = v1keep.length
       ? Math.min(...v1keep.map(b => b.made_ts)) : 0;
     const gens = [
-      ["v1", "τ-confidence gate (per-minute call precision)",
+      ["v1", "τ-confidence gate — RETIRED (never scaled)",
        settledB.filter(b => b.made_ts >= v1start && b.made_ts < v1end),
        v1keep],
-      ["v2", "bet-EV logit, mid-priced counterfactual training",
+      ["v2", "bet-EV logit, mid-priced training — RETIRED (subtracted value)",
        settledB.filter(b => b.sel_keep != null && b.sel_v == null),
        sel.filter(b => b.win != null && b.sel_v == null)],
       ["v3", "bet-EV logit, ask-adjusted training (live now)",

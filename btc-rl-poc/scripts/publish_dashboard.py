@@ -38,6 +38,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("kb_bets.jsonl", None),
     ("kb_bets_sel.jsonl", None),
     ("kb_bets_sel_prepolicy.jsonl", None),
+    ("pb_bets.jsonl", None),
     ("metrics_history.jsonl", None),
     ("metrics.json", None),
     ("training_progress.jsonl", None),
