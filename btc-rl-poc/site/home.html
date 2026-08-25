@@ -1115,6 +1115,55 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
         `fill="currentColor" opacity=".55">${fPT(t)}</text>`;
     }
     const first = !window.__eqDrawn; window.__eqDrawn = true;
+    // forecast cones: 5th-95th Monte-Carlo band behind each live line,
+    // at the desk's measured win rate — the falsifiability layer: a
+    // live path escaping its cone is the model being wrong in public
+    const settledAll = pt.filter(t => t.actual != null);
+    const pHat = settledAll.length >= 5
+      ? settledAll.reduce((a2, t) => a2 + t.win, 0) / settledAll.length
+      : 0.79;
+    const FRACS = { Follower: 0.10, Ladder: 0.10, Disciplined: 0.10,
+                    Gambler: 0.33 };
+    window.__cones = window.__cones || {};
+    const coneFor = (nm, ser) => {
+      const nb = ser.length - 1;
+      if (nb < 1) return null;
+      const key = `${nm}:${nb}:${pHat.toFixed(2)}`;
+      if (window.__cones[key]) return window.__cones[key];
+      const P = 300, paths2 = [];
+      for (let i = 0; i < P; i++) {
+        let k = START; const tr = [k];
+        for (let j = 0; j < nb; j++) {
+          const ncon = Math.floor(
+            Math.min(FRACS[nm] * k, 450000) / 75);
+          if (ncon >= 1) {
+            k -= ncon * 75;
+            if (Math.random() < pHat) k += ncon * 100;
+          }
+          tr.push(k);
+        }
+        paths2.push(tr);
+      }
+      const lo = [], hi = [];
+      for (let j = 0; j <= nb; j++) {
+        const colv = paths2.map(t => t[j]).sort((x, y) => x - y);
+        lo.push(colv[15]); hi.push(colv[284]);
+      }
+      return (window.__cones[key] = { lo, hi });
+    };
+    let cones = "";
+    for (const [nm, col, ser] of SER) {
+      const c = coneFor(nm, ser);
+      if (!c) continue;
+      const up = c.hi.map((v, j) =>
+        (j ? "L" : "M") + X(ser[j][0]).toFixed(1) + "," +
+        Y(Math.min(v, y1)).toFixed(1)).join(" ");
+      const dn = c.lo.map((v, j) =>
+        "L" + X(ser[c.lo.length - 1 - j][0]).toFixed(1) + "," +
+        Y(Math.max(c.lo[c.lo.length - 1 - j], y0)).toFixed(1)).join(" ");
+      cones += `<path d="${up} ${dn} Z" fill="${col}" ` +
+        `fill-opacity=".07" stroke="none"/>`;
+    }
     let paths = "", dots = "";
     for (const [nm, col, ser, dash] of SER) {
       const d = ser.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1)
@@ -1144,10 +1193,14 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
       `letter-spacing:.1em;color:var(--muted)">EQUITY RACE — LIVE PAPER ` +
       `BANKROLLS</span><span style="display:inline-flex;gap:14px;` +
       `align-items:center;flex-wrap:wrap">${legend}</span></div>` +
+      `<p class="mini" style="margin:0 0 2px">shaded = each trader's ` +
+      `5–95% forecast cone at the desk's measured win rate ` +
+      `(${(100 * pHat).toFixed(0)}%) — a live line escaping its cone ` +
+      `falsifies the model in public</p>` +
       `<svg viewBox="0 0 ${W} ${H}" style="width:100%" role="img" ` +
       `aria-label="equity race — three paper traders, bankroll over time">` +
       `<title>equity race — bankroll (incl. banked) after each settled ` +
-      `trade, PT times</title>` + grid +
+      `trade, PT times</title>` + grid + cones +
       `<line x1="${PL}" x2="${W - PR}" y1="${Y(START)}" y2="${Y(START)}" ` +
       `stroke="currentColor" stroke-opacity=".3" stroke-dasharray="3 4"/>` +
       `<text x="${W - PR}" y="${Y(START) - 5}" text-anchor="end" ` +
