@@ -680,30 +680,66 @@ function drawTwoMillion(kb) {
       : `${v} measured · collecting (n=${a3.n})`,
       a3.n >= 15 ? a3.ev : null]);
   }
-  // class-world column: paper trading has no depth cap — pure compounding
-  const t2mPaper = (e) => {
+  // THE ACTUAL SIMULATION (tests/sneaky_trader.py): detection-aware.
+  // Market makers track the trader's 'heat' (his recent take of the
+  // ~$500 near-touch depth, decaying when he abstains) and quote his
+  // edge away linearly in heat. Closed-form optimum: take
+  // x* = 1/(2*beta) of depth — harvest half of what detection
+  // tolerates. Loud (naive full-size) trading trips detection fast.
+  const LAM = 0.97, ALPHA = 0.06, HMAX = 1.0;
+  const BETA = ALPHA / ((1 - LAM) * HMAX);
+  const XSTAR = Math.min(1, 1 / (2 * BETA));
+  const fdys = d => d == null ? "–" : d < 2 ? `${(d * 24).toFixed(0)}h`
+    : d < 365 ? `${d.toFixed(0)}d` : `${(d / 365).toFixed(1)}y`;
+  const t2mPaper = (e) => {          // class world: paper has no cap
     if (e == null) return "–";
     if (e <= 0) return "never";
-    const days = Math.log(2e6 / 1e3) / (BETS_D * Math.log(1 + STAKE * e));
-    return days < 2 ? `${(days * 24).toFixed(0)}h`
-      : days < 365 ? `${days.toFixed(0)}d` : `${(days / 365).toFixed(1)}y`;
+    return fdys(Math.log(2e6 / 1e3)
+      / (BETS_D * Math.log(1 + STAKE * e)));
+  };
+  const stealth = (e) => {           // sustainable extraction at x*
+    if (e == null || e <= 0) return [null, null, null];
+    const daily = BETS_D * XSTAR * CAP * e * (1 - BETA * XSTAR);
+    // loud: heat h_n = (ALPHA/(1-LAM))(1-LAM^n); quoted out (e_eff
+    // ~5% of e) after n windows; total extracted until then
+    let h = 0, tot = 0, n = 0;
+    while (1 - h / HMAX > 0.05 && n < 10000) {
+      tot += CAP * e * Math.max(0, 1 - h / HMAX);
+      h = LAM * h + ALPHA;
+      n++;
+    }
+    return [daily, Math.ceil(n / BETS_D), tot];
   };
   document.getElementById("tm-table").innerHTML =
-    `<table style="min-width:0;max-width:640px"><thead><tr>` +
+    `<table style="min-width:0;max-width:680px"><thead><tr>` +
     `<th>EV scenario</th><th class="num">per $1</th>` +
-    `<th class="num">from $1k</th><th class="num">from $10k</th>` +
-    `<th class="num">from $100k</th>` +
-    `<th class="num">paper · no depth cap</th></tr></thead><tbody>` +
-    scen.map(([nm, e]) => `<tr><td>${nm}</td>` +
-      `<td class="num">${e == null ? "–" : (100 * e).toFixed(1) + "%"}</td>` +
-      [1e3, 1e4, 1e5].map(k =>
-        `<td class="num">${e == null ? "–" : t2m(e, k)}</td>`).join("") +
-      `<td class="num">${t2mPaper(e)}</td></tr>`).join("") +
-    `</tbody></table>` +
-    `<p class="mini">assumptions: ~${BETS_D} qualifying windows/day · ` +
-    `${100 * STAKE}% of bankroll per bet · ~$${CAP}/window capacity ` +
-    `(beyond it growth is linear, so starting capital barely matters) · ` +
-    `simulated research, not advice</p>`;
+    `<th class="num">loud: quoted out in</th>` +
+    `<th class="num">loud: total won</th>` +
+    `<th class="num">stealth $/day</th>` +
+    `<th class="num">$2M stealth</th>` +
+    `<th class="num">$2M paper · no cap</th></tr></thead><tbody>` +
+    scen.map(([nm, e]) => {
+      const [daily, caughtD, loudTot] = stealth(e);
+      const neg = e != null && e <= 0;
+      return `<tr><td>${nm}</td>` +
+        `<td class="num">${e == null ? "–" : (100 * e).toFixed(1) + "%"}</td>` +
+        `<td class="num">${e == null ? "–" : neg ? "never (no edge)"
+          : fdys(caughtD)}</td>` +
+        `<td class="num">${daily == null ? "–"
+          : "$" + Math.round(loudTot).toLocaleString()}</td>` +
+        `<td class="num">${daily == null ? (neg ? "never" : "–")
+          : "$" + daily.toFixed(0)}</td>` +
+        `<td class="num">${daily == null ? (neg ? "never" : "–")
+          : fdys(2e6 / daily)}</td>` +
+        `<td class="num">${t2mPaper(e)}</td></tr>`;
+    }).join("") + `</tbody></table>` +
+    `<p class="mini">the detection-aware simulation (tests/` +
+    `sneaky_trader.py): market makers quote a detected winner's edge ` +
+    `away — heat decay λ=${LAM}, sensitivity α=${ALPHA} ⇒ optimal ` +
+    `take x* = ${(100 * XSTAR).toFixed(0)}% of the ~$${CAP} near-touch ` +
+    `depth ("harvest half of what detection tolerates", Kyle 1985) · ` +
+    `~${BETS_D} windows/day · paper column = class world, no ` +
+    `counterparty adapts · simulated research, not advice</p>`;
   // the LADDER trader simulated on the same scenarios: banks $1k on
   // reaching $11k, plays on with $10k, level scales x10 — day-stepped
   // the trader's true sizing is 10% of PLAYING bankroll (desk rule),
