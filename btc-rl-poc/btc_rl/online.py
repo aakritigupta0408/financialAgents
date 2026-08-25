@@ -414,6 +414,31 @@ KB_LOGIT_PATH_NAME = "kb_logit.json"
 KB_LOGIT_DIM = 24
 KB4_LOGIT_PATH_NAME = "kb4_logit.json"
 KB4_DIM = 12
+KB5_LOGIT_PATH_NAME = "kb5_logit.json"
+KB5_DIM = 14
+KB5_BE_MARGIN = 3.0   # confident-entry bar: p_hat*100 >= cost + margin
+
+
+def _kb5_features(side_yes: bool, ask_c: float, p2: float, p3: float,
+                  p4: float, k_pup: float | None, bx: list[float],
+                  pf: list[float], mins_left: float,
+                  hot: bool) -> list[float]:
+    """kb5 = train-where-you-trade: features of a BIDDABLE entry on one
+    side. Sees the ask (the adverse-selection variable), the model-market
+    disagreement, all three parents' probabilities oriented to the side,
+    barrier path, phase, and the hot-hour flag. Parents unchanged."""
+    s = 1.0 if side_yes else -1.0
+    pm = k_pup if k_pup is not None else 0.5
+    o = lambda x: (x - 0.5) * 2.0 * s     # oriented, centered
+    return [
+        1.0, o(p2), o(p3), o(p4), o(pm),
+        (o(p2) - o(pm)),                  # disagreement, oriented
+        ask_c / 100.0,
+        (100.0 * (p2 if side_yes else 1 - p2) - ask_c) / 100.0,  # edge
+        bx[3] * s,                        # strike z toward the side
+        mins_left / 15.0,
+        1.0 if hot else 0.0,
+    ] + [pf[0] * s, pf[1], pf[3] * s * 5.0]
 
 
 def _kb4_features(p_blend: float, p_logit: float, k_pup: float | None,
@@ -1431,6 +1456,14 @@ def run(once: bool = False) -> None:
             kb4_logit = BinaryLogit(KB4_DIM)
     except Exception:
         kb4_logit = BinaryLogit(KB4_DIM)
+    kb5_path = RESULTS_DIR / KB5_LOGIT_PATH_NAME
+    try:
+        kb5_logit = (BinaryLogit.from_dict(json.loads(kb5_path.read_text()))
+                     if kb5_path.exists() else BinaryLogit(KB5_DIM))
+        if kb5_logit.dim != KB5_DIM:
+            kb5_logit = BinaryLogit(KB5_DIM)
+    except Exception:
+        kb5_logit = BinaryLogit(KB5_DIM)
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -1795,6 +1828,41 @@ def run(once: bool = False) -> None:
                         row.update(extra)
                         kb.append(row)
                         kb_made.add((variant, pm_mkt["ticker"], slot1))
+                    # kb5 — train-where-you-trade arm: only exists on
+                    # BIDDABLE minutes (mid/late, a side under 80c at the
+                    # ask); picks its side by expected value and logs the
+                    # entry economics it would face. Parents untouched.
+                    if (mins_left <= 10 and pm_mkt.get("yes_bid")
+                            and pm_mkt.get("yes_ask")
+                            and ("kb5", pm_mkt["ticker"], slot1)
+                            not in kb_made):
+                        hot = now.hour in (18, 19, 20, 1)
+                        best5 = None
+                        for sy, askc in ((True, pm_mkt["yes_ask"]),
+                                         (False, 100 - pm_mkt["yes_bid"])):
+                            if not 5 <= askc < 80:
+                                continue
+                            x5 = _kb5_features(sy, askc, p_blend, p_logit,
+                                               p_stack, k_pup, bx, pf,
+                                               mins_left, hot)
+                            pw5 = kb5_logit.predict(x5)
+                            evc = pw5 * 100 - (askc + math.ceil(
+                                7 * (askc / 100) * (1 - askc / 100)))
+                            if best5 is None or evc > best5[0]:
+                                best5 = (evc, sy, askc, pw5, x5)
+                        if best5:
+                            evc, sy, askc, pw5, x5 = best5
+                            kb.append({**common, "variant": "kb5",
+                                       "p_up": round(pw5 if sy
+                                                     else 1 - pw5, 4),
+                                       "call": int(sy),
+                                       "ask_c": round(askc, 1),
+                                       "ev_c": round(evc, 1),
+                                       "conf_entry": int(pw5 * 100 >= askc
+                                                         + KB5_BE_MARGIN),
+                                       "b5x": [round(v, 5) for v in x5],
+                                       "trained": kb5_logit.updates})
+                            kb_made.add(("kb5", pm_mkt["ticker"], slot1))
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -1832,6 +1900,10 @@ def run(once: bool = False) -> None:
                 if r.get("b4x") and len(r["b4x"]) == kb4_logit.dim:
                     kb4_logit.update(r["b4x"], outcome)
                     logit_changed = True
+                if r.get("b5x") and len(r["b5x"]) == kb5_logit.dim:
+                    # label: did the CHOSEN side win (call==1 means yes)
+                    kb5_logit.update(r["b5x"], r["hit"])
+                    logit_changed = True
                 kb_changed = True
             if logit_changed:
                 tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
@@ -1840,6 +1912,9 @@ def run(once: bool = False) -> None:
                 tmp4 = (RESULTS_DIR / KB4_LOGIT_PATH_NAME).with_suffix(".tmp4")
                 tmp4.write_text(json.dumps(kb4_logit.to_dict()))
                 tmp4.replace(RESULTS_DIR / KB4_LOGIT_PATH_NAME)
+                tmp5 = (RESULTS_DIR / KB5_LOGIT_PATH_NAME).with_suffix(".tmp5")
+                tmp5.write_text(json.dumps(kb5_logit.to_dict()))
+                tmp5.replace(RESULTS_DIR / KB5_LOGIT_PATH_NAME)
             if kb_changed:
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
@@ -2087,7 +2162,7 @@ def run(once: bool = False) -> None:
                         "brier": s.get("brier"),
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
-                    for v in ("kb", "kb2", "kb3", "kb4")
+                    for v in ("kb", "kb2", "kb3", "kb4", "kb5")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),

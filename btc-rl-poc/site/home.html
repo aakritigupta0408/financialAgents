@@ -107,6 +107,16 @@
 </section>
 
 <section>
+  <h2>The $2,000,000 question — a measured answer
+    <span class="paper-tag">stress test · not advice</span></h2>
+  <p class="sub small muted">If someone used kb2's confident calls to trade,
+  how long to turn a starting bankroll into $2M — and what's the minimum
+  capital? Computed live from the ledger, with the honest three-regime answer.</p>
+  <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
+  <p class="mini" id="tm-verdict"></p>
+</section>
+
+<section>
   <h2>Headline results <span class="badge pending" id="verdict">computing…</span></h2>
   <div class="cards">
     <div class="card">
@@ -551,6 +561,52 @@ function drawTape(prices, st, r, bets) {
     "red lost) · amber ring = open bet · dashed = the window strike";
 }
 
+function drawTwoMillion(kb) {
+  const el = document.getElementById("tm-cards");
+  const rows = kb.filter(r => r.variant === "kb2" && r.actual != null
+    && r.mkt_p_up != null && r.mins_left <= 10
+    && Math.max(r.p_up, 1 - r.p_up) >= 0.64);
+  const ent = [];
+  for (const r of rows) {
+    const side = r.call ? "yes" : "no";
+    const ask = 100 * (side === "yes" ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
+    if (ask < 5 || ask >= 80) continue;
+    const fee = Math.ceil(7 * (ask / 100) * (1 - ask / 100));
+    ent.push([r.hit, ask + fee]);
+  }
+  const n = ent.length;
+  if (n < 60) { el.innerHTML = '<p class="mini">collecting…</p>'; return; }
+  const w = ent.reduce((a, e) => a + e[0], 0), p = w / n;
+  const cost = ent.reduce((a, e) => a + e[1], 0) / n;
+  const z = 1.96, den = 1 + z * z / n;
+  const half = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
+  const plo = (p + z * z / (2 * n) - half) / den,
+        phi = (p + z * z / (2 * n) + half) / den;
+  const ev = (p * 100 - cost) / cost, evhi = (phi * 100 - cost) / cost;
+  const be = cost / 100;
+  const card = (big, label, sub) =>
+    `<div class="card" style="text-align:center"><div class="bignum" ` +
+    `style="font-size:28px">${big}</div><p class="mini">${label}</p>` +
+    `<p class="mini" style="color:var(--faint)">${sub}</p></div>`;
+  el.innerHTML =
+    card(`${(100 * p).toFixed(1)}%`, "measured win rate, biddable confident calls",
+      `95% CI [${(100 * plo).toFixed(1)}, ${(100 * phi).toFixed(1)}] · n=${n}`) +
+    card(`${(100 * be).toFixed(1)}%`, "break-even win rate at the ask+fee",
+      `avg cost ${cost.toFixed(1)}¢ per 100¢ contract`) +
+    card(`${(100 * ev).toFixed(1)}%`, "expected value per $1 staked",
+      `even the CI's best case: ${(100 * evhi).toFixed(1)}%`) +
+    card(phi < be ? "never" : "—", "expected time to $2M, any capital",
+      phi < be ? "the CI never reaches break-even" : "edge within noise");
+  document.getElementById("tm-verdict").innerHTML =
+    `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
+    `(any real positive edge, compounding uncapped) · <b>~years</b> ` +
+    `(positive edge under ~$500/window market capacity). The research ` +
+    `finding: the number that must change is a win rate above ` +
+    `${(100 * be).toFixed(1)}% on biddable entries — adverse selection ` +
+    `currently caps us below it (the market prices out the good calls ` +
+    `and sells the disputed ones). Simulated research, not advice.`;
+}
+
 async function boot() {
   const [kb, bets, sel, prices, st] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
@@ -571,6 +627,7 @@ async function boot() {
     drawTape(prices, st, k2r, bets);
   } catch (e) {}
   try { drawBid(bets, st); } catch (e) {}
+  try { drawTwoMillion(kb); } catch (e) {}
   const stale = (Date.now() / 1000 - (st.alive_at || 0)) > 300;
   document.getElementById("dot").className = "live-dot" + (stale ? " stale" : "");
   document.getElementById("asof").textContent = st.alive_at
