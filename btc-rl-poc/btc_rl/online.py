@@ -1779,6 +1779,11 @@ def run(once: bool = False) -> None:
                                   if prev and ko is not None
                                   and prev[1] is not None else None)
                 k_flow_prev = {pm_mkt["ticker"]: (kv, ko)}
+                # near-touch book depth (contracts within 3c of the best
+                # bid, each side) — the measured per-window capacity that
+                # the $2M analysis assumes as ~$500
+                snap["k_depth_yes"] = pm_mkt.get("depth_yes")
+                snap["k_depth_no"] = pm_mkt.get("depth_no")
             try:  # frozen crypto-LLM reads the news tape (cached per headline)
                 senti = sentiment_snapshot()
             except Exception:

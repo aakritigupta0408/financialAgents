@@ -245,35 +245,45 @@ def fetch_kalshi_btc15() -> dict | None:
         except (TypeError, ValueError):
             m["volume"] = m["oi"] = None
         yes_bid, yes_ask = m.get("yes_bid"), m.get("yes_ask")
-        if not yes_bid or not yes_ask:
-            # markets endpoint often carries no quotes — derive the touch
-            # from the orderbook (best yes bid; best no bid => 100 - yes ask)
-            try:
-                raw = _session.get(
-                    "https://api.elections.kalshi.com/trade-api/v2/markets/"
-                    f"{m['ticker']}/orderbook",
-                    params={"depth": 1}, timeout=8).json()
-                book = raw.get("orderbook") or raw.get("orderbook_fp") or {}
-                if "yes_dollars" in book or "no_dollars" in book:
-                    yes_lvls = [float(p) * 100 for p, _ in
-                                book.get("yes_dollars") or []]
-                    no_lvls = [float(p) * 100 for p, _ in
-                               book.get("no_dollars") or []]
-                else:  # legacy shape: integer-cent [price, qty] levels
-                    yes_lvls = [lvl[0] for lvl in book.get("yes") or []]
-                    no_lvls = [lvl[0] for lvl in book.get("no") or []]
-                # resting YES buys: best bid = highest; resting NO buys
-                # imply the YES ask at 100 - best no bid
-                if yes_lvls:
-                    yes_bid = yes_bid or round(max(yes_lvls), 1)
-                if no_lvls:
-                    yes_ask = yes_ask or round(100 - max(no_lvls), 1)
-            except Exception:
-                pass
+        # always read the book: it both backfills missing quotes AND
+        # measures near-touch DEPTH — the market's per-window capacity
+        # (the public markets endpoint returns volume/oi as null, so the
+        # book is the only depth signal available without auth)
+        depth_yes = depth_no = None
+        try:
+            raw = _session.get(
+                "https://api.elections.kalshi.com/trade-api/v2/markets/"
+                f"{m['ticker']}/orderbook",
+                params={"depth": 10}, timeout=8).json()
+            book = raw.get("orderbook") or raw.get("orderbook_fp") or {}
+            if "yes_dollars" in book or "no_dollars" in book:
+                yes_l = [(float(p) * 100, float(q)) for p, q in
+                         book.get("yes_dollars") or []]
+                no_l = [(float(p) * 100, float(q)) for p, q in
+                        book.get("no_dollars") or []]
+            else:  # legacy shape: integer-cent [price, qty] levels
+                yes_l = [(lvl[0], lvl[1]) for lvl in book.get("yes") or []]
+                no_l = [(lvl[0], lvl[1]) for lvl in book.get("no") or []]
+            # resting YES buys: best bid = highest; resting NO buys
+            # imply the YES ask at 100 - best no bid
+            if yes_l:
+                bb = max(p for p, _ in yes_l)
+                yes_bid = yes_bid or round(bb, 1)
+                depth_yes = round(sum(q for p, q in yes_l
+                                      if p >= bb - 3), 1)
+            if no_l:
+                nb = max(p for p, _ in no_l)
+                yes_ask = yes_ask or round(100 - nb, 1)
+                depth_no = round(sum(q for p, q in no_l
+                                     if p >= nb - 3), 1)
+        except Exception:
+            pass
         return {"ticker": m["ticker"], "title": m.get("title"),
                 "strike": m.get("floor_strike"),
                 "close_time": m.get("close_time"),
                 "yes_bid": yes_bid, "yes_ask": yes_ask,
+                "volume": m.get("volume"), "oi": m.get("oi"),
+                "depth_yes": depth_yes, "depth_no": depth_no,
                 "last_price": m.get("last_price")}
     except Exception:
         return None
