@@ -30,12 +30,14 @@
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span> Final deliverable · live evaluation</div>
   <h1>The 80/80 scoreboard &amp; bet-policy A/B</h1>
-  <p class="sub">Deliverable models <b>kb2</b> (market-anchored blend) and
-  <b>kb3</b> (online learner): a probability on the live Kalshi 15-minute
-  contract <b>every minute</b>, no fixed decision time. Class baseline to beat:
-  <b>80% precision and 80% recall per class</b> at each model's confidence
-  gate. The earlier fixed-T-3 variant (kbf) is retired as trivial — the
-  market alone matches it at that timestamp. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
+  <p class="sub"><b>Eight live arms</b> put a probability on the Kalshi
+  15-minute contract <b>every minute</b>, no fixed decision time — from the
+  anchor deliverable <b>kb2</b> (market-anchored blend) to <b>kb7</b>
+  (zero-shot foundation model) and <b>kb8</b> (kb7 × market, learned live).
+  Class baseline: <b>80% precision and 80% recall per class</b> at each
+  arm's disclosed confidence gate; kb2, kb4 and kb7 currently clear it.
+  The fixed-T-3 variant (kbf) is retired as trivial — the market alone
+  matches it at that timestamp. Below it, the live A/B: the <b>bidding model</b> (mandatory one bet
   per window) vs the <b>selector model</b> — a bet-level EV model that judges
   the very same bet in the same tick it is placed (whenever the entry strikes —
   no fixed decision minute, no future information) and keeps it only if its
@@ -152,12 +154,14 @@
   confidence threshold targeting 80% precision; coverage is the share of
   calls confident enough to make.</p>
   <div class="legend">
-    <span><span class="sw" style="background:#3987e5"></span>kb (control)</span>
-    <span><span class="sw" style="background:#2fb59a"></span>kb2 (market blend)</span>
-    <span><span class="sw" style="background:#d55181"></span>kb3 (logit)</span>
-    <span><span class="sw" style="background:#9085e9"></span>kb4 (stack of kb2+kb3)</span>
-    <span><span class="sw" style="background:#d95926"></span>kb5 (train-where-you-trade, EV-seeking)</span>
-    <span><span class="sw" style="background:#c98500"></span>kb6 (fast information: perp lead, tape, whale flow, new)</span>
+    <span><span class="sw" style="background:#2461b8"></span>kb (control)</span>
+    <span><span class="sw" style="background:#0b7d8a"></span>kb2 (market blend)</span>
+    <span><span class="sw" style="background:#b43a6e"></span>kb3 (logit)</span>
+    <span><span class="sw" style="background:#5f50c7"></span>kb4 (stack of kb2+kb3)</span>
+    <span><span class="sw" style="background:#bc4514"></span>kb5 (train-where-you-trade, EV-seeking)</span>
+    <span><span class="sw" style="background:#8f6000"></span>kb6 (fast information: perp lead, tape, whale flow)</span>
+    <span><span class="sw" style="background:#0d7a4e"></span>kb7 (zero-shot foundation model, frozen)</span>
+    <span><span class="sw" style="background:#667283"></span>kb8 (kb7 × market log-pool, learned live)</span>
     <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
   </div>
   <div id="kbrace"></div>
@@ -286,8 +290,8 @@ function lineSVG(seriesList, opts) {
 }
 
 function brierRace(kb, st) {
-  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9", kb5: "#d95926", kb6: "#c98500" };
-  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [], kb6: [] };
+  const COL = { kb: "#2461b8", kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7", kb5: "#bc4514", kb6: "#8f6000", kb7: "#0d7a4e", kb8: "#667283" };
+  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [], kb6: [], kb7: [], kb8: [] };
   for (const r of kb) {
     const v = r.variant || "kb";
     if (groups[v] && r.actual != null) groups[v].push(r);
@@ -318,7 +322,7 @@ function brierRace(kb, st) {
         title: "rolling Brier by variant vs market" })
     : '<p class="mini">collecting…</p>';
   const t = st.kb_treatments || {};
-  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5", "kb6"].filter(v => t[v]).map(v => {
+  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8"].filter(v => t[v]).map(v => {
     const s = t[v], p = s.prec80;
     return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
       `<td class="num">${s.scored ?? "–"}</td>` +
@@ -449,9 +453,9 @@ async function poll() {
       ["kb2", "market-anchored blend", "learned per-phase blend of model + market"],
       ["kb3", "online logistic learner", "24 features, one SGD step per settle"],
       ["kb4", "stack of kb2 + kb3", "learns when to trust which model"],
-      ["kb6", "fast information (new)", "perp lead, tape, whale flow, OI delta"],
+      ["kb6", "fast information", "perp lead, tape, whale flow, OI delta"],
       ["kb7", "zero-shot foundation model (frozen)", "Chronos-Bolt read at the strike"],
-      ["kb8", "calibrated stack over kb7 (new)", "learns to fuse kb7's signal with the market"],
+      ["kb8", "kb7 × market log-pool", "learns to fuse kb7's signal with the market"],
     ];
     const blocks = {};
     for (const [v2, title, blurb] of ARMS_META)
