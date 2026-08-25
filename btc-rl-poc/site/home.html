@@ -700,41 +700,58 @@ function drawTwoMillion(kb) {
     `simulated research, not advice</p>`;
   // the LADDER trader simulated on the same scenarios: banks $1k on
   // reaching $11k, plays on with $10k, level scales x10 — day-stepped
-  const ladder = (e) => {
-    if (e == null) return ["–", "–", "–"];
-    if (e <= 0) return ["never", "never", "never"];
+  // the trader's true sizing is 10% of PLAYING bankroll (desk rule),
+  // so his bid steps $100 -> $1k -> $10k -> $100k as the ladder climbs
+  const LSTAKE = 0.10;
+  const fdays = d => d == null ? "—" : d < 2 ? `${(d * 24).toFixed(0)}h`
+    : d < 365 ? `${d.toFixed(0)}d` : `${(d / 365).toFixed(1)}y`;
+  const ladder = (e, capped) => {
     let K = 1e3, banked = 0, level = 1e3, days = 0, firstBank = null;
     while (banked + K < 2e6 && days < 365 * 200) {
-      K = (STAKE * K < CAP) ? K * Math.pow(1 + STAKE * e, BETS_D)
-                            : K + BETS_D * CAP * e;
+      K = (!capped || LSTAKE * K < CAP)
+        ? K * Math.pow(1 + LSTAKE * e, BETS_D)
+        : K + BETS_D * CAP * e;
       while (K >= 11 * level) {
         banked += level; K -= level; level *= 10;
         if (firstBank == null) firstBank = days + 1;
       }
       days++;
     }
-    const f = d => d == null ? "—" : d < 2 ? `${(d * 24).toFixed(0)}h`
-      : d < 365 ? `${d.toFixed(0)}d` : `${(d / 365).toFixed(1)}y`;
-    return [f(firstBank), days >= 365 * 200 ? ">200y" : f(days),
-            "$" + Math.round(banked).toLocaleString()];
+    return [firstBank, days >= 365 * 200 ? null : days, banked];
   };
   document.getElementById("tm-ladder").innerHTML =
     `<p class="small" style="margin:6px 0 4px"><b>The ladder trader, ` +
-    `simulated</b> <span class="muted">— starts $1k; at $11k banks $1k ` +
-    `and plays on with $10k (bid limit steps $100 → $1k → $10k…)</span></p>` +
-    `<table style="min-width:0;max-width:560px"><thead><tr>` +
+    `simulated</b> <span class="muted">— starts $1k; at $11k banks $1k, ` +
+    `plays $10k; at $110k banks $10k, plays $100k … bid = 10% of playing ` +
+    `bankroll, so it steps $100 → $1k → $10k → $100k</span></p>` +
+    `<table style="min-width:0;max-width:640px"><thead><tr>` +
     `<th>EV scenario</th><th class="num">per $1</th>` +
-    `<th class="num">first $1k banked</th><th class="num">$2M total</th>` +
-    `<th class="num">banked at end</th></tr></thead><tbody>` +
+    `<th class="num">first $1k banked</th>` +
+    `<th class="num">$2M at ~$500/window depth</th>` +
+    `<th class="num">$2M if depth unlimited</th></tr></thead><tbody>` +
     scen.map(([nm, e]) => {
-      const [fb, t2, bk] = ladder(e);
-      return `<tr><td>${nm}</td><td class="num">${e == null ? "–"
-        : (100 * e).toFixed(1) + "%"}</td><td class="num">${fb}</td>` +
-        `<td class="num">${t2}</td><td class="num">${bk}</td></tr>`;
+      if (e == null) return `<tr><td>${nm}</td>` +
+        `<td class="num">–</td><td class="num">–</td>` +
+        `<td class="num">–</td><td class="num">–</td></tr>`;
+      if (e <= 0) return `<tr><td>${nm}</td>` +
+        `<td class="num">${(100 * e).toFixed(1)}%</td>` +
+        `<td class="num">never</td><td class="num">never</td>` +
+        `<td class="num">never</td></tr>`;
+      const [fb, tc] = ladder(e, true);
+      const [, tu] = ladder(e, false);
+      return `<tr><td>${nm}</td>` +
+        `<td class="num">${(100 * e).toFixed(1)}%</td>` +
+        `<td class="num">${fdays(fb)}</td>` +
+        `<td class="num">${tc == null ? ">200y" : fdays(tc)}</td>` +
+        `<td class="num">${tu == null ? ">200y" : fdays(tu)}</td></tr>`;
     }).join("") + `</tbody></table>` +
-    `<p class="mini">same assumptions and capacity cap as above — banking ` +
-    `slows compounding slightly but locks profits out of drawdown reach · ` +
-    `simulated research, not advice</p>`;
+    `<p class="mini">the ladder mechanics scale the bid ×10 per rung ` +
+    `exactly as designed — with unlimited depth each rung takes ` +
+    `roughly constant time, so $2M arrives in rungs · at the measured ` +
+    `~$${CAP}/window depth a $10k bid still fills only ~$${CAP}, which ` +
+    `is the whole gap between the two right-hand columns · banking ` +
+    `locks profits out of drawdown reach either way · simulated ` +
+    `research, not advice</p>`;
   document.getElementById("tm-verdict").innerHTML =
     `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
     `(any real positive edge, compounding uncapped) · <b>~years</b> ` +
