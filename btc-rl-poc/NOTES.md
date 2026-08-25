@@ -1,5 +1,25 @@
 # Research log
 
+## 2026-08-25 — PRE-REGISTRATION: tier evidence acceleration (2 methods)
+
+(SPRT considered and NOT adopted, per project decision.)
+
+METHOD A — market-paired scoring (variance reduction), applied to the
+live tier stream and the replay identically: per entered window, the
+market's implied win probability is q = entry cost / 100 (ask + fee);
+the score is (win - q). Test: mean excess score > 0, t-test CLUSTERED
+BY DAY. The market price absorbs shared outcome variance, so this
+reaches a verdict with fewer windows than the raw win-rate test.
+
+METHOD B — REPLAY over the mined history (corroboration, labeled
+replay, never merged with the live stream): apply the identical frozen
+tier rule (kb7 conf >= 0.77, first qualifying minute, real bid/ask
+from the mined rows, 5-80c band, fees in) over the ~1,301-window
+results/kalshi_history.jsonl. kb7 recomputed per minute from
+historical closes with NO look-ahead (context strictly before each
+decision minute). Report windows, win rate, Wilson CI, EV per $1 at
+real asks + fees, and Method A's clustered excess-score t.
+
 ## 2026-08-25 — trader 4, the ALL-IN (registered at launch)
 
 100% of capital on every leader entry (follower's 0.62 gate), stake
