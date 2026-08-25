@@ -922,10 +922,11 @@ function drawTwoMillion(kb) {
       : "never";
     document.getElementById("tm-winner").innerHTML =
       `<p class="small" style="margin:6px 0 4px"><b>The disciplined ` +
-      `trader — the winning policy</b> <span class="muted">— bids only ` +
-      `kb7's top-confidence windows (~${WD.toFixed(0)}/day), sized so ` +
-      `total take = the stealth optimum (${(100 * XSTAR).toFixed(0)}% ` +
-      `of depth), one bid per window, ladder banking</span></p>` +
+      `trader — the winning policy</b> <span class="muted">— takes any ` +
+      `desk entry (kb7 or the leader) only at ≥77% confidence — policy ` +
+      `v2, ~${WD.toFixed(0)} qualifying windows/day — sized so total ` +
+      `take = the stealth optimum (${(100 * XSTAR).toFixed(0)}% of ` +
+      `depth), one bid per window, ladder banking</span></p>` +
       `<p class="mini">selective tier measured live: ${wsum}/${top.length}` +
       ` entries won across ${wn} windows · EV ` +
       `${eSel == null ? "–" : (100 * eSel).toFixed(1) + "%"}/$1 at avg ` +
@@ -949,9 +950,10 @@ function drawTwoMillion(kb) {
       `<td class="num">${paperD}</td></tr>` +
       `</tbody></table>` +
       `<p class="mini">the one number this stands on is the selective ` +
-      `tier's win rate — it updates live above and gets a pre-registered ` +
-      `Conviction Book stream before anything more is claimed · ` +
-      `simulated research, not advice</p>`;
+      `tier's win rate — its pre-registered protocol ran 08-25: the ` +
+      `663-window real-ask replay above is the corroboration, and the ` +
+      `live stream continues under the frozen rule · simulated ` +
+      `research, not advice</p>`;
     // ---- the answer in one line + the math as an animated pipeline ----
     const ansEl = document.getElementById("tm-answer");
     const flowEl = document.getElementById("tm-flow");
@@ -981,7 +983,7 @@ function drawTwoMillion(kb) {
         `<text x="${x + 11}" y="58" text-anchor="middle" font-size="13" ` +
         `font-weight="700" fill="currentColor" opacity=".6">${sym}</text>`;
       flowEl.innerHTML =
-        `<svg viewBox="0 0 985 152" style="width:100%;margin-top:6px" ` +
+        `<svg viewBox="0 0 985 162" style="width:100%;margin-top:6px" ` +
         `role="img" aria-label="the $2M math pipeline">` +
         `<title>edge × stake × windows × detection = dollars per day → ` +
         `time to $2M</title>` +
@@ -1001,17 +1003,19 @@ function drawTwoMillion(kb) {
         op(834, "→") +
         node(843, `${fdys(2e6 / dailyF)}`,
           "to $2,000,000", "$2M ÷ $/day", "var(--good-text)") +
-        `<text x="0" y="128" font-size="10.5" fill="currentColor" ` +
+        `<text x="0" y="126" font-size="10.5" fill="currentColor" ` +
         `opacity=".65">${(window.__st && window.__st.k_depth_yes != null)
           ? `depth on the book RIGHT NOW: ~$${Math.round(
               Math.min(window.__st.k_depth_yes, window.__st.k_depth_no)
-            ).toLocaleString()} near-touch (thinner side, live) · `
-          : ""}same pipeline, other worlds:  measured ~$9k depth ` +
+            ).toLocaleString()} near-touch (thinner side, live)`
+          : ""}</text>` +
+        `<text x="0" y="140" font-size="10.5" fill="currentColor" ` +
+        `opacity=".65">same pipeline, other worlds:  measured ~$9k depth ` +
         `→ <tspan font-weight="700">$${Math.round(daily9).toLocaleString()}` +
-        `/day → ${fdys(2e6 / daily9)}</tspan>   ·   paper / class world ` +
-        `(no depth cap, no adversary) → <tspan font-weight="700">` +
+        `/day → ${fdys(2e6 / daily9)}</tspan> · paper / class world ` +
+        `(no cap, no adversary) → <tspan font-weight="700">` +
         `${paperD}</tspan></text>` +
-        `<text x="0" y="146" font-size="10.5" fill="currentColor" ` +
+        `<text x="0" y="154" font-size="10.5" fill="currentColor" ` +
         `opacity=".5">every number is live — the tier's win rate moves ` +
         `this whole chain · simulated research, not advice</text></svg>`;
     } else if (ansEl) {
