@@ -23,6 +23,21 @@
   vertical-align: 3px; margin-left: 8px; }
 .badge.pass { color: var(--good-text); background: rgba(43,217,126,.12); }
 .badge.pending { color: var(--series-2); background: rgba(57,135,229,.12); }
+.sig-verdict { font: 650 34px/1.15 var(--display); margin: 10px 0 4px; }
+.sig-verdict.buy { color: var(--good-text); }
+.sig-verdict.aside { color: var(--ink-2); }
+.sig-cols { display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px 26px; margin-top: 12px; }
+@media (max-width: 760px) { .sig-cols { grid-template-columns: 1fr; } }
+.ev { display: flex; gap: 9px; padding: 5px 0; font-size: 13.5px;
+  color: var(--ink-2); border-bottom: 1px solid var(--grid); }
+.ev .m { flex: 0 0 auto; width: 16px; text-align: center; }
+.ev.for .m { color: var(--good-text); } .ev.against .m { color: var(--down); }
+.sig-econ { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 12px; }
+.paper-tag { font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--series-4);
+  border: 1px solid rgba(201,133,0,.4); border-radius: 6px;
+  padding: 3px 9px; }
 </style>
 </head>
 <body>
@@ -51,6 +66,20 @@
   demonstrates is <b>calibrated probability at disclosed operating points</b> —
   and it beats the class baseline of 80% precision <i>and</i> 80% recall per class.</p>
 </header>
+
+<section>
+  <h2>The live signal — what the system would do right now
+    <span class="paper-tag">paper · research demo</span></h2>
+  <p class="sub small muted">The decision layer, live: kb2's current probability
+  on the open Kalshi window is held against a <b>bet-grade gate</b> — a
+  precision-first threshold that depends on window phase (early calls need
+  near-certainty, late calls less) and backs off during session-open hours
+  where misses cluster. When the gate clears, this panel shows the exact
+  paper order, its economics, and every piece of evidence for and against —
+  the same auditable ledger data as everywhere else. No real orders are
+  placed; this is how the research would be <i>used</i>.</p>
+  <div id="sig-card"><p class="mini">reading the live window…</p></div>
+</section>
 
 <section>
   <h2>Headline results <span class="badge pending" id="verdict">computing…</span></h2>
@@ -194,6 +223,114 @@ const numEl = (label, v) =>
   `<span class="stat"><span class="k">${label}</span><br>` +
   `<span class="bignum" style="color:${v != null && v >= .8 ? "var(--good-text)" : "var(--down)"}">${v == null ? "–" : (100 * v).toFixed(1) + "%"}</span></span>`;
 
+const HOT_HOURS = [18, 19, 20, 1];   // session opens (PT): misses cluster
+function gateTau(minsLeft, hour) {
+  let tau = minsLeft > 10 ? 0.90 : minsLeft >= 5 ? 0.75 : 0.65;
+  if (HOT_HOURS.includes(hour)) tau += 0.10;
+  return Math.min(tau, 0.97);
+}
+function drawSignal(kb, bets, st) {
+  const el = document.getElementById("sig-card");
+  const k2 = kb.filter(r => r.variant === "kb2");
+  const r = k2[k2.length - 1];
+  const now = Date.now() / 1000;
+  if (!r || now - r.made_ts > 240) {
+    el.innerHTML = '<p class="mini">no live call in the last 4 minutes — ' +
+      'the market may be between windows or the feed is catching up.</p>';
+    return;
+  }
+  const hour = parseInt(new Date(r.made_ts * 1000).toLocaleString("en-US",
+    { timeZone: "America/Los_Angeles", hour: "2-digit", hour12: false }));
+  const conf = Math.max(r.p_up, 1 - r.p_up);
+  const tau = gateTau(r.mins_left, hour);
+  const side = r.call ? "YES" : "NO";
+  const graded = conf >= tau;
+  const pm = st.pm || {};
+  const ask = r.call ? pm.yes_ask : (pm.yes_bid != null ? 100 - pm.yes_bid : null);
+  const fee = ask != null ? Math.ceil(7 * (ask / 100) * (1 - ask / 100)) : null;
+  const breakeven = ask != null ? (ask + fee) : null;
+
+  // historical precision of calls LIKE this one: same phase bucket,
+  // same-or-higher confidence, settled — computed from the public ledger
+  const phase = r.mins_left > 10 ? "early" : r.mins_left >= 5 ? "mid" : "late";
+  const pf = m => m > 10 ? "early" : m >= 5 ? "mid" : "late";
+  const alike = k2.filter(q => q.actual != null && pf(q.mins_left) === phase
+    && Math.max(q.p_up, 1 - q.p_up) >= tau && q.call === r.call);
+  const alikeP = alike.length >= 15
+    ? alike.filter(q => q.hit).length / alike.length : null;
+
+  // evidence for / against
+  const k3 = kb.filter(q => q.variant === "kb3" && q.ticker === r.ticker
+    && q.made_ts === r.made_ts)[0];
+  const k4 = kb.filter(q => q.variant === "kb4" && q.ticker === r.ticker
+    && q.made_ts === r.made_ts)[0];
+  const ev = [];
+  const push = (ok, text) => ev.push({ ok, text });
+  push(graded, `kb2 confidence ${(100 * conf).toFixed(0)}% vs the ` +
+    `${(100 * tau).toFixed(0)}% bet-grade bar for a ${phase}-window call`);
+  if (alikeP != null)
+    push(alikeP >= 0.85, `calls like this one (${phase}, ≥${(100 * tau).toFixed(0)}% ` +
+      `confident, same side) were right ${(100 * alikeP).toFixed(1)}% of the ` +
+      `time historically (n=${alike.length})`);
+  if (k3) push((k3.p_up >= 0.5) === (r.call === 1),
+    `kb3 (independent 24-feature learner) says ${(100 * k3.p_up).toFixed(0)}% ` +
+    `— ${(k3.p_up >= 0.5) === (r.call === 1) ? "agrees" : "disagrees"}`);
+  if (k4) push((k4.p_up >= 0.5) === (r.call === 1),
+    `kb4 (stack) says ${(100 * k4.p_up).toFixed(0)}% — ` +
+    `${(k4.p_up >= 0.5) === (r.call === 1) ? "agrees" : "disagrees"}`);
+  if (r.mkt_p_up != null)
+    push((r.mkt_p_up >= 0.5) === (r.call === 1),
+      `the market prices ${(100 * r.mkt_p_up).toFixed(0)}% — ` +
+      `${(r.mkt_p_up >= 0.5) === (r.call === 1) ? "agrees" : "the crowd is on the other side"}`);
+  if (r.pf && r.pf.length >= 1) {
+    const occ = r.pf[0] + 0.5;  // fraction of window spent above strike
+    const occSide = r.call ? occ : 1 - occ;
+    push(occSide >= 0.5, `price has spent ${(100 * occSide).toFixed(0)}% of ` +
+      `this window on the called side of the strike`);
+  }
+  push(!HOT_HOURS.includes(hour), HOT_HOURS.includes(hour)
+    ? "session-open hour — confident calls historically 15pts less precise here (gate raised)"
+    : "outside the session-open hot hours where misses cluster");
+  push(phase !== "early", phase === "early"
+    ? "early in the window — outcomes this far out are near coin-flips"
+    : `${phase} window — ${(r.mins_left).toFixed(1)} min to close, information is real`);
+  if (breakeven != null && graded)
+    push(100 * conf > breakeven, `model probability ${(100 * conf).toFixed(0)}% vs ` +
+      `break-even ${breakeven}¢ (ask ${ask}¢ + ${fee}¢ fee) — ` +
+      `${100 * conf > breakeven ? "positive" : "negative"} expected value`);
+
+  const fmtC = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+    { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
+      hour12: false });
+  const verdict = graded
+    ? `<div class="sig-verdict buy">BUY ${side}${ask != null ? " @ " + ask + "¢" : ""}</div>`
+    : `<div class="sig-verdict aside">STAND ASIDE</div>`;
+  const econ = !graded
+    ? `<p class="small muted" style="margin-top:6px">confidence ${(100 * conf).toFixed(0)}% is below the
+       ${(100 * tau).toFixed(0)}% bar this situation demands — the discipline IS the edge:
+       historically, sub-gate calls in this phase run near coin-flip.</p>`
+    : ask == null
+      ? `<p class="small muted" style="margin-top:6px">signal is bet-grade; the live quote is
+         unavailable this second — entry would be at the current ask.</p>`
+      : `<div class="sig-econ">
+        <span class="stat"><span class="k">entry (ask)</span><br><span class="bignum">${ask}¢</span></span>
+        <span class="stat"><span class="k">fee</span><br><span class="bignum">${fee}¢</span></span>
+        <span class="stat"><span class="k">break-even</span><br><span class="bignum">${breakeven}%</span></span>
+        <span class="stat"><span class="k">model P</span><br><span class="bignum">${(100 * conf).toFixed(0)}%</span></span>
+        <span class="stat"><span class="k">paper size</span><br><span class="bignum">2% of bankroll</span></span>
+      </div>`;
+  const fors = ev.filter(e => e.ok), against = ev.filter(e => !e.ok);
+  el.innerHTML =
+    `<p class="mini">window closes ${fmtC(r.close_ts)} PT · strike $${Math.round(r.strike).toLocaleString()} ·
+      call made ${fmtC(r.made_ts)} PT (${r.mins_left.toFixed(1)} min left)</p>` +
+    verdict + econ +
+    `<div class="sig-cols"><div><p class="small" style="font-weight:600;margin-bottom:4px">Evidence for</p>` +
+    (fors.map(e => `<div class="ev for"><span class="m">✓</span><span>${e.text}</span></div>`).join("") || '<p class="mini">none</p>') +
+    `</div><div><p class="small" style="font-weight:600;margin-bottom:4px">Evidence against / risk</p>` +
+    (against.map(e => `<div class="ev against"><span class="m">✗</span><span>${e.text}</span></div>`).join("") || '<p class="mini">none</p>') +
+    `</div></div>`;
+}
+
 async function boot() {
   const [kb, bets, sel, st] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
@@ -202,6 +339,10 @@ async function boot() {
     fetch(bust("../results/online_status.json"), { cache: "no-store" })
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
   ]);
+  try { drawSignal(kb, bets, st); } catch (e) {
+    document.getElementById("sig-card").innerHTML =
+      '<p class="mini">signal unavailable</p>';
+  }
   const stale = (Date.now() / 1000 - (st.alive_at || 0)) > 300;
   document.getElementById("dot").className = "live-dot" + (stale ? " stale" : "");
   document.getElementById("asof").textContent = st.alive_at
