@@ -1042,7 +1042,7 @@ function drawDesk(pt, kb, pt2) {
     : "";
 }
 
-function drawDesk3(pt3) {
+function drawDesk3(pt3, kb) {
   // the DISCIPLINED trader — his orders rendered like a real broker
   // ticket (research theater: nothing is purchased, ever)
   const el = document.getElementById("desk3");
@@ -1081,20 +1081,66 @@ function drawDesk3(pt3) {
       `${(100 * t.p_arm).toFixed(0)}% · placed ${fT2(t.made_ts)}</div>` +
       `</div>`;
   };
+  // skipped windows, derived live from the ledger: every closed window
+  // kb7 saw but the trader passed on, with the reason — restraint made
+  // visible (this is most of his life by design)
+  const byW = {};
+  for (const r of (kb || []))
+    if (r.variant === "kb7" && r.mins_left <= 12)
+      (byW[r.ticker] = byW[r.ticker] || []).push(r);
+  const traded = new Set(pt3.map(t => t.ticker));
+  const nowS = Date.now() / 1000;
+  const skips = [];
+  for (const tk in byW) {
+    if (traded.has(tk)) continue;
+    const rs = byW[tk];
+    if (rs[0].close_ts > nowS) continue;          // window still open
+    let best = null;
+    for (const r of rs) {
+      const c = Math.max(r.p_up, 1 - r.p_up);
+      if (!best || c > best.c) best = { c, r };
+    }
+    let reason;
+    if (best.c < 0.77) {
+      reason = `kb7 peaked at ${(100 * best.c).toFixed(0)}% — below the ` +
+        `77% bar`;
+    } else {
+      const r = best.r;
+      const ask = r.mkt_p_up == null ? null
+        : 100 * (r.p_up >= .5 ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
+      reason = ask == null
+        ? `qualified at ${(100 * best.c).toFixed(0)}% but no market quote`
+        : ask >= 80
+          ? `qualified at ${(100 * best.c).toFixed(0)}% but priced out ` +
+            `(~${ask.toFixed(0)}¢)`
+          : ask < 5
+            ? `qualified but ask ~${ask.toFixed(0)}¢ under the 5¢ floor`
+            : `qualified at ${(100 * best.c).toFixed(0)}% — window passed ` +
+              `unfilled`;
+    }
+    skips.push({ ts: rs[0].close_ts, reason });
+  }
+  const events = pt3.map(t => ({ ts: t.made_ts, html: ticket(t, false) }))
+    .concat(skips.map(s => ({ ts: s.ts, html:
+      `<div class="mini" style="padding:5px 4px;border-bottom:1px solid ` +
+      `rgba(128,128,128,.15)">⏸ ${fT2(s.ts)} · SKIPPED — ${s.reason}` +
+      `</div>` })));
+  events.sort((a, b) => b.ts - a.ts);
   const latest = pt3[pt3.length - 1];
+  const skN = skips.length;
   el.innerHTML =
     `<p class="small"><b>The disciplined trader — live</b> ` +
     `<span class="paper-tag">pre-registered · kb7 ≥ 77% only · ` +
     `simulated · not advice</span><br><span class="mini">bids only the ` +
     `top-confidence tier the ledger says carries the edge · 10% of ` +
     `funds · bankroll <b>${money(bank)}</b> · record ${wins}/` +
-    `${settled.length}${open.length ? " · 1 open" : ""}</span></p>` +
-    (latest ? ticket(latest, true) : `<p class="mini">order book empty — ` +
-      `he bids only when kb7's confidence clears 77% on a biddable ` +
-      `window; most windows never qualify. Patience is the strategy.</p>`) +
-    (pt3.length > 1
-      ? pt3.slice(-4, -1).reverse().map(t => ticket(t, false)).join("")
-      : "");
+    `${settled.length}${open.length ? " · 1 open" : ""} · ` +
+    `<b>${skN}</b> windows skipped</span></p>` +
+    (latest ? ticket(latest, true)
+      : `<p class="mini">no order yet — patience is the strategy; ` +
+        `the skips below are it working.</p>`) +
+    `<div style="margin-top:8px">` +
+    events.slice(0, 8).map(e => e.html).join("") + `</div>`;
 }
 
 async function boot() {
@@ -1111,7 +1157,7 @@ async function boot() {
     jsonl("../results/pt3_trades.jsonl"),
   ]);
   try { drawDesk(ptr, kb, pt2r); } catch (e) {}
-  try { drawDesk3(pt3r); } catch (e) {}
+  try { drawDesk3(pt3r, kb); } catch (e) {}
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
       '<p class="mini">desk commentary unavailable</p>';
