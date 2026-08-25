@@ -76,13 +76,8 @@
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
     Course project · live since 2026-08-20 · <span id="asof">loading…</span></div>
   <h1>Can a learning system call Bitcoin's next 15 minutes?</h1>
-  <p class="sub hero-thesis">An always-on experiment: eleven reinforcement-learning
-  arms forecast BTC-USD at +1/+5/+15/+30 minutes while two binary models price the
-  live Kalshi 15-minute contract <b>every minute</b> — scored against the market's
-  own probabilities, with fees in, on public append-only ledgers. The honest
-  headline: at these horizons the market is nearly efficient; the edge this system
-  demonstrates is <b>calibrated probability at disclosed operating points</b> —
-  and it beats the class baseline of 80% precision <i>and</i> 80% recall per class.</p>
+  <p class="sub hero-thesis">Eleven learning arms · every minute · public
+  append-only ledgers · above the 80/80 class baseline at disclosed gates.</p>
 </header>
 
 <section>
@@ -104,25 +99,18 @@
   <div class="cards">
     <div class="card">
       <h3>The deliverable — kb2</h3>
-      <p class="small muted">Market-anchored blend, a probability every minute,
-      confidence-gated. All four class metrics vs the 80/80 baseline:</p>
       <div class="nums" id="kb2-nums"><span class="mini">loading…</span></div>
       <p class="mini" id="kb2-sub"></p>
       <a href="ab_dashboard.html" class="small">Full scoreboard, phase audit &amp; decision ledger →</a>
     </div>
     <div class="card">
       <h3>The learner — kb3</h3>
-      <p class="small muted">Online logistic, 24 features, one SGD step per settled
-      call — the learning-curve arm:</p>
       <div class="nums" id="kb3-nums"><span class="mini">loading…</span></div>
       <p class="mini" id="kb3-sub"></p>
       <a href="ab_dashboard.html" class="small">Learning curve vs the market →</a>
     </div>
     <div class="card">
       <h3>The bet-policy A/B</h3>
-      <p class="small muted">A mandatory one-bet-per-window bidder vs a selector
-      that judges the same bet at placement — three policy generations, each
-      scored on kept-vs-skipped:</p>
       <div class="nums" id="ab-nums"><span class="mini">loading…</span></div>
       <p class="mini" id="ab-sub"></p>
       <a href="ab_dashboard.html" class="small">Generations table &amp; bet ledger →</a>
@@ -131,64 +119,30 @@
 </section>
 
 <section>
-  <h2>What we disproved — and published anyway</h2>
-  <p class="sub small muted">Negative results are results. Every claim below is
-  measured in the repo and stated on the dashboards.</p>
-  <div style="margin-top:8px">
-    <div class="finding"><span class="mark">✗</span><span class="small">
-      <b>A fixed-time caller is trivial.</b> Our first deliverable (kbf, one call
-      at T-3 minutes, 90.4% accurate) was retired when we measured the market
-      alone at the same instant: 90.9%. Its replacement locks a call the first
-      minute confidence clears a gate — average lock 11+ minutes out.</span></div>
-    <div class="finding"><span class="mark">✗</span><span class="small">
-      <b>Minute-scale direction from price alone is a coin flip.</b> The sign of
-      MAE-optimal level forecasts runs 48–54% across all arms — the martingale
-      floor, shown live on the direction chart. Skill exists only against fixed
-      strikes with market anchoring.</span></div>
-    <div class="finding"><span class="mark">✗</span><span class="small">
-      <b>Selector v2 subtracted value.</b> Trained on mid-quote counterfactuals but
-      deployed against ask fills, it kept 76–79¢ favorites that were −EV: 43% on
-      kept bets vs 51% on its skips. Diagnosed (mid-vs-ask bias), retired on the
-      public generations table; v3 trains on ask-adjusted prices.</span></div>
-    <div class="finding"><span class="mark">✗</span><span class="small">
-      <b>The mandatory bet mandate is −EV.</b> Forced entries plus fees put the
-      always-bet policy under water — measured on 180+ real-priced paper bets;
-      it is the motivation for selection, kept as the honest control.</span></div>
-    <div class="finding"><span class="mark">✓</span><span class="small">
-      <b>What survives:</b> calibrated per-minute probabilities above 80/80 at
-      disclosed coverage, decision times that vary with conviction, and an
-      evaluation protocol (point-in-time, chronological, market-as-null,
-      costs-in) that every number on these pages is held to.</span></div>
+  <h2>Disproved &amp; kept honest</h2>
+  <div class="cards" style="margin-top:10px">
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">90.4% <span class="muted">vs</span> 90.9%</div>
+      <p class="mini">✗ fixed-time kbf vs market alone — retired</p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">48–54%</div>
+      <p class="mini">✗ direction from price alone — coin flip</p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">43% <span class="muted">&lt;</span> 51%</div>
+      <p class="mini">✗ selector v2 kept vs skipped — retired</p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">−EV</div>
+      <p class="mini">✗ the always-bet mandate after fees</p></div>
   </div>
+  <p class="mini" style="margin-top:8px">every claim measured in the repo · details on <a href="ab_dashboard.html">Results</a></p>
 </section>
 
 <section>
-  <h2>Guided tour</h2>
-  <div class="scroll"><table class="tour">
-    <thead><tr><th>Page</th><th>What you'll find</th></tr></thead>
-    <tbody>
-      <tr><td><a href="ab_dashboard.html">Results</a></td>
-        <td>The 80/80 scoreboard with per-class Wilson bounds, the entry-time
-        phase audit, kb2/kb3 decision ledger, selector generations, bet ledger
-        with ask-priced entries, evaluation protocol.</td></tr>
-      <tr><td><a href="live_online.html">Live desk</a></td>
-        <td>Real-time predictions vs actual per horizon with calibrated 80%
-        bands, the direction-calls chart (noise floor vs strike-anchored skill),
-        winner's circle, one-bet tape.</td></tr>
-      <tr><td><a href="experiment_review.html">Experiment lab</a></td>
-        <td>Arm-by-arm scorecards (MASE, Diebold–Mariano, pinball, BSS),
-        reliability diagram, retrain-gate timeline, architecture notes.</td></tr>
-      <tr><td><a href="index.html">Backtest</a></td>
-        <td>The 120-day offline report that seeded the arms — and the noise-floor
-        finding that shaped the whole design.</td></tr>
-      <tr><td><a href="live_training.html">Training</a></td>
-        <td>Batch training curves and the hourly gated-retrain strip (a 3h
-        hold-out must not regress or the retrain reverts).</td></tr>
-    </tbody>
-  </table></div>
-  <p class="mini" style="margin-top:10px">Everything recomputes client-side from
-  append-only, git-SHA-stamped ledgers published beside these pages — the repo's
-  <code>results/</code> directory is the single source of truth.</p>
+  <h2>Explore</h2>
+  <div class="legend" style="margin-top:10px">
+    <a class="chip" href="ab_dashboard.html">▦ Results — 80/80 scoreboard</a>
+    <a class="chip" href="live_online.html">▲ Live desk — predictions &amp; bands</a>
+    <a class="chip" href="experiment_review.html">⚗ Experiment lab — arm scorecards</a>
+    <a class="chip" href="index.html">▤ Backtest — 120-day report</a>
+    <a class="chip" href="live_training.html">↺ Training — curves &amp; gates</a>
+  </div>
+  <p class="mini" style="margin-top:8px">all numbers recompute client-side from git-stamped ledgers · refreshed every 15 s</p>
 </section>
 
 <footer>BTC 7PM Oracle · NYU Deep Learning course project · data: Coinbase,
@@ -198,7 +152,7 @@ advice</footer>
 
 <script>
 const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" +
-  (Math.floor(Date.now() / 30000) * 30);
+  (Math.floor(Date.now() / 15000) * 15);
 async function jsonl(path) {
   try {
     const r = await fetch(bust(path), { cache: "no-store" });
@@ -274,6 +228,15 @@ function drawSignal(kb, bets, st) {
   const pf = m => m > 10 ? "early" : m >= 5 ? "mid" : "late";
   const alike = k2.filter(q => q.actual != null && pf(q.mins_left) === phase
     && Math.max(q.p_up, 1 - q.p_up) >= tau && q.call === r.call);
+  // live recomputations for the personas (never hardcode analysis):
+  const g62 = k2.filter(q => q.actual != null
+    && Math.max(q.p_up, 1 - q.p_up) >= 0.62);
+  const gMiss = g62.filter(q => !q.hit && q.mkt_p_up != null);
+  const gShared = gMiss.filter(q =>
+    (q.mkt_p_up >= .5) === (q.call === 1)).length;
+  const early62 = g62.filter(q => q.mins_left > 10);
+  const earlyPrec = early62.length
+    ? early62.filter(q => q.hit).length / early62.length : null;
   const alikeP = alike.length >= 15
     ? alike.filter(q => q.hit).length / alike.length : null;
 
@@ -348,15 +311,18 @@ function drawSignal(kb, bets, st) {
   if (k4) mleBits.push(`the kb4 stack sits at ${(100 * k4.p_up).toFixed(0)}%`);
   msgs.push(msg("mle", "the MLE — engineering log",
     `Cohort check: ${mleBits.join("; ")}. The phase-dependent bar exists ` +
-    `because flat-threshold early calls ran 68–72% precise — the ` +
-    `precision-coverage frontier says accuracy is bought by abstaining ` +
-    `where confidence is cheap.`));
+    (earlyPrec != null
+      ? `because flat-threshold early calls run ${(100 * earlyPrec).toFixed(0)}% precise on the live ledger — `
+      : `because early confidence is unreliable — `) +
+    `the precision-coverage frontier says accuracy is bought by ` +
+    `abstaining where confidence is cheap.`));
   const qBits = [];
   if (r.mkt_p_up != null && (r.mkt_p_up >= .5) === (r.call === 1))
     qBits.push(`The market already prices ${(100 * r.mkt_p_up).toFixed(0)}% — ` +
       `this call buys calibration, not informational edge; of the model's ` +
-      `276 confident misses, 275 were shared with the crowd, so when the ` +
-      `market is wrong here, so is the model`);
+      `${gMiss.length} confident misses on the ledger, ${gShared} were ` +
+      `shared with the crowd, so when the market is wrong here, so is ` +
+      `the model`);
   if (r.mkt_p_up != null && (r.mkt_p_up >= .5) !== (r.call === 1))
     qBits.push(`It's fading the crowd (market says ` +
       `${(100 * r.mkt_p_up).toFixed(0)}%) — it almost never does that, ` +
@@ -499,7 +465,7 @@ async function boot() {
   vd.textContent = pass2 ? "kb2 above 80/80" : "collecting";
 }
 boot();
-setInterval(boot, 60000);
+setInterval(boot, 15000);
 </script>
 </body>
 </html>

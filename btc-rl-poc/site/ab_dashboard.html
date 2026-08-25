@@ -666,7 +666,7 @@ async function poll() {
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for data… (" + e.message + ")";
   }
-  setTimeout(poll, REMOTE ? 60000 : 10000);
+  setTimeout(poll, REMOTE ? 15000 : 10000);
 }
 poll();
 </script>

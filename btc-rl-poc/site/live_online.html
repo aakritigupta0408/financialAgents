@@ -1276,7 +1276,7 @@ async function poll() {
   } catch (e) {
     document.getElementById("foot").textContent = "waiting for daemon… (" + e.message + ")";
   }
-  setTimeout(poll, REMOTE ? 45000 : 5000);
+  setTimeout(poll, REMOTE ? 15000 : 5000);
 }
 
 function attachTips() {
