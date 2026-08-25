@@ -175,11 +175,11 @@
   <h2>The $1K Desk — four traders, four disciplines
     <span class="paper-tag">TA spec · simulated · not advice</span></h2>
   <p class="sub small muted">Each starts with $1,000 and pays real asks and
-  fees. 🎯 <b>The Follower</b> places the <b>current best bidder's</b> call
+  fees. 🦊 <b>Dartmon, the Follower</b> places the <b>current best bidder's</b> call
   (the arm leading its last 10 settled decisions), risking at most 10% of
-  funds. 🪜 <b>The Ladder</b> mirrors every trade uncapped and banks $1k at
-  $11k, then ×10. 🧘 <b>The Disciplined</b> takes any desk entry only at
-  ≥77% confidence. 🎲 <b>The Gambler</b> stakes 33% of his capital on
+  funds. 🐢 <b>Rungmon, the Ladder</b> mirrors every trade uncapped and banks $1k at
+  $11k, then ×10. 🦉 <b>Sagemon, the Disciplined</b> takes any desk entry only at
+  ≥77% confidence. 🐉 <b>Blazemon, the Gambler</b> stakes 33% of his capital on
   every entry (about 1.6× Kelly at these asks), capped by the LIVE
   near-touch depth of the book — the aggressive end of the sizing
   curriculum. Reviewed at end
@@ -1334,21 +1334,21 @@ function drawRoster(pt, pt2, pt3, kb, pt4) {
     }
   } catch (e) {}
   el.innerHTML =
-    card("t1", "🎯", "The Follower", bank1, a.dp,
+    card("t1", "🦊", "Dartmon · the Follower", bank1, a.dp,
       `rides the hot hand — always the arm leading its last 10 ` +
       `decisions${lastLead ? ` · now <b>${lastLead.leader}</b> ` +
       `${lastLead.rec10}` : ""} · record ${a.wins}/${a.s.length}`,
       a.series, "#2461b8") +
-    card("t2", "🪜", "The Ladder", cash2 + banked2, b.dp,
+    card("t2", "🐢", "Rungmon · the Ladder", cash2 + banked2, b.dp,
       `same calls, uncapped 10% sizing · ` + (banked2 > 0
         ? `banked <b>${money(banked2)}</b> so far · level ${money(level2)}`
         : `first rung: bank $1k on reaching $11k, then ×10`),
       b.series, "#8f6000") +
-    card("t3", "🧘", "The Disciplined", bank3, c.dp,
+    card("t3", "🦉", "Sagemon · the Disciplined", bank3, c.dp,
       `takes any desk entry at ≥77% confidence (v2) · record ${c.wins}/` +
       `${c.s.length} · most windows he simply watches`,
       c.series, "#0d7a4e") +
-    card("t4", "🎲", "The Gambler", bank4, g4.dp,
+    card("t4", "🐉", "Blazemon · the Gambler", bank4, g4.dp,
       (bank4 < 500
         ? `<b style="color:var(--down)">BUSTED</b> · record ` +
           `${g4.wins}/${g4.s.length}`
