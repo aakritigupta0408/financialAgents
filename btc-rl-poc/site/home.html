@@ -1414,7 +1414,34 @@ function drawDesk3(pt3, kb) {
       : `<p class="mini">no order yet — patience is the strategy; ` +
         `the skips below are it working.</p>`) +
     `<div style="margin-top:8px">` +
-    events.slice(0, 8).map(e => e.html).join("") + `</div>`;
+    events.slice(0, 8).map(e => e.html).join("") + `</div>` +
+    // his full ledger, same table form as the follower's
+    `<div class="scroll" style="margin-top:10px">` +
+    `<table style="min-width:0"><thead><tr><th>entry</th>` +
+    `<th>source · confidence</th><th>call</th><th class="num">size</th>` +
+    `<th class="num">stake</th><th class="num">result</th></tr></thead>` +
+    `<tbody>` + (pt3.length
+      ? pt3.slice().reverse().map(t => {
+          const res = t.actual == null
+            ? `<span class="badge pending">open</span>`
+            : t.win
+              ? `<span style="color:var(--good-text)">+${money(t.pnl_c)}` +
+                `</span>`
+              : `<span style="color:var(--down)">${money(t.pnl_c)}</span>`;
+          const src = t.src === "leader" ? (t.leader || "leader") : "kb7";
+          return `<tr><td>${fT2(t.made_ts)}</td>` +
+            `<td><span style="color:${COLD[src] || "inherit"}">●</span> ` +
+            `${src} <span class="muted">` +
+            `${(100 * t.p_arm).toFixed(0)}%</span></td>` +
+            `<td>${t.side.toUpperCase()} ≥ $` +
+            `${Math.round(t.strike).toLocaleString()}</td>` +
+            `<td class="num">${t.contracts} @ ${t.ask_c}¢</td>` +
+            `<td class="num">${money(t.stake_c)}</td>` +
+            `<td class="num">${res}</td></tr>`;
+        }).join("")
+      : `<tr><td colspan="6" class="mini">no orders yet — entries ` +
+        `require 77% confidence on a biddable window</td></tr>`) +
+    `</tbody></table></div>`;
 }
 
 async function boot() {
