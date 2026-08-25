@@ -47,17 +47,26 @@
 </header>
 
 <section>
-  <h2>kb2, kb3 &amp; kb4 vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
-  <p class="sub small muted">Both models call <b>every minute of every window</b> —
+  <h2>All arms vs the class baseline <span class="badge pending" id="verdict">collecting</span></h2>
+  <p class="sub small muted">Every arm calls <b>every minute of every window</b>
+  (kb5 only where a bet is placeable — it is judged by EV, not precision;
+  kb7 is frozen zero-shot) —
   no fixed decision time, nothing waited-for. Metrics below are at each model's
   confidence gate (smallest τ where both classes clear 80% precision on calls
   with max(p,1−p) ≥ τ), with the market's accuracy on the <i>same gated
   calls</i> as the triviality check. A fixed T-3 variant (kbf) is retired:
   at T-3 the market alone scores 90.9% vs its 90.4% — reading a converged
   market, not predicting.</p>
-  <div id="kb2-block" style="margin-top:12px"></div>
-  <div id="kb3-block" style="margin-top:16px"></div>
-  <div id="kb4-block" style="margin-top:16px"></div>
+  <div class="scroll" style="margin-top:12px"><table id="league">
+    <thead><tr><th>Arm</th><th>Design</th><th>Status</th>
+      <th class="num">UP P/R</th><th class="num">DOWN P/R</th>
+      <th class="num">Coverage</th><th class="num">vs market</th>
+      <th class="num">Calls</th></tr></thead>
+    <tbody><tr><td colspan="8" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini">click an arm for its full card — tiles, confusion,
+  certainty gate, Wilson bounds</p>
+  <div id="arm-detail" style="margin-top:14px"></div>
   <div id="kb2-phase" style="margin-top:14px"></div>
   <p class="mini" id="kbf-note"></p>
 </section>
@@ -426,17 +435,89 @@ async function poll() {
         tile("UP precision", s.up.p, s.up.np) + tile("UP recall", s.up.r, s.up.nr) +
         tile("DOWN precision", s.down.p, s.down.np) + tile("DOWN recall", s.down.r, s.down.nr) +
         `</div>` + confLine + p90line;
-      return { html, pass, pending: false, tau };
+      return { html, pass, pending: false, tau,
+               stats: { up: { p: s.up.p, r: s.up.r },
+                        down: { p: s.down.p, r: s.down.r },
+                        cov: sel.length / rows.length, n: rows.length,
+                        oacc, macc } };
     };
-    const b2 = gatedBlock("kb2", "kb2 — market-anchored blend",
-      "learned per-phase blend of model + market probability");
-    const b3 = gatedBlock("kb3", "kb3 — online logistic learner",
-      "24 features, one SGD step per settled call, lr decay");
-    const b4 = gatedBlock("kb4", "kb4 — stack of kb2 + kb3 (new)",
-      "learns when to trust which model; parents unchanged");
-    document.getElementById("kb2-block").innerHTML = b2.html;
-    document.getElementById("kb3-block").innerHTML = b3.html;
-    document.getElementById("kb4-block").innerHTML = b4.html;
+    const ARMS_META = [
+      ["kb",  "control — t8 distribution, calibrated", "the per-minute baseline"],
+      ["kb2", "market-anchored blend", "learned per-phase blend of model + market"],
+      ["kb3", "online logistic learner", "24 features, one SGD step per settle"],
+      ["kb4", "stack of kb2 + kb3", "learns when to trust which model"],
+      ["kb6", "fast information (new)", "perp lead, tape, whale flow, OI delta"],
+      ["kb7", "zero-shot foundation model (frozen)", "Chronos-Bolt read at the strike"],
+    ];
+    const blocks = {};
+    for (const [v2, title, blurb] of ARMS_META)
+      blocks[v2] = gatedBlock(v2, `${v2} — ${title}`, blurb);
+    // kb5 special block — judged by EV at real asks, not precision
+    let kb5html = "", kb5net = 0, kb5stake = 0, kb5n = 0, kb5w = 0;
+    try {
+      const k5 = kb.filter(r => r.variant === "kb5" && r.actual != null
+        && r.conf_entry);
+      for (const r of k5) {
+        const fee = Math.ceil(7 * (r.ask_c / 100) * (1 - r.ask_c / 100));
+        kb5stake += r.ask_c + fee;
+        kb5net += r.hit ? (100 - r.ask_c - fee) : -(r.ask_c + fee);
+      }
+      kb5n = k5.length; kb5w = k5.reduce((a, r) => a + r.hit, 0);
+      kb5html =
+        `<div class="small" style="margin-bottom:6px"><b>kb5 — train-where-you-trade EV arm</b> ` +
+        `<span class="badge ${kb5net > 0 ? "pass" : "pending"}" style="margin-left:8px">` +
+        `${kb5net > 0 ? "EV positive (small n)" : "collecting"}</span> ` +
+        `<span class="muted">judged by profit at real asks — cheap longshots where low win rates still pay</span></div>` +
+        `<div class="statusbar">` +
+        `<span class="stat"><span class="k">confident entries</span><br><span class="bignum">${kb5n}</span></span>` +
+        `<span class="stat"><span class="k">wins</span><br><span class="bignum">${kb5w}</span></span>` +
+        `<span class="stat"><span class="k">avg cost</span><br><span class="bignum">${kb5n ? (kb5stake / kb5n).toFixed(0) : "–"}¢</span></span>` +
+        `<span class="stat"><span class="k">net</span><br><span class="bignum" style="color:${kb5net >= 0 ? "var(--good-text)" : "var(--down)"}">${kb5net >= 0 ? "+" : ""}${kb5net.toFixed(0)}¢</span></span>` +
+        `<span class="stat"><span class="k">EV per $1</span><br><span class="bignum" style="color:${kb5net >= 0 ? "var(--good-text)" : "var(--down)"}">${kb5stake ? (100 * kb5net / kb5stake).toFixed(0) + "%" : "–"}</span></span>` +
+        `</div><p class="mini">the live pre-registered test — the Conviction Book bets only these entries</p>`;
+    } catch (e) {}
+    // league table
+    const LCOL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181",
+                   kb4: "#9085e9", kb6: "#c98500", kb7: "#199e70" };
+    const fmtPR = (a, b) => (a == null ? "–" : (100 * a).toFixed(0)) + "/" +
+      (b == null ? "–" : (100 * b).toFixed(0));
+    const lrows = [];
+    for (const [v2, title] of ARMS_META) {
+      const B = blocks[v2];
+      const badge = B.pending
+        ? '<span class="badge pending">collecting</span>'
+        : B.pass ? '<span class="badge pass">above 80/80</span>'
+                 : '<span class="badge pending">below target</span>';
+      const st2 = B.stats || {};
+      lrows.push(`<tr data-arm="${v2}" style="cursor:pointer">` +
+        `<td><span class="sw" style="background:${LCOL[v2] || "var(--series-1)"}"></span><b>${v2}</b></td>` +
+        `<td class="small">${title}</td><td>${badge}</td>` +
+        `<td class="num">${st2.up ? fmtPR(st2.up.p, st2.up.r) : "–"}</td>` +
+        `<td class="num">${st2.down ? fmtPR(st2.down.p, st2.down.r) : "–"}</td>` +
+        `<td class="num">${st2.cov != null ? (100 * st2.cov).toFixed(0) + "%" : "–"}</td>` +
+        `<td class="num">${st2.oacc != null && st2.macc != null
+          ? (100 * st2.oacc).toFixed(1) + " / " + (100 * st2.macc).toFixed(1) : "–"}</td>` +
+        `<td class="num">${st2.n ?? "–"}</td></tr>`);
+    }
+    lrows.push(`<tr data-arm="kb5" style="cursor:pointer">` +
+      `<td><span class="sw" style="background:#d95926"></span><b>kb5</b></td>` +
+      `<td class="small">train-where-you-trade EV arm</td>` +
+      `<td><span class="badge ${kb5net > 0 ? "pass" : "pending"}">${kb5net > 0 ? "EV positive" : "collecting"}</span></td>` +
+      `<td class="num" colspan="2">judged by EV: <b style="color:${kb5net >= 0 ? "var(--good-text)" : "var(--down)"}">${kb5stake ? (100 * kb5net / kb5stake).toFixed(0) + "%/$1" : "–"}</b></td>` +
+      `<td class="num">–</td><td class="num">–</td>` +
+      `<td class="num">${kb5n}</td></tr>`);
+    document.querySelector("#league tbody").innerHTML = lrows.join("");
+    const showArm = v2 => {
+      document.getElementById("arm-detail").innerHTML =
+        v2 === "kb5" ? kb5html : (blocks[v2] ? blocks[v2].html : "");
+      for (const tr of document.querySelectorAll("#league tbody tr"))
+        tr.style.background = tr.dataset.arm === v2
+          ? "rgba(57,135,229,.07)" : "";
+    };
+    for (const tr of document.querySelectorAll("#league tbody tr"))
+      tr.onclick = () => showArm(tr.dataset.arm);
+    showArm("kb2");
+    const b2 = blocks.kb2, b3 = blocks.kb3;
     // entry-time stratification — the audit a skeptic would run: does the
     // gate just harvest late-window convergence, and is there any edge
     // over the market within a phase?
