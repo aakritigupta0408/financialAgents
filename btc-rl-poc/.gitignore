@@ -20,3 +20,5 @@ results/q_table_online_*.json
 results/linucb_t*.json
 results/dqn_t8-*.pt
 results/lstm_t9-*.pt
+results/chronos_bolt_ft/
+results/hist_bars_cache.jsonl

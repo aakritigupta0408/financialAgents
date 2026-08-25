@@ -1,5 +1,21 @@
 # Research log
 
+## 2026-08-25 — kb9 round 2: TimesFM + fine-tuning — the axis is exhausted
+
+Same pre-registered gate as round 1 (window-clustered paired Brier
+t < -2 vs live kb7), 233 held-out windows, no leakage (fine-tune
+trained strictly before the eval cutoff on 83k of our own BTC minutes):
+  TimesFM 2.5 200M zero-shot:  acc 70.0% brier .189  t = +0.67  TIE
+  Chronos-Bolt fine-tuned:     acc 70.4% brier .184  t = -0.25  TIE
+With round 1 (Bolt-base worse, Chronos-2 tie, +covariates tie), FIVE
+upgrade attempts across scale, architecture, covariates, family, and
+adaptation all land within noise of the 47M zero-shot Bolt-small.
+Conclusion: at the 15-minute BTC horizon the price path's extractable
+signal is the binding constraint, not the model. kb9 remains
+unlaunched; checkpoint kept local (results/chronos_bolt_ft/,
+gitignored). Bench latency note: TimesFM 0.10s/call on CPU — viable
+if it ever earns a slot.
+
 ## 2026-08-25 — PRE-REGISTRATION: tier evidence acceleration (2 methods)
 
 (SPRT considered and NOT adopted, per project decision.)
