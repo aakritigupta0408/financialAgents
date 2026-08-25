@@ -63,7 +63,7 @@
 </section>
 
 <section>
-  <h2>Decision ledger — kb2, kb3 &amp; kb4, one locked call per window</h2>
+  <h2>Decision ledger — kb2, kb3, kb4 &amp; kb5, one locked call per window</h2>
   <p class="sub muted small">The raw evidence behind the scoreboard: for each
   window, the model's call at the <b>first minute its confidence cleared the
   gate</b> — the decision time varies with conviction, never a fixed T-x.
@@ -74,6 +74,7 @@
     <button class="chip on" id="dl-kb2">kb2</button>
     <button class="chip" id="dl-kb3">kb3</button>
     <button class="chip" id="dl-kb4">kb4</button>
+    <button class="chip" id="dl-kb5">kb5</button>
   </div>
   <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="kbf-tbl">
     <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
@@ -139,7 +140,8 @@
     <span><span class="sw" style="background:#2fb59a"></span>kb2 (market blend)</span>
     <span><span class="sw" style="background:#d55181"></span>kb3 (logit)</span>
     <span><span class="sw" style="background:#9085e9"></span>kb4 (stack of kb2+kb3)</span>
-    <span><span class="sw" style="background:#d95926"></span>kb5 (train-where-you-trade, EV-seeking, new)</span>
+    <span><span class="sw" style="background:#d95926"></span>kb5 (train-where-you-trade, EV-seeking)</span>
+    <span><span class="sw" style="background:#c98500"></span>kb6 (fast information: perp lead, tape, whale flow, new)</span>
     <span><span class="sw" style="background:var(--ink-2)"></span>market</span>
   </div>
   <div id="kbrace"></div>
@@ -268,8 +270,8 @@ function lineSVG(seriesList, opts) {
 }
 
 function brierRace(kb, st) {
-  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9", kb5: "#d95926" };
-  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [] };
+  const COL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9", kb5: "#d95926", kb6: "#c98500" };
+  const groups = { kb: [], kb2: [], kb3: [], kb4: [], kb5: [], kb6: [] };
   for (const r of kb) {
     const v = r.variant || "kb";
     if (groups[v] && r.actual != null) groups[v].push(r);
@@ -300,7 +302,7 @@ function brierRace(kb, st) {
         title: "rolling Brier by variant vs market" })
     : '<p class="mini">collecting…</p>';
   const t = st.kb_treatments || {};
-  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5"].filter(v => t[v]).map(v => {
+  const rowsH = ["kb", "kb2", "kb3", "kb4", "kb5", "kb6"].filter(v => t[v]).map(v => {
     const s = t[v], p = s.prec80;
     return `<tr><td><span class="sw" style="background:${COL[v]}"></span>${v}</td>` +
       `<td class="num">${s.scored ?? "–"}</td>` +
@@ -582,12 +584,12 @@ async function poll() {
     } catch {}
 
     // decision ledger — kb2/kb3, first gate-clearing call per window
-    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62 };
+    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62, kb5: null };
     const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
       { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
         hour: "2-digit", minute: "2-digit", hour12: false });
     const dlData = {};
-    for (const v2 of ["kb2", "kb3", "kb4"]) {
+    for (const v2 of ["kb2", "kb3", "kb4", "kb5"]) {
       const byWin = new Map();
       for (const r of kb) {
         if (r.variant !== v2) continue;
@@ -597,10 +599,18 @@ async function poll() {
       const out = [];
       for (const rs of byWin.values()) {
         rs.sort((a, b) => b.mins_left - a.mins_left);
-        let pick = rs.find(r =>
-          Math.max(r.p_up, 1 - r.p_up) >= DL_TAU[v2]);
-        const forced = !pick;
-        if (!pick) pick = rs[rs.length - 1];
+        let pick, forced = false;
+        if (v2 === "kb5") {
+          // kb5's gate is EV-based (conf_entry); it ABSTAINS when no
+          // +EV entry exists — no forced fallback
+          pick = rs.find(r => r.conf_entry);
+          if (!pick) continue;
+        } else {
+          pick = rs.find(r =>
+            Math.max(r.p_up, 1 - r.p_up) >= DL_TAU[v2]);
+          forced = !pick;
+          if (!pick) pick = rs[rs.length - 1];
+        }
         out.push({ ...pick, forced });
       }
       out.sort((a, b) => b.close_ts - a.close_ts);
@@ -636,7 +646,9 @@ async function poll() {
         `(${(100 * hits / Math.max(1, st2.length)).toFixed(1)}%) · ` +
         `gated only ${gh}/${gated.length} ` +
         `(${(100 * gh / Math.max(1, gated.length)).toFixed(1)}%) · ` +
-        `avg lock ${avgLock.toFixed(1)} min left · gate τ ${DL_TAU[v2]}`;
+        `avg lock ${avgLock.toFixed(1)} min left · ` +
+        (v2 === "kb5" ? "gate: predicted win ≥ ask+fee+3¢ (abstains otherwise)"
+                      : `gate τ ${DL_TAU[v2]}`);
       if (v2 === "kb3")
         note += ` · logit updates ${st.kb_logit_updates ?? "–"} · ` +
           `24 features, lr decay`;
@@ -647,11 +659,14 @@ async function poll() {
         "chip" + (v2 === "kb3" ? " on" : "");
       document.getElementById("dl-kb4").className =
         "chip" + (v2 === "kb4" ? " on" : "");
+      document.getElementById("dl-kb5").className =
+        "chip" + (v2 === "kb5" ? " on" : "");
     };
     renderDL("kb2");
     document.getElementById("dl-kb2").onclick = () => renderDL("kb2");
     document.getElementById("dl-kb3").onclick = () => renderDL("kb3");
     document.getElementById("dl-kb4").onclick = () => renderDL("kb4");
+    document.getElementById("dl-kb5").onclick = () => renderDL("kb5");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
     const winCount = new Set(kb.map(r => r.ticker)).size;
