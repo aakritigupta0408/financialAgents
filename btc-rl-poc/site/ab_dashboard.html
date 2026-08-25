@@ -273,7 +273,7 @@ function lineSVG(seriesList, opts) {
     g += `<text x="${X(x)}" y="${H-B+16}" text-anchor="middle">${xfmt(x)}</text>`; }
   if (opts.yl) g += `<text x="${L}" y="${T-4}" text-anchor="start" style="font-weight:600">${opts.yl}</text>`;
   if (opts.xl) g += `<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle">${opts.xl}</text>`;
-  if (opts.baseline != null) g += `<line x1="${L}" y1="${Y(opts.baseline)}" x2="${W-R}" y2="${Y(opts.baseline)}" stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5"/>`;
+  if (opts.baseline != null) g += `<line x1="${L}" y1="${Y(opts.baseline)}" x2="${W-R}" y2="${Y(opts.baseline)}" stroke="rgba(22,32,44,.35)" stroke-dasharray="5 5"/>`;
   for (const s of seriesList) {
     g += `<path fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" d="${
       s.pts.map(([x, y], i) => `${i ? "L" : "M"}${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join("")}"/>`;
@@ -479,9 +479,9 @@ async function poll() {
         `</div><p class="mini">the live pre-registered test — the Conviction Book bets only these entries</p>`;
     } catch (e) {}
     // league table
-    const LCOL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181",
-                   kb4: "#9085e9", kb6: "#c98500", kb7: "#199e70",
-                   kb8: "#64748b" };
+    const LCOL = { kb: "#2461b8", kb2: "#0b7d8a", kb3: "#b43a6e",
+                   kb4: "#5f50c7", kb6: "#8f6000", kb7: "#0d7a4e",
+                   kb8: "#667283" };
     const fmtPR = (a, b) => (a == null ? "–" : (100 * a).toFixed(0)) + "/" +
       (b == null ? "–" : (100 * b).toFixed(0));
     const lrows = [];

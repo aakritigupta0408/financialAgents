@@ -16,8 +16,8 @@
   --ink: #f2efe6; --ink-2: #b3afa2; --muted: #837f74; --faint: #5d5a51;
   --display: Didot, "Didot LT STD", "Bodoni 72", "Bodoni MT",
              "Iowan Old Style", Georgia, serif;
-  --grid: rgba(255,255,255,.05); --axis: rgba(255,255,255,.18);
-  --border: rgba(255,255,255,.07);
+  --grid: rgba(22,32,44,.05); --axis: rgba(22,32,44,.18);
+  --border: rgba(22,32,44,.07);
   /* categorical arm palette — validated (CVD + contrast) for dark surface;
      baselines are neutral by design: ctl = series-1 gray, rp = faint */
   --series-1: #aeb6c2; --series-2: #3987e5; --series-3: #d55181;
@@ -97,7 +97,7 @@ section { background: var(--surface); border: 1px solid var(--border);
   letter-spacing: .1em; padding: 3px 10px; border-radius: 6px;
   vertical-align: 2px; border: 1px solid var(--border); color: var(--ink-2);
   background: var(--surface-2); }
-.arm-tag.agg { color: var(--ink); border-color: rgba(255,255,255,.2); }
+.arm-tag.agg { color: var(--ink); border-color: rgba(22,32,44,.2); }
 .arm-tag.treatment { color: var(--good-text);
   border-color: rgba(43,217,126,.3); background: rgba(43,217,126,.07); }
 .arm-tag.control { color: var(--series-1); }
@@ -118,7 +118,7 @@ section { background: var(--surface); border: 1px solid var(--border);
   border-radius: 2px; vertical-align: 3px; background: none; }
 .sw.ring { background: transparent; border: 2px solid var(--faint); }
 .chip { font: 600 13px ui-sans-serif, system-ui; color: var(--ink-2);
-  background: rgba(255,255,255,.04); border: 1px solid var(--border);
+  background: rgba(22,32,44,.04); border: 1px solid var(--border);
   border-radius: 999px; padding: 5px 14px; cursor: pointer; }
 .chip.on { color: var(--ink); border-color: var(--series-2);
   background: rgba(57,135,229,.14); }
@@ -772,11 +772,11 @@ function winnerChart(prices, preds, h) {
       `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.hi).toFixed(1)}`).join("");
     const dn = [...banded].reverse().map(r =>
       `L${f.X(r.ts).toFixed(1)},${f.Y(r.lo).toFixed(1)}`).join("");
-    g += `<path d="${up}${dn}Z" fill="rgba(255,255,255,.08)" stroke="none"/>`;
+    g += `<path d="${up}${dn}Z" fill="rgba(22,32,44,.08)" stroke="none"/>`;
   }
   // faint continuous connector so churn-heavy stretches never vanish
   if (rows.length > 1)
-    g += `<path class="predline" style="stroke:rgba(255,255,255,.22);stroke-width:1.5" ` +
+    g += `<path class="predline" style="stroke:rgba(22,32,44,.22);stroke-width:1.5" ` +
       `d="${rows.map((r, i) =>
         `${i ? "L" : "M"}${f.X(r.ts).toFixed(1)},${f.Y(r.pred).toFixed(1)}`).join("")}"/>`;
   // colored overlay per leadership stretch + a visible dot on every point
@@ -800,7 +800,7 @@ function winnerChart(prices, preds, h) {
     // leadership change tick
     const x = f.X(rows[i].ts).toFixed(1);
     g += `<line x1="${x}" y1="12" x2="${x}" y2="${f.H - 30}" ` +
-      `stroke="rgba(255,255,255,.25)" stroke-dasharray="2 4"><title>lead: ` +
+      `stroke="rgba(22,32,44,.25)" stroke-dasharray="2 4"><title>lead: ` +
       `${seg[0].src} → ${rows[i].src}</title></line>`;
     seg = [rows[i]];
   }
@@ -888,7 +888,7 @@ function miniLine(seriesList, opts) {
   if (opts.xl) g += `<text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">${opts.xl}</text>`;
   if (opts.zero)
     g += `<line x1="${L}" y1="${Y(0)}" x2="${W - R}" y2="${Y(0)}" ` +
-      `stroke="rgba(255,255,255,.35)" stroke-dasharray="5 5" stroke-width="1.5"/>`;
+      `stroke="rgba(22,32,44,.35)" stroke-dasharray="5 5" stroke-width="1.5"/>`;
   for (const s2 of seriesList) {
     g += `<path class="predline" style="stroke:${s2.color}"${s2.dash ? ' stroke-dasharray="6 5"' : ""} d="${s2.pts.map((p2, i) =>
       `${i ? "L" : "M"}${X(p2[0]).toFixed(1)},${Y(p2[1]).toFixed(1)}`).join("")}"/>`;

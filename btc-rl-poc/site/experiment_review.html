@@ -194,19 +194,19 @@
 
   <!-- Row 1: sources -->
   <g>
-    <rect x="10" y="8" width="256" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="10" y="8" width="256" height="62" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
     <rect x="10" y="8" width="4" height="62" rx="2" fill="#38bdf8"/>
     <text x="24" y="26" fill="#fff" font-weight="700">Market data</text>
     <text x="24" y="42" fill="#94a3b8">Coinbase 1m bars · L2 book · trades/ticks</text>
     <text x="24" y="57" fill="#94a3b8">Kraken · Bitstamp · Gemini (BRTI composite)</text>
 
-    <rect x="286" y="8" width="256" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="286" y="8" width="256" height="62" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
     <rect x="286" y="8" width="4" height="62" rx="2" fill="#fbbf24"/>
     <text x="300" y="26" fill="#fff" font-weight="700">Derivatives &amp; on-chain</text>
     <text x="300" y="42" fill="#94a3b8">OKX funding · Deribit perp basis</text>
     <text x="300" y="57" fill="#94a3b8">mempool fees · hash rate</text>
 
-    <rect x="562" y="8" width="248" height="62" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+    <rect x="562" y="8" width="248" height="62" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
     <rect x="562" y="8" width="4" height="62" rx="2" fill="#a78bfa"/>
     <text x="576" y="26" fill="#fff" font-weight="700">Text &amp; prediction markets</text>
     <text x="576" y="42" fill="#94a3b8">RSS → CryptoBERT sentiment · Fear&amp;Greed</text>
@@ -217,14 +217,14 @@
   <line x1="686" y1="70" x2="686" y2="94" stroke="#64748b" marker-end="url(#arr)"/>
 
   <!-- Row 2: features -->
-  <rect x="10" y="98" width="800" height="52" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="98" width="800" height="52" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
   <rect x="10" y="98" width="4" height="52" rx="2" fill="#f472b6"/>
   <text x="24" y="117" fill="#fff" font-weight="700">Feature snapshots — every 30 s, point-in-time joins (no lookahead)</text>
   <text x="24" y="136" fill="#94a3b8">10 base (returns · vol · RSI · EMA · volume · F&amp;G) + 3 trend + 5 live streams + 2 order book + 3 LLM + 4 order-flow + 60-step return sequence</text>
   <line x1="410" y1="150" x2="410" y2="174" stroke="#64748b" marker-end="url(#arr)"/>
 
   <!-- Row 3: arms -->
-  <rect x="10" y="178" width="800" height="120" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="178" width="800" height="120" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
   <rect x="10" y="178" width="4" height="120" rx="2" fill="#34d399"/>
   <text x="24" y="197" fill="#fff" font-weight="700">RL arms — predict every 5 min at +1 / +5 / +15 / +30 · actions = k × live σ_h (|k| ≤ 1.5)</text>
   <g font-weight="600">
@@ -255,7 +255,7 @@
   <line x1="410" y1="298" x2="410" y2="322" stroke="#64748b" marker-end="url(#arr)"/>
 
   <!-- Row 4: ledger -->
-  <rect x="10" y="326" width="800" height="56" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="326" width="800" height="56" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
   <rect x="10" y="326" width="4" height="56" rx="2" fill="#fb7185"/>
   <text x="24" y="345" fill="#fff" font-weight="700">Prediction ledger</text>
   <text x="24" y="364" fill="#94a3b8">every prediction + 80% interval → scored at maturity · skill-weighted consensus per horizon · leakage-guarded backfill · era-split debugging</text>
@@ -271,7 +271,7 @@
   <text x="866" y="342" fill="#64748b" font-size="10.5">gate + revert</text>
 
   <!-- Row 5: dashboards -->
-  <rect x="10" y="410" width="800" height="56" rx="12" fill="rgba(255,255,255,.04)" stroke="rgba(255,255,255,.14)"/>
+  <rect x="10" y="410" width="800" height="56" rx="12" fill="rgba(22,32,44,.04)" stroke="rgba(22,32,44,.14)"/>
   <rect x="10" y="410" width="4" height="56" rx="2" fill="#c4b5fd"/>
   <text x="24" y="429" fill="#fff" font-weight="700">Dashboards</text>
   <text x="24" y="448" fill="#94a3b8">live predictions (bands · learning staircase · Kalshi tracker + kb calls) · experiment review (DM tests · coverage) · training curves · 120-day backtest</text>
@@ -468,7 +468,7 @@ function groupedChart(preds) {
   const gw = (W - L - R) / groups.length;
   let g = "";
   for (let v = 0; v <= ymax; v += ymax > 300 ? 100 : 25) {
-    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(255,255,255,.06)"/>` +
+    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(22,32,44,.06)"/>` +
       `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">$${Math.round(v)}</text>`;
   }
   groups.forEach((grp, gi) => {
@@ -491,14 +491,14 @@ function groupedChart(preds) {
     if (grp.floor != null) {
       const fy = Y(grp.floor);
       g += `<line x1="${x0 - 4}" y1="${fy.toFixed(1)}" x2="${(x0 + gw - 24).toFixed(1)}" y2="${fy.toFixed(1)}" ` +
-        `stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
+        `stroke="rgba(22,32,44,.65)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
         `<text x="${(x0 + gw - 24).toFixed(1)}" y="${(fy - 5).toFixed(1)}" text-anchor="end" ` +
         `style="fill:#e2e8f0;font-size:10.5px">floor $${Math.round(grp.floor)}</text>`;
     }
     g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 30}" ` +
       `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
   });
-  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(255,255,255,.22)"/>`;
+  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(22,32,44,.22)"/>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE, all arms and horizons">${g}</svg>`;
 }
 
@@ -535,7 +535,7 @@ function pctChart(preds, metric, refs, label) {
   const gw = (W - L - R) / groups.length;
   let g = "";
   for (let v = 0; v <= 100; v += 25)
-    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(255,255,255,.06)"/>` +
+    g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(22,32,44,.06)"/>` +
       `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v}%</text>`;
   for (const ref of refs)
     g += `<line x1="${L}" y1="${Y(ref.v).toFixed(1)}" x2="${W - R}" y2="${Y(ref.v).toFixed(1)}" ` +
@@ -553,7 +553,7 @@ function pctChart(preds, metric, refs, label) {
     g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 26}" ` +
       `text-anchor="middle" style="fill:#f8fafc;font-weight:700">+${grp.h} min</text>`;
   });
-  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(255,255,255,.22)"/>`;
+  g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(22,32,44,.22)"/>`;
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">${g}</svg>`;
 }
 
@@ -613,7 +613,7 @@ function binaryPanel(kb, bets) {
     }
     const W = 420, H = 300, L = 44, R = 10, T = 10, B = 30;
     const X = v => L + v * (W - L - R), Y = v => T + (1 - v) * (H - T - B);
-    let g = `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="rgba(255,255,255,.3)" stroke-dasharray="4 4"/>`;
+    let g = `<line x1="${X(0)}" y1="${Y(0)}" x2="${X(1)}" y2="${Y(1)}" stroke="rgba(22,32,44,.3)" stroke-dasharray="4 4"/>`;
     for (const v of [0, .5, 1]) {
       g += `<text x="${X(v)}" y="${H - 8}" text-anchor="middle">${v}</text>` +
         `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${v}</text>`;
@@ -693,14 +693,14 @@ async function poll() {
       ).join("");
     document.getElementById("graph-rel").innerHTML = groupedChart(preds);
     document.getElementById("q-dir").innerHTML = pctChart(preds, st => st.dir,
-      [{ v: 50, color: "rgba(255,255,255,.5)", dash: true, label: "coin flip 50%" },
+      [{ v: 50, color: "rgba(22,32,44,.5)", dash: true, label: "coin flip 50%" },
        { v: 55, color: "#6ee7b7", label: "target 55%" }],
       "direction accuracy by arm and horizon");
     document.getElementById("q-cov").innerHTML = pctChart(preds, st => st.cov,
       [{ v: 80, color: "#6ee7b7", label: "well-calibrated 80%" }],
       "80% band coverage by arm and horizon");
     document.getElementById("q-replay").innerHTML = pctChart(preds, st => st.replay,
-      [{ v: 100, color: "rgba(255,255,255,.5)", dash: true, label: "pure copy 100%" }],
+      [{ v: 100, color: "rgba(22,32,44,.5)", dash: true, label: "pure copy 100%" }],
       "replay index by arm and horizon");
 
     let sb = "";
