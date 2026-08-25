@@ -554,6 +554,42 @@ def _kb4_features(p_blend: float, p_logit: float, k_pup: float | None,
         bx[3],                                 # above-strike z (capped)
         mins_left / 15.0,
     ] + pf                                     # 4 barrier/path features
+
+
+KB8_LOGIT_PATH_NAME = "kb8_logit.json"
+KB8_DIM = 3
+
+
+def _kb8_features(p7: float, w80: float, k_pup: float | None,
+                  bx: list[float], pf: list[float],
+                  mins_left: float) -> list[float] | None:
+    """kb8 = log-opinion pool of kb7 and the market, learned online.
+    kb7 itself stays frozen and untouched — its p_up is an INPUT here.
+
+    Deliberately minimal (tests/kb8_feature_lab.py): behind the per-
+    minute rows there are only ~13 independent window outcomes per day,
+    and every auxiliary feature tried (band width, barrier path, time
+    interactions, even a market-presence flag) LOWERED held-back
+    prequential accuracy. Three dims: bias, kb7 log-odds, market
+    log-odds; a missing market quote is log-odds 0 (= no opinion). In
+    log-odds space "copy the market" is learnable as weight ~1, and the
+    learned weights ARE the answer to "how much to trust the foundation
+    model vs the crowd" (warm start landed near 0.4/0.6). w80/bx/pf/
+    mins_left stay in the signature so richer variants can be re-tried
+    when window count warrants — see the lab script before adding any.
+    """
+    import math as _m
+
+    def lg(p):
+        p = min(0.98, max(0.02, p))     # market can print exactly 0/1
+        return max(-3.0, min(3.0, _m.log(p / (1.0 - p))))
+    return [
+        1.0,
+        lg(p7),
+        lg(k_pup) if k_pup is not None else 0.0,
+    ]
+
+
 KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
 
 
@@ -1570,6 +1606,14 @@ def run(once: bool = False) -> None:
             kb6_logit = BinaryLogit(KB6_DIM)
     except Exception:
         kb6_logit = BinaryLogit(KB6_DIM)
+    kb8_path = RESULTS_DIR / KB8_LOGIT_PATH_NAME
+    try:
+        kb8_logit = (BinaryLogit.from_dict(json.loads(kb8_path.read_text()))
+                     if kb8_path.exists() else BinaryLogit(KB8_DIM))
+        if kb8_logit.dim != KB8_DIM:
+            kb8_logit = BinaryLogit(KB8_DIM)
+    except Exception:
+        kb8_logit = BinaryLogit(KB8_DIM)
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -2001,6 +2045,24 @@ def run(once: bool = False) -> None:
                                         "pnl_c": None,
                                     })
                                     pb_tickers.add(pm_mkt["ticker"])
+                            # kb8 — calibrated decorrelation stack: reads
+                            # the SAME fm result kb7 just produced (one
+                            # Chronos call per slot, no added latency) and
+                            # learns online how to fuse it with the market.
+                            # kb7's rows and Conviction Book are untouched.
+                            if ("kb8", pm_mkt["ticker"], slot1) not in kb_made:
+                                b8x = _kb8_features(p7, w80, k_pup, bx, pf,
+                                                    mins_left)
+                                if b8x is not None and len(b8x) == KB8_DIM:
+                                    p8 = round(kb8_logit.predict(b8x), 4)
+                                    kb.append({**common, "variant": "kb8",
+                                               "p_up": p8,
+                                               "call": int(p8 >= 0.5),
+                                               "b8x": [round(v, 5)
+                                                       for v in b8x],
+                                               "trained": kb8_logit.updates})
+                                    kb_made.add(("kb8", pm_mkt["ticker"],
+                                                 slot1))
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the
@@ -2098,6 +2160,9 @@ def run(once: bool = False) -> None:
                     # label: did the CHOSEN side win (call==1 means yes)
                     kb5_logit.update(r["b5x"], r["hit"])
                     logit_changed = True
+                if r.get("b8x") and len(r["b8x"]) == kb8_logit.dim:
+                    kb8_logit.update(r["b8x"], outcome)
+                    logit_changed = True
                 kb_changed = True
             if logit_changed:
                 tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
@@ -2112,6 +2177,9 @@ def run(once: bool = False) -> None:
                 tmp5 = (RESULTS_DIR / KB5_LOGIT_PATH_NAME).with_suffix(".tmp5")
                 tmp5.write_text(json.dumps(kb5_logit.to_dict()))
                 tmp5.replace(RESULTS_DIR / KB5_LOGIT_PATH_NAME)
+                tmp8 = (RESULTS_DIR / KB8_LOGIT_PATH_NAME).with_suffix(".tmp8")
+                tmp8.write_text(json.dumps(kb8_logit.to_dict()))
+                tmp8.replace(RESULTS_DIR / KB8_LOGIT_PATH_NAME)
             if kb_changed:
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
@@ -2378,7 +2446,8 @@ def run(once: bool = False) -> None:
                         "brier": s.get("brier"),
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
-                    for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7")
+                    for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb6",
+                              "kb7", "kb8")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "kbf": _class_prf(kb),

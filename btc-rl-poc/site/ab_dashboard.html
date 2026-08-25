@@ -87,6 +87,7 @@
     <button class="chip" id="dl-kb5">kb5</button>
     <button class="chip" id="dl-kb6">kb6</button>
     <button class="chip" id="dl-kb7">kb7</button>
+    <button class="chip" id="dl-kb8">kb8</button>
   </div>
   <div class="scroll" style="max-height:420px;overflow-y:auto"><table id="kbf-tbl">
     <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
@@ -448,6 +449,7 @@ async function poll() {
       ["kb4", "stack of kb2 + kb3", "learns when to trust which model"],
       ["kb6", "fast information (new)", "perp lead, tape, whale flow, OI delta"],
       ["kb7", "zero-shot foundation model (frozen)", "Chronos-Bolt read at the strike"],
+      ["kb8", "calibrated stack over kb7 (new)", "learns to fuse kb7's signal with the market"],
     ];
     const blocks = {};
     for (const [v2, title, blurb] of ARMS_META)
@@ -478,7 +480,8 @@ async function poll() {
     } catch (e) {}
     // league table
     const LCOL = { kb: "#3987e5", kb2: "#2fb59a", kb3: "#d55181",
-                   kb4: "#9085e9", kb6: "#c98500", kb7: "#199e70" };
+                   kb4: "#9085e9", kb6: "#c98500", kb7: "#199e70",
+                   kb8: "#64748b" };
     const fmtPR = (a, b) => (a == null ? "–" : (100 * a).toFixed(0)) + "/" +
       (b == null ? "–" : (100 * b).toFixed(0));
     const lrows = [];
@@ -702,12 +705,12 @@ async function poll() {
     } catch {}
 
     // decision ledger — kb2/kb3, first gate-clearing call per window
-    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62, kb5: null, kb6: 0.62, kb7: 0.62 };
+    const DL_TAU = { kb2: 0.62, kb3: 0.82, kb4: 0.62, kb5: null, kb6: 0.62, kb7: 0.62, kb8: 0.62 };
     const fmtT = ts => new Date(ts * 1000).toLocaleString("en-US",
       { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
         hour: "2-digit", minute: "2-digit", hour12: false });
     const dlData = {};
-    for (const v2 of ["kb2", "kb3", "kb4", "kb5", "kb6", "kb7"]) {
+    for (const v2 of ["kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8"]) {
       const byWin = new Map();
       for (const r of kb) {
         if (r.variant !== v2) continue;
@@ -801,6 +804,8 @@ async function poll() {
         "chip" + (v2 === "kb6" ? " on" : "");
       document.getElementById("dl-kb7").className =
         "chip" + (v2 === "kb7" ? " on" : "");
+      document.getElementById("dl-kb8").className =
+        "chip" + (v2 === "kb8" ? " on" : "");
     };
     renderDL("kb2");
     document.getElementById("dl-kb2").onclick = () => renderDL("kb2");
@@ -809,6 +814,7 @@ async function poll() {
     document.getElementById("dl-kb5").onclick = () => renderDL("kb5");
     document.getElementById("dl-kb6").onclick = () => renderDL("kb6");
     document.getElementById("dl-kb7").onclick = () => renderDL("kb7");
+    document.getElementById("dl-kb8").onclick = () => renderDL("kb8");
     // traffic
     const settled = kb.filter(r => r.actual != null).length;
     const winCount = new Set(kb.map(r => r.ticker)).size;
