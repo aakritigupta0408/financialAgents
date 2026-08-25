@@ -1,5 +1,41 @@
 # Research log
 
+## 2026-08-25 — capacity, detection, and how real bots live with both
+
+**Measured:** Kalshi near-touch depth now logged per minute
+(k_depth_yes/no; first reading ~$6-9k at a 95c late-window quote; the
+5-80c tradeable band is thinner). Volume/OI fields were being dropped
+by our fetch (the _fp variants DO populate) — fixed.
+
+**Simulated (tests/sneaky_trader.py, Kyle-1985-flavored):** a "loud"
+trader taking full depth is quoted out in 1-2 days having extracted a
+few hundred dollars; a stealth trader (grid-searched sizing/timing)
+converges to taking x* = 1/(2*beta) ~ 25% of depth — the closed form
+"harvest half of what detection tolerates" — and survives forever at
+~$52/day on kb7's 2.8% edge. Stealth is survival, not acceleration.
+
+**How production systems handle it (the TA's question):**
+1. They don't avoid impact — they OPTIMIZE against it. Almgren-Chriss
+   (2000) optimal execution; TWAP/VWAP/POV algos cap participation at
+   ~5-15% of volume; iceberg orders; randomized slice sizes/timing to
+   defeat flow fingerprinting. Our x* ~ 25%-of-depth cap is a POV cap.
+2. They hide in volume (Kyle 1985): trade when noise flow is thick.
+   Empirical square-root impact law (Bouchaud et al.): cost ~
+   sigma * sqrt(Q / V_daily) — taking 1% of volume is cheap, 30% ruinous.
+3. BREADTH over depth (Grinold's fundamental law, IR = IC*sqrt(N)):
+   tiny edge x thousands of independent markets. The scaling axis is
+   number of markets, never size in one. For us: more series (hourly,
+   other strikes, ETH), more venues — capacity multiplies linearly.
+4. They earn the spread instead of paying it (maker strategies) — but
+   that needs speed: our measured -10.6c/contract maker result is what
+   passive quoting WITHOUT speed looks like (adverse selection).
+5. They measure their own footprint: pre-trade impact models, post-
+   trade TCA feedback, capacity-aware sizing (fractional Kelly), and
+   funds CLOSE to new capital at strategy capacity.
+6. Alpha lifecycle: edges decay as others find them; rotate signals.
+No manipulation modeled anywhere (no spoofing/wash/multi-account) —
+sizing, timing, venue and breadth discipline only.
+
 Weekly notes on what was tried, what was measured, and what died.
 Newest first. Every claim here should be reproducible from a script in
 `tests/` against the committed data in `results/`.
