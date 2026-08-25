@@ -932,103 +932,13 @@ function drawDesk(pt, kb, pt2, pt3d) {
   const today = dayKey(Date.now() / 1000);
   const dpnl = settled.filter(t => dayKey(t.close_ts) === today)
     .reduce((a, t) => a + t.pnl_c, 0);
-  const last = pt[pt.length - 1];
-  // current leader computed LIVE from the ledger (same rule the daemon
-  // uses: last 10 settled gate-clearing decisions, min 5, tau 0.62)
-  let lead = null, leadKey = null;
-  for (const v of ["kb2", "kb3", "kb4", "kb6", "kb7", "kb8"]) {
-    const byw = {};
-    for (const r of (kb || [])) {
-      if (r.variant !== v || r.actual == null) continue;
-      (byw[r.ticker] = byw[r.ticker] || []).push(r);
-    }
-    const decs = [];
-    for (const tk in byw) {
-      const rs = byw[tk].sort((a, b) => b.mins_left - a.mins_left);
-      const d0 = rs.find(r => Math.max(r.p_up, 1 - r.p_up) >= 0.62);
-      if (d0) decs.push([d0.close_ts, d0.hit,
-                         Math.pow(d0.p_up - d0.actual, 2)]);
-    }
-    decs.sort((a, b) => a[0] - b[0]);
-    const ten = decs.slice(-10);
-    if (ten.length < 5) continue;
-    const wr2 = ten.reduce((a, x) => a + x[1], 0);
-    const br2 = ten.reduce((a, x) => a + x[2], 0) / ten.length;
-    const key = [wr2 / ten.length, -br2];
-    if (!leadKey || key[0] > leadKey[0]
-        || (key[0] === leadKey[0] && key[1] > leadKey[1])) {
-      leadKey = key; lead = [v, wr2, ten.length];
-    }
+  // identity, balances, leader, ladder state all live on the roster
+  // cards — nothing is stated twice (the ledger's "ladder size" column
+  // carries the twin's per-trade sizing)
+  for (const id of ["desk-head", "desk-ladder", "desk2-feed"]) {
+    const z = document.getElementById(id);
+    if (z) z.innerHTML = "";
   }
-  const leadTxt = lead
-    ? `leader <span style="color:${COLD[lead[0]] || "inherit"}">●</span> ` +
-      `<b>${lead[0]}</b> <span class="muted">${lead[1]}/${lead[2]} ` +
-      `last-10</span>`
-    : (last
-      ? `leader <span style="color:${COLD[last.leader] || "inherit"}">●` +
-        `</span> <b>${last.leader}</b> <span class="muted">` +
-        `${last.rec10} last-10</span>`
-      : `leader forms once an arm has 5 settled decisions`);
-  document.getElementById("desk-head").innerHTML =
-    `<div class="bignum" style="font-size:34px">${money(equity)}</div>` +
-    `<p class="mini"><span style="color:${dpnl >= 0
-      ? "var(--good-text)" : "var(--down)"}">${dpnl >= 0 ? "▲" : "▼"} ` +
-    `${money(dpnl)} today</span> · buying power ` +
-    `${money(Math.floor(cash * 0.10))} <span class="muted">(10% rule)</span>` +
-    ` · ` + leadTxt + `</p>`;
-  // the ladder twin — same entries, banks $1k at $11k then x10
-  try {
-    const s2 = (pt2 || []).filter(t => t.actual != null)
-      .sort((a, b) => a.close_ts - b.close_ts);
-    const o2 = (pt2 || []).filter(t => t.actual == null);
-    let cash2 = START, banked2 = 0, level2 = START;
-    for (const t of s2) {
-      cash2 += t.pnl_c;
-      while (cash2 >= 11 * level2) {
-        banked2 += level2; cash2 -= level2; level2 *= 10;
-      }
-    }
-    const worth2 = cash2 + banked2;
-    cash2 -= o2.reduce((a, t) => a + t.stake_c, 0);
-    document.getElementById("desk-ladder").innerHTML =
-      `<b>The ladder twin</b> — total worth ` +
-      `<b>${money(worth2)}</b> (banked ${money(banked2)} · playing ` +
-      `${money(worth2 - banked2)}) · level ${money(level2)}, bid limit ` +
-      `${money(Math.floor((worth2 - banked2) * 0.10))} · same entries, ` +
-      `sized to his own 10%, UNCAPPED (paper fills at the ask) — banks ` +
-      `$1k at $11k, then $10k at $110k, ×10`;
-    // his own ticket feed — the compounding is the show: watch the
-    // contract counts grow as the bankroll climbs the ladder
-    const feed = document.getElementById("desk2-feed");
-    if (feed && pt2 && pt2.length) {
-      const fT3 = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
-        { timeZone: "America/Los_Angeles", hour: "2-digit",
-          minute: "2-digit", hour12: false }) + " PT";
-      feed.innerHTML = `<div style="margin-top:6px">` +
-        pt2.slice(-4).reverse().map(t => {
-          const buy = t.side === "yes";
-          const status = t.actual == null
-            ? `<span class="badge pending">OPEN · settles ` +
-              `${fT3(t.close_ts)}</span>`
-            : t.win
-              ? `<span class="badge pass">WON +${money(t.pnl_c)}</span>`
-              : `<span class="badge" style="background:` +
-                `rgba(230,80,80,.15);color:var(--down)">LOST ` +
-                `${money(t.pnl_c)}</span>`;
-          return `<div class="card" style="max-width:430px;` +
-            `padding:8px 14px;margin-top:6px">` +
-            `<div style="display:flex;justify-content:space-between;` +
-            `align-items:center;gap:10px">` +
-            `<b style="font-size:13px;color:${buy
-              ? "var(--good-text)" : "var(--down)"}">BUY ` +
-            `${t.side.toUpperCase()}</b>${status}</div>` +
-            `<div class="mini">BTC ≥ $${Math.round(t.strike)
-              .toLocaleString()} · <b>${t.contracts} contracts @ ` +
-            `${t.ask_c}¢</b> = ${money(t.stake_c)} · leader ` +
-            `${t.leader} · banked ${money(t.banked_c || 0)}</div></div>`;
-        }).join("") + `</div>`;
-    }
-  } catch (e) {}
   // equity race — all three traders on one labeled, hoverable chart
   const cv = document.getElementById("desk-curve");
   const mkSeries = (trades, ladder) => {
@@ -1310,31 +1220,53 @@ function drawDesk3(pt3, kb) {
       const c = Math.max(r.p_up, 1 - r.p_up);
       if (!best || c > best.c) best = { c, r };
     }
-    let reason;
-    if (best.c < 0.77) {
-      reason = `kb7 peaked at ${(100 * best.c).toFixed(0)}% — below the ` +
-        `77% bar`;
-    } else {
+    let type, ask = null;
+    if (best.c < 0.77) type = "bar";
+    else {
       const r = best.r;
-      const ask = r.mkt_p_up == null ? null
-        : 100 * (r.p_up >= .5 ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
-      reason = ask == null
-        ? `qualified at ${(100 * best.c).toFixed(0)}% but no market quote`
-        : ask >= 80
-          ? `qualified at ${(100 * best.c).toFixed(0)}% but priced out ` +
-            `(~${ask.toFixed(0)}¢)`
-          : ask < 5
-            ? `qualified but ask ~${ask.toFixed(0)}¢ under the 5¢ floor`
-            : `qualified at ${(100 * best.c).toFixed(0)}% — window passed ` +
-              `unfilled`;
+      ask = r.mkt_p_up == null ? null
+        : Math.min(99, 100 * (r.p_up >= .5 ? r.mkt_p_up : 1 - r.mkt_p_up)
+                       + 2.5);
+      type = ask == null ? "noquote" : ask >= 80 ? "priced"
+        : ask < 5 ? "floor" : "unfilled";
     }
-    skips.push({ ts: rs[0].close_ts, reason });
+    skips.push({ ts: rs[0].close_ts, type, conf: best.c, ask });
   }
-  const events = pt3.map(t => ({ ts: t.made_ts, html: ticket(t, false) }))
-    .concat(skips.map(s => ({ ts: s.ts, html:
-      `<div class="mini" style="padding:5px 4px;border-bottom:1px solid ` +
-      `rgba(128,128,128,.15)">⏸ ${fT2(s.ts)} · SKIPPED — ${s.reason}` +
-      `</div>` })));
+  // compress consecutive same-reason skips into one run — the pattern
+  // ("priced out again and again") IS the finding, not the repetition
+  skips.sort((a, b) => b.ts - a.ts);
+  const runs = [];
+  for (const s of skips) {
+    const r = runs[runs.length - 1];
+    if (r && r.type === s.type) {
+      r.n++; r.t1 = s.ts;
+      r.clo = Math.min(r.clo, s.conf); r.chi = Math.max(r.chi, s.conf);
+      if (s.ask != null) r.ask = Math.min(r.ask ?? 99, s.ask);
+    } else runs.push({ type: s.type, n: 1, t0: s.ts, t1: s.ts,
+                       clo: s.conf, chi: s.conf, ask: s.ask });
+  }
+  const runTxt = r => {
+    const when = r.n === 1 ? fT2(r.t0) : `${fT2(r.t1)}–${fT2(r.t0)}`;
+    const win = r.n === 1 ? "" : ` · ${r.n} windows`;
+    const conf = r.clo === r.chi
+      ? `${(100 * r.clo).toFixed(0)}%`
+      : `${(100 * r.clo).toFixed(0)}–${(100 * r.chi).toFixed(0)}%`;
+    const why = r.type === "bar"
+      ? `kb7 peaked at ${conf} — below the 77% bar`
+      : r.type === "priced"
+        ? `qualified at ${conf} but priced out (asks ≥${r.ask.toFixed(0)}¢` +
+          ` — the market agrees and charges for it)`
+        : r.type === "noquote" ? `qualified at ${conf} but no market quote`
+        : r.type === "floor" ? `ask under the 5¢ floor`
+        : `qualified at ${conf} — window passed unfilled`;
+    return `<div class="mini" style="padding:5px 4px;border-bottom:1px ` +
+      `solid rgba(128,128,128,.15)">⏸ ${when} · SKIPPED${win} — ${why}` +
+      `</div>`;
+  };
+  // the latest order is the big ticket above — never repeated in the feed
+  const events = pt3.slice(0, -1)
+    .map(t => ({ ts: t.made_ts, html: ticket(t, false) }))
+    .concat(runs.map(r => ({ ts: r.t0, html: runTxt(r) })));
   events.sort((a, b) => b.ts - a.ts);
   const latest = pt3[pt3.length - 1];
   const skN = skips.length;
