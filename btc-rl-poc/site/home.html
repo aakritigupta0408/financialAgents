@@ -683,16 +683,25 @@ function drawTwoMillion(kb) {
       : `${v} measured · collecting (n=${a3.n})`,
       a3.n >= 15 ? a3.ev : null]);
   }
+  // class-world column: paper trading has no depth cap — pure compounding
+  const t2mPaper = (e) => {
+    if (e == null) return "–";
+    if (e <= 0) return "never";
+    const days = Math.log(2e6 / 1e3) / (BETS_D * Math.log(1 + STAKE * e));
+    return days < 2 ? `${(days * 24).toFixed(0)}h`
+      : days < 365 ? `${days.toFixed(0)}d` : `${(days / 365).toFixed(1)}y`;
+  };
   document.getElementById("tm-table").innerHTML =
-    `<table style="min-width:0;max-width:560px"><thead><tr>` +
+    `<table style="min-width:0;max-width:640px"><thead><tr>` +
     `<th>EV scenario</th><th class="num">per $1</th>` +
     `<th class="num">from $1k</th><th class="num">from $10k</th>` +
-    `<th class="num">from $100k</th></tr></thead><tbody>` +
+    `<th class="num">from $100k</th>` +
+    `<th class="num">paper · no depth cap</th></tr></thead><tbody>` +
     scen.map(([nm, e]) => `<tr><td>${nm}</td>` +
       `<td class="num">${e == null ? "–" : (100 * e).toFixed(1) + "%"}</td>` +
       [1e3, 1e4, 1e5].map(k =>
         `<td class="num">${e == null ? "–" : t2m(e, k)}</td>`).join("") +
-      `</tr>`).join("") +
+      `<td class="num">${t2mPaper(e)}</td></tr>`).join("") +
     `</tbody></table>` +
     `<p class="mini">assumptions: ~${BETS_D} qualifying windows/day · ` +
     `${100 * STAKE}% of bankroll per bet · ~$${CAP}/window capacity ` +
