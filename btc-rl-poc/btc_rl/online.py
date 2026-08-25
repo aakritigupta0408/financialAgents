@@ -2735,6 +2735,10 @@ def run(once: bool = False) -> None:
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"],
                 "brti": brti,
+                # live near-touch book depth (within 3c of the best bid,
+                # each side) — the measured capacity behind the $2M math
+                "k_depth_yes": (pm_mkt or {}).get("depth_yes"),
+                "k_depth_no": (pm_mkt or {}).get("depth_no"),
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "kalshi_binary": _kb_summary(kb),
                 "kb_treatments": {

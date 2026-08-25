@@ -152,7 +152,7 @@
 <section>
   <h2>The $2,000,000 question — a measured answer
     <span class="paper-tag">stress test · not advice</span></h2>
-  <p class="sub small muted">If someone used kb2's confident calls to trade,
+  <p class="sub small muted">If someone traded the confident calls of any of the eight arms,
   how long to turn a starting bankroll into $2M — and what's the minimum
   capital? Computed live from the ledger, with the honest three-regime answer.</p>
   <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
@@ -658,38 +658,48 @@ function drawTape(prices, st, r, bets) {
 
 function drawTwoMillion(kb) {
   const el = document.getElementById("tm-cards");
-  const rows = kb.filter(r => r.variant === "kb2" && r.actual != null
-    && r.mkt_p_up != null && r.mins_left <= 10
-    && Math.max(r.p_up, 1 - r.p_up) >= 0.64);
-  const ent = [];
-  for (const r of rows) {
-    const side = r.call ? "yes" : "no";
-    const ask = 100 * (side === "yes" ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
-    if (ask < 5 || ask >= 80) continue;
-    const fee = Math.ceil(7 * (ask / 100) * (1 - ask / 100));
-    ent.push([r.hit, ask + fee]);
-  }
-  const n = ent.length;
-  if (n < 60) { el.innerHTML = '<p class="mini">collecting…</p>'; return; }
-  const w = ent.reduce((a, e) => a + e[0], 0), p = w / n;
-  const cost = ent.reduce((a, e) => a + e[1], 0) / n;
-  const z = 1.96, den = 1 + z * z / n;
-  const half = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n));
-  const plo = (p + z * z / (2 * n) - half) / den,
-        phi = (p + z * z / (2 * n) + half) / den;
-  const ev = (p * 100 - cost) / cost, evhi = (phi * 100 - cost) / cost;
-  const be = cost / 100;
+  // every arm judged the same way; the tiles showcase today's BEST
+  const armStats = (v) => {
+    const rows = kb.filter(r => r.variant === v && r.actual != null
+      && r.mkt_p_up != null && r.mins_left <= 10
+      && Math.max(r.p_up, 1 - r.p_up) >= 0.64);
+    const ent = [], wset = new Set();
+    for (const r of rows) {
+      const ask = 100 * (r.call ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
+      if (ask < 5 || ask >= 80) continue;
+      const fee = Math.ceil(7 * (ask / 100) * (1 - ask / 100));
+      ent.push([r.hit, ask + fee]); wset.add(r.ticker);
+    }
+    const n2 = ent.length;
+    if (!n2) return null;
+    const w2 = ent.reduce((a2, e) => a2 + e[0], 0), p2 = w2 / n2;
+    const c2 = ent.reduce((a2, e) => a2 + e[1], 0) / n2;
+    const z = 1.96, den = 1 + z * z / n2;
+    const half = z * Math.sqrt(p2 * (1 - p2) / n2 + z * z / (4 * n2 * n2));
+    const phi2 = (p2 + z * z / (2 * n2) + half) / den;
+    return { v, n: n2, wn: wset.size, p: p2, cost: c2,
+      plo: (p2 + z * z / (2 * n2) - half) / den, phi: phi2,
+      ev: (p2 * 100 - c2) / c2, evhi: (phi2 * 100 - c2) / c2,
+      be: c2 / 100 };
+  };
+  const ALL = ["kb2", "kb3", "kb4", "kb6", "kb7", "kb8"]
+    .map(armStats).filter(s2 => s2 && s2.wn >= 10);
+  if (!ALL.length) { el.innerHTML = '<p class="mini">collecting…</p>'; return; }
+  const bestA = ALL.reduce((a2, b2) => (b2.ev > a2.ev ? b2 : a2));
+  const k2s = ALL.find(s2 => s2.v === "kb2") || bestA;
+  const { p, cost, plo, phi, be, n } = bestA;
+  const ev = k2s.ev, evhi = k2s.evhi;   // kb2 keeps its scenario rows
   const card = (big, label, sub) =>
     `<div class="card" style="text-align:center"><div class="bignum" ` +
     `style="font-size:28px">${big}</div><p class="mini">${label}</p>` +
     `<p class="mini" style="color:var(--faint)">${sub}</p></div>`;
   el.innerHTML =
-    card(`${(100 * p).toFixed(1)}%`, "measured win rate, biddable confident calls",
-      `95% CI [${(100 * plo).toFixed(1)}, ${(100 * phi).toFixed(1)}] · n=${n}`) +
+    card(`${(100 * p).toFixed(1)}%`, `win rate on biddable confident calls — best arm today: <b>${bestA.v}</b>`,
+      `95% CI [${(100 * plo).toFixed(1)}, ${(100 * phi).toFixed(1)}] · ${bestA.wn} windows (${n} entries)`) +
     card(`${(100 * be).toFixed(1)}%`, "break-even win rate at the ask+fee",
       `avg cost ${cost.toFixed(1)}¢ per 100¢ contract`) +
-    card(`${(100 * ev).toFixed(1)}%`, "expected value per $1 staked",
-      `even the CI's best case: ${(100 * evhi).toFixed(1)}%`) +
+    card(`${(100 * bestA.ev).toFixed(1)}%`, `expected value per $1 staked — ${bestA.v}`,
+      `even the CI's best case: ${(100 * bestA.evhi).toFixed(1)}%`) +
     card(phi < be ? "never" : "—", "expected time to $2M, any capital",
       phi < be ? "the CI never reaches break-even" : "edge within noise");
   // the TA's requested form: time to $2M by scenario x starting capital
@@ -909,7 +919,9 @@ function drawTwoMillion(kb) {
       row(`conservative floor ($${CAP}/window)`, CAP) +
       row(`measured near-touch (~$9k, units audit pending)`, 9000) +
       `<tr><td>paper · class world (no adversary, compounding)</td>` +
-      `<td class="num">10% of bankroll</td><td class="num">—</td>` +
+      `<td class="num">10% of bankroll</td>` +
+      `<td class="num">+${(100 * (Math.pow(1 + 0.10 * eSel, WD) - 1))
+        .toFixed(0)}%/day, compounding</td>` +
       `<td class="num">${paperD}</td></tr>` +
       `</tbody></table>` +
       `<p class="mini">the one number this stands on is the selective ` +
@@ -966,7 +978,11 @@ function drawTwoMillion(kb) {
         node(843, `${fdys(2e6 / dailyF)}`,
           "to $2,000,000", "$2M ÷ $/day", "var(--good-text)") +
         `<text x="0" y="128" font-size="10.5" fill="currentColor" ` +
-        `opacity=".65">same pipeline, other worlds:  measured ~$9k depth ` +
+        `opacity=".65">${(window.__st && window.__st.k_depth_yes != null)
+          ? `depth on the book RIGHT NOW: ~$${Math.round(
+              Math.min(window.__st.k_depth_yes, window.__st.k_depth_no)
+            ).toLocaleString()} near-touch (thinner side, live) · `
+          : ""}same pipeline, other worlds:  measured ~$9k depth ` +
         `→ <tspan font-weight="700">$${Math.round(daily9).toLocaleString()}` +
         `/day → ${fdys(2e6 / daily9)}</tspan>   ·   paper / class world ` +
         `(no depth cap, no adversary) → <tspan font-weight="700">` +
@@ -1417,6 +1433,7 @@ async function boot() {
   try { drawRoster(ptr, pt2r, pt3r, kb); } catch (e) {}
   try { drawDesk(ptr, kb, pt2r, pt3r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
+  window.__st = st;
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
       '<p class="mini">desk commentary unavailable</p>';
