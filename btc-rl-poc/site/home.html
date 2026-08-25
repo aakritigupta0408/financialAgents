@@ -666,19 +666,21 @@ function drawTwoMillion(kb) {
       const a2 = 100 * (r.call ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
       if (a2 < 5 || a2 >= 80) continue;
       const f2 = Math.ceil(7 * (a2 / 100) * (1 - a2 / 100));
-      e2.push([r.hit, a2 + f2]);
+      e2.push([r.hit, a2 + f2, r.ticker]);
     }
     const n2 = e2.length;
-    if (!n2) return { n: 0, ev: null };
+    if (!n2) return { n: 0, w: 0, ev: null };
     const w2 = e2.reduce((a, x) => a + x[0], 0);
     const c2 = e2.reduce((a, x) => a + x[1], 0) / n2;
-    return { n: n2, ev: ((w2 / n2) * 100 - c2) / c2 };
+    // effective n is WINDOWS — same-window entries share one outcome
+    const wins2 = new Set(e2.map(x => x[2])).size;
+    return { n: n2, w: wins2, ev: ((w2 / n2) * 100 - c2) / c2 };
   };
   for (const v of ["kb4", "kb7", "kb8"]) {
     const a3 = armEV(v);
-    scen.push([a3.n >= 15 ? `${v} measured · n=${a3.n}`
-      : `${v} measured · collecting (n=${a3.n})`,
-      a3.n >= 15 ? a3.ev : null]);
+    scen.push([a3.w >= 10 ? `${v} measured · ${a3.w} windows`
+      : `${v} measured · collecting (${a3.w} windows)`,
+      a3.w >= 10 ? a3.ev : null]);
   }
   // THE ACTUAL SIMULATION (tests/sneaky_trader.py): detection-aware.
   // Market makers track the trader's 'heat' (his recent take of the
