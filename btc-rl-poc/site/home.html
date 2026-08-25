@@ -118,6 +118,22 @@
 </section>
 
 <section>
+  <h2>The $1K Desk — one trader, follow the leader
+    <span class="paper-tag">TA spec · simulated · not advice</span></h2>
+  <p class="sub small muted">A paper trader starts with $1,000, never risks
+  more than 10% of funds on a bid, and always places the <b>current best
+  bidder's</b> call — the arm leading over its last 10 settled decisions.
+  Reviewed at end of day. Nothing is ever purchased.</p>
+  <div id="desk-head" style="margin-top:10px"></div>
+  <div id="desk-curve"></div>
+  <div class="scroll" id="desk-trades" style="margin-top:10px"></div>
+  <p class="mini" id="desk-eod"></p>
+  <div class="disc"><b>Simulated research desk</b> — paper trades at logged
+  market asks for model evaluation only; not financial advice, never a
+  recommendation to buy or sell anything.</div>
+</section>
+
+<section>
   <h2>Headline results <span class="badge pending" id="verdict">computing…</span></h2>
   <div class="cards">
     <div class="card">
@@ -619,15 +635,40 @@ function drawTwoMillion(kb) {
     ["kb2 CI-best", evhi],
     ["kb5 warm-start (unverified)", 0.189],
   ];
+  // the other top arms, same entry rules, live-computed from the ledger
+  const armEV = (v) => {
+    const e2 = [];
+    for (const r of kb) {
+      if (r.variant !== v || r.actual == null || r.mkt_p_up == null
+          || r.mins_left > 10
+          || Math.max(r.p_up, 1 - r.p_up) < 0.64) continue;
+      const a2 = 100 * (r.call ? r.mkt_p_up : 1 - r.mkt_p_up) + 2.5;
+      if (a2 < 5 || a2 >= 80) continue;
+      const f2 = Math.ceil(7 * (a2 / 100) * (1 - a2 / 100));
+      e2.push([r.hit, a2 + f2]);
+    }
+    const n2 = e2.length;
+    if (!n2) return { n: 0, ev: null };
+    const w2 = e2.reduce((a, x) => a + x[0], 0);
+    const c2 = e2.reduce((a, x) => a + x[1], 0) / n2;
+    return { n: n2, ev: ((w2 / n2) * 100 - c2) / c2 };
+  };
+  for (const v of ["kb4", "kb7", "kb8"]) {
+    const a3 = armEV(v);
+    scen.push([a3.n >= 15 ? `${v} measured · n=${a3.n}`
+      : `${v} measured · collecting (n=${a3.n})`,
+      a3.n >= 15 ? a3.ev : null]);
+  }
   document.getElementById("tm-table").innerHTML =
     `<table style="min-width:0;max-width:560px"><thead><tr>` +
     `<th>EV scenario</th><th class="num">per $1</th>` +
     `<th class="num">from $1k</th><th class="num">from $10k</th>` +
     `<th class="num">from $100k</th></tr></thead><tbody>` +
     scen.map(([nm, e]) => `<tr><td>${nm}</td>` +
-      `<td class="num">${(100 * e).toFixed(1)}%</td>` +
+      `<td class="num">${e == null ? "–" : (100 * e).toFixed(1) + "%"}</td>` +
       [1e3, 1e4, 1e5].map(k =>
-        `<td class="num">${t2m(e, k)}</td>`).join("") + `</tr>`).join("") +
+        `<td class="num">${e == null ? "–" : t2m(e, k)}</td>`).join("") +
+      `</tr>`).join("") +
     `</tbody></table>` +
     `<p class="mini">assumptions: ~${BETS_D} qualifying windows/day · ` +
     `${100 * STAKE}% of bankroll per bet · ~$${CAP}/window capacity ` +
@@ -643,8 +684,116 @@ function drawTwoMillion(kb) {
     `and sells the disputed ones). Simulated research, not advice.`;
 }
 
+function drawDesk(pt) {
+  // The $1K Desk — portfolio view for the follow-the-leader paper trader
+  const START = 100000;                       // $1,000 in cents
+  const COLD = { kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9",
+                 kb6: "#c98500", kb7: "#199e70", kb8: "#64748b" };
+  const settled = pt.filter(t => t.actual != null);
+  const open = pt.filter(t => t.actual == null);
+  const cash = START + settled.reduce((a, t) => a + t.pnl_c, 0)
+                     - open.reduce((a, t) => a + t.stake_c, 0);
+  const equity = cash + open.reduce((a, t) => a + t.stake_c, 0);
+  const money = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100)
+    .toLocaleString("en-US", { minimumFractionDigits: 2,
+                               maximumFractionDigits: 2 });
+  const dayKey = ts => new Date(ts * 1000)
+    .toLocaleDateString("en-US", { timeZone: "America/New_York" });
+  const today = dayKey(Date.now() / 1000);
+  const dpnl = settled.filter(t => dayKey(t.close_ts) === today)
+    .reduce((a, t) => a + t.pnl_c, 0);
+  const last = pt[pt.length - 1];
+  document.getElementById("desk-head").innerHTML =
+    `<div class="bignum" style="font-size:34px">${money(equity)}</div>` +
+    `<p class="mini"><span style="color:${dpnl >= 0
+      ? "var(--good-text)" : "var(--down)"}">${dpnl >= 0 ? "▲" : "▼"} ` +
+    `${money(dpnl)} today</span> · buying power ` +
+    `${money(Math.floor(cash * 0.10))} <span class="muted">(10% rule)</span>` +
+    ` · ` + (last
+      ? `leader <span style="color:${COLD[last.leader] || "inherit"}">●` +
+        `</span> <b>${last.leader}</b> <span class="muted">` +
+        `${last.rec10} last-10</span>`
+      : `leader forms once an arm has 5 settled decisions`) + `</p>`;
+  const cv = document.getElementById("desk-curve");
+  if (!settled.length) {
+    cv.innerHTML =
+      '<p class="mini">equity curve appears after the first settled trade</p>';
+  } else {
+    const pts = [[pt[0].made_ts - 60, START]]
+      .concat(settled.map(t => [t.close_ts, t.bankroll_c]));
+    const W = 680, H = 120, P = 8;
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const ylo = Math.min(...ys, START), yhi = Math.max(...ys, START);
+    const X = t => P + (W - 2 * P) * (t - x0) / Math.max(1, x1 - x0);
+    const Y = v => H - P - (H - 2 * P) * (v - ylo) / Math.max(1, yhi - ylo);
+    const d = pts.map((p, i) =>
+      (i ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[1]).toFixed(1))
+      .join(" ");
+    const col = ys[ys.length - 1] >= START
+      ? "var(--good-text)" : "var(--down)";
+    cv.innerHTML =
+      `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px" ` +
+      `role="img" aria-label="$1K Desk equity curve">` +
+      `<title>equity — bankroll after each settled trade</title>` +
+      `<line x1="${P}" y1="${Y(START)}" x2="${W - P}" y2="${Y(START)}" ` +
+      `stroke="currentColor" stroke-opacity="0.25" stroke-dasharray="3 4"/>` +
+      `<text x="${W - P}" y="${Y(START) - 4}" text-anchor="end" ` +
+      `font-size="10" fill="currentColor" opacity="0.55">$1,000 start</text>` +
+      `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"/>` +
+      `<circle cx="${X(pts[pts.length - 1][0])}" ` +
+      `cy="${Y(pts[pts.length - 1][1])}" r="3.5" fill="${col}"/>` +
+      `<text x="${P}" y="12" font-size="10" fill="currentColor" ` +
+      `opacity="0.55">high ${money(yhi)}</text>` +
+      `<text x="${P}" y="${H - 2}" font-size="10" fill="currentColor" ` +
+      `opacity="0.55">low ${money(ylo)}</text></svg>`;
+  }
+  const fT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+    { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit",
+      hour12: false }) + " ET · " +
+    new Date(ts * 1000).toLocaleTimeString("en-IN",
+    { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit",
+      hour12: false }) + " IST";
+  const rowsH = pt.slice(-8).reverse().map(t => {
+    const res = t.actual == null
+      ? `<span class="badge pending">open</span>`
+      : t.win
+        ? `<span style="color:var(--good-text)">+${money(t.pnl_c)}</span>`
+        : `<span style="color:var(--down)">${money(t.pnl_c)}</span>`;
+    return `<tr><td>${fT(t.made_ts)}</td>` +
+      `<td><span style="color:${COLD[t.leader] || "inherit"}">●</span> ` +
+      `${t.leader} <span class="muted">${t.rec10}</span></td>` +
+      `<td>${t.side.toUpperCase()} ≥ $` +
+      `${Math.round(t.strike).toLocaleString()}</td>` +
+      `<td class="num">${t.contracts} @ ${t.ask_c}¢</td>` +
+      `<td class="num">${money(t.stake_c)}</td>` +
+      `<td class="num">${res}</td></tr>`;
+  }).join("");
+  document.getElementById("desk-trades").innerHTML = pt.length
+    ? `<table style="min-width:0"><thead><tr><th>entry</th>` +
+      `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
+      `<th class="num">stake</th><th class="num">result</th></tr>` +
+      `</thead><tbody>${rowsH}</tbody></table>`
+    : '<p class="mini">the desk is open with $1,000 — waiting for the ' +
+      'first leader-gated, biddable window</p>';
+  const byd = {};
+  for (const t of settled) {
+    const dk = dayKey(t.close_ts);
+    (byd[dk] = byd[dk] || [0, 0, 0])[0]++;
+    byd[dk][1] += t.win;
+    byd[dk][2] += t.pnl_c;
+  }
+  const days = Object.entries(byd).slice(-3);
+  document.getElementById("desk-eod").innerHTML = days.length
+    ? "EOD review: " + days.map(([dk, [n2, w2, p2]]) =>
+        `${dk} — ${n2} trades, ${w2} wins, <b style="color:${p2 >= 0
+          ? "var(--good-text)" : "var(--down)"}">${money(p2)}</b>`)
+        .join(" · ")
+    : "";
+}
+
 async function boot() {
-  const [kb, bets, sel, prices, st] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -652,7 +801,9 @@ async function boot() {
       .then(r => r.ok ? r.json() : []).catch(() => []),
     fetch(bust("../results/online_status.json"), { cache: "no-store" })
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    jsonl("../results/pt_trades.jsonl"),
   ]);
+  try { drawDesk(ptr); } catch (e) {}
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
       '<p class="mini">desk commentary unavailable</p>';

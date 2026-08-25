@@ -266,6 +266,50 @@ KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
 KB_MAX_ROWS = 20_000
 KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
 PB_BET_LOG_NAME = "pb_bets.jsonl"  # Conviction Book: kb5-gated entries only
+
+# The $1K Desk (TA spec, 2026-08-25): a paper trader starting at $1,000
+# that risks at most 10% of current funds per bid and always follows the
+# CURRENT BEST BIDDER — the arm leading over its last 10 settled
+# gate-clearing decisions. One entry per window, real asks + fees.
+PT_LOG_NAME = "pt_trades.jsonl"
+PT_START_BANKROLL_C = 100_000          # $1,000 in cents
+PT_FRAC = 0.10                         # max fraction of funds per bid
+PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
+PT_LAST_N = 10                         # leadership window (decisions)
+PT_MIN_REC = 5                         # min decisions to hold leadership
+PT_ARMS = ("kb2", "kb3", "kb4", "kb6", "kb7", "kb8")
+
+
+def _pt_leader(kb_rows: list[dict]) -> tuple[str, int, int] | None:
+    """Current best bidder: for each arm, its last PT_LAST_N settled
+    gate-clearing decisions (decision-ledger semantics: the FIRST minute
+    in a window clearing PT_TAU), ranked by wins then mean Brier.
+    Settled windows only — decision-time information, no leakage.
+    Returns (arm, wins, n) or None if no arm has PT_MIN_REC decisions."""
+    best = None
+    for arm in PT_ARMS:
+        byw: dict[str, list[dict]] = {}
+        for r in kb_rows:
+            if r.get("variant") == arm and r.get("actual") is not None:
+                byw.setdefault(r["ticker"], []).append(r)
+        decs = []
+        for rows in byw.values():
+            rows.sort(key=lambda r: -r["mins_left"])
+            for r in rows:
+                if max(r["p_up"], 1 - r["p_up"]) >= PT_TAU:
+                    decs.append((r["close_ts"], r["hit"],
+                                 (r["p_up"] - r["actual"]) ** 2))
+                    break
+        decs.sort()
+        decs = decs[-PT_LAST_N:]
+        if len(decs) < PT_MIN_REC:
+            continue
+        wins = sum(h for _, h, _ in decs)
+        brier = sum(b for _, _, b in decs) / len(decs)
+        key = (wins / len(decs), -brier)
+        if best is None or key > best[0]:
+            best = (key, arm, wins, len(decs))
+    return (best[1], best[2], best[3]) if best else None
 KB_BET_MAX_PRICE_C = 80        # entries only below 80 cents (fee+spread
                                # make higher entries -EV; tightened from
                                # 85 on ledger evidence, 2026-08-21)
@@ -1564,6 +1608,13 @@ def run(once: bool = False) -> None:
     kb_sel_tickers = {b["ticker"] for b in kb_sel_bets}
     pb_bets = _load_kb_bets(PB_BET_LOG_NAME)
     pb_tickers = {b["ticker"] for b in pb_bets}
+    pt_trades = _load_kb_bets(PT_LOG_NAME)
+    pt_tickers = {t["ticker"] for t in pt_trades}
+    # bankroll is derived from the log alone (single source of truth):
+    # start + settled pnl - stakes still locked in open positions
+    pt_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt_trades if t.get("actual") is None)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2116,6 +2167,56 @@ def run(once: bool = False) -> None:
                                     "pnl_c": None,
                                 })
                                 pb_tickers.add(pm_mkt["ticker"])
+                    # The $1K Desk — paper trader (TA spec): follows the
+                    # CURRENT best bidder (last-10 settled decisions),
+                    # risks at most 10% of funds, buys at the real ask
+                    # with Kalshi fees, one entry per window. Purely
+                    # observational research — nothing is purchased.
+                    if (pm_mkt["ticker"] not in pt_tickers
+                            and mins_left <= 12 and pm_mkt.get("yes_bid")
+                            and pm_mkt.get("yes_ask")):
+                        led = _pt_leader(kb)
+                        if led:
+                            pt_arm, pt_w, pt_n = led
+                            ptr = next(
+                                (r for r in reversed(kb)
+                                 if r.get("variant") == pt_arm
+                                 and r["ticker"] == pm_mkt["ticker"]
+                                 and r["made_ts"] == slot1), None)
+                            if ptr and max(ptr["p_up"],
+                                           1 - ptr["p_up"]) >= PT_TAU:
+                                syp = ptr["p_up"] >= 0.5
+                                askp = (pm_mkt["yes_ask"] if syp
+                                        else 100 - pm_mkt["yes_bid"])
+                                feep = math.ceil(
+                                    7 * (askp / 100) * (1 - askp / 100))
+                                if 5 <= askp < 80:
+                                    budget = int(PT_FRAC * pt_bankroll_c)
+                                    ncon = int(budget // (askp + feep))
+                                    if ncon >= 1:
+                                        stake = int(ncon * (askp + feep))
+                                        pt_bankroll_c -= stake
+                                        pt_trades.append({
+                                            "ticker": pm_mkt["ticker"],
+                                            "made_ts": now_ts,
+                                            "close_ts": k_close_ts,
+                                            "strike": pm_mkt["strike"],
+                                            "side": "yes" if syp else "no",
+                                            "ask_c": round(askp, 1),
+                                            "fee_c": feep,
+                                            "contracts": ncon,
+                                            "stake_c": stake,
+                                            "leader": pt_arm,
+                                            "rec10": f"{pt_w}/{pt_n}",
+                                            "p_arm": round(max(
+                                                ptr["p_up"],
+                                                1 - ptr["p_up"]), 4),
+                                            "mins_left": round(mins_left, 1),
+                                            "actual": None, "win": None,
+                                            "pnl_c": None,
+                                            "bankroll_c": pt_bankroll_c,
+                                        })
+                                        pt_tickers.add(pm_mkt["ticker"])
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -2327,6 +2428,27 @@ def run(once: bool = False) -> None:
                 tmpp.write_text("".join(json.dumps(b) + "\n"
                                         for b in pb_bets))
                 tmpp.replace(RESULTS_DIR / PB_BET_LOG_NAME)
+            pt_changed = False
+            for t in pt_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue  # settle only on authoritative candles
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt_bankroll_c += payout
+                t["bankroll_c"] = pt_bankroll_c
+                pt_changed = True
+            if pt_changed or (pt_trades and pt_trades[-1]["actual"] is None
+                              and pt_trades[-1]["made_ts"] >= now_ts - 90):
+                tmpt = (RESULTS_DIR / PT_LOG_NAME).with_suffix(".tmpt")
+                tmpt.write_text("".join(json.dumps(t) + "\n"
+                                        for t in pt_trades))
+                tmpt.replace(RESULTS_DIR / PT_LOG_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"
