@@ -272,6 +272,11 @@ PB_BET_LOG_NAME = "pb_bets.jsonl"  # Conviction Book: kb5-gated entries only
 # CURRENT BEST BIDDER — the arm leading over its last 10 settled
 # gate-clearing decisions. One entry per window, real asks + fees.
 PT_LOG_NAME = "pt_trades.jsonl"
+# Trader 2, the LADDER: same entries, but banks profits — on reaching
+# 11x his current level he withdraws one level (starting level $1,000),
+# keeps playing with 10x, and the level itself scales x10. His 10% bid
+# limit therefore steps $100 -> $1,000 -> $10,000 as he climbs.
+PT2_LOG_NAME = "pt2_trades.jsonl"
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
@@ -1615,6 +1620,21 @@ def run(once: bool = False) -> None:
     pt_bankroll_c = PT_START_BANKROLL_C \
         + sum(t["pnl_c"] for t in pt_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt_trades if t.get("actual") is None)
+    pt2_trades = _load_kb_bets(PT2_LOG_NAME)
+    pt2_tickers = {t["ticker"] for t in pt2_trades}
+    # ladder trader state replayed from his log alone (restart-safe)
+    pt2_bankroll_c = PT_START_BANKROLL_C
+    pt2_banked_c = 0
+    pt2_level_c = PT_START_BANKROLL_C
+    for t in sorted((t for t in pt2_trades if t.get("actual") is not None),
+                    key=lambda t: t["close_ts"]):
+        pt2_bankroll_c += t["pnl_c"]
+        while pt2_bankroll_c >= 11 * pt2_level_c:
+            pt2_banked_c += pt2_level_c
+            pt2_bankroll_c -= pt2_level_c
+            pt2_level_c *= 10
+    pt2_bankroll_c -= sum(t["stake_c"] for t in pt2_trades
+                          if t.get("actual") is None)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2172,7 +2192,8 @@ def run(once: bool = False) -> None:
                     # risks at most 10% of funds, buys at the real ask
                     # with Kalshi fees, one entry per window. Purely
                     # observational research — nothing is purchased.
-                    if (pm_mkt["ticker"] not in pt_tickers
+                    if ((pm_mkt["ticker"] not in pt_tickers
+                            or pm_mkt["ticker"] not in pt2_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -2191,32 +2212,51 @@ def run(once: bool = False) -> None:
                                 feep = math.ceil(
                                     7 * (askp / 100) * (1 - askp / 100))
                                 if 5 <= askp < 80:
-                                    budget = int(PT_FRAC * pt_bankroll_c)
-                                    ncon = int(budget // (askp + feep))
-                                    if ncon >= 1:
-                                        stake = int(ncon * (askp + feep))
-                                        pt_bankroll_c -= stake
-                                        pt_trades.append({
-                                            "ticker": pm_mkt["ticker"],
-                                            "made_ts": now_ts,
-                                            "close_ts": k_close_ts,
-                                            "strike": pm_mkt["strike"],
-                                            "side": "yes" if syp else "no",
-                                            "ask_c": round(askp, 1),
-                                            "fee_c": feep,
-                                            "contracts": ncon,
-                                            "stake_c": stake,
-                                            "leader": pt_arm,
-                                            "rec10": f"{pt_w}/{pt_n}",
-                                            "p_arm": round(max(
-                                                ptr["p_up"],
-                                                1 - ptr["p_up"]), 4),
-                                            "mins_left": round(mins_left, 1),
-                                            "actual": None, "win": None,
-                                            "pnl_c": None,
-                                            "bankroll_c": pt_bankroll_c,
-                                        })
-                                        pt_tickers.add(pm_mkt["ticker"])
+                                    base_row = {
+                                        "ticker": pm_mkt["ticker"],
+                                        "made_ts": now_ts,
+                                        "close_ts": k_close_ts,
+                                        "strike": pm_mkt["strike"],
+                                        "side": "yes" if syp else "no",
+                                        "ask_c": round(askp, 1),
+                                        "fee_c": feep,
+                                        "leader": pt_arm,
+                                        "rec10": f"{pt_w}/{pt_n}",
+                                        "p_arm": round(max(
+                                            ptr["p_up"],
+                                            1 - ptr["p_up"]), 4),
+                                        "mins_left": round(mins_left, 1),
+                                        "actual": None, "win": None,
+                                        "pnl_c": None,
+                                    }
+                                    if pm_mkt["ticker"] not in pt_tickers:
+                                        ncon = int((PT_FRAC * pt_bankroll_c)
+                                                   // (askp + feep))
+                                        if ncon >= 1:
+                                            stake = int(ncon * (askp + feep))
+                                            pt_bankroll_c -= stake
+                                            pt_trades.append({
+                                                **base_row,
+                                                "contracts": ncon,
+                                                "stake_c": stake,
+                                                "bankroll_c": pt_bankroll_c,
+                                            })
+                                            pt_tickers.add(pm_mkt["ticker"])
+                                    if pm_mkt["ticker"] not in pt2_tickers:
+                                        nc2 = int((PT_FRAC * pt2_bankroll_c)
+                                                  // (askp + feep))
+                                        if nc2 >= 1:
+                                            st2 = int(nc2 * (askp + feep))
+                                            pt2_bankroll_c -= st2
+                                            pt2_trades.append({
+                                                **base_row,
+                                                "contracts": nc2,
+                                                "stake_c": st2,
+                                                "bankroll_c": pt2_bankroll_c,
+                                                "banked_c": pt2_banked_c,
+                                                "level_c": pt2_level_c,
+                                            })
+                                            pt2_tickers.add(pm_mkt["ticker"])
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -2449,6 +2489,35 @@ def run(once: bool = False) -> None:
                 tmpt.write_text("".join(json.dumps(t) + "\n"
                                         for t in pt_trades))
                 tmpt.replace(RESULTS_DIR / PT_LOG_NAME)
+            pt2_changed = False
+            for t in pt2_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt2_bankroll_c += payout
+                # the ladder: bank one level at 11x, play on with 10x
+                while pt2_bankroll_c >= 11 * pt2_level_c:
+                    pt2_banked_c += pt2_level_c
+                    pt2_bankroll_c -= pt2_level_c
+                    pt2_level_c *= 10
+                t["bankroll_c"] = pt2_bankroll_c
+                t["banked_c"] = pt2_banked_c
+                t["level_c"] = pt2_level_c
+                pt2_changed = True
+            if pt2_changed or (pt2_trades
+                               and pt2_trades[-1]["actual"] is None
+                               and pt2_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp2t = (RESULTS_DIR / PT2_LOG_NAME).with_suffix(".tmp2t")
+                tmp2t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt2_trades))
+                tmp2t.replace(RESULTS_DIR / PT2_LOG_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

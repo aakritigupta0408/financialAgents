@@ -114,6 +114,7 @@
   capital? Computed live from the ledger, with the honest three-regime answer.</p>
   <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
   <div class="scroll" id="tm-table" style="margin-top:12px"></div>
+  <div class="scroll" id="tm-ladder" style="margin-top:12px"></div>
   <p class="mini" id="tm-verdict"></p>
 </section>
 
@@ -125,6 +126,7 @@
   bidder's</b> call — the arm leading over its last 10 settled decisions.
   Reviewed at end of day. Nothing is ever purchased.</p>
   <div id="desk-head" style="margin-top:10px"></div>
+  <p class="mini" id="desk-ladder"></p>
   <div id="desk-curve"></div>
   <div class="scroll" id="desk-trades" style="margin-top:10px"></div>
   <p class="mini" id="desk-eod"></p>
@@ -154,6 +156,24 @@
       <p class="mini" id="ab-sub"></p>
       <a href="ab_dashboard.html" class="small">Generations table &amp; bet ledger →</a>
     </div>
+    <div class="card">
+      <h3>The stack — kb4</h3>
+      <div class="nums" id="kb4-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb4-sub"></p>
+      <a href="ab_dashboard.html" class="small">League table &amp; decision ledger →</a>
+    </div>
+    <div class="card">
+      <h3>The foundation model — kb7</h3>
+      <div class="nums" id="kb7-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb7-sub"></p>
+      <a href="ab_dashboard.html" class="small">Zero-shot Chronos, frozen →</a>
+    </div>
+    <div class="card">
+      <h3>The fusion — kb8</h3>
+      <div class="nums" id="kb8-nums"><span class="mini">loading…</span></div>
+      <p class="mini" id="kb8-sub"></p>
+      <a href="ab_dashboard.html" class="small">kb7 × market, learned live →</a>
+    </div>
   </div>
 </section>
 
@@ -170,6 +190,10 @@
       <p class="mini">✗ the always-bet mandate after fees</p></div>
     <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">−11¢</div>
       <p class="mini">✗ passive maker fills at 1-min speed — adversely selected</p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">69.8% <span class="muted">&lt;</span> 73.0%</div>
+      <p class="mini">✗ bigger foundation model (Bolt-base, Chronos-2 + covariates) vs frozen kb7 — tie or worse, kb9 not launched</p></div>
+    <div class="card" style="text-align:center"><div class="bignum" style="font-size:30px">$1,000 → $103</div>
+      <p class="mini">✗ follow-the-leader desk, 4 replayed days — adverse selection at the ask</p></div>
   </div>
   <p class="mini" style="margin-top:8px">every claim measured in the repo · details on <a href="ab_dashboard.html">Results</a></p>
 </section>
@@ -674,6 +698,43 @@ function drawTwoMillion(kb) {
     `${100 * STAKE}% of bankroll per bet · ~$${CAP}/window capacity ` +
     `(beyond it growth is linear, so starting capital barely matters) · ` +
     `simulated research, not advice</p>`;
+  // the LADDER trader simulated on the same scenarios: banks $1k on
+  // reaching $11k, plays on with $10k, level scales x10 — day-stepped
+  const ladder = (e) => {
+    if (e == null) return ["–", "–", "–"];
+    if (e <= 0) return ["never", "never", "never"];
+    let K = 1e3, banked = 0, level = 1e3, days = 0, firstBank = null;
+    while (banked + K < 2e6 && days < 365 * 200) {
+      K = (STAKE * K < CAP) ? K * Math.pow(1 + STAKE * e, BETS_D)
+                            : K + BETS_D * CAP * e;
+      while (K >= 11 * level) {
+        banked += level; K -= level; level *= 10;
+        if (firstBank == null) firstBank = days + 1;
+      }
+      days++;
+    }
+    const f = d => d == null ? "—" : d < 2 ? `${(d * 24).toFixed(0)}h`
+      : d < 365 ? `${d.toFixed(0)}d` : `${(d / 365).toFixed(1)}y`;
+    return [f(firstBank), days >= 365 * 200 ? ">200y" : f(days),
+            "$" + Math.round(banked).toLocaleString()];
+  };
+  document.getElementById("tm-ladder").innerHTML =
+    `<p class="small" style="margin:6px 0 4px"><b>The ladder trader, ` +
+    `simulated</b> <span class="muted">— starts $1k; at $11k banks $1k ` +
+    `and plays on with $10k (bid limit steps $100 → $1k → $10k…)</span></p>` +
+    `<table style="min-width:0;max-width:560px"><thead><tr>` +
+    `<th>EV scenario</th><th class="num">per $1</th>` +
+    `<th class="num">first $1k banked</th><th class="num">$2M total</th>` +
+    `<th class="num">banked at end</th></tr></thead><tbody>` +
+    scen.map(([nm, e]) => {
+      const [fb, t2, bk] = ladder(e);
+      return `<tr><td>${nm}</td><td class="num">${e == null ? "–"
+        : (100 * e).toFixed(1) + "%"}</td><td class="num">${fb}</td>` +
+        `<td class="num">${t2}</td><td class="num">${bk}</td></tr>`;
+    }).join("") + `</tbody></table>` +
+    `<p class="mini">same assumptions and capacity cap as above — banking ` +
+    `slows compounding slightly but locks profits out of drawdown reach · ` +
+    `simulated research, not advice</p>`;
   document.getElementById("tm-verdict").innerHTML =
     `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
     `(any real positive edge, compounding uncapped) · <b>~years</b> ` +
@@ -684,7 +745,7 @@ function drawTwoMillion(kb) {
     `and sells the disputed ones). Simulated research, not advice.`;
 }
 
-function drawDesk(pt) {
+function drawDesk(pt, kb, pt2) {
   // The $1K Desk — portfolio view for the follow-the-leader paper trader
   const START = 100000;                       // $1,000 in cents
   const COLD = { kb2: "#2fb59a", kb3: "#d55181", kb4: "#9085e9",
@@ -703,17 +764,70 @@ function drawDesk(pt) {
   const dpnl = settled.filter(t => dayKey(t.close_ts) === today)
     .reduce((a, t) => a + t.pnl_c, 0);
   const last = pt[pt.length - 1];
+  // current leader computed LIVE from the ledger (same rule the daemon
+  // uses: last 10 settled gate-clearing decisions, min 5, tau 0.62)
+  let lead = null, leadKey = null;
+  for (const v of ["kb2", "kb3", "kb4", "kb6", "kb7", "kb8"]) {
+    const byw = {};
+    for (const r of (kb || [])) {
+      if (r.variant !== v || r.actual == null) continue;
+      (byw[r.ticker] = byw[r.ticker] || []).push(r);
+    }
+    const decs = [];
+    for (const tk in byw) {
+      const rs = byw[tk].sort((a, b) => b.mins_left - a.mins_left);
+      const d0 = rs.find(r => Math.max(r.p_up, 1 - r.p_up) >= 0.62);
+      if (d0) decs.push([d0.close_ts, d0.hit,
+                         Math.pow(d0.p_up - d0.actual, 2)]);
+    }
+    decs.sort((a, b) => a[0] - b[0]);
+    const ten = decs.slice(-10);
+    if (ten.length < 5) continue;
+    const wr2 = ten.reduce((a, x) => a + x[1], 0);
+    const br2 = ten.reduce((a, x) => a + x[2], 0) / ten.length;
+    const key = [wr2 / ten.length, -br2];
+    if (!leadKey || key[0] > leadKey[0]
+        || (key[0] === leadKey[0] && key[1] > leadKey[1])) {
+      leadKey = key; lead = [v, wr2, ten.length];
+    }
+  }
+  const leadTxt = lead
+    ? `leader <span style="color:${COLD[lead[0]] || "inherit"}">●</span> ` +
+      `<b>${lead[0]}</b> <span class="muted">${lead[1]}/${lead[2]} ` +
+      `last-10</span>`
+    : (last
+      ? `leader <span style="color:${COLD[last.leader] || "inherit"}">●` +
+        `</span> <b>${last.leader}</b> <span class="muted">` +
+        `${last.rec10} last-10</span>`
+      : `leader forms once an arm has 5 settled decisions`);
   document.getElementById("desk-head").innerHTML =
     `<div class="bignum" style="font-size:34px">${money(equity)}</div>` +
     `<p class="mini"><span style="color:${dpnl >= 0
       ? "var(--good-text)" : "var(--down)"}">${dpnl >= 0 ? "▲" : "▼"} ` +
     `${money(dpnl)} today</span> · buying power ` +
     `${money(Math.floor(cash * 0.10))} <span class="muted">(10% rule)</span>` +
-    ` · ` + (last
-      ? `leader <span style="color:${COLD[last.leader] || "inherit"}">●` +
-        `</span> <b>${last.leader}</b> <span class="muted">` +
-        `${last.rec10} last-10</span>`
-      : `leader forms once an arm has 5 settled decisions`) + `</p>`;
+    ` · ` + leadTxt + `</p>`;
+  // the ladder twin — same entries, banks $1k at $11k then x10
+  try {
+    const s2 = (pt2 || []).filter(t => t.actual != null)
+      .sort((a, b) => a.close_ts - b.close_ts);
+    const o2 = (pt2 || []).filter(t => t.actual == null);
+    let cash2 = START, banked2 = 0, level2 = START;
+    for (const t of s2) {
+      cash2 += t.pnl_c;
+      while (cash2 >= 11 * level2) {
+        banked2 += level2; cash2 -= level2; level2 *= 10;
+      }
+    }
+    const worth2 = cash2 + banked2;
+    cash2 -= o2.reduce((a, t) => a + t.stake_c, 0);
+    document.getElementById("desk-ladder").innerHTML =
+      `<b>The ladder twin</b> — total worth ` +
+      `<b>${money(worth2)}</b> (banked ${money(banked2)} · playing ` +
+      `${money(worth2 - banked2)}) · level ${money(level2)}, bid limit ` +
+      `${money(Math.floor((worth2 - banked2) * 0.10))} · same entries, ` +
+      `sized to his own 10% — banks $1k at $11k, then ×10`;
+  } catch (e) {}
   const cv = document.getElementById("desk-curve");
   if (!settled.length) {
     cv.innerHTML =
@@ -754,28 +868,35 @@ function drawDesk(pt) {
     new Date(ts * 1000).toLocaleTimeString("en-IN",
     { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit",
       hour12: false }) + " IST";
+  const p2byT = {};
+  for (const t of (pt2 || [])) p2byT[t.ticker] = t;
   const rowsH = pt.slice(-8).reverse().map(t => {
     const res = t.actual == null
       ? `<span class="badge pending">open</span>`
       : t.win
         ? `<span style="color:var(--good-text)">+${money(t.pnl_c)}</span>`
         : `<span style="color:var(--down)">${money(t.pnl_c)}</span>`;
+    const l2 = p2byT[t.ticker];
     return `<tr><td>${fT(t.made_ts)}</td>` +
       `<td><span style="color:${COLD[t.leader] || "inherit"}">●</span> ` +
       `${t.leader} <span class="muted">${t.rec10}</span></td>` +
       `<td>${t.side.toUpperCase()} ≥ $` +
       `${Math.round(t.strike).toLocaleString()}</td>` +
       `<td class="num">${t.contracts} @ ${t.ask_c}¢</td>` +
+      `<td class="num">${l2 ? l2.contracts : "–"}</td>` +
       `<td class="num">${money(t.stake_c)}</td>` +
       `<td class="num">${res}</td></tr>`;
   }).join("");
-  document.getElementById("desk-trades").innerHTML = pt.length
-    ? `<table style="min-width:0"><thead><tr><th>entry</th>` +
-      `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
-      `<th class="num">stake</th><th class="num">result</th></tr>` +
-      `</thead><tbody>${rowsH}</tbody></table>`
-    : '<p class="mini">the desk is open with $1,000 — waiting for the ' +
-      'first leader-gated, biddable window</p>';
+  // the bid ledger is ALWAYS shown — an empty book is information too
+  document.getElementById("desk-trades").innerHTML =
+    `<table style="min-width:0"><thead><tr><th>entry</th>` +
+    `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
+    `<th class="num">ladder size</th>` +
+    `<th class="num">stake</th><th class="num">result</th></tr>` +
+    `</thead><tbody>${rowsH ||
+      `<tr><td colspan="7" class="mini">no bids yet — the desk enters ` +
+      `only when the leader clears its gate on a biddable window ` +
+      `(ask 5–80¢, ≤12 min left)</td></tr>`}</tbody></table>`;
   const byd = {};
   for (const t of settled) {
     const dk = dayKey(t.close_ts);
@@ -793,7 +914,7 @@ function drawDesk(pt) {
 }
 
 async function boot() {
-  const [kb, bets, sel, prices, st, ptr] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr, pt2r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -802,8 +923,9 @@ async function boot() {
     fetch(bust("../results/online_status.json"), { cache: "no-store" })
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
     jsonl("../results/pt_trades.jsonl"),
+    jsonl("../results/pt2_trades.jsonl"),
   ]);
-  try { drawDesk(ptr); } catch (e) {}
+  try { drawDesk(ptr, kb, pt2r); } catch (e) {}
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
       '<p class="mini">desk commentary unavailable</p>';
@@ -823,10 +945,18 @@ async function boot() {
           hour12: false }) + " PT" : "status unavailable";
   let pass2 = false;
   for (const [v, numsId, subId] of [["kb2", "kb2-nums", "kb2-sub"],
-                                    ["kb3", "kb3-nums", "kb3-sub"]]) {
+                                    ["kb3", "kb3-nums", "kb3-sub"],
+                                    ["kb4", "kb4-nums", "kb4-sub"],
+                                    ["kb7", "kb7-nums", "kb7-sub"],
+                                    ["kb8", "kb8-nums", "kb8-sub"]]) {
     const rows = kb.filter(r => r.variant === v && r.actual != null
       && r.call != null);
-    if (rows.length < 60) continue;
+    if (rows.length < 60) {
+      const el2 = document.getElementById(numsId);
+      if (el2) el2.innerHTML = `<span class="mini">collecting — ` +
+        `${rows.length} settled calls (cards appear at 60)</span>`;
+      continue;
+    }
     const g = gated(rows);
     const vals = [["UP prec", g.up.p], ["UP rec", g.up.r],
                   ["DOWN prec", g.down.p], ["DOWN rec", g.down.r]];
