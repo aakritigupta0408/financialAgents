@@ -1975,6 +1975,32 @@ def run(once: bool = False) -> None:
                                        "q80_w": w80,
                                        "q80_lo": qlo, "q80_hi": qhi})
                             kb_made.add(("kb7", pm_mkt["ticker"], slot1))
+                            # Conviction Book stream 2 (pre-registered
+                            # 2026-08-26): kb7-confident biddable entries
+                            # — the only arm whose confidence survives
+                            # biddability (decorrelated from the crowd)
+                            if (mins_left <= 10
+                                    and max(p7, 1 - p7) >= 0.70
+                                    and pm_mkt.get("yes_bid")
+                                    and pm_mkt.get("yes_ask")
+                                    and pm_mkt["ticker"] not in pb_tickers):
+                                sy7 = p7 >= 0.5
+                                ask7 = (pm_mkt["yes_ask"] if sy7
+                                        else 100 - pm_mkt["yes_bid"])
+                                if 5 <= ask7 < 80:
+                                    pb_bets.append({
+                                        "ticker": pm_mkt["ticker"],
+                                        "made_ts": now_ts,
+                                        "close_ts": k_close_ts,
+                                        "strike": pm_mkt["strike"],
+                                        "side": "yes" if sy7 else "no",
+                                        "price_c": round(ask7, 1),
+                                        "p_win": round(max(p7, 1 - p7), 4),
+                                        "src": "kb7",
+                                        "actual": None, "win": None,
+                                        "pnl_c": None,
+                                    })
+                                    pb_tickers.add(pm_mkt["ticker"])
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the
