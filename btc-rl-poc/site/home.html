@@ -418,99 +418,137 @@ function drawTape(prices, st, r, bets) {
         box = document.getElementById("px-chart");
   if (!prices || prices.length < 10) return;
   let series = prices.slice();
-  // live composite as the final point so the tape moves between closes
   if (st && st.brti && st.brti.price && st.alive_at
       && st.alive_at > series[series.length - 1].ts)
     series = series.concat([{ ts: st.alive_at, c: st.brti.price }]);
+  const span = window.__tapeSpan || 3 * 3600;
   const t1 = series[series.length - 1].ts;
-  const pts = series.filter(p => p.ts >= t1 - 3 * 3600);
+  const pts = series.filter(p => p.ts >= t1 - span);
   const last = pts[pts.length - 1].c, ago = pts[0].c;
   const chg = last - ago, pct = chg / ago * 100, up = chg >= 0;
+  const chip = s => `<button class="chip${(window.__tapeSpan || 10800) === s ? " on" : ""}" ` +
+    `onclick="window.__tapeSpan=${s};window.__tapeRedraw&&window.__tapeRedraw()">` +
+    `${s / 3600}h</button>`;
   head.innerHTML = `<div class="price-head">` +
     `<span class="price-big">$${last.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>` +
     `<span class="price-chg ${up ? "up" : "down"}">${up ? "▲" : "▼"} ` +
-    `$${Math.abs(chg).toFixed(0)} (${pct.toFixed(2)}%) past 3h</span>` +
-    `<span class="mini">BTC-USD · minute closes + live composite</span></div>`;
-  const W = 900, H = 260, L = 8, R = 8, T = 12, B = 22;
+    `$${Math.abs(chg).toFixed(0)} (${pct.toFixed(2)}%)</span>` +
+    `<span class="legend" style="margin:0">${chip(3600)}${chip(10800)}${chip(21600)}</span></div>`;
+  const W = 900, H = 300, L = 10, R = 58, T = 14, B = 24;
   const xmin = pts[0].ts, xmax = t1;
   let ymin = Infinity, ymax = -Infinity;
-  for (const p of pts) { ymin = Math.min(ymin, p.c); ymax = Math.max(ymax, p.c); }
-  if (r && r.strike) { ymin = Math.min(ymin, r.strike); ymax = Math.max(ymax, r.strike); }
-  const pad = (ymax - ymin) * .08 || 10; ymin -= pad; ymax += pad;
+  for (const q of pts) { ymin = Math.min(ymin, q.c); ymax = Math.max(ymax, q.c); }
+  if (r && r.strike && r.close_ts >= xmin)
+    { ymin = Math.min(ymin, r.strike); ymax = Math.max(ymax, r.strike); }
+  const pad = (ymax - ymin) * .1 || 10; ymin -= pad; ymax += pad;
   const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
   const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
-  const d = pts.map((p, i) =>
-    `${i ? "L" : "M"}${X(p.ts).toFixed(1)},${Y(p.c).toFixed(1)}`).join("");
+  // Catmull-Rom -> cubic bezier: the smooth line is the whole feel
+  const P = pts.map(q => [X(q.ts), Y(q.c)]);
+  let d = `M${P[0][0].toFixed(1)},${P[0][1].toFixed(1)}`;
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i],
+          p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += `C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},` +
+      `${c2[1].toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
   const col = up ? "var(--up)" : "var(--down)";
   let g = `<defs><linearGradient id="pxg" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0" stop-color="${up ? "rgba(43,217,126,.22)" : "rgba(255,93,93,.22)"}"/>` +
-    `<stop offset="1" stop-color="rgba(0,0,0,0)"/></linearGradient></defs>`;
-  g += `<path d="${d}L${X(xmax).toFixed(1)},${H - B}L${X(xmin).toFixed(1)},${H - B}Z" fill="url(#pxg)"/>`;
-  g += `<path class="${tapeDrawn ? "" : "line"}" d="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`;
-  for (let ts = Math.ceil(xmin / 1800) * 1800; ts <= xmax; ts += 1800)
-    g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle" style="font-size:10.5px">` +
+    `<stop offset="0" stop-color="${up ? "rgba(43,217,126,.20)" : "rgba(255,93,93,.20)"}"/>` +
+    `<stop offset="1" stop-color="rgba(0,0,0,0)"/></linearGradient>` +
+    `<filter id="pxglow" x="-20%" y="-20%" width="140%" height="140%">` +
+    `<feGaussianBlur stdDeviation="3" result="b"/>` +
+    `<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>` +
+    `</filter></defs>`;
+  for (let i = 1; i <= 3; i++) {
+    const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+    g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" ` +
+      `stroke="var(--grid)" stroke-width="1"/>` +
+      `<text x="${W - R + 8}" y="${y + 4}" style="font-size:10.5px;` +
+      `fill:var(--faint)">$${Math.round(v).toLocaleString()}</text>`;
+  }
+  g += `<path d="${d}L${X(xmax).toFixed(1)},${H - B}L${X(xmin).toFixed(1)},${H - B}Z" fill="url(#pxg)" stroke="none"/>`;
+  g += `<path class="${tapeDrawn ? "" : "line"}" d="${d}" fill="none" ` +
+    `stroke="${col}" stroke-width="2.4" stroke-linejoin="round" ` +
+    `stroke-linecap="round" filter="url(#pxglow)"/>`;
+  const step = span <= 3600 ? 900 : span <= 10800 ? 1800 : 3600;
+  for (let ts = Math.ceil(xmin / step) * step; ts <= xmax; ts += step)
+    g += `<text x="${X(ts)}" y="${H - 6}" text-anchor="middle" ` +
+      `style="font-size:10.5px;fill:var(--faint)">` +
       new Date(ts * 1000).toLocaleTimeString("en-US",
         { timeZone: "America/Los_Angeles", hour: "2-digit",
           minute: "2-digit", hour12: false }) + `</text>`;
   if (r && r.strike && r.close_ts >= xmin) {
+    const ys = Y(r.strike);
     g += `<line x1="${X(Math.max(xmin, r.close_ts - 900))}" x2="${W - R}" ` +
-      `y1="${Y(r.strike)}" y2="${Y(r.strike)}" stroke="var(--series-4)" ` +
+      `y1="${ys}" y2="${ys}" stroke="var(--series-4)" ` +
       `stroke-dasharray="5 5" stroke-width="1.4"/>` +
-      `<text x="${W - R}" y="${Y(r.strike) - 6}" text-anchor="end" ` +
-      `style="fill:var(--series-4)">window strike $${Math.round(r.strike).toLocaleString()}</text>`;
+      `<rect x="${W - R + 4}" y="${ys - 9}" rx="4" width="52" height="16" ` +
+      `fill="rgba(201,133,0,.15)"/>` +
+      `<text x="${W - R + 8}" y="${ys + 3}" style="font-size:10px;` +
+      `fill:var(--series-4)">strike</text>`;
   }
   const priceAt = ts => {
     let best = pts[0];
-    for (const p of pts)
-      if (Math.abs(p.ts - ts) < Math.abs(best.ts - ts)) best = p;
-    return best.c;
+    for (const q of pts)
+      if (Math.abs(q.ts - ts) < Math.abs(best.ts - ts)) best = q;
+    return best;
   };
   for (const b of bets.filter(b => b.made_ts >= xmin && b.win != null))
-    g += `<circle cx="${X(b.made_ts)}" cy="${Y(priceAt(b.made_ts))}" r="4.5" ` +
+    g += `<circle cx="${X(b.made_ts)}" cy="${Y(priceAt(b.made_ts).c)}" r="4.5" ` +
       `fill="${b.win ? "var(--up)" : "var(--down)"}" stroke="var(--page)" ` +
       `stroke-width="1.5"><title>paper ${b.side.toUpperCase()} @ ` +
       `${b.price_c}¢ · ${b.win ? "won" : "lost"} ` +
       `${(b.pnl_c >= 0 ? "+" : "") + b.pnl_c}¢</title></circle>`;
-  g += `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}">` +
-    `<animate attributeName="r" values="3;6;3" dur="1.6s" repeatCount="indefinite"/></circle>`;
   const open = bets.filter(b => b.actual == null && b.made_ts >= xmin)
     .slice(-1)[0];
   if (open)
-    g += `<circle cx="${X(open.made_ts)}" cy="${Y(priceAt(open.made_ts))}" ` +
+    g += `<circle cx="${X(open.made_ts)}" cy="${Y(priceAt(open.made_ts).c)}" ` +
       `r="6" fill="none" stroke="var(--series-4)" stroke-width="2">` +
       `<animate attributeName="r" values="5;8;5" dur="1.6s" ` +
       `repeatCount="indefinite"/></circle>`;
+  g += `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}" ` +
+    `filter="url(#pxglow)"><animate attributeName="r" values="3;6;3" ` +
+    `dur="1.6s" repeatCount="indefinite"/></circle>`;
+  // crosshair layer (hairline + snapped dot + pinned readout)
+  g += `<g id="px-x" style="display:none">` +
+    `<line id="px-xl" y1="${T}" y2="${H - B}" stroke="rgba(255,255,255,.25)" stroke-width="1"/>` +
+    `<circle id="px-xd" r="4.5" fill="var(--ink)" stroke="var(--page)" stroke-width="1.5"/>` +
+    `<rect id="px-xr" y="${T}" rx="5" width="118" height="20" fill="var(--ink)"/>` +
+    `<text id="px-xt" y="${T + 14}" style="font-size:11px;fill:var(--page);font-weight:600"></text></g>`;
   box.innerHTML = `<svg id="px-svg" viewBox="0 0 ${W} ${H}" role="img" ` +
-    `aria-label="BTC price last 3 hours with the model's settled paper entries">${g}</svg>`;
+    `aria-label="BTC price with the model's settled paper entries">${g}</svg>`;
   tapeDrawn = true;
-  // crosshair tooltip (reuses the fixed #tip element pattern)
   const svg = document.getElementById("px-svg");
-  let tip = document.getElementById("tip");
-  if (!tip) {
-    tip = document.createElement("div");
-    tip.id = "tip";
-    document.body.appendChild(tip);
-  }
+  const xg = document.getElementById("px-x"),
+        xl = document.getElementById("px-xl"),
+        xd = document.getElementById("px-xd"),
+        xr = document.getElementById("px-xr"),
+        xt = document.getElementById("px-xt");
   svg.onmousemove = e => {
     const rect = svg.getBoundingClientRect();
     const fx = (e.clientX - rect.left) / rect.width * W;
+    if (fx < L || fx > W - R) { xg.style.display = "none"; return; }
     const ts = xmin + (fx - L) / (W - L - R) * (xmax - xmin);
-    let best = pts[0];
-    for (const q of pts)
-      if (Math.abs(q.ts - ts) < Math.abs(best.ts - ts)) best = q;
-    tip.textContent = `$${best.c.toLocaleString(undefined,
-      { maximumFractionDigits: 0 })} · ` +
-      new Date(best.ts * 1000).toLocaleTimeString("en-US",
+    const q = priceAt(ts);
+    const px2 = X(q.ts), py = Y(q.c);
+    xg.style.display = "";
+    xl.setAttribute("x1", px2); xl.setAttribute("x2", px2);
+    xd.setAttribute("cx", px2); xd.setAttribute("cy", py);
+    const lbl = `$${q.c.toLocaleString(undefined, { maximumFractionDigits: 0 })}  ` +
+      new Date(q.ts * 1000).toLocaleTimeString("en-US",
         { timeZone: "America/Los_Angeles", hour: "2-digit",
-          minute: "2-digit", hour12: false }) + " PT";
-    tip.style.left = (e.clientX + 14) + "px";
-    tip.style.top = (e.clientY - 10) + "px";
-    tip.style.opacity = 1;
+          minute: "2-digit", hour12: false });
+    const rx = Math.min(W - R - 122, Math.max(L, px2 - 59));
+    xr.setAttribute("x", rx); xt.setAttribute("x", rx + 8);
+    xt.textContent = lbl;
   };
-  svg.onmouseleave = () => { tip.style.opacity = 0; };
+  svg.onmouseleave = () => { xg.style.display = "none"; };
   document.getElementById("px-note").textContent =
-    "dots = the mandatory bidder's settled paper entries (green won, red " +
-    "lost) · hover a dot for the fill · dashed = the open window's strike";
+    "hover for the crosshair · dots = settled paper entries (green won, " +
+    "red lost) · amber ring = open bet · dashed = the window strike";
 }
 
 async function boot() {
@@ -529,6 +567,7 @@ async function boot() {
   }
   try {
     const k2r = kb.filter(x => x.variant === "kb2").slice(-1)[0];
+    window.__tapeRedraw = () => drawTape(prices, st, k2r, bets);
     drawTape(prices, st, k2r, bets);
   } catch (e) {}
   try { drawBid(bets, st); } catch (e) {}
