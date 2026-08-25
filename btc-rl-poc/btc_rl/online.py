@@ -277,6 +277,13 @@ PT_LOG_NAME = "pt_trades.jsonl"
 # keeps playing with 10x, and the level itself scales x10. His 10% bid
 # limit therefore steps $100 -> $1,000 -> $10,000 as he climbs.
 PT2_LOG_NAME = "pt2_trades.jsonl"
+# Trader 3, the DISCIPLINED (pre-registered 2026-08-25): bids ONLY when
+# kb7's confidence >= 0.77 — the measured top-44% tier of its biddable
+# entries (17/18 wins at registration; thin n, hence this live test).
+# One bid per window, 10% of funds, real ask + fee, ask 5-80c. The
+# threshold is FROZEN here; changing it invalidates the track record.
+PT3_LOG_NAME = "pt3_trades.jsonl"
+PT3_TAU = 0.77
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
@@ -1635,6 +1642,11 @@ def run(once: bool = False) -> None:
             pt2_level_c *= 10
     pt2_bankroll_c -= sum(t["stake_c"] for t in pt2_trades
                           if t.get("actual") is None)
+    pt3_trades = _load_kb_bets(PT3_LOG_NAME)
+    pt3_tickers = {t["ticker"] for t in pt3_trades}
+    pt3_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt3_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2262,6 +2274,49 @@ def run(once: bool = False) -> None:
                                                 "level_c": pt2_level_c,
                                             })
                                             pt2_tickers.add(pm_mkt["ticker"])
+                    # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
+                    # only (frozen pre-registration above), 10% of funds,
+                    # real ask + fee, one bid per window
+                    if (pm_mkt["ticker"] not in pt3_tickers
+                            and mins_left <= 12 and pm_mkt.get("yes_bid")
+                            and pm_mkt.get("yes_ask")):
+                        k7r = next(
+                            (r for r in reversed(kb)
+                             if r.get("variant") == "kb7"
+                             and r["ticker"] == pm_mkt["ticker"]
+                             and r["made_ts"] == slot1), None)
+                        if k7r and max(k7r["p_up"],
+                                       1 - k7r["p_up"]) >= PT3_TAU:
+                            sy3 = k7r["p_up"] >= 0.5
+                            ask3 = (pm_mkt["yes_ask"] if sy3
+                                    else 100 - pm_mkt["yes_bid"])
+                            fee3 = math.ceil(
+                                7 * (ask3 / 100) * (1 - ask3 / 100))
+                            if 5 <= ask3 < 80:
+                                nc3 = int((PT_FRAC * pt3_bankroll_c)
+                                          // (ask3 + fee3))
+                                if nc3 >= 1:
+                                    st3 = int(nc3 * (ask3 + fee3))
+                                    pt3_bankroll_c -= st3
+                                    pt3_trades.append({
+                                        "ticker": pm_mkt["ticker"],
+                                        "made_ts": now_ts,
+                                        "close_ts": k_close_ts,
+                                        "strike": pm_mkt["strike"],
+                                        "side": "yes" if sy3 else "no",
+                                        "ask_c": round(ask3, 1),
+                                        "fee_c": fee3,
+                                        "contracts": nc3,
+                                        "stake_c": st3,
+                                        "p_arm": round(max(
+                                            k7r["p_up"],
+                                            1 - k7r["p_up"]), 4),
+                                        "mins_left": round(mins_left, 1),
+                                        "actual": None, "win": None,
+                                        "pnl_c": None,
+                                        "bankroll_c": pt3_bankroll_c,
+                                    })
+                                    pt3_tickers.add(pm_mkt["ticker"])
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -2523,6 +2578,28 @@ def run(once: bool = False) -> None:
                 tmp2t.write_text("".join(json.dumps(t) + "\n"
                                          for t in pt2_trades))
                 tmp2t.replace(RESULTS_DIR / PT2_LOG_NAME)
+            pt3_changed = False
+            for t in pt3_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt3_bankroll_c += payout
+                t["bankroll_c"] = pt3_bankroll_c
+                pt3_changed = True
+            if pt3_changed or (pt3_trades
+                               and pt3_trades[-1]["actual"] is None
+                               and pt3_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp3t = (RESULTS_DIR / PT3_LOG_NAME).with_suffix(".tmp3t")
+                tmp3t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt3_trades))
+                tmp3t.replace(RESULTS_DIR / PT3_LOG_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

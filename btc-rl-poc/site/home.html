@@ -131,6 +131,7 @@
   <div id="desk-curve"></div>
   <div class="scroll" id="desk-trades" style="margin-top:10px"></div>
   <p class="mini" id="desk-eod"></p>
+  <div id="desk3" style="margin-top:16px"></div>
   <div class="disc"><b>Simulated research desk</b> — paper trades at logged
   market asks for model evaluation only; not financial advice, never a
   recommendation to buy or sell anything.</div>
@@ -1041,8 +1042,63 @@ function drawDesk(pt, kb, pt2) {
     : "";
 }
 
+function drawDesk3(pt3) {
+  // the DISCIPLINED trader — his orders rendered like a real broker
+  // ticket (research theater: nothing is purchased, ever)
+  const el = document.getElementById("desk3");
+  if (!el) return;
+  const START = 100000;
+  const money = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100)
+    .toLocaleString("en-US", { minimumFractionDigits: 2,
+                               maximumFractionDigits: 2 });
+  const settled = pt3.filter(t => t.actual != null);
+  const open = pt3.filter(t => t.actual == null);
+  const bank = START + settled.reduce((a, t) => a + t.pnl_c, 0);
+  const wins = settled.reduce((a, t) => a + t.win, 0);
+  const fT2 = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+    { timeZone: "America/New_York", hour: "2-digit", minute: "2-digit",
+      hour12: false }) + " ET";
+  const ticket = (t, big) => {
+    const buy = t.side === "yes";
+    const status = t.actual == null
+      ? `<span class="badge pending">OPEN · settles ${fT2(t.close_ts)}</span>`
+      : t.win
+        ? `<span class="badge pass">WON +${money(t.pnl_c)}</span>`
+        : `<span class="badge" style="background:rgba(230,80,80,.15);` +
+          `color:var(--down)">LOST ${money(t.pnl_c)}</span>`;
+    return `<div class="card" style="max-width:${big ? 430 : 400}px;` +
+      `padding:${big ? 14 : 10}px 16px;margin-top:8px">` +
+      `<div style="display:flex;justify-content:space-between;` +
+      `align-items:center;gap:10px">` +
+      `<b style="font-size:${big ? 17 : 14}px;color:${buy
+        ? "var(--good-text)" : "var(--down)"}">BUY ${t.side.toUpperCase()}` +
+      `</b>${status}</div>` +
+      `<div class="small" style="margin-top:6px">BTC ≥ ` +
+      `$${Math.round(t.strike).toLocaleString()} · ` +
+      `<b>${t.contracts} contracts @ ${t.ask_c}¢</b></div>` +
+      `<div class="mini">est. cost ${money(t.stake_c)} incl. ` +
+      `${money(t.fee_c * t.contracts)} fees · kb7 confidence ` +
+      `${(100 * t.p_arm).toFixed(0)}% · placed ${fT2(t.made_ts)}</div>` +
+      `</div>`;
+  };
+  const latest = pt3[pt3.length - 1];
+  el.innerHTML =
+    `<p class="small"><b>The disciplined trader — live</b> ` +
+    `<span class="paper-tag">pre-registered · kb7 ≥ 77% only · ` +
+    `simulated · not advice</span><br><span class="mini">bids only the ` +
+    `top-confidence tier the ledger says carries the edge · 10% of ` +
+    `funds · bankroll <b>${money(bank)}</b> · record ${wins}/` +
+    `${settled.length}${open.length ? " · 1 open" : ""}</span></p>` +
+    (latest ? ticket(latest, true) : `<p class="mini">order book empty — ` +
+      `he bids only when kb7's confidence clears 77% on a biddable ` +
+      `window; most windows never qualify. Patience is the strategy.</p>`) +
+    (pt3.length > 1
+      ? pt3.slice(-4, -1).reverse().map(t => ticket(t, false)).join("")
+      : "");
+}
+
 async function boot() {
-  const [kb, bets, sel, prices, st, ptr, pt2r] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -1052,8 +1108,10 @@ async function boot() {
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
     jsonl("../results/pt_trades.jsonl"),
     jsonl("../results/pt2_trades.jsonl"),
+    jsonl("../results/pt3_trades.jsonl"),
   ]);
   try { drawDesk(ptr, kb, pt2r); } catch (e) {}
+  try { drawDesk3(pt3r); } catch (e) {}
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
       '<p class="mini">desk commentary unavailable</p>';

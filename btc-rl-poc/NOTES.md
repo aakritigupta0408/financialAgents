@@ -1,5 +1,15 @@
 # Research log
 
+## 2026-08-25 — PRE-REGISTRATION: the disciplined trader (pt3)
+
+Frozen before any trade: bids ONLY when kb7's same-minute confidence
+>= 0.77 (the measured top-44% tier boundary; 17/18 wins at
+registration, THIN n — that is why this live test exists), one bid per
+window, 10% of a $1,000 paper bankroll, real ask + Kalshi fee, ask
+5-80c, mins_left <= 12. Threshold lives in btc_rl/online.py PT3_TAU;
+changing it invalidates the track record. Success bar: win rate above
+the ~75% biddable break-even over >= 30 WINDOWS.
+
 ## 2026-08-25 — capacity, detection, and how real bots live with both
 
 **Measured:** Kalshi near-touch depth now logged per minute
