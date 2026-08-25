@@ -83,8 +83,9 @@
     <thead><tr><th>Window close (PT)</th><th class="num">Strike</th>
       <th class="num">Locked at</th><th>Mode</th><th>Call</th>
       <th class="num">Our P(up)</th><th class="num">Market P(up)</th>
+      <th class="num">Track-record CI</th>
       <th>Outcome</th><th>Result</th></tr></thead>
-    <tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody>
+    <tbody><tr><td colspan="10" class="muted">loading…</td></tr></tbody>
   </table></div>
   <p class="mini" id="kbf-tbl-note"></p>
 </section>
@@ -652,6 +653,23 @@ async function poll() {
       out.sort((a, b) => b.close_ts - a.close_ts);
       dlData[v2] = out;
     }
+    const cohortCI = (v2, r) => {
+      // per-call confidence interval from the arm's OWN track record:
+      // settled calls of the same variant within ±5 points of this
+      // call's confidence — empirical hit rate with a Wilson 95% CI
+      const c = Math.max(r.p_up, 1 - r.p_up);
+      const sel = kb.filter(q => (q.variant || "kb") === v2
+        && q.actual != null
+        && Math.abs(Math.max(q.p_up, 1 - q.p_up) - c) <= 0.05);
+      if (sel.length < 20) return '<span class="muted">n&lt;20</span>';
+      const ph = sel.reduce((a, q) => a + q.hit, 0) / sel.length;
+      const lo = wilsonLo(ph, sel.length);
+      const z = 1.96, n = sel.length, den = 1 + z * z / n;
+      const hi = (ph + z * z / (2 * n) + z * Math.sqrt(ph * (1 - ph) / n
+        + z * z / (4 * n * n))) / den;
+      return `${(100 * ph).toFixed(0)}% [${(100 * lo).toFixed(0)}–` +
+        `${(100 * hi).toFixed(0)}] <span class="muted">n=${n}</span>`;
+    };
     const renderDL = v2 => {
       const rowsOut = dlData[v2];
       document.querySelector("#kbf-tbl tbody").innerHTML =
@@ -669,6 +687,7 @@ async function poll() {
             `<td><span class="pill ${r.call ? "yes" : "no"}">${r.call ? "UP" : "DOWN"}</span></td>` +
             `<td class="num">${Math.min(100, 100 * r.p_up).toFixed(0)}%</td>` +
             `<td class="num">${r.mkt_p_up != null ? (100 * r.mkt_p_up).toFixed(0) + "%" : "–"}</td>` +
+            `<td class="num">${cohortCI(v2, r)}</td>` +
             `<td>${oc}</td><td>${res}</td></tr>`;
         }).join("");
       const st2 = rowsOut.filter(r => r.actual != null);
