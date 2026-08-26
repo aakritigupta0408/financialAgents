@@ -118,6 +118,21 @@ section { background: var(--surface); border: 1px solid var(--border);
 .sw.line { width: 18px; height: 0; border-top: 2.5px solid var(--ink-2);
   border-radius: 2px; vertical-align: 3px; background: none; }
 .sw.ring { background: transparent; border: 2px solid var(--faint); }
+.arm-live { display: grid; gap: 10px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.arm-live .ac { border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 13px; border-top: 3px solid var(--ac); }
+.arm-live .ac.settled { opacity: .6; }
+.arm-live .ac .an { font-weight: 700; font-size: 14px; color: var(--ac); }
+.arm-live .ac .ad { font-size: 11px; color: var(--muted); margin: 1px 0 9px; }
+.arm-live .ac .acall { font-size: 21px; font-weight: 700; letter-spacing: -.02em; }
+.arm-live .ac .acall .up { color: var(--series-7); }
+.arm-live .ac .acall .down { color: var(--series-3); }
+.arm-live .ac .acall .cf { font-size: 13px; color: var(--muted); font-weight: 600; }
+.arm-live .ac .bar { height: 6px; border-radius: 3px; margin-top: 9px;
+  background: rgba(22,32,44,.08); overflow: hidden; }
+.arm-live .ac .bar > i { display: block; height: 100%; background: var(--ac); }
+.arm-live .ac .meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
 .chip { font: 600 13px ui-sans-serif, system-ui; color: var(--ink-2);
   background: rgba(22,32,44,.04); border: 1px solid var(--border);
   border-radius: 999px; padding: 5px 14px; cursor: pointer; }
@@ -335,6 +350,16 @@ details[open] > summary { margin-bottom: 6px; }
   </details>
 </section>
 </div>
+
+<section>
+  <h2>Every arm's live call
+    <span class="sub muted small" style="margin-left:8px">the open window — eight models, side by side</span></h2>
+  <p class="sub muted small">Each arm scores the <b>same</b> open Kalshi window on its own. The big arrow is the
+  arm's committed side; the bar underneath is its <b>P(up)</b> — the probability the price ends above the strike.
+  For most arms the two agree, but the EV-trained arm (kb5) can bet against its own P(up) when the quote misprices
+  the odds, so direction and P(up) may disagree by design. Refreshes every 15&nbsp;s with the tape.</p>
+  <div id="arm-live" class="arm-live"><p class="mini">reading the open window…</p></div>
+</section>
 
 <section>
   <h2>One bet per window</h2>
@@ -935,6 +960,65 @@ function drawBets(bets) {
     }).join("");
 }
 
+// the live board: every kb arm's call on the current open window. Fixed
+// color order (never cycled); kb6/kbf excluded — retired from trading.
+const ARM_LIVE = [
+  ["kb", "control", "--series-1"],
+  ["kb2", "market-anchored", "--series-2"],
+  ["kb3", "online logit", "--series-7"],
+  ["kb4", "stacked", "--series-4"],
+  ["kb5", "EV-trained", "--series-6"],
+  ["kb7", "Chronos-Bolt", "--series-3"],
+  ["kb8", "kb7 × market", "--series-9"],
+  ["kb9", "TimesFM 2.5", "--series-5"],
+];
+
+// Given one arm's read on the open window, decide how to present it.
+// Direction ALWAYS comes from `call` (kb5 can bet against its own P(up));
+// this returns the confidence figure + any badge shown next to the arrow.
+function armCallView(pUp, call, open) {
+  const up = call === 1;
+  const arrow = up ? "▲" : "▼";
+  const label = up ? "UP" : "DOWN";
+  const dir = up ? "up" : "down";
+  const agrees = (pUp >= 0.5) === up;      // does the bet match the P(up) side?
+  let conf = Math.max(pUp, 1 - pUp);        // confidence in the direction
+  let flag = "";
+  if (!agrees) {
+    // the arm bet AGAINST its own P(up) — kb5's EV logic, when the quote
+    // misprices the odds. Report the probability mass actually on the bet
+    // side (candidly low), and flag it as a pure price play, not a read.
+    conf = up ? pUp : 1 - pUp;
+    flag = "price play, not its read";
+  }
+  return { arrow, label, dir, conf, flag, agrees };
+}
+
+function drawArmLive(armRows) {
+  const el = document.getElementById("arm-live");
+  if (!el) return;
+  const latest = {};                        // freshest row per arm
+  for (const r of armRows) {
+    const v = r.variant || "kb";
+    if (!latest[v] || (r.made_ts || 0) > (latest[v].made_ts || 0)) latest[v] = r;
+  }
+  const cards = ARM_LIVE.filter(([v]) => latest[v]).map(([v, desc, col]) => {
+    const r = latest[v];
+    const open = r.actual == null;
+    const view = armCallView(r.p_up, r.call, open);
+    const cf = view.conf != null ? (100 * view.conf).toFixed(0) + "%" : "–";
+    return `<div class="ac${open ? "" : " settled"}" style="--ac:var(${col})">` +
+      `<div class="an">${v}</div><div class="ad">${desc}</div>` +
+      `<div class="acall"><span class="${view.dir}">${view.arrow} ${view.label}` +
+      `</span> <span class="cf">${cf}</span></div>` +
+      `<div class="bar" title="P(up) ${(100 * r.p_up).toFixed(0)}%">` +
+      `<i style="width:${(100 * r.p_up).toFixed(0)}%"></i></div>` +
+      `<div class="meta">P(up) ${(100 * r.p_up).toFixed(0)}%` +
+      `${view.flag ? " · " + view.flag : ""} · ${open ? "live" : "settled"}</div></div>`;
+  }).join("");
+  el.innerHTML = cards || '<p class="mini">collecting…</p>';
+}
+
 function drawDirection(preds, kbRows) {
   const CONS = { 1: "consensus-h1", 5: "consensus",
                  15: "consensus-h15", 30: "consensus-h30" };
@@ -1073,11 +1157,13 @@ async function poll() {
       fetch(bust("../results/kb_bets.jsonl"), { cache: "no-store" }),
     ]);
     const kbRows = [];
+    const armRows = [];
     if (kbRes.ok) for (const line of (await kbRes.text()).split("\n")) {
       if (!line.trim()) continue;
       // this page is the kb-CONTROL binary view; keep only kb rows so the
       // call table and today-Brier don't blend all nine arms into one
       try { const r = JSON.parse(line);
+        armRows.push(r);                       // every arm, for the live board
         if ((r.variant || "kb") === "kb") kbRows.push(r); } catch {}
     }
     const betRows = [];
@@ -1102,6 +1188,7 @@ async function poll() {
     draw();
     try { drawLearning(preds, learnLog.slice(-400)); } catch {}
     try { drawDirection(preds, kbRows); } catch {}
+    try { drawArmLive(armRows); } catch {}
     renderArmCards(preds);
     document.getElementById("npred").textContent = preds.length.toLocaleString();
 
