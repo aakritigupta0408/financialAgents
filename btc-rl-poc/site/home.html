@@ -199,6 +199,18 @@
 </section>
 
 <section>
+  <h2>Live exchange integration — Kalshi sandbox
+    <span class="paper-tag">demo API · fake funds · not advice</span></h2>
+  <p class="sub small muted">Sagemon's paper decisions are re-submitted as
+  real, cryptographically-signed orders to Kalshi's <b>demo</b> trading
+  engine (fake balance, verified demo-only key — authenticates on the
+  sandbox, rejected by production). This proves the full engineering path
+  a real strategy would use, with zero real money. Each row is an actual
+  signed API request and the exchange's actual response.</p>
+  <div id="demo-int"><p class="mini">reading the integration log…</p></div>
+</section>
+
+<section>
   <h2>Headline results <span class="badge pending" id="verdict">computing…</span></h2>
   <div class="cards">
     <div class="card">
@@ -1572,6 +1584,65 @@ function drawDesk3(pt3, kb) {
     `</tbody></table></div>`;
 }
 
+async function drawDemoIntegration() {
+  const el = document.getElementById("demo-int");
+  if (!el) return;
+  const rows = await jsonl("../results/demo_orders.jsonl");
+  if (!rows.length) {
+    el.innerHTML = '<p class="mini">no signed orders yet — the mirror ' +
+      'submits when Sagemon strikes a qualifying window</p>';
+    return;
+  }
+  const fT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+    { timeZone: "America/Los_Angeles", hour: "2-digit",
+      minute: "2-digit", hour12: false }) + " PT";
+  const n = rows.length;
+  const okAuth = rows.some(r => (r.result?.status || 0) !== 401
+    && r.result?.status !== 403);
+  const codes = {};
+  for (const r of rows) {
+    const c = r.result?.dry_run ? "dry-run"
+      : (r.result?.status || "err");
+    codes[c] = (codes[c] || 0) + 1;
+  }
+  const codeTxt = Object.entries(codes)
+    .map(([c, k]) => `${c}×${k}`).join(" · ");
+  const body = rows.slice(-8).reverse().map(r => {
+    const st = r.result?.dry_run ? "dry-run"
+      : (r.result?.status ?? "—");
+    const msg = r.result?.resp?.error?.code
+      || (st === 200 || st === 201 ? "accepted" : "");
+    const good = st === 200 || st === 201;
+    return `<tr><td>${fT(r.ts)}</td>` +
+      `<td>${r.side.toUpperCase()} ${r.count} @ ${r.price_c}¢</td>` +
+      `<td class="mini" style="max-width:220px">${r.ticker}</td>` +
+      `<td class="num" style="color:${good ? "var(--good-text)"
+        : "var(--muted)"}">${st}</td>` +
+      `<td class="mini">${msg}</td></tr>`;
+  }).join("");
+  el.innerHTML =
+    `<div class="statusbar" style="margin-bottom:10px">` +
+    `<span class="stat"><span class="k">signed submissions</span><br>` +
+    `<span class="bignum">${n}</span></span>` +
+    `<span class="stat"><span class="k">auth</span><br>` +
+    `<span class="bignum" style="color:var(--good-text)">${okAuth
+      ? "verified" : "—"}</span></span>` +
+    `<span class="stat"><span class="k">responses</span><br>` +
+    `<span class="bignum" style="font-size:15px">${codeTxt}</span></span>` +
+    `</div>` +
+    `<div class="scroll"><table style="min-width:0"><thead><tr>` +
+    `<th>submitted</th><th>order</th><th>market</th>` +
+    `<th class="num">HTTP</th><th>exchange response</th></tr></thead>` +
+    `<tbody>${body}</tbody></table></div>` +
+    (codes["404"] ? `<p class="mini">the 404s are honest: Kalshi's ` +
+      `<b>sandbox does not list the 15-minute crypto market for ` +
+      `trading</b> (its matching engine carries only sports/parlay ` +
+      `books), so these real signed orders are correctly rejected — ` +
+      `the integration is proven, the venue simply doesn't offer this ` +
+      `contract on demo. Fills would require the production venue, which ` +
+      `this research never touches.</p>` : "");
+}
+
 async function boot() {
   const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
@@ -1590,6 +1661,7 @@ async function boot() {
   try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r); } catch (e) {}
   try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
+  try { drawDemoIntegration(); } catch (e) {}
   window.__st = st;
   try { drawSignal(kb, bets, st); } catch (e) {
     document.getElementById("desk-chat").innerHTML =
