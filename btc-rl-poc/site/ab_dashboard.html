@@ -366,7 +366,8 @@ function drawTraderAB(kb, T) {
     pt2: ["Ladder", "10%, banks $1k at $11k ×10", 1000, "#8f6000"],
     pt3: ["Disciplined", "kb7/leader ≥77%, 10%", 1000, "#0d7a4e"],
     pt4: ["Gambler", "33% (~1.6× Kelly)", 1000, "#b84343"],
-    pt5: ["Saver", "$10k, 25%, banks 25% of wins", 10000, "#5f50c7"],
+    pt5: ["Saver", "$10k, 10% (was 25%), banks 25% of wins", 10000, "#5f50c7"],
+    pt6: ["MLE (learns)", "supervised +EV, half-Kelly", 1000, "#16202c"],
   };
   // opportunity set for idle%: distinct biddable kb7 windows
   const opp = new Set(kb.filter(r => r.variant === "kb7"
@@ -379,7 +380,7 @@ function drawTraderAB(kb, T) {
     .toLocaleString("en-US", { minimumFractionDigits: 0,
       maximumFractionDigits: 0 });
   const rows = [];
-  for (const key of ["pt", "pt2", "pt3", "pt4", "pt5"]) {
+  for (const key of ["pt", "pt2", "pt3", "pt4", "pt5", "pt6"]) {
     const [name, policy, start, col] = META[key];
     const raw = (T[key] || []).filter(x => x.actual != null)
       .sort((a, b) => a.close_ts - b.close_ts);
@@ -443,7 +444,7 @@ function drawTraderAB(kb, T) {
 
 async function poll() {
   try {
-    const [kb, bets, sel, pre, pb, stRes, ptA, pt2A, pt3A, pt4A, pt5A]
+    const [kb, bets, sel, pre, pb, stRes, ptA, pt2A, pt3A, pt4A, pt5A, pt6A]
       = await Promise.all([
       jsonl("../results/kalshi_binary_log.jsonl"),
       jsonl("../results/kb_bets.jsonl"),
@@ -456,10 +457,11 @@ async function poll() {
       jsonl("../results/pt3_trades.jsonl"),
       jsonl("../results/pt4_trades.jsonl"),
       jsonl("../results/pt5_trades.jsonl"),
+      jsonl("../results/pt6_trades.jsonl"),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
     try { drawTraderAB(kb, {pt: ptA, pt2: pt2A, pt3: pt3A, pt4: pt4A,
-      pt5: pt5A}); } catch (e) {}
+      pt5: pt5A, pt6: pt6A}); } catch (e) {}
     document.getElementById("dot").className =
       "live-dot" + ((Date.now()/1000 - (st.alive_at||0)) > 300 ? " stale" : "");
 

@@ -304,6 +304,32 @@ PT5_FRAC = 0.10   # reworked 2026-08-26 from 0.25 (~2.5x Kelly, bled
                   # -31% with -$15k drawdown) to 0.10; skim unchanged.
                   # Rows before the change are policy v1 (25% sizing).
 PT5_SKIM = 0.25
+# Trader 6, the MLE (2026-08-26): a SUPERVISED meta-trader. Learns
+# P(the leader-side bet wins) online from decision-time features of the
+# rule traders' shared signal, bets only when EV>0 at the real ask, and
+# sizes by HALF-KELLY of the estimated edge (capped 10%). Industry
+# standard: supervised edge + analytic sizing, not end-to-end RL (which
+# our window count can't support). Backtest: it learns that abstaining
+# is the skill — ~break-even EV but near-zero drawdown vs the Gambler.
+PT6_LOG_NAME = "pt6_trades.jsonl"
+PT6_LOGIT_PATH_NAME = "pt6_logit.json"
+PT6_DIM = 7
+
+
+def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
+                  sy: bool, pf: list[float], mins_left: float
+                  ) -> list[float]:
+    """Decision-time features for the meta-trader (no leakage): the
+    shared rule-trader signal (leader confidence, the ask, their
+    disagreement with the market) plus barrier/phase context."""
+    a = ask_c / 100.0
+    pm = k_pup if k_pup is not None else 0.5
+    p = (pf + [0.0] * 4)
+    return [1.0, conf, a, conf - a,
+            ((pm - 0.5) * (1 if sy else -1)) * 2.0,
+            mins_left / 15.0, p[2]]
+
+
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
@@ -1730,6 +1756,19 @@ def run(once: bool = False) -> None:
         + sum(t["pnl_c"] - t.get("skim_c", 0)
               for t in pt5_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt5_trades if t.get("actual") is None)
+    pt6_trades = _load_kb_bets(PT6_LOG_NAME)
+    pt6_tickers = {t["ticker"] for t in pt6_trades}
+    pt6_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt6_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt6_trades if t.get("actual") is None)
+    pt6_path = RESULTS_DIR / PT6_LOGIT_PATH_NAME
+    try:
+        pt6_logit = (BinaryLogit.from_dict(json.loads(pt6_path.read_text()))
+                     if pt6_path.exists() else BinaryLogit(PT6_DIM))
+        if pt6_logit.dim != PT6_DIM:
+            pt6_logit = BinaryLogit(PT6_DIM)
+    except Exception:
+        pt6_logit = BinaryLogit(PT6_DIM)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2454,6 +2493,43 @@ def run(once: bool = False) -> None:
                                                 "savings_c": pt5_savings_c,
                                             })
                                             pt5_tickers.add(pm_mkt["ticker"])
+                                    # Trader 6, the MLE meta-trader:
+                                    # supervised P(win) on the shared
+                                    # signal; bet iff EV>0, half-Kelly
+                                    # size (capped 10%). Learns on settle.
+                                    if pm_mkt["ticker"] not in pt6_tickers:
+                                        b6x = _pt6_features(
+                                            base_row["p_arm"], askp, k_pup,
+                                            syp, pf, mins_left)
+                                        pw6 = pt6_logit.predict(b6x)
+                                        ev6 = pw6 * 100 - (askp + feep)
+                                        if ev6 > 0:
+                                            odds = (100 - (askp + feep)) \
+                                                / (askp + feep)
+                                            kelly = max(0.0, (pw6 * (1 + odds)
+                                                        - 1) / odds)
+                                            frac = min(0.10, 0.5 * kelly)
+                                            cap = min(int(frac
+                                                      * pt6_bankroll_c), dcap)
+                                            nc6 = int(cap // (askp + feep))
+                                            if nc6 >= 1:
+                                                st6 = int(nc6
+                                                          * (askp + feep))
+                                                pt6_bankroll_c -= st6
+                                                pt6_trades.append({
+                                                    **base_row,
+                                                    "contracts": nc6,
+                                                    "stake_c": st6,
+                                                    "b6x": [round(v, 5)
+                                                            for v in b6x],
+                                                    "p_win": round(pw6, 4),
+                                                    "trained":
+                                                        pt6_logit.updates,
+                                                    "bankroll_c":
+                                                        pt6_bankroll_c,
+                                                })
+                                                pt6_tickers.add(
+                                                    pm_mkt["ticker"])
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
@@ -2838,6 +2914,37 @@ def run(once: bool = False) -> None:
                 tmp5t.write_text("".join(json.dumps(t) + "\n"
                                          for t in pt5_trades))
                 tmp5t.replace(RESULTS_DIR / PT5_LOG_NAME)
+            pt6_changed = pt6_learned = False
+            for t in pt6_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt6_bankroll_c += payout
+                t["bankroll_c"] = pt6_bankroll_c
+                # supervised update: label = did the bet win
+                if t.get("b6x") and len(t["b6x"]) == pt6_logit.dim:
+                    pt6_logit.update(t["b6x"], t["win"])
+                    pt6_learned = True
+                pt6_changed = True
+            if pt6_changed or (pt6_trades
+                               and pt6_trades[-1]["actual"] is None
+                               and pt6_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp6t = (RESULTS_DIR / PT6_LOG_NAME).with_suffix(".tmp6t")
+                tmp6t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt6_trades))
+                tmp6t.replace(RESULTS_DIR / PT6_LOG_NAME)
+            if pt6_learned:
+                tmp6l = (RESULTS_DIR
+                         / PT6_LOGIT_PATH_NAME).with_suffix(".tmp6l")
+                tmp6l.write_text(json.dumps(pt6_logit.to_dict()))
+                tmp6l.replace(RESULTS_DIR / PT6_LOGIT_PATH_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

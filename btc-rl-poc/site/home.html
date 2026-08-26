@@ -84,6 +84,7 @@
 .tavatar.t3 { background: rgba(43,217,126,.16); }
 .tavatar.t4 { background: rgba(184,67,67,.16); }
 .tavatar.t5 { background: rgba(95,80,199,.16); }
+.tavatar.t6 { background: rgba(22,32,44,.12); }
 .tcard .tname { font: 700 11px var(--display); letter-spacing: .12em;
   text-transform: uppercase; color: var(--muted); }
 .tcard .tbank { font: 650 26px/1.2 var(--display);
@@ -172,7 +173,7 @@
 </section>
 
 <section>
-  <h2>The Desk — five traders, five disciplines
+  <h2>The Desk — six traders: five rules and one that learns
     <span class="paper-tag">TA spec · simulated · not advice</span></h2>
   <p class="sub small muted">Each starts with $1,000 and pays real asks and
   fees. 🦊 <b>Dartmon, the Follower</b> places the <b>current best bidder's</b> call
@@ -184,7 +185,11 @@
   near-touch depth of the book — the aggressive end of the sizing
   curriculum. 🐿️ <b>Stashmon, the Saver</b> starts with $10k, stakes 25%,
   and banks 25% of every win as savings that never return to play.
-  Reviewed at end of day. Nothing is ever purchased.</p>
+  🤖 <b>Metamon, the MLE</b> is the one that learns — a supervised model
+  that watches the five rule-traders' signals, predicts the odds of each
+  bet winning, and only bets (half-Kelly sized) when the expected value
+  is positive; it retrains on every outcome. Reviewed at end of day.
+  Nothing is ever purchased.</p>
   <div class="trader-roster" id="desk-roster"></div>
   <div id="desk-head" style="margin-top:10px"></div>
   <p class="mini" id="desk-ladder"></p>
@@ -1055,7 +1060,7 @@ function drawTwoMillion(kb) {
     `and sells the disputed ones). Simulated research, not advice.`;
 }
 
-function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d) {
+function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
   // The $1K Desk — portfolio view for the follow-the-leader paper trader
   const START = 100000;                       // $1,000 in cents
   const COLD = { kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7",
@@ -1110,6 +1115,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d) {
     ["Disciplined", "#0d7a4e", mkSeries(pt3d || [], false), ""],
     ["Gambler", "#b84343", mkSeries(pt4d || [], false), ""],
     ["Saver", "#5f50c7", mkSeries(pt5d || [], false, 1000000), "2 4"],
+    ["MLE", "#16202c", mkSeries(pt6d || [], false), ""],
   ];
   const withData = SER.filter(s => s[2].length >= 2);
   if (!withData.length) {
@@ -1303,7 +1309,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d) {
     : "";
 }
 
-function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
+function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
   const el = document.getElementById("desk-roster");
   if (!el) return;
   const START = 100000;
@@ -1337,7 +1343,8 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
     return { s, wins, dp, series: [START].concat(s.map(t => t.bankroll_c)) };
   };
   const a = stats(pt), b = stats(pt2), c = stats(pt3),
-        g4 = stats(pt4 || []), s5 = stats(pt5 || []);
+        g4 = stats(pt4 || []), s5 = stats(pt5 || []),
+        m6 = stats(pt6 || []);
   const bank1 = START + a.s.reduce((x, t) => x + t.pnl_c, 0);
   let cash2 = START, banked2 = 0, level2 = START;
   for (const t of b.s.slice().sort((x, y) => x.close_ts - y.close_ts)) {
@@ -1351,6 +1358,7 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
   const sav5 = s5.s.reduce((x, t) => x + (t.skim_c || 0), 0);
   const bank5 = SAV_START
     + s5.s.reduce((x, t) => x + t.pnl_c - (t.skim_c || 0), 0);
+  const bank6 = START + m6.s.reduce((x, t) => x + t.pnl_c, 0);
   s5.series = [SAV_START].concat((() => {
     let w = SAV_START; const out = [];
     for (const t of s5.s) { w += t.pnl_c; out.push(w); }
@@ -1423,6 +1431,17 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
       '<circle cx="17" cy="22.5" r="1.3" fill="#5f50c7" stroke="none"/>' +
       '<circle cx="13" cy="23" r="2.2" fill="#5f50c7" fill-opacity=".25" ' +
       'stroke="none"/>'),
+    // MLE — robot head, antenna, screen eyes
+    t6: sv("#16202c",
+      '<path d="M20 8 L20 12 M20 6 a1.6 1.6 0 1 0 0.01 0"/>' +
+      '<rect x="9" y="12" width="22" height="18" rx="4" ' +
+      'fill="#16202c" fill-opacity=".10"/>' +
+      '<rect x="13" y="17" width="5" height="4" rx="1" ' +
+      'fill="#16202c" stroke="none"/>' +
+      '<rect x="22" y="17" width="5" height="4" rx="1" ' +
+      'fill="#16202c" stroke="none"/>' +
+      '<path d="M15 25 L25 25" stroke-width="1.5"/>' +
+      '<path d="M9 20 L6 20 M31 20 L34 20"/>'),
   };
   const card = (cls, emoji, name, bal, dp, meta, series, col) =>
     `<div class="tcard"><div class="tavatar ${cls}">` +
@@ -1473,14 +1492,19 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
       `starts $10k · stakes 25% · banks 25% of every win — savings ` +
       `<b>${money(sav5)}</b> never return to play · record ` +
       `${s5.wins}/${s5.s.length}`,
-      s5.series, "#5f50c7");
+      s5.series, "#5f50c7") +
+    card("t6", "🤖", "Metamon · the MLE", bank6, m6.dp,
+      `learned meta-trader — supervised P(win), bets only +EV, ` +
+      `half-Kelly sizing · record ${m6.wins}/${m6.s.length} · learns ` +
+      `that <b>not betting</b> is the skill`,
+      m6.series, "#16202c");
   // count-up animation on the three balances
   try {
     const prev = window.__rosterPrev || {};
     const now = { t1: bank1, t2: cash2 + banked2, t3: bank3,
-                  t4: bank4, t5: bank5 + sav5 };
+                  t4: bank4, t5: bank5 + sav5, t6: bank6 };
     const els = el.querySelectorAll(".tbank");
-    const keys = ["t1", "t2", "t3", "t4", "t5"];
+    const keys = ["t1", "t2", "t3", "t4", "t5", "t6"];
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     keys.forEach((k, i) => {
       const from = prev[k], to = now[k];
@@ -1741,7 +1765,7 @@ async function drawDemoIntegration() {
 }
 
 async function boot() {
-  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r, pt6r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -1754,9 +1778,10 @@ async function boot() {
     jsonl("../results/pt3_trades.jsonl"),
     jsonl("../results/pt4_trades.jsonl"),
     jsonl("../results/pt5_trades.jsonl"),
+    jsonl("../results/pt6_trades.jsonl"),
   ]);
-  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r); } catch (e) {}
-  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r); } catch (e) {}
+  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r, pt6r); } catch (e) {}
+  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r, pt6r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
   try { drawDemoAccount(); } catch (e) {}
   try { drawDemoIntegration(); } catch (e) {}
