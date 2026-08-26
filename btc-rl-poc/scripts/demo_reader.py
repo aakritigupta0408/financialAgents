@@ -44,8 +44,35 @@ def main():
                 seen.add(json.loads(l).get("trade_id"))
             except Exception:
                 pass
+    SNAP = ROOT / "results" / "demo_account.json"
     while True:
         try:
+            # live account snapshot (balance / positions / open orders)
+            try:
+                bp = "/trade-api/v2/portfolio/balance"
+                bal = requests.get(HOST + bp, headers=hdr("GET", bp),
+                                   timeout=8).json()
+                pp = "/trade-api/v2/portfolio/positions"
+                pos = requests.get(HOST + pp, headers=hdr("GET", pp),
+                                   timeout=8).json()
+                oo = "/trade-api/v2/portfolio/orders"
+                ords = requests.get(HOST + oo, headers=hdr("GET", oo),
+                                    params={"status": "resting"},
+                                    timeout=8).json()
+                SNAP.write_text(json.dumps({
+                    "read_ts": int(time.time()),
+                    "balance_dollars": bal.get("balance_dollars"),
+                    "portfolio_value": bal.get("portfolio_value"),
+                    "positions": pos.get("market_positions", []),
+                    "resting_orders": [
+                        {"ticker": o.get("ticker"),
+                         "side": o.get("book_side"),
+                         "count": o.get("initial_count_fp"),
+                         "status": o.get("status")}
+                        for o in ords.get("orders", [])],
+                }))
+            except Exception:
+                pass
             p = "/trade-api/v2/portfolio/fills"
             r = requests.get(HOST + p, headers=hdr("GET", p),
                              params={"limit": 50}, timeout=10)

@@ -210,6 +210,7 @@
   crypto contracts return 404 because Kalshi's demo doesn't route crypto
   through its public order API — a venue quirk, not our signing. Zero real
   money; each row is an actual signed request and the exchange's response.</p>
+  <div id="demo-acct"></div>
   <div id="demo-int"><p class="mini">reading the integration log…</p></div>
 </section>
 
@@ -1587,6 +1588,37 @@ function drawDesk3(pt3, kb) {
     `</tbody></table></div>`;
 }
 
+async function drawDemoAccount() {
+  const el = document.getElementById("demo-acct");
+  if (!el) return;
+  let a = null;
+  try {
+    const r = await fetch(bust("../results/demo_account.json"));
+    if (r.ok) a = await r.json();
+  } catch (e) {}
+  if (!a) { el.innerHTML = ""; return; }
+  const pos = (a.positions || []).filter(p2 => +(p2.position_fp || 0) !== 0);
+  el.innerHTML =
+    `<div class="statusbar" style="margin:4px 0 12px">` +
+    `<span class="stat"><span class="k">demo account cash</span><br>` +
+    `<span class="bignum">$${a.balance_dollars ?? "–"}</span></span>` +
+    `<span class="stat"><span class="k">positions value</span><br>` +
+    `<span class="bignum">$${((a.portfolio_value || 0) / 100).toFixed(2)}` +
+    `</span></span>` +
+    `<span class="stat"><span class="k">open positions</span><br>` +
+    `<span class="bignum">${pos.length}</span></span>` +
+    `<span class="stat"><span class="k">resting orders</span><br>` +
+    `<span class="bignum">${(a.resting_orders || []).length}</span></span>` +
+    `<span class="stat"><span class="k">as of</span><br>` +
+    `<span class="bignum" style="font-size:14px">${new Date(
+      a.read_ts * 1000).toLocaleTimeString("en-US",
+      { timeZone: "America/Los_Angeles", hour12: false })} PT</span>` +
+    `</span></div>` +
+    (pos.length ? `<p class="mini">holding: ` + pos.map(p2 =>
+      `${p2.ticker} × ${p2.position_fp} (cost $${p2.total_traded_dollars})`)
+      .join(" · ") + `</p>` : "");
+}
+
 async function drawDemoIntegration() {
   const el = document.getElementById("demo-int");
   if (!el) return;
@@ -1664,6 +1696,7 @@ async function boot() {
   try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r); } catch (e) {}
   try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
+  try { drawDemoAccount(); } catch (e) {}
   try { drawDemoIntegration(); } catch (e) {}
   window.__st = st;
   try { drawSignal(kb, bets, st); } catch (e) {
