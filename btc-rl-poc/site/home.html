@@ -1080,8 +1080,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
   const dpnl = settled.filter(t => dayKey(t.close_ts) === today)
     .reduce((a, t) => a + t.pnl_c, 0);
   // identity, balances, leader, ladder state all live on the roster
-  // cards — nothing is stated twice (the ledger's "ladder size" column
-  // carries the twin's per-trade sizing)
+  // cards — nothing is stated twice (the ledger below carries each
+  // trader's own per-window cell: result + contracts @ entry)
   for (const id of ["desk-head", "desk-ladder", "desk2-feed"]) {
     const z = document.getElementById(id);
     if (z) z.innerHTML = "";
@@ -1260,51 +1260,82 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
   const fT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
     { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
       hour12: false }) + " PT";
-  const p2byT = {}, p4byT = {};
-  for (const t of (pt2 || [])) p2byT[t.ticker] = t;
-  for (const t of (pt4d || [])) p4byT[t.ticker] = t;
-  const rowsH = pt.slice(-8).reverse().map(t => {
-    const res = t.actual == null
-      ? `<span class="badge pending">open</span>`
-      : t.win
-        ? `<span style="color:var(--good-text)">+${money(t.pnl_c)}</span>`
-        : `<span style="color:var(--down)">${money(t.pnl_c)}</span>`;
-    const l2 = p2byT[t.ticker], l4 = p4byT[t.ticker];
-    return `<tr><td>${fT(t.made_ts)}</td>` +
-      `<td><span style="color:${COLD[t.leader] || "inherit"}">●</span> ` +
-      `${t.leader} <span class="muted">${t.rec10}</span></td>` +
-      `<td>${t.side.toUpperCase()} ≥ $` +
-      `${Math.round(t.strike).toLocaleString()}</td>` +
-      `<td class="num">${t.contracts} @ ${t.ask_c}¢</td>` +
-      `<td class="num">${l2 ? l2.contracts : "–"}</td>` +
-      `<td class="num">${l4 ? l4.contracts : "–"}</td>` +
-      `<td class="num">${money(t.stake_c)}</td>` +
-      `<td class="num">${res}</td></tr>`;
+  // one row per recent WINDOW; each trader gets its own cell with its own
+  // stake and result — the ledger is the whole desk's, not the Follower's
+  const TRD = [
+    ["pt", pt, "Follower", "#2461b8"],
+    ["pt2", pt2, "Ladder", "#8f6000"],
+    ["pt3", pt3d, "Disciplined", "#0d7a4e"],
+    ["pt4", pt4d, "Gambler", "#b84343"],
+    ["pt5", pt5d, "Saver", "#5f50c7"],
+    ["pt6", pt6d, "MLE", "#16202c"],
+  ];
+  const byWin = {};
+  for (const [k, arr] of TRD)
+    for (const t of (arr || []))
+      (byWin[t.ticker] = byWin[t.ticker] || {})[k] = t;
+  const winRows = Object.values(byWin)
+    .sort((a, b) => Math.min(...Object.values(a).map(t => t.made_ts))
+                  - Math.min(...Object.values(b).map(t => t.made_ts)))
+    .slice(-8).reverse();
+  const cell = (t, rowSide) => {
+    if (!t) return `<td class="num" style="color:var(--faint)" ` +
+      `title="sat this window out">—</td>`;
+    const sub = (t.side !== rowSide
+      ? `<b>${t.side === "yes" ? "YES" : "NO"}</b> · ` : "") +
+      `${t.contracts} @ ${Math.round(t.ask_c)}¢`;
+    if (t.actual == null)
+      return `<td class="num"><span class="badge pending">open</span>` +
+        `<div class="mini" style="margin-top:2px">${sub}</div></td>`;
+    return `<td class="num"><b style="color:${t.win
+        ? "var(--good-text)" : "var(--down)"}">${t.win ? "+" : ""}` +
+      `${money(t.pnl_c)}</b>` +
+      `<div class="mini" style="margin-top:2px">${sub}</div></td>`;
+  };
+  const rowsH = winRows.map(w => {
+    const lead = w.pt;             // leader/rec10 ride the Follower's row
+    const any = lead || w.pt2 || w.pt3 || w.pt4 || w.pt5 || w.pt6;
+    return `<tr><td>${fT(any.made_ts)}</td>` +
+      `<td>${lead
+        ? `<span style="color:${COLD[lead.leader] || "inherit"}">●</span> ` +
+          `${lead.leader} <span class="muted">${lead.rec10}</span>`
+        : `<span class="muted">—</span>`}</td>` +
+      `<td>${any.side === "yes" ? "YES" : "NO"} ≥ $` +
+      `${Math.round(any.strike).toLocaleString()}` +
+      `<div class="mini">entry ${Math.round(any.ask_c)}¢</div></td>` +
+      TRD.map(([k]) => cell(w[k], any.side)).join("") + `</tr>`;
   }).join("");
   // the bid ledger is ALWAYS shown — an empty book is information too
   document.getElementById("desk-trades").innerHTML =
-    `<table style="min-width:0"><thead><tr><th>entry</th>` +
-    `<th>leader (last-10)</th><th>call</th><th class="num">size</th>` +
-    `<th class="num">ladder size</th>` +
-    `<th class="num">gambler size</th>` +
-    `<th class="num">follower stake</th>` +
-    `<th class="num">follower result</th></tr>` +
-    `</thead><tbody>${rowsH ||
-      `<tr><td colspan="8" class="mini">no bids yet — the desk enters ` +
+    `<table style="min-width:820px"><thead><tr><th>entry</th>` +
+    `<th>leader (last-10)</th><th>the desk's call</th>` +
+    TRD.map(([, , nm, col]) => `<th class="num">` +
+      `<span style="color:${col}">●</span> ${nm}</th>`).join("") +
+    `</tr></thead><tbody>${rowsH ||
+      `<tr><td colspan="9" class="mini">no bids yet — the desk enters ` +
       `only when the leader clears its gate on a biddable window ` +
-      `(ask 5–80¢, ≤12 min left)</td></tr>`}</tbody></table>`;
+      `(ask 5–80¢, ≤12 min left)</td></tr>`}</tbody></table>` +
+    `<p class="mini" style="margin-top:4px">each trader's cell: its own ` +
+    `result and <span class="muted">contracts @ entry</span> · bold side ` +
+    `= that trader took the other side of the desk's call · — = sat out</p>`;
+  // EOD review — the whole desk, not just the Follower
   const byd = {};
-  for (const t of settled) {
-    const dk = dayKey(t.close_ts);
-    (byd[dk] = byd[dk] || [0, 0, 0])[0]++;
-    byd[dk][1] += t.win;
-    byd[dk][2] += t.pnl_c;
-  }
-  const days = Object.entries(byd).slice(-3);
+  for (const [k, arr] of TRD)
+    for (const t of (arr || [])) {
+      if (t.actual == null) continue;
+      const dk = dayKey(t.close_ts);
+      const d = (byd[dk] = byd[dk] || { n: 0, w: 0, p: 0, f: 0 });
+      d.n++; d.w += t.win; d.p += t.pnl_c;
+      if (k === "pt") d.f += t.pnl_c;
+    }
+  const days = Object.entries(byd)
+    .sort((a, b) => new Date(a[0]) - new Date(b[0])).slice(-3);
+  const eodCol = v => v >= 0 ? "var(--good-text)" : "var(--down)";
   document.getElementById("desk-eod").innerHTML = days.length
-    ? "EOD review (follower): " + days.map(([dk, [n2, w2, p2]]) =>
-        `${dk} — ${n2} trades, ${w2} wins, <b style="color:${p2 >= 0
-          ? "var(--good-text)" : "var(--down)"}">${money(p2)}</b>`)
+    ? "EOD review (whole desk): " + days.map(([dk, d]) =>
+        `${dk} — ${d.n} entries, ${d.w} won, desk net ` +
+        `<b style="color:${eodCol(d.p)}">${money(d.p)}</b> ` +
+        `<span class="muted">(follower ${money(d.f)})</span>`)
         .join(" · ")
     : "";
 }
