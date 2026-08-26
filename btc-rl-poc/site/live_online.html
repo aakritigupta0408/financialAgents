@@ -275,7 +275,7 @@ details[open] > summary { margin-bottom: 6px; }
 <section class="statusbar">
   <div class="stat"><div class="k">BRTI-style composite</div><div class="bignum" id="brti">–</div></div>
   <div class="stat"><div class="k">Predictions</div><div class="bignum" id="npred">–</div></div>
-  <div class="stat"><div class="k">Direction (goal &gt;55%)</div><div class="bignum" id="t-dir">–</div></div>
+  <div class="stat"><div class="k">Direction (near-martingale — floor ≈50%; the vs-strike call below is the well-posed one)</div><div class="bignum" id="t-dir">–</div></div>
   <div class="stat"><div class="k">80% band coverage (goal 80%)</div><div class="bignum" id="t-cov">–</div></div>
 </section>
 
@@ -305,7 +305,7 @@ details[open] > summary { margin-bottom: 6px; }
     <div class="stat"><div class="k">Hit rate</div><div class="bignum" id="kb-acc">–</div></div>
     <div class="stat"><div class="k">Our Brier</div><div class="bignum" id="kb-brier">–</div></div>
     <div class="stat"><div class="k">Market Brier</div><div class="bignum" id="kb-mkt">–</div></div>
-    <div class="stat"><div class="k">This window's bet</div><div class="bignum" id="kb-bet">–</div></div>
+    <div class="stat"><div class="k">This window's bet <span style="text-transform:none;letter-spacing:0">(struck at entry — the live call above may have moved since)</span></div><div class="bignum" id="kb-bet">–</div></div>
     <div class="stat"><div class="k">One-bet record · P&amp;L</div><div class="bignum" id="kb-bet-pnl">–</div></div>
     <div class="stat"><div class="k">Today's bet win rate (PT)</div><div class="bignum" id="kb-today">–</div></div>
     <div class="stat"><div class="k">Today · Brier us vs market</div><div class="bignum" id="kb-today-brier">–</div></div>
@@ -1206,6 +1206,9 @@ async function poll() {
         document.getElementById("kb-bet").textContent =
           lastBet && lastBet.actual == null && lastBet.ticker === status.pm?.ticker
             ? `${lastBet.side.toUpperCase()} @ ${Math.round(lastBet.price_c)}¢` +
+              (lastBet.model_p != null
+                ? ` · model ${Math.round(100 * lastBet.model_p)}% at strike`
+                : "") +
               (lastBet.forced ? " (forced)" : "")
             : "waiting to strike";
         document.getElementById("kb-bet-pnl").textContent = bS?.settled
