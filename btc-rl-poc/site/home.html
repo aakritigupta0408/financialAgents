@@ -102,11 +102,27 @@
 #desk-curve path.eq { stroke-dasharray: 2400; stroke-dashoffset: 2400;
   animation: drawline 1.6s ease-out forwards; }
 .eq-dot { animation: pulse-open 2s ease-in-out infinite; }
-.flowline { stroke-dasharray: 6 6; animation: flowdash 1s linear infinite; }
-@keyframes flowdash { to { stroke-dashoffset: -12; } }
-#tm-flow .fnode { animation: rise .6s ease both; }
-@media (prefers-reduced-motion: reduce) {
-  .flowline, #tm-flow .fnode { animation: none; } }
+/* the $2M question, set as a worked problem: given → steps → answer */
+#tm-math { margin-top: 12px; }
+#tm-math .mgiven, #tm-math .mstep { border-left: 3px solid var(--border);
+  padding: 8px 0 8px 18px; margin: 0 0 14px; }
+#tm-math .mname { font: 700 11px var(--display, inherit);
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 6px; }
+#tm-math .meq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 14px; line-height: 1.9; white-space: pre-wrap; }
+#tm-math .meq i { font-style: italic;
+  font-family: Georgia, "Times New Roman", serif; font-size: 15px; }
+#tm-math .meq .mc { color: var(--muted); font-size: 12px;
+  font-family: inherit; }
+#tm-math .mres { font-weight: 700; }
+#tm-math .mres .pos { color: var(--good-text); }
+#tm-math .mres .neg { color: var(--down); }
+#tm-math .mnote { font-size: 12px; color: var(--muted); margin-top: 3px; }
+#tm-math .mans { border-left: 3px solid var(--good-text);
+  background: var(--surface-2); border-radius: 0 12px 12px 0;
+  padding: 12px 16px; font-size: 13.5px; }
+@media (prefers-reduced-motion: reduce) { .flowline { animation: none; } }
 @media (prefers-reduced-motion: reduce) {
   .tkt, .badge.pending, .eq-dot { animation: none; }
   #desk-curve path.eq { animation: none; stroke-dashoffset: 0; }
@@ -272,10 +288,8 @@
     <span class="paper-tag">stress test · not advice</span></h2>
   <p class="sub small muted">If someone traded the confident calls of any of the nine arms,
   how long to turn a starting bankroll into $2M — and what's the minimum
-  capital? Computed live from the ledger, with the honest three-regime answer.</p>
-  <div class="cards" style="margin-top:10px" id="tm-cards"><p class="mini">computing…</p></div>
-  <p class="small" id="tm-answer" style="margin-top:14px"></p>
-  <div id="tm-flow"></div>
+  capital? Worked like a problem set — every number substitutes live from the ledger.</p>
+  <div id="tm-math"><p class="mini">computing…</p></div>
   <details style="margin-top:12px"><summary>Simulation 1 — trade LOUD vs
     trade QUIETLY (what detection does to an edge)</summary>
     <div class="scroll" id="tm-table"></div></details>
@@ -699,7 +713,7 @@ function drawTape(prices, st, r, bets) {
 }
 
 function drawTwoMillion(kb) {
-  const el = document.getElementById("tm-cards");
+  const el = document.getElementById("tm-math");
   // every arm judged the same way; the tiles showcase today's BEST
   const armStats = (v) => {
     const rows = kb.filter(r => r.variant === v && r.actual != null
@@ -731,19 +745,7 @@ function drawTwoMillion(kb) {
   const k2s = ALL.find(s2 => s2.v === "kb2") || bestA;
   const { p, cost, plo, phi, be, n } = bestA;
   const ev = k2s.ev, evhi = k2s.evhi;   // kb2 keeps its scenario rows
-  const card = (big, label, sub) =>
-    `<div class="card" style="text-align:center"><div class="bignum" ` +
-    `style="font-size:28px">${big}</div><p class="mini">${label}</p>` +
-    `<p class="mini" style="color:var(--faint)">${sub}</p></div>`;
-  el.innerHTML =
-    card(`${(100 * p).toFixed(1)}%`, `win rate on biddable confident calls — best arm today: <b>${bestA.v}</b>`,
-      `95% CI [${(100 * plo).toFixed(1)}, ${(100 * phi).toFixed(1)}] · ${bestA.wn} windows (${n} entries)`) +
-    card(`${(100 * be).toFixed(1)}%`, "break-even win rate at the ask+fee",
-      `avg cost ${cost.toFixed(1)}¢ per 100¢ contract`) +
-    card(`${(100 * bestA.ev).toFixed(1)}%`, `expected value per $1 staked — ${bestA.v}`,
-      `even the CI's best case: ${(100 * bestA.evhi).toFixed(1)}%`) +
-    card(phi < be ? "never" : "—", "expected time to $2M, any capital",
-      phi < be ? "the CI never reaches break-even" : "edge within noise");
+  // (rendering happens at the end, as a worked problem — see below)
   // the TA's requested form: time to $2M by scenario x starting capital
   const BETS_D = 30, STAKE = 0.25, CAP = 500;  // stated assumptions
   const t2m = (e, K0) => {
@@ -977,87 +979,101 @@ function drawTwoMillion(kb) {
       `663-window real-ask replay above is the corroboration, and the ` +
       `live stream continues under the frozen rule · simulated ` +
       `research, not advice</p>`;
-    // ---- the answer in one line + the math as an animated pipeline ----
-    const ansEl = document.getElementById("tm-answer");
-    const flowEl = document.getElementById("tm-flow");
-    if (eSel != null && eSel > 0 && ansEl && flowEl) {
-      const dailyF = WD * FSEL * CAP * eSel * 0.5;
+    // ---- the whole section, set as a worked problem: given → steps ----
+    const F1 = x => (100 * x).toFixed(1);
+    const step = (name, lines, note) =>
+      `<div class="mstep"><div class="mname">${name}</div>` +
+      lines.map((l, i2) => `<div class="meq${
+        i2 === lines.length - 1 ? " mres" : ""}">${l}</div>`).join("") +
+      (note ? `<div class="mnote">${note}</div>` : "") + `</div>`;
+    const depthNow = (window.__st && window.__st.k_depth_yes != null)
+      ? Math.round(Math.min(window.__st.k_depth_yes, window.__st.k_depth_no))
+      : null;
+    const given =
+      `<div class="mgiven"><div class="mname">given · live from the ledger</div>` +
+      `<div class="meq"><i>p̂</i>     = ${F1(p)}%   <span class="mc">` +
+      `best-arm win rate on biddable confident calls — ${bestA.v} · ` +
+      `${bestA.wn} windows (${n} entries) · 95% CI [${F1(plo)}, ${F1(phi)}]` +
+      `</span></div>` +
+      `<div class="meq"><i>c</i>     = ${bestA.cost.toFixed(1)}¢   ` +
+      `<span class="mc">avg cost of a 100¢ contract (ask + fee)</span></div>` +
+      `<div class="meq"><i>p</i><sub>sel</sub>  = ${top.length
+        ? F1(wsum / top.length) : "–"}%   <span class="mc">selective tier ` +
+      `(confidence ≥ 77%) — ${wsum}/${top.length} entries won, ` +
+      `${wn} windows</span></div>` +
+      `<div class="meq"><i>D</i>     = $${CAP}   <span class="mc">` +
+      `conservative near-touch depth per window` +
+      `${depthNow != null ? ` — book right now: ~$${depthNow
+        .toLocaleString()}` : ""}</span></div></div>`;
+    const s1 = step("step 1 · break-even win rate",
+      [`<i>p</i><sub>be</sub> = <i>c</i> / 100¢ = ${bestA.cost.toFixed(1)}` +
+       ` / 100 = <b>${F1(be)}%</b>`],
+      "win more often than this on biddable entries, or lose money");
+    const s2 = step("step 2 · brute force — bet every confident call",
+      [`EV = (100·<i>p̂</i> − <i>c</i>) / <i>c</i>`,
+       `   = (${F1(p)} − ${bestA.cost.toFixed(1)}) / ${bestA.cost.toFixed(1)}`,
+       `   = <span class="${bestA.ev <= 0 ? "neg" : "pos"}">` +
+       `${bestA.ev <= 0 ? "" : "+"}${F1(bestA.ev)}% per $1</span>` +
+       `${bestA.ev <= 0 ? "  &lt; 0  ⇒  T(all-in) = <span class=\"neg\">" +
+         "never</span>" : ""}`],
+      `adverse selection: the market prices out the good calls and sells ` +
+      `the disputed ones — even the CI's best case is ` +
+      `${(100 * bestA.evhi).toFixed(1)}%, within noise`);
+    if (eSel != null && eSel > 0) {
+      const sPer = FSEL * CAP;
+      const dailyF = WD * sPer * eSel * 0.5;
       const daily9 = WD * FSEL * 9000 * eSel * 0.5;
-      ansEl.innerHTML =
-        `<b>The answer, in one line:</b> betting <i>everything</i> loses — ` +
-        `every arm's all-entries edge is negative at real asks (tiles ` +
-        `above) — so $2M by brute force is <b>never</b>. The one live ` +
-        `route is <b>selectivity</b>: the disciplined tier is running ` +
-        `<b>${wsum}/${top.length}</b> across ${wn} windows ` +
-        `(+${(100 * eSel).toFixed(1)}%/$1). <b>If</b> that survives more ` +
-        `windows, the pipeline below is the whole calculation:`;
-      const node = (x, big, l1, l2, col) =>
-        `<g class="fnode"><rect x="${x}" y="34" width="142" height="66" ` +
-        `rx="12" fill="var(--surface-2)" stroke="var(--border)"/>` +
-        `<text x="${x + 71}" y="62" text-anchor="middle" font-size="17" ` +
-        `font-weight="700" fill="${col || "var(--ink)"}">${big}</text>` +
-        `<text x="${x + 71}" y="78" text-anchor="middle" font-size="8.5" ` +
-        `fill="currentColor" opacity=".6">${l1}</text>` +
-        `<text x="${x + 71}" y="90" text-anchor="middle" font-size="8.5" ` +
-        `fill="currentColor" opacity=".6">${l2}</text></g>`;
-      const op = (x, sym) =>
-        `<line class="flowline" x1="${x}" x2="${x + 22}" y1="67" y2="67" ` +
-        `stroke="currentColor" stroke-opacity=".45" stroke-width="1.5"/>` +
-        `<text x="${x + 11}" y="58" text-anchor="middle" font-size="13" ` +
-        `font-weight="700" fill="currentColor" opacity=".6">${sym}</text>`;
-      flowEl.innerHTML =
-        `<svg viewBox="0 0 985 162" style="width:100%;margin-top:6px" ` +
-        `role="img" aria-label="the $2M math pipeline">` +
-        `<title>edge × stake × windows × detection = dollars per day → ` +
-        `time to $2M</title>` +
-        node(0, `+${(100 * eSel).toFixed(1)}%`,
-          "edge per $1 staked", "selective tier · live") +
-        op(146, "×") +
-        node(172, `$${Math.round(FSEL * CAP)}`,
-          "stake per window", `${(100 * XSTAR).toFixed(0)}% of $${CAP} depth`) +
-        op(318, "×") +
-        node(344, `${WD.toFixed(0)}/day`,
-          "windows that qualify", "confidence ≥ 77%") +
-        op(490, "×") +
-        node(516, "½", "detection tax", "trade quietly, keep half") +
-        op(662, "=") +
-        node(688, `$${Math.round(dailyF)}/day`,
-          "sustainable extraction", "at proven depth", "var(--good-text)") +
-        op(834, "→") +
-        node(843, `${fdys(2e6 / dailyF)}`,
-          "to $2,000,000", "$2M ÷ $/day", "var(--good-text)") +
-        `<text x="0" y="126" font-size="10.5" fill="currentColor" ` +
-        `opacity=".65">${(window.__st && window.__st.k_depth_yes != null)
-          ? `depth on the book RIGHT NOW: ~$${Math.round(
-              Math.min(window.__st.k_depth_yes, window.__st.k_depth_no)
-            ).toLocaleString()} near-touch (thinner side, live)`
-          : ""}</text>` +
-        `<text x="0" y="140" font-size="10.5" fill="currentColor" ` +
-        `opacity=".65">same pipeline, other worlds:  measured ~$9k depth ` +
-        `→ <tspan font-weight="700">$${Math.round(daily9).toLocaleString()}` +
-        `/day → ${fdys(2e6 / daily9)}</tspan> · paper / class world ` +
-        `(no cap, no adversary) → <tspan font-weight="700">` +
-        `${paperD}</tspan></text>` +
-        `<text x="0" y="154" font-size="10.5" fill="currentColor" ` +
-        `opacity=".5">every number is live — the tier's win rate moves ` +
-        `this whole chain · simulated research, not advice</text></svg>`;
-    } else if (ansEl) {
-      ansEl.innerHTML = `<b>The answer, in one line:</b> every measured ` +
-        `edge — including the selective tier right now — is at or below ` +
-        `break-even at real asks, so the honest time-to-$2M is ` +
-        `<b>never</b> until a win rate clears ~75% on biddable entries. ` +
-        `The simulations below show what changes if one does.`;
-      if (flowEl) flowEl.innerHTML = "";
+      const selCost = cost;             // the tier's avg cost, computed above
+      const s3 = step("step 3 · the one live route — selectivity (conf ≥ 77%)",
+        [`<i>e</i> = (100·<i>p</i><sub>sel</sub> − <i>c</i><sub>sel</sub>)` +
+         ` / <i>c</i><sub>sel</sub>`,
+         `  = (${F1(wsum / top.length)} − ${selCost.toFixed(1)})` +
+         ` / ${selCost.toFixed(1)}`,
+         `  = <span class="pos">+${F1(eSel)}% per $1</span>` +
+         `  <span class="mc">(thin sample)</span>`],
+        "corroboration, pre-registered 08-25: the same frozen rule over " +
+        "663 mined windows at real asks → +3.6%/$1 (74.4% vs 71.8¢ " +
+        "break-even, clustered t 0.85) — both shown, never merged");
+      const s4 = step("step 4 · sustainable $/day under detection",
+        [`$/day = <i>e</i> · <i>s</i> · <i>N</i><sub>q</sub> · ½` +
+         `   <span class="mc">s = (x*/q)·D = (${XSTAR.toFixed(2)}/` +
+         `${QSEL}) · $${CAP} = $${Math.round(sPer)} · ` +
+         `N<sub>q</sub> ≈ ${WD.toFixed(0)}/day · ½ = detection tax</span>`,
+         `      = ${(eSel).toFixed(3)} · $${Math.round(sPer)} · ` +
+         `${WD.toFixed(0)} · 0.5`,
+         `      = <span class="pos">$${Math.round(dailyF)} / day</span>`],
+        "x* = harvest half of what detection tolerates (Kyle 1985) — " +
+        "trading loud instead trips the market maker in days");
+      const s5 = step("step 5 · time to $2,000,000",
+        [`<i>T</i> = $2,000,000 ÷ $/day`,
+         `  = 2,000,000 ÷ ${Math.round(dailyF)}`,
+         `  = <b>${fdys(2e6 / dailyF)}</b>`],
+        `substitute other worlds: <i>D</i> = $9k measured depth → ` +
+        `$${Math.round(daily9).toLocaleString()}/day → <b>${
+          fdys(2e6 / daily9)}</b> · paper / class world (no cap, no ` +
+        `adversary, compounding) → <b>${paperD}</b>`);
+      const ans = `<div class="mans"><b>Answer — three regimes:</b> ` +
+        `<b>never</b> (measured all-entries edge, step 2) · ` +
+        `<b>~${paperD}</b> (paper world, uncapped compounding) · ` +
+        `<b>${fdys(2e6 / dailyF)}–${fdys(2e6 / daily9)}</b> (real depth ` +
+        `+ detection, step 5). The binding constraint is one number: ` +
+        `a win rate above <i>p</i><sub>be</sub> = ${F1(be)}% on biddable ` +
+        `entries. Every figure recomputes live · simulated research, ` +
+        `not advice.</div>`;
+      el.innerHTML = given + s1 + s2 + s3 + s4 + s5 + ans;
+    } else {
+      el.innerHTML = given + s1 + s2 +
+        `<div class="mans"><b>Answer:</b> every measured edge — including ` +
+        `the selective tier right now — is at or below break-even at ` +
+        `real asks, so the honest time-to-$2M is <b>never</b> until a ` +
+        `win rate clears <i>p</i><sub>be</sub> = ${F1(be)}%. The ` +
+        `simulations below show what changes if one does.</div>`;
     }
   } catch (e) {}
   document.getElementById("tm-verdict").innerHTML =
-    `Three regimes: <b>never</b> (measured edge, negative) · <b>~weeks</b> ` +
-    `(any real positive edge, compounding uncapped) · <b>~years</b> ` +
-    `(positive edge under ~$500/window market capacity). The research ` +
-    `finding: the number that must change is a win rate above ` +
-    `${(100 * be).toFixed(1)}% on biddable entries — adverse selection ` +
-    `currently caps us below it (the market prices out the good calls ` +
-    `and sells the disputed ones). Simulated research, not advice.`;
+    `full working: the three simulations above (detection, ladder, ` +
+    `disciplined policy) supply the constants substituted in steps 4–5 · ` +
+    `simulated research, not advice.`;
 }
 
 function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
