@@ -1,5 +1,17 @@
 # Research log
 
+## 2026-08-25 — Kalshi DEMO mirror for Sagemon (zero money, by design)
+
+scripts/demo_trader.py: a SEPARATE process that mirrors pt3's fresh
+paper entries as orders on Kalshi's demo environment (fake balance,
+real order lifecycle; KXBTC15M confirmed live on demo). Safety is
+structural: the demo host is hard-coded (no production URL exists in
+the file), demo-only credentials live outside the repo
+(~/.kalshi_demo.pem + env KALSHI_DEMO_KEY_ID), dry-run without them,
+one order per window, contract cap. The live daemon is untouched.
+Purpose: demonstrate real exchange plumbing (acks, fills, settlement)
+for the presentation with zero financial exposure.
+
 ## 2026-08-25 — trader 5, the SAVER (registered at launch) + skim-policy finding
 
 Stashmon: starts $10,000, stakes 25% of playing bankroll (desk-wide
