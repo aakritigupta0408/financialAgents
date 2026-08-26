@@ -1,5 +1,44 @@
 # Research log
 
+## 2026-08-26 — post-presentation TA feedback: revenue A/B, meta-trader, retirement
+
+**Revenue A/B (Results page):** replaced the dead bidding-vs-selector
+A/B with a trader revenue+risk scoreboard — net P&L, return, win%,
+avg/trade, avg win/bid, MAX DRAWDOWN, idle%, today, ranked by net÷DD.
+Live snapshot: Disciplined +8.3% (net÷DD 0.15, the only real winner);
+Follower/Ladder ~flat; Gambler −84.5% (DD $6.4k); Saver −30.6% (DD
+$15.2k). The TA's point stands: accuracy without capital discipline
+fails — max drawdown is the number the sleeping client wakes to.
+
+**MLE meta-trader — SL vs RL decision.** Industry standard: predict
+edge SUPERVISED (like every quant alpha model, like our kb5), size
+ANALYTICALLY via fractional Kelly. RL in finance is for EXECUTION
+(JPM LOXM, market-making) where tick data is ~infinite; end-to-end RL
+for position sizing on ~120 windows would overfit catastrophically.
+Decision: supervised edge + half-Kelly baseline now; RL is the
+aspirational upgrade gated on far more data. Baseline built
+(tests/metatrader_baseline.py): online logit P(win) → bet iff EV>0 →
+half-Kelly size capped 10%. Result: 34 bets/190 windows, 62% win,
+~break-even EV, but MAX DRAWDOWN $4 vs Gambler $6.4k / Saver $15.2k —
+it learned that not-betting (82% idle) is the skill. Next: wire live
+as pt6, learning from the rule traders' signals.
+
+**Retirement candidates (evidence-based):**
+- RETIRE: kb6 (fast information) — UP recall 63% (worst arm, well below
+  80), coverage 37%, persistently cold. Clear underperformer.
+- REWORK not retire: kb5 (EV −14% but the cheap-longshot thesis is
+  validated — cheap bids ≤51c are +23% EV, just rare); kb8 (young);
+  Saver (25% sizing too aggressive — lower it).
+- KEEP as controls: kb (null baseline), Gambler (ruin demonstration),
+  Follower/Ladder (sizing baselines). Their job is to be beaten.
+
+**Cheap-bid finding:** capping ask ≤51c flips EV positive (+23%, 55%
+win, 19 windows) because break-even is ~53c — the kb5 cheap-longshot
+thesis. A regime-abstention gate (trailing market acc) only helps at a
+LOW threshold (~0.62 over 8 windows); the proposed 0.68 gate zeroes out
+trading (market's own accuracy rarely clears 68%).
+
+
 ## 2026-08-25 — Kalshi DEMO mirror for Sagemon (zero money, by design)
 
 scripts/demo_trader.py: a SEPARATE process that mirrors pt3's fresh
