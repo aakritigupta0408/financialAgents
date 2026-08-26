@@ -586,7 +586,8 @@ function retrainPanel(rows) {
 }
 
 function binaryPanel(kb, bets) {
-  const done = kb.filter(r => r.actual != null);
+  // kb-control only — was blending all nine arms into one hit-rate/Brier
+  const done = kb.filter(r => r.actual != null && (r.variant || "kb") === "kb");
   if (done.length) {
     const brier = done.reduce((a, r) => a + r.brier, 0) / done.length;
     const mk = done.filter(r => r.mkt_brier != null);

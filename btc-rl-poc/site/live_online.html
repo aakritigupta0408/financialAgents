@@ -1075,7 +1075,10 @@ async function poll() {
     const kbRows = [];
     if (kbRes.ok) for (const line of (await kbRes.text()).split("\n")) {
       if (!line.trim()) continue;
-      try { kbRows.push(JSON.parse(line)); } catch {}
+      // this page is the kb-CONTROL binary view; keep only kb rows so the
+      // call table and today-Brier don't blend all nine arms into one
+      try { const r = JSON.parse(line);
+        if ((r.variant || "kb") === "kb") kbRows.push(r); } catch {}
     }
     const betRows = [];
     if (betRes.ok) for (const line of (await betRes.text()).split("\n")) {
