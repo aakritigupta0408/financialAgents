@@ -250,3 +250,20 @@ Verified live: first row's p_up reproduces sigmoid(w·b8x) exactly;
 **Standing discipline reaffirmed:** stream metrics are window-counted
 (effective n = windows, not minutes) — the kb7 "13/14" counting error
 and the kb8 feature-lab result are the same lesson from two directions.
+
+## 2026-08-26 — Gambler policy v2: the gate + a $10k reset
+
+08/26 diagnosis (ledgers): the desk hit 65.6% of windows vs a ~66.7%
+break-even at ~65¢ asks — a −1pp edge that stake size amplified
+(Follower −$261, Gambler 33% stakes −$1,092, Saver −$2,354), while the
+Disciplined's ≥0.77 gate ran 27/34 = 79.4% and finished +$276, the only
+policy in the green.
+
+Change (user-directed): pt4 adopts the same PT3 gate (PT4_TAU = 0.77)
+and his funds reset to $10k at cutover ts 1787788353. History is NOT
+rewritten — pre-reset rows stay in pt4_trades.jsonl and are excluded
+from the v2 bankroll (rows stamped pv:2 going forward); pages filter to
+the v2 era. Pre-registered read: v2 Gambler becomes "Disciplined at
+3.3× stakes" — same entry set, ~1.6× Kelly sizing. If the gate's edge
+is real he compounds ~10× faster; if it's thin-sample optimism the 33%
+sizing will surface that within days. Either outcome is informative.

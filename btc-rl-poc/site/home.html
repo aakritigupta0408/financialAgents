@@ -175,11 +175,13 @@
   (the arm leading its last 10 settled decisions), risking at most 10% of
   funds. 🐢 <b>Rungmon, the Ladder</b> mirrors every trade uncapped and banks $1k at
   $11k, then ×10. 🦉 <b>Sagemon, the Disciplined</b> takes any desk entry only at
-  ≥77% confidence. 🐉 <b>Blazemon, the Gambler</b> stakes 33% of his capital on
-  every entry (about 1.6× Kelly at these asks), capped by the LIVE
-  near-touch depth of the book — the aggressive end of the sizing
-  curriculum. 🐿️ <b>Stashmon, the Saver</b> starts with $10k, stakes 25%,
-  and banks 25% of every win as savings that never return to play.
+  ≥77% confidence. 🐉 <b>Blazemon, the Gambler</b> stakes 33% of his capital
+  (about 1.6× Kelly at these asks) — since 08-26 (policy v2) only at
+  ≥77% confidence, funds reset to $10k, capped by the LIVE near-touch
+  depth of the book — still the aggressive end of the sizing
+  curriculum, now on gated entries. 🐿️ <b>Stashmon, the Saver</b> starts with $10k, stakes 10%
+  (cut from 25% on 08-26), and banks 25% of every win as savings that
+  never return to play.
   🤖 <b>Metamon, the MLE</b> is the one that learns — a supervised model
   that watches the five rule-traders' signals, predicts the odds of each
   bet winning, and only bets (half-Kelly sized) when the expected value
@@ -1129,7 +1131,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
     ["Follower", "#2461b8", mkSeries(pt, false), ""],
     ["Ladder", "#8f6000", mkSeries(pt2 || [], true), "6 5"],
     ["Disciplined", "#0d7a4e", mkSeries(pt3d || [], false), ""],
-    ["Gambler", "#b84343", mkSeries(pt4d || [], false), ""],
+    ["Gambler", "#b84343", mkSeries(pt4d || [], false, 1000000), ""],
     ["Saver", "#5f50c7", mkSeries(pt5d || [], false, 1000000), "2 4"],
     ["MLE", "#16202c", mkSeries(pt6d || [], false), ""],
   ];
@@ -1400,7 +1402,13 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
       banked2 += level2; cash2 -= level2; level2 *= 10; }
   }
   const bank3 = START + c.s.reduce((x, t) => x + t.pnl_c, 0);
-  const bank4 = START + g4.s.reduce((x, t) => x + t.pnl_c, 0);
+  // Gambler v2: reset to $10k at the 2026-08-26 cutover (rows pre-filtered)
+  const PT4_START = 1000000;
+  const bank4 = PT4_START + g4.s.reduce((x, t) => x + t.pnl_c, 0);
+  g4.series = [PT4_START].concat((() => {
+    let w = PT4_START; const out = [];
+    for (const t of g4.s) { w += t.pnl_c; out.push(w); }
+    return out; })());
   const SAV_START = 1000000;
   const sav5 = s5.s.reduce((x, t) => x + (t.skim_c || 0), 0);
   const bank5 = SAV_START
@@ -1531,12 +1539,13 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
       (bank4 < 500
         ? `<b style="color:var(--down)">BUSTED</b> · record ` +
           `${g4.wins}/${g4.s.length}`
-        : `33% of capital on every leader entry (~1.6× Kelly), capped ` +
-          `by live book depth · record ${g4.wins}/${g4.s.length} · three ` +
-          `losses in a row = −70%`),
+        : `policy v2 (08-26): 33% stakes, but only at ≥77% confidence — ` +
+          `the Disciplined's gate — funds reset to $10k at cutover · ` +
+          `v2 record ${g4.wins}/${g4.s.length}`),
       g4.series, "#b84343") +
     card("t5", "🐿️", "Stashmon · the Saver", bank5 + sav5, s5.dp,
-      `starts $10k · stakes 25% · banks 25% of every win — savings ` +
+      `starts $10k · stakes 10% (cut from 25%, 08-26) · banks 25% of ` +
+      `every win — savings ` +
       `<b>${money(sav5)}</b> never return to play · record ` +
       `${s5.wins}/${s5.s.length}`,
       s5.series, "#5f50c7") +
@@ -1823,7 +1832,10 @@ async function boot() {
     jsonl("../results/pt_trades.jsonl"),
     jsonl("../results/pt2_trades.jsonl"),
     jsonl("../results/pt3_trades.jsonl"),
-    jsonl("../results/pt4_trades.jsonl"),
+    // Gambler policy v2 (2026-08-26): gate + $10k reset — the page
+    // shows his v2 era; pre-cutover history stays in the raw log
+    jsonl("../results/pt4_trades.jsonl")
+      .then(rows => rows.filter(t => t.made_ts >= 1787788353)),
     jsonl("../results/pt5_trades.jsonl"),
     jsonl("../results/pt6_trades.jsonl"),
   ]);

@@ -294,6 +294,14 @@ PT3_TAU = 0.77
 PT4_LOG_NAME = "pt4_trades.jsonl"
 PT4_FRAC = 0.33
 PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
+# Gambler policy v2 (2026-08-26): adopts the Disciplined's >=0.77
+# confidence gate (all-entries 33% staking bled -$1,092 on 08/26 while
+# the gated tier ran 79.4%), and his funds RESET to $10k at the cutover.
+# History stays in the log untouched; rows made before PT4_RESET_TS
+# simply don't count toward the v2 bankroll. v2 rows are stamped pv:2.
+PT4_TAU = 0.77
+PT4_RESET_TS = 1_787_788_353  # 2026-08-26 16:52 PT — v2 cutover
+PT4_RESET_C = 1_000_000       # $10,000 fresh v2 bankroll
 # Trader 5, the SAVER (2026-08-25): starts $10k, stakes 25% of playing
 # bankroll (depth-capped like the whole desk), and SKIMS 25% of every
 # win into savings that never return to play; losses hit the bankroll
@@ -1745,9 +1753,14 @@ def run(once: bool = False) -> None:
         - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
-    pt4_bankroll_c = PT_START_BANKROLL_C \
-        + sum(t["pnl_c"] for t in pt4_trades if t.get("actual") is not None) \
-        - sum(t["stake_c"] for t in pt4_trades if t.get("actual") is None)
+    # v2 bankroll: $10k reset at cutover — only v2-era trades count
+    pt4_bankroll_c = PT4_RESET_C \
+        + sum(t["pnl_c"] for t in pt4_trades
+              if t.get("actual") is not None
+              and t["made_ts"] >= PT4_RESET_TS) \
+        - sum(t["stake_c"] for t in pt4_trades
+              if t.get("actual") is None
+              and t["made_ts"] >= PT4_RESET_TS)
     pt5_trades = _load_kb_bets(PT5_LOG_NAME)
     pt5_tickers = {t["ticker"] for t in pt5_trades}
     pt5_savings_c = sum(t.get("skim_c", 0) for t in pt5_trades
@@ -2453,13 +2466,16 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt3_bankroll_c,
                                             })
                                             pt3_tickers.add(pm_mkt["ticker"])
-                                    # Trader 4, the GAMBLER: 33% of
-                                    # capital per entry, capped by the
-                                    # LIVE near-touch depth on the side
-                                    # he lifts (buying YES consumes the
-                                    # NO book and vice versa); $500
-                                    # fallback only if the book is dark
-                                    if pm_mkt["ticker"] not in pt4_tickers:
+                                    # Trader 4, the GAMBLER (policy v2,
+                                    # 2026-08-26): 33% of capital, but
+                                    # now ONLY at >=0.77 confidence —
+                                    # the Disciplined's gate — capped by
+                                    # the LIVE near-touch depth on the
+                                    # side he lifts; $500 fallback only
+                                    # if the book is dark
+                                    if (pm_mkt["ticker"] not in pt4_tickers
+                                            and base_row["p_arm"]
+                                            >= PT4_TAU):
                                         st4cap = min(int(PT4_FRAC
                                                      * pt4_bankroll_c),
                                                      dcap)
@@ -2472,6 +2488,7 @@ def run(once: bool = False) -> None:
                                                 "contracts": nc4,
                                                 "stake_c": st4,
                                                 "depth_cap_c": dcap,
+                                                "pv": 2,
                                                 "bankroll_c": pt4_bankroll_c,
                                             })
                                             pt4_tickers.add(pm_mkt["ticker"])
@@ -2874,8 +2891,11 @@ def run(once: bool = False) -> None:
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
                 t["pnl_c"] = payout - t["stake_c"]
-                pt4_bankroll_c += payout
-                t["bankroll_c"] = pt4_bankroll_c
+                # pre-reset stragglers settle into the log but never
+                # touch the v2 bankroll (their stake wasn't debited)
+                if t["made_ts"] >= PT4_RESET_TS:
+                    pt4_bankroll_c += payout
+                    t["bankroll_c"] = pt4_bankroll_c
                 pt4_changed = True
             if pt4_changed or (pt4_trades
                                and pt4_trades[-1]["actual"] is None

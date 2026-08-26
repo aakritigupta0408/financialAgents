@@ -365,7 +365,7 @@ function drawTraderAB(kb, T) {
     pt: ["Follower", "flat 10%, best bidder", 1000, "#2461b8"],
     pt2: ["Ladder", "10%, banks $1k at $11k ×10", 1000, "#8f6000"],
     pt3: ["Disciplined", "kb7/leader ≥77%, 10%", 1000, "#0d7a4e"],
-    pt4: ["Gambler", "33% (~1.6× Kelly)", 1000, "#b84343"],
+    pt4: ["Gambler", "33% at ≥77% gate (v2, reset 08-26)", 10000, "#b84343"],
     pt5: ["Saver", "$10k, 10% (was 25%), banks 25% of wins", 10000, "#5f50c7"],
     pt6: ["MLE (learns)", "supervised +EV, half-Kelly", 1000, "#16202c"],
   };
@@ -455,7 +455,10 @@ async function poll() {
       jsonl("../results/pt_trades.jsonl"),
       jsonl("../results/pt2_trades.jsonl"),
       jsonl("../results/pt3_trades.jsonl"),
-      jsonl("../results/pt4_trades.jsonl"),
+      // Gambler v2 (2026-08-26): gate + $10k reset — scoreboard shows
+      // the v2 era; the raw log keeps his pre-reset history
+      jsonl("../results/pt4_trades.jsonl")
+        .then(rows => rows.filter(t => t.made_ts >= 1787788353)),
       jsonl("../results/pt5_trades.jsonl"),
       jsonl("../results/pt6_trades.jsonl"),
     ]);
