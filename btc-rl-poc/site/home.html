@@ -83,6 +83,7 @@
 .tavatar.t2 { background: rgba(201,133,0,.16); }
 .tavatar.t3 { background: rgba(43,217,126,.16); }
 .tavatar.t4 { background: rgba(184,67,67,.16); }
+.tavatar.t5 { background: rgba(95,80,199,.16); }
 .tcard .tname { font: 700 11px var(--display); letter-spacing: .12em;
   text-transform: uppercase; color: var(--muted); }
 .tcard .tbank { font: 650 26px/1.2 var(--display);
@@ -171,7 +172,7 @@
 </section>
 
 <section>
-  <h2>The $1K Desk — four traders, four disciplines
+  <h2>The Desk — five traders, five disciplines
     <span class="paper-tag">TA spec · simulated · not advice</span></h2>
   <p class="sub small muted">Each starts with $1,000 and pays real asks and
   fees. 🦊 <b>Dartmon, the Follower</b> places the <b>current best bidder's</b> call
@@ -181,8 +182,9 @@
   ≥77% confidence. 🐉 <b>Blazemon, the Gambler</b> stakes 33% of his capital on
   every entry (about 1.6× Kelly at these asks), capped by the LIVE
   near-touch depth of the book — the aggressive end of the sizing
-  curriculum. Reviewed at end
-  of day. Nothing is ever purchased.</p>
+  curriculum. 🐿️ <b>Stashmon, the Saver</b> starts with $10k, stakes 25%,
+  and banks 25% of every win as savings that never return to play.
+  Reviewed at end of day. Nothing is ever purchased.</p>
   <div class="trader-roster" id="desk-roster"></div>
   <div id="desk-head" style="margin-top:10px"></div>
   <p class="mini" id="desk-ladder"></p>
@@ -1037,7 +1039,7 @@ function drawTwoMillion(kb) {
     `and sells the disputed ones). Simulated research, not advice.`;
 }
 
-function drawDesk(pt, kb, pt2, pt3d, pt4d) {
+function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d) {
   // The $1K Desk — portfolio view for the follow-the-leader paper trader
   const START = 100000;                       // $1,000 in cents
   const COLD = { kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7",
@@ -1074,7 +1076,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
         k += t.pnl_c;
         while (k >= 11 * lv) { bk += lv; k -= lv; lv *= 10; }
         out.push([t.close_ts, k + bk]);
-      } else out.push([t.close_ts, t.bankroll_c]);
+      } else out.push([t.close_ts,
+                       t.bankroll_c + (t.savings_c || 0)]);
     }
     return out;
   };
@@ -1085,6 +1088,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     ["Ladder", "#8f6000", mkSeries(pt2 || [], true), "6 5"],
     ["Disciplined", "#0d7a4e", mkSeries(pt3d || [], false), ""],
     ["Gambler", "#b84343", mkSeries(pt4d || [], false), ""],
+    ["Saver", "#5f50c7", mkSeries(pt5d || [], false), "2 4"],
   ];
   const withData = SER.filter(s => s[2].length >= 2);
   if (!withData.length) {
@@ -1137,7 +1141,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
       ? settledAll.reduce((a2, t) => a2 + t.win, 0) / settledAll.length
       : 0.79;
     const FRACS = { Follower: 0.10, Ladder: 0.10, Disciplined: 0.10,
-                    Gambler: 0.33 };
+                    Gambler: 0.33, Saver: 0.25 };
+    const STARTS = { Saver: 1000000 };
     window.__cones = window.__cones || {};
     const coneFor = (nm, ser) => {
       const nb = ser.length - 1;
@@ -1146,7 +1151,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
       if (window.__cones[key]) return window.__cones[key];
       const P = 300, paths2 = [];
       for (let i = 0; i < P; i++) {
-        let k = START; const tr = [k];
+        let k = STARTS[nm] || START; const tr = [k];
         for (let j = 0; j < nb; j++) {
           const ncon = Math.floor(
             Math.min(FRACS[nm] * k, 450000) / 75);
@@ -1273,7 +1278,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d) {
     : "";
 }
 
-function drawRoster(pt, pt2, pt3, kb, pt4) {
+function drawRoster(pt, pt2, pt3, kb, pt4, pt5) {
   const el = document.getElementById("desk-roster");
   if (!el) return;
   const START = 100000;
@@ -1307,7 +1312,7 @@ function drawRoster(pt, pt2, pt3, kb, pt4) {
     return { s, wins, dp, series: [START].concat(s.map(t => t.bankroll_c)) };
   };
   const a = stats(pt), b = stats(pt2), c = stats(pt3),
-        g4 = stats(pt4 || []);
+        g4 = stats(pt4 || []), s5 = stats(pt5 || []);
   const bank1 = START + a.s.reduce((x, t) => x + t.pnl_c, 0);
   let cash2 = START, banked2 = 0, level2 = START;
   for (const t of b.s.slice().sort((x, y) => x.close_ts - y.close_ts)) {
@@ -1317,6 +1322,14 @@ function drawRoster(pt, pt2, pt3, kb, pt4) {
   }
   const bank3 = START + c.s.reduce((x, t) => x + t.pnl_c, 0);
   const bank4 = START + g4.s.reduce((x, t) => x + t.pnl_c, 0);
+  const SAV_START = 1000000;
+  const sav5 = s5.s.reduce((x, t) => x + (t.skim_c || 0), 0);
+  const bank5 = SAV_START
+    + s5.s.reduce((x, t) => x + t.pnl_c - (t.skim_c || 0), 0);
+  s5.series = [SAV_START].concat((() => {
+    let w = SAV_START; const out = [];
+    for (const t of s5.s) { w += t.pnl_c; out.push(w); }
+    return out; })());
   b.series = [START];
   { let k = START, bk = 0, lv = START;
     for (const t of b.s) { k += t.pnl_c;
@@ -1369,14 +1382,19 @@ function drawRoster(pt, pt2, pt3, kb, pt4) {
         : `33% of capital on every leader entry (~1.6× Kelly), capped ` +
           `by live book depth · record ${g4.wins}/${g4.s.length} · three ` +
           `losses in a row = −70%`),
-      g4.series, "#b84343");
+      g4.series, "#b84343") +
+    card("t5", "🐿️", "Stashmon · the Saver", bank5 + sav5, s5.dp,
+      `starts $10k · stakes 25% · banks 25% of every win — savings ` +
+      `<b>${money(sav5)}</b> never return to play · record ` +
+      `${s5.wins}/${s5.s.length}`,
+      s5.series, "#5f50c7");
   // count-up animation on the three balances
   try {
     const prev = window.__rosterPrev || {};
     const now = { t1: bank1, t2: cash2 + banked2, t3: bank3,
-                  t4: bank4 };
+                  t4: bank4, t5: bank5 + sav5 };
     const els = el.querySelectorAll(".tbank");
-    const keys = ["t1", "t2", "t3", "t4"];
+    const keys = ["t1", "t2", "t3", "t4", "t5"];
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     keys.forEach((k, i) => {
       const from = prev[k], to = now[k];
@@ -1547,7 +1565,7 @@ function drawDesk3(pt3, kb) {
 }
 
 async function boot() {
-  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -1559,9 +1577,10 @@ async function boot() {
     jsonl("../results/pt2_trades.jsonl"),
     jsonl("../results/pt3_trades.jsonl"),
     jsonl("../results/pt4_trades.jsonl"),
+    jsonl("../results/pt5_trades.jsonl"),
   ]);
-  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r); } catch (e) {}
-  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r); } catch (e) {}
+  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r); } catch (e) {}
+  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
   window.__st = st;
   try { drawSignal(kb, bets, st); } catch (e) {

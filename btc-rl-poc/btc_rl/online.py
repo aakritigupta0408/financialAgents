@@ -294,6 +294,14 @@ PT3_TAU = 0.77
 PT4_LOG_NAME = "pt4_trades.jsonl"
 PT4_FRAC = 0.33
 PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
+# Trader 5, the SAVER (2026-08-25): starts $10k, stakes 25% of playing
+# bankroll (depth-capped like the whole desk), and SKIMS 25% of every
+# win into savings that never return to play; losses hit the bankroll
+# in full. The profit ratchet: slower compounding, monotone savings.
+PT5_LOG_NAME = "pt5_trades.jsonl"
+PT5_START_C = 1_000_000       # $10,000
+PT5_FRAC = 0.25
+PT5_SKIM = 0.25
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
@@ -1709,6 +1717,14 @@ def run(once: bool = False) -> None:
     pt4_bankroll_c = PT_START_BANKROLL_C \
         + sum(t["pnl_c"] for t in pt4_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt4_trades if t.get("actual") is None)
+    pt5_trades = _load_kb_bets(PT5_LOG_NAME)
+    pt5_tickers = {t["ticker"] for t in pt5_trades}
+    pt5_savings_c = sum(t.get("skim_c", 0) for t in pt5_trades
+                        if t.get("actual") is not None)
+    pt5_bankroll_c = PT5_START_C \
+        + sum(t["pnl_c"] - t.get("skim_c", 0)
+              for t in pt5_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt5_trades if t.get("actual") is None)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
@@ -2415,6 +2431,24 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt4_bankroll_c,
                                             })
                                             pt4_tickers.add(pm_mkt["ticker"])
+                                    # Trader 5, the SAVER: 25% stakes,
+                                    # skims 25% of each win to savings
+                                    if pm_mkt["ticker"] not in pt5_tickers:
+                                        st5cap = min(int(PT5_FRAC
+                                                     * pt5_bankroll_c),
+                                                     dcap)
+                                        nc5 = int(st5cap // (askp + feep))
+                                        if nc5 >= 1:
+                                            st5 = int(nc5 * (askp + feep))
+                                            pt5_bankroll_c -= st5
+                                            pt5_trades.append({
+                                                **base_row,
+                                                "contracts": nc5,
+                                                "stake_c": st5,
+                                                "bankroll_c": pt5_bankroll_c,
+                                                "savings_c": pt5_savings_c,
+                                            })
+                                            pt5_tickers.add(pm_mkt["ticker"])
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
@@ -2769,6 +2803,36 @@ def run(once: bool = False) -> None:
                 tmp4t.write_text("".join(json.dumps(t) + "\n"
                                          for t in pt4_trades))
                 tmp4t.replace(RESULTS_DIR / PT4_LOG_NAME)
+            pt5_changed = False
+            for t in pt5_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                if t["win"]:
+                    sk = int(PT5_SKIM * t["pnl_c"])
+                    pt5_savings_c += sk
+                    pt5_bankroll_c += payout - sk
+                    t["skim_c"] = sk
+                else:
+                    pt5_bankroll_c += payout
+                    t["skim_c"] = 0
+                t["bankroll_c"] = pt5_bankroll_c
+                t["savings_c"] = pt5_savings_c
+                pt5_changed = True
+            if pt5_changed or (pt5_trades
+                               and pt5_trades[-1]["actual"] is None
+                               and pt5_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp5t = (RESULTS_DIR / PT5_LOG_NAME).with_suffix(".tmp5t")
+                tmp5t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt5_trades))
+                tmp5t.replace(RESULTS_DIR / PT5_LOG_NAME)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

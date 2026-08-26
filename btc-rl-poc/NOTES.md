@@ -1,5 +1,19 @@
 # Research log
 
+## 2026-08-25 — trader 5, the SAVER (registered at launch) + skim-policy finding
+
+Stashmon: starts $10,000, stakes 25% of playing bankroll (desk-wide
+live depth cap applies), and skims 25% of every WIN into savings that
+never return to play; losses hit the bankroll in full. Same leader
+entry pool as the desk (0.62 gate), one bet/window, real asks + fees.
+Registered before first trade; rows carry skim_c and savings_c.
+
+Related measured finding (tests, 1,500 paths): holding the bankroll at
+exactly K* = depth/fraction ($45k) and withdrawing all overflow is 38%
+SLOWER to $2M than letting it ride — the skim removes every buffer, so
+each loss pins stakes under the depth cap. Holding at ~2x K* ($90k)
+costs only ~1% of time with full safety above. Buffer before skim.
+
 ## 2026-08-25 — kb9 LAUNCHED as second foundation family (not an upgrade)
 
 TimesFM 2.5 (200M, frozen zero-shot) goes live as kb9 — explicitly NOT
