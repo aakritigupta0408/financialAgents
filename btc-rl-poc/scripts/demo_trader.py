@@ -26,7 +26,8 @@ from pathlib import Path
 
 import requests
 
-DEMO_HOST = "https://demo-api.kalshi.co"        # demo ONLY — by design
+DEMO_HOST = "https://external-api.demo.kalshi.co"  # demo ONLY — by design
+# (new unified engine host; the old demo-api host now 410s orders)
 ROOT = Path(__file__).resolve().parent.parent
 PT3 = ROOT / "results" / "pt3_trades.jsonl"
 OUT = ROOT / "results" / "demo_orders.jsonl"
@@ -59,17 +60,24 @@ def _sign(method: str, path: str) -> dict:
 
 
 def place(trade: dict) -> dict:
-    path = "/trade-api/v2/portfolio/orders"
+    """V2 unified book: buying YES at q == bid at q; buying NO at q ==
+    ask (sell yes) at 1-q. Prices are 4-decimal dollar strings."""
+    path = "/trade-api/v2/portfolio/events/orders"
+    yes_side = trade["side"] == "yes"
+    px = trade["ask_c"] / 100.0 if yes_side \
+        else (100.0 - trade["ask_c"]) / 100.0
     body = {
         "ticker": trade["ticker"],
-        "action": "buy",
-        "side": trade["side"],                   # "yes" | "no"
-        "count": min(int(trade["contracts"]), DEMO_MAX_CONTRACTS),
-        "type": "limit",
-        ("yes_price" if trade["side"] == "yes" else "no_price"):
-            int(round(trade["ask_c"])),
         "client_order_id":
             f"sagemon-{trade['ticker']}-{trade['made_ts']}",
+        "side": "bid" if yes_side else "ask",
+        "count": f"{min(int(trade['contracts']), DEMO_MAX_CONTRACTS)}.00",
+        "price": f"{px:.4f}",
+        "time_in_force": "good_till_canceled",
+        "self_trade_prevention_type": "taker_at_cross",
+        "post_only": False,
+        "subaccount": 0,
+        "exchange_index": 0,
     }
     if not LIVE:
         return {"dry_run": True, "would_send": body}
