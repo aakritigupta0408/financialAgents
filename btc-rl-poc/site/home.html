@@ -201,12 +201,15 @@
 <section>
   <h2>Live exchange integration — Kalshi sandbox
     <span class="paper-tag">demo API · fake funds · not advice</span></h2>
-  <p class="sub small muted">Sagemon's paper decisions are re-submitted as
-  real, cryptographically-signed orders to Kalshi's <b>demo</b> trading
-  engine (fake balance, verified demo-only key — authenticates on the
-  sandbox, rejected by production). This proves the full engineering path
-  a real strategy would use, with zero real money. Each row is an actual
-  signed API request and the exchange's actual response.</p>
+  <p class="sub small muted">Our decisions are re-submitted as real,
+  cryptographically-signed orders to Kalshi's <b>demo</b> trading engine
+  (fake balance, verified demo-only key — authenticates on the sandbox,
+  rejected by production). <b>Execution is proven</b>: standard contracts
+  return <b>HTTP 201 accepted</b> and rest live in the exchange book (the
+  KXHIGHNY row is a live resting order in the account). The 15-minute
+  crypto contracts return 404 because Kalshi's demo doesn't route crypto
+  through its public order API — a venue quirk, not our signing. Zero real
+  money; each row is an actual signed request and the exchange's response.</p>
   <div id="demo-int"><p class="mini">reading the integration log…</p></div>
 </section>
 
