@@ -98,10 +98,31 @@
   <p class="mini" id="kbf-tbl-note"></p>
 </section>
 
-<!-- A/B bidding-vs-selector section hidden 2026-08-25 per project
-     decision (legacy experiment; the desk traders now carry the trading
-     story). Data collection and ledgers continue unchanged; JS still
-     fills these nodes so nothing downstream breaks. -->
+<section>
+  <h2>Trader A/B — revenue &amp; risk scoreboard
+    <span class="badge pending" id="tab-verdict">live</span></h2>
+  <p class="sub small muted">The five paper traders bid the same signals
+  with different <b>capital policies</b>. This is the A/B that matters —
+  not prediction accuracy but <b>money</b>: net P&amp;L, return on the
+  bankroll it started with, average return per trade, win rate, average
+  win per winning bid, <b>maximum drawdown</b> (the depletion the client
+  never wants to wake up to), how idle the policy is, and today's swing.
+  All computed live from the append-only trade ledgers. Ranked by
+  risk-adjusted return (net ÷ max drawdown).</p>
+  <div class="scroll"><table id="trader-ab">
+    <thead><tr><th>Trader</th><th>Policy</th>
+      <th class="num">Net P&amp;L</th><th class="num">Return</th>
+      <th class="num">Trades</th><th class="num">Win%</th>
+      <th class="num">Avg/trade</th><th class="num">Avg win/bid</th>
+      <th class="num">Max DD</th><th class="num">Idle%</th>
+      <th class="num">Today</th><th class="num">Net÷DD</th></tr></thead>
+    <tbody><tr><td colspan="12" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="trader-ab-note"></p>
+</section>
+
+<!-- Legacy A/B bidding-vs-selector section, hidden 2026-08-25; ledgers
+     and JS retained so nothing downstream breaks. -->
 <section style="display:none">
   <h2>A/B — bidding model vs selector model</h2>
   <div class="scroll"><table id="ab-tbl">
@@ -337,17 +358,108 @@ function brierRace(kb, st) {
   if (rowsH) document.querySelector("#kbt-tbl tbody").innerHTML = rowsH;
 }
 
+function drawTraderAB(kb, T) {
+  const el = document.querySelector("#trader-ab tbody");
+  if (!el) return;
+  const META = {
+    pt: ["Follower", "flat 10%, best bidder", 1000, "#2461b8"],
+    pt2: ["Ladder", "10%, banks $1k at $11k ×10", 1000, "#8f6000"],
+    pt3: ["Disciplined", "kb7/leader ≥77%, 10%", 1000, "#0d7a4e"],
+    pt4: ["Gambler", "33% (~1.6× Kelly)", 1000, "#b84343"],
+    pt5: ["Saver", "$10k, 25%, banks 25% of wins", 10000, "#5f50c7"],
+  };
+  // opportunity set for idle%: distinct biddable kb7 windows
+  const opp = new Set(kb.filter(r => r.variant === "kb7"
+    && r.actual != null && (r.mins_left ?? 99) <= 12).map(r => r.ticker));
+  const now = Math.max(0, ...kb.map(r => r.made_ts || 0));
+  const dayOf = ts => new Date(ts * 1000).toLocaleDateString("en-US",
+    { timeZone: "America/Los_Angeles" });
+  const today = dayOf(now);
+  const money = c => (c < 0 ? "−$" : "$") + Math.abs(c)
+    .toLocaleString("en-US", { minimumFractionDigits: 0,
+      maximumFractionDigits: 0 });
+  const rows = [];
+  for (const key of ["pt", "pt2", "pt3", "pt4", "pt5"]) {
+    const [name, policy, start, col] = META[key];
+    const raw = (T[key] || []).filter(x => x.actual != null)
+      .sort((a, b) => a.close_ts - b.close_ts);
+    if (!raw.length) continue;
+    const banked = key === "pt5"
+      ? raw.reduce((a, x) => a + (x.skim_c || 0), 0) / 100 : 0;
+    const net = raw.reduce((a, x) => a + x.pnl_c, 0) / 100;
+    const wins = raw.filter(x => x.win);
+    const wr = wins.length / raw.length;
+    const avgTrade = net / raw.length;
+    const avgWin = wins.length
+      ? wins.reduce((a, x) => a + x.pnl_c, 0) / 100 / wins.length : 0;
+    let eq = start, pk = start, dd = 0;
+    for (const x of raw) { eq += x.pnl_c / 100; pk = Math.max(pk, eq);
+      dd = Math.max(dd, pk - eq); }
+    const idle = 1 - new Set(raw.map(x => x.ticker)).size
+      / Math.max(1, opp.size);
+    const todayPnl = raw.filter(x => dayOf(x.close_ts) === today)
+      .reduce((a, x) => a + x.pnl_c, 0) / 100;
+    const ndd = dd > 0 ? net / dd : (net > 0 ? Infinity : 0);
+    rows.push({ name, policy, col, net, ret: 100 * net / start,
+      n: raw.length, wr, avgTrade, avgWin, dd, idle, todayPnl, ndd,
+      banked });
+  }
+  rows.sort((a, b) => b.ndd - a.ndd);
+  const cell = (v, good) => `<td class="num" style="color:${v >= 0
+    ? "var(--good-text)" : "var(--down)"}">${money(v)}</td>`;
+  el.innerHTML = rows.map(r =>
+    `<tr><td><span class="sw" style="background:${r.col}"></span>` +
+    `<b>${r.name}</b></td><td class="mini">${r.policy}` +
+    (r.banked ? ` · banked ${money(r.banked)}` : "") + `</td>` +
+    cell(r.net) +
+    `<td class="num" style="color:${r.ret >= 0 ? "var(--good-text)"
+      : "var(--down)"}">${r.ret >= 0 ? "+" : ""}${r.ret.toFixed(1)}%</td>` +
+    `<td class="num">${r.n}</td>` +
+    `<td class="num">${(100 * r.wr).toFixed(0)}%</td>` +
+    cell(r.avgTrade) +
+    `<td class="num">${money(r.avgWin)}</td>` +
+    `<td class="num" style="color:var(--down)">−${money(r.dd)}</td>` +
+    `<td class="num">${(100 * r.idle).toFixed(0)}%</td>` +
+    cell(r.todayPnl) +
+    `<td class="num"><b>${r.ndd === Infinity ? "∞"
+      : r.ndd.toFixed(2)}</b></td></tr>`).join("")
+    || `<tr><td colspan="12" class="muted">collecting…</td></tr>`;
+  const best = rows[0], worst = rows[rows.length - 1];
+  const tp = rows.reduce((a, r) => a + r.todayPnl, 0);
+  document.getElementById("trader-ab-note").innerHTML = rows.length
+    ? `Best risk-adjusted: <b>${best.name}</b> (net÷DD ` +
+      `${best.ndd === Infinity ? "∞" : best.ndd.toFixed(2)}). ` +
+      `Worst depletion: <b>${worst.name}</b> — max drawdown ` +
+      `${money(worst.dd)}. Desk today: <b style="color:${tp >= 0
+        ? "var(--good-text)" : "var(--down)"}">${money(tp)}</b>. ` +
+      `Max drawdown is the number the client sees on waking; a policy ` +
+      `that "wins" on accuracy but bleeds capital overnight fails this ` +
+      `test — which is the point of ranking by net ÷ drawdown, not P&L ` +
+      `alone.`
+    : "";
+  const v = document.getElementById("tab-verdict");
+  if (best) { v.className = "badge pass"; v.textContent = best.name + " leads"; }
+}
+
 async function poll() {
   try {
-    const [kb, bets, sel, pre, pb, stRes] = await Promise.all([
+    const [kb, bets, sel, pre, pb, stRes, ptA, pt2A, pt3A, pt4A, pt5A]
+      = await Promise.all([
       jsonl("../results/kalshi_binary_log.jsonl"),
       jsonl("../results/kb_bets.jsonl"),
       jsonl("../results/kb_bets_sel.jsonl"),
       jsonl("../results/kb_bets_sel_prepolicy.jsonl"),
       jsonl("../results/pb_bets.jsonl"),
       fetch(bust("../results/online_status.json"), { cache: "no-store" }),
+      jsonl("../results/pt_trades.jsonl"),
+      jsonl("../results/pt2_trades.jsonl"),
+      jsonl("../results/pt3_trades.jsonl"),
+      jsonl("../results/pt4_trades.jsonl"),
+      jsonl("../results/pt5_trades.jsonl"),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
+    try { drawTraderAB(kb, {pt: ptA, pt2: pt2A, pt3: pt3A, pt4: pt4A,
+      pt5: pt5A}); } catch (e) {}
     document.getElementById("dot").className =
       "live-dot" + ((Date.now()/1000 - (st.alive_at||0)) > 300 ? " stale" : "");
 
