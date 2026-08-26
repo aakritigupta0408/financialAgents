@@ -300,14 +300,19 @@ PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
 # in full. The profit ratchet: slower compounding, monotone savings.
 PT5_LOG_NAME = "pt5_trades.jsonl"
 PT5_START_C = 1_000_000       # $10,000
-PT5_FRAC = 0.25
+PT5_FRAC = 0.10   # reworked 2026-08-26 from 0.25 (~2.5x Kelly, bled
+                  # -31% with -$15k drawdown) to 0.10; skim unchanged.
+                  # Rows before the change are policy v1 (25% sizing).
 PT5_SKIM = 0.25
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
 PT_LAST_N = 10                         # leadership window (decisions)
 PT_MIN_REC = 5                         # min decisions to hold leadership
-PT_ARMS = ("kb2", "kb3", "kb4", "kb6", "kb7", "kb8")
+# kb6 RETIRED 2026-08-26 from trader candidacy — weakest arm (UP recall
+# 63%, coverage 37%, persistently cold); it keeps predicting for the
+# record but no trader follows its calls.
+PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
 
 
 def _pt_leader(kb_rows: list[dict]) -> tuple[str, int, int] | None:

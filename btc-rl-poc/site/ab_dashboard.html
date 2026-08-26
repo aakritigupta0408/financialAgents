@@ -568,7 +568,7 @@ async function poll() {
       ["kb2", "market-anchored blend", "learned per-phase blend of model + market"],
       ["kb3", "online logistic learner", "24 features, one SGD step per settle"],
       ["kb4", "stack of kb2 + kb3", "learns when to trust which model"],
-      ["kb6", "fast information", "perp lead, tape, whale flow, OI delta"],
+      ["kb6", "fast information — RETIRED from trading", "perp lead, tape, whale flow · UP recall 63%, coverage 37%; retired 08-26 from trader candidacy, still logs for the record"],
       ["kb7", "zero-shot foundation model (frozen)", "Chronos-Bolt read at the strike"],
       ["kb8", "kb7 × market log-pool", "learns to fuse kb7's signal with the market"],
       ["kb9", "second foundation family (TimesFM 2.5, frozen)", "decorrelated treatment — tied kb7 on the gauntlet, launched for disagreement value"],

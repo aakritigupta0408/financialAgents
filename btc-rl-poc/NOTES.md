@@ -1,5 +1,17 @@
 # Research log
 
+## 2026-08-26 — executed: kb6 retired, Saver reworked, kb9 to traders
+
+- kb6 removed from PT_ARMS (trader leader candidacy) — no trader follows
+  its calls now; it keeps predicting for the record. Flagged RETIRED in
+  the league. Reason: UP recall 63% (worst), coverage 37%, cold.
+- kb9 ADDED to PT_ARMS (was missing) — traders can now follow the
+  TimesFM arm's calls too.
+- Saver (pt5) sizing 0.25 -> 0.10 (25% was ~2.5x Kelly; bled -31% /
+  -$15k drawdown). Skim (25% of wins) unchanged. Pre-0826 rows are
+  policy v1 (25%); marked in code.
+
+
 ## 2026-08-26 — post-presentation TA feedback: revenue A/B, meta-trader, retirement
 
 **Revenue A/B (Results page):** replaced the dead bidding-vs-selector
