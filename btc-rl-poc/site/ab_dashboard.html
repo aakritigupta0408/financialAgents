@@ -460,7 +460,9 @@ async function poll() {
       jsonl("../results/pt4_trades.jsonl")
         .then(rows => rows.filter(t => t.made_ts >= 1787788353)),
       jsonl("../results/pt5_trades.jsonl"),
-      jsonl("../results/pt6_trades.jsonl"),
+      // MLE shadow rows (skipped-window training data) aren't trades
+      jsonl("../results/pt6_trades.jsonl")
+        .then(rows => rows.filter(t => !t.skipped)),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
     try { drawTraderAB(kb, {pt: ptA, pt2: pt2A, pt3: pt3A, pt4: pt4A,

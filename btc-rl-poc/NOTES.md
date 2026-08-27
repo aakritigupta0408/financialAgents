@@ -267,3 +267,17 @@ the v2 era. Pre-registered read: v2 Gambler becomes "Disciplined at
 3.3× stakes" — same entry set, ~1.6× Kelly sizing. If the gate's edge
 is real he compounds ~10× faster; if it's thin-sample optimism the 33%
 sizing will surface that within days. Either outcome is informative.
+
+## 2026-08-26 — Metamon calibration bug + fix (margin gate & shadow rows)
+
+Live pt6 bet 7/7 consecutive windows (the baseline said ~82% idle is
+the skill). Cause: p_win tracks the ask (weight +0.26 — price IS
+information) and sat 4–16 pts above cost on every window, so "EV>0"
+always fired. 4W/3L at ~60c = below break-even.
+
+Fix, two parts: (1) PT6_MIN_EDGE_C = 10 — bet only when claimed edge
+>= 10c/$1 (of the first 7 live bets only the +15.9c one qualified; it
+won). (2) skipped windows log SHADOW rows (stake 0, skipped: true)
+that are labeled at settle and still train the logit — a gated trader
+that learns only from its own bets would re-learn nothing. Money views
+exclude shadows.

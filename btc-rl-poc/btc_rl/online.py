@@ -322,6 +322,14 @@ PT5_SKIM = 0.25
 PT6_LOG_NAME = "pt6_trades.jsonl"
 PT6_LOGIT_PATH_NAME = "pt6_logit.json"
 PT6_DIM = 7
+# 2026-08-26 calibration fix: the logit's p_win tracks the ask (price IS
+# information, weight +0.26) and sat 4-16 pts above cost on EVERY window,
+# so "EV>0" fired always and Metamon bet 7/7 windows — the opposite of
+# the baseline's finding that ~82% idle is the skill. Require a claimed
+# edge margin over break-even before betting (the meta-trader's analog
+# of the Disciplined's 0.77 gate); of his first 7 live bets only the
+# +15.9c entry would have qualified (it won).
+PT6_MIN_EDGE_C = 10           # bet only if pw*100 - (ask+fee) >= 10c
 
 
 def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
@@ -2520,7 +2528,7 @@ def run(once: bool = False) -> None:
                                             syp, pf, mins_left)
                                         pw6 = pt6_logit.predict(b6x)
                                         ev6 = pw6 * 100 - (askp + feep)
-                                        if ev6 > 0:
+                                        if ev6 >= PT6_MIN_EDGE_C:
                                             odds = (100 - (askp + feep)) \
                                                 / (askp + feep)
                                             kelly = max(0.0, (pw6 * (1 + odds)
@@ -2547,6 +2555,29 @@ def run(once: bool = False) -> None:
                                                 })
                                                 pt6_tickers.add(
                                                     pm_mkt["ticker"])
+                                        else:
+                                            # SHADOW row — no money moves,
+                                            # but the skipped bet is still
+                                            # labeled at settle so the
+                                            # logit keeps learning at full
+                                            # window rate (a gated trader
+                                            # that only learns from its
+                                            # own bets re-learns nothing)
+                                            pt6_trades.append({
+                                                **base_row,
+                                                "contracts": 0,
+                                                "stake_c": 0,
+                                                "skipped": True,
+                                                "b6x": [round(v, 5)
+                                                        for v in b6x],
+                                                "p_win": round(pw6, 4),
+                                                "trained":
+                                                    pt6_logit.updates,
+                                                "bankroll_c":
+                                                    pt6_bankroll_c,
+                                            })
+                                            pt6_tickers.add(
+                                                pm_mkt["ticker"])
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
