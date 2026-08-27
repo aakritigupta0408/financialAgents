@@ -281,3 +281,25 @@ won). (2) skipped windows log SHADOW rows (stake 0, skipped: true)
 that are labeled at settle and still train the logit — a gated trader
 that learns only from its own bets would re-learn nothing. Money views
 exclude shadows.
+
+## 2026-08-26 — SEV-0 RCA: where the error and bias are born
+
+Full-graph audit (tests/sev0_error_audit.py). Root-cause chain:
+T1 RL arms carry a bullish drift prior (t10 bias +$45@h30, t2 +$54@h30,
+up-call shares 71-83% vs 53% reality; direction acc of ALL price arms
+47-53% = no directional edge) -> T2 kb arms inherit the lean (pBias
++0.03..+0.11, Platt intercepts all negative, kb7 worst a=-0.565;
+kb6 slope b=0.33 = near-noise resolution) -> T3 amplifies: leader
+compares UNCALIBRATED p_up across arms (mixed-confidence AUC 0.503 =
+coin flip) and churns 16x/day; fixed-kb4 counterfactual +4.7%/$1 beat
+the churner's +2.0% -> T4 multiplies by stake (Saver -$2.5k at 25%
+era) -> losses concentrate: herd whipsaw 75.2% of loss dollars,
+knife-edge windows 52.8%, toxic hours 31.2%, idiosyncratic only 5.3%.
+Per-tier gates DO work (kb7@0.77 94.3%, desk@0.77 80.8%) but the 0.85
+tail collapses (50%, n=6, adverse-selection tail).
+
+Mitigation queue (leverage order): M1 per-arm online Platt layer before
+any cross-arm comparison; M2 knife-edge veto |mkt-0.5|<0.10; M3 sticky
+leader (evidence-based switching); M4 re-anchor t10/t2/t6/t11 drift
+priors; M5 sizing fixes (done: PT5 0.10, PT4 gate, PT6 margin);
+M6 asymmetric UP/DOWN gate while pBias>0; M7 09h PT hour policy.
