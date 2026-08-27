@@ -28,7 +28,7 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 
 PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css",
-         "ab_dashboard.html"]
+         "ab_dashboard.html", "sev0.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
