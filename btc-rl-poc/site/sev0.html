@@ -16,10 +16,11 @@
   font-variant-numeric: tabular-nums; }
 /* ---- architecture diagram ---- */
 #arch svg { width: 100%; height: auto; }
-#arch .tier { fill: var(--surface-2); stroke: var(--border); }
-#arch .tname { font: 700 11px ui-sans-serif, system-ui;
+#arch .tier, #plan .tier { fill: var(--surface-2); stroke: var(--border); }
+#arch .tname, #plan .tname { font: 700 11px ui-sans-serif, system-ui;
   letter-spacing: .1em; fill: var(--ink); }
-#arch .tsub { font: 10px ui-sans-serif, system-ui; fill: var(--muted); }
+#arch .tsub, #plan .tsub { font: 10px ui-sans-serif, system-ui;
+  fill: var(--muted); }
 #arch .tmetric { font: 700 13px ui-monospace, Menlo, monospace;
   fill: var(--down); }
 #arch .tmetric.ok { fill: var(--good-text); }
@@ -30,9 +31,9 @@
   stroke-dasharray: 4 7; animation: sevflow 1.4s linear infinite reverse;
   opacity: .7; }
 @keyframes sevflow { to { stroke-dashoffset: -13; } }
-#arch .flowlab { font: 600 9.5px ui-sans-serif, system-ui;
-  fill: var(--down); }
-#arch .flowlab.fix { fill: var(--good-text); }
+#arch .flowlab, #plan .flowlab { font: 600 9.5px ui-sans-serif,
+  system-ui; fill: var(--down); }
+#arch .flowlab.fix, #plan .flowlab.fix { fill: var(--good-text); }
 @media (prefers-reduced-motion: reduce) {
   #arch .errflow, #arch .fixflow { animation: none; } }
 /* ---- attribution bars ---- */
@@ -252,6 +253,108 @@
   wrong on that window at once: a shared-worldview failure that adding
   more arms cannot fix.</p>
   <div id="attr" style="margin-top:10px"><p class="mini">computing…</p></div>
+</section>
+
+<section id="plan">
+  <h2>Execution plan — the fix pipeline, with metric gates</h2>
+  <p class="sub small">Dependency-ordered: calibration (M1) is the unlock —
+  the leader fix (M3) and asymmetric gate (M6) consume its output, so they
+  wait. Each arrow is a <b>metric gate</b>: the measured number that must
+  move, by how much, on how many windows, before the next step is trusted.
+  Red branch = the pre-declared falsification path. Every behavior change
+  runs in shadow mode first; every "X beats Y" claim needs a
+  Diebold–Mariano test clustered by window.</p>
+  <svg viewBox="0 0 960 700" style="width:100%;margin-top:10px" role="img"
+    aria-label="remediation pipeline flowchart with metric gates">
+    <title>fix pipeline: sizing → calibration → vetoes → leader →
+      asymmetric gate → tier-1 re-anchor → order-flow features</title>
+    <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4"
+      markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
+    <!-- step boxes (left column) -->
+    <g font-family="ui-sans-serif,system-ui">
+    <rect class="tier" x="10" y="8" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="30">STEP 0 · SIZING — SHIPPED, VERIFYING</text>
+    <text class="tsub" x="24" y="46">Saver 25→10% · Gambler ≥77% gate + $10k reset · MLE 10¢ margin</text>
+    <text class="tsub" x="24" y="60">gates: Gambler stays &gt;72.6% over 30 gated bets · MLE ≥60% idle over 50 windows</text>
+
+    <rect class="tier" x="10" y="106" width="440" height="62" rx="12"
+      style="stroke:var(--series-2);stroke-width:2"/>
+    <text class="tname" x="24" y="128">STEP 1 · M1 PER-ARM PLATT LAYER — THE UNLOCK</text>
+    <text class="tsub" x="24" y="144">1 week shadow: log p_cal beside p_up, change no behavior</text>
+    <text class="tsub" x="24" y="158">problem: arms speak different confidence languages (kb7 a −0.57 vs kb4 −0.12)</text>
+
+    <rect class="tier" x="10" y="204" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="226">STEP 2 · M2 KNIFE-EDGE VETO + M7 HOUR POLICY</text>
+    <text class="tsub" x="24" y="242">no entry at |mkt−0.5|&lt;0.10 · stand down 09:00–10:00 PT</text>
+    <text class="tsub" x="24" y="256">problem: 52.8% of loss $ knife-edge · 09h 64% wrong (market too)</text>
+
+    <rect class="tier" x="10" y="302" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="324">STEP 3 · M3 FIXED-SHARE LEADER (new treatment)</text>
+    <text class="tsub" x="24" y="340">multiplicative weights on log-loss of p_cal · Follower stays as control</text>
+    <text class="tsub" x="24" y="354">problem: 16 switches/day · churner +2.0%/$1 vs fixed-kb4 +4.7%</text>
+
+    <rect class="tier" x="10" y="400" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="422">STEP 4 · M6 ASYMMETRIC GATE (conditional)</text>
+    <text class="tsub" x="24" y="438">UP needs p_cal ≥ τ+0.03 · SKIPPED if Step 1 already kills the lean</text>
+    <text class="tsub" x="24" y="452">problem: FP 33% vs FN 24% — sunsets itself at trailing pBias &lt; 0.02</text>
+
+    <rect class="tier" x="10" y="498" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="520">STEP 5 · M4 TIER-1 RE-ANCHOR (parallel-safe)</text>
+    <text class="tsub" x="24" y="536">trailing-bias recentering t10/t2/t6/t11 + adaptive conformal bands</text>
+    <text class="tsub" x="24" y="550">problem: t10 +$45 bias @h30, 80% up-calls vs 53% real · bands 65–73%</text>
+
+    <rect class="tier" x="10" y="596" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="618">STEP 6 · M-T0 ORDER-FLOW FEATURES (last)</text>
+    <text class="tsub" x="24" y="634">taker-buy imbalance → kb3 · only after the pipeline is honest</text>
+    <text class="tsub" x="24" y="648">gate: non-zero prequential weight AND kb3 Brier does not degrade</text>
+
+    <!-- connecting arrows with gate labels -->
+    <line x1="230" y1="70" x2="230" y2="104" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <line x1="230" y1="168" x2="230" y2="202" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="190" class="flowlab fix">GATE: cross-arm AUC 0.503 → &gt;0.65 · every |pBias| &lt; 0.02 · 100 windows</text>
+    <line x1="230" y1="266" x2="230" y2="300" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="288" class="flowlab fix">GATE: knife-edge loss share 52.8% → &lt;25% · EV/$1 +1pt vs shadow · 50 bids, DM test</text>
+    <line x1="230" y1="364" x2="230" y2="398" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="386" class="flowlab fix">GATE: regret vs best fixed arm 2.7% → &lt;1%/$1 · rolling 100 windows</text>
+    <line x1="230" y1="462" x2="230" y2="496" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="484" class="flowlab fix">GATE: FP−FN gap 9pts → &lt;3pts · 100 decisions (or auto-skip)</text>
+    <line x1="230" y1="560" x2="230" y2="594" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="582" class="flowlab fix">GATE: |bias| &lt; $10 @h30 · coverage 77–83% · 200 cycles</text>
+
+    <!-- fail branch off step 1 -->
+    <path d="M 450 137 C 520 137, 520 137, 560 137" stroke="var(--down)"
+      stroke-width="1.6" fill="none" marker-end="url(#arr)"
+      stroke-dasharray="5 4"/>
+    <rect x="562" y="100" width="388" height="76" rx="12"
+      fill="rgba(209,60,60,.06)" stroke="var(--down)"/>
+    <text class="tname" x="576" y="122" fill="var(--down)">FAIL BRANCH · AUC still ≈ 0.5 after calibration</text>
+    <text class="tsub" x="576" y="138">confidence carries NO cross-arm signal at all →</text>
+    <text class="tsub" x="576" y="152">abandon confidence-weighted selection; vetoes-only</text>
+    <text class="tsub" x="576" y="166">+ equal-weight ensemble of top-Brier arms (kb8, kb4, kb2)</text>
+
+    <!-- global close-out box -->
+    <rect x="562" y="500" width="388" height="158" rx="12"
+      fill="rgba(12,138,77,.05)" stroke="var(--good-text)"/>
+    <text class="tname" x="576" y="522" fill="var(--good-text)">INCIDENT CLOSES WHEN (each on ≥100 windows)</text>
+    <text class="tsub" x="576" y="540">1 · herd-whipsaw loss share 75.2% → &lt; 40%</text>
+    <text class="tsub" x="576" y="556">2 · desk EV/$1 ≥ +3% with maxDD &lt; 2× half-Kelly prediction</text>
+    <text class="tsub" x="576" y="572">3 · cross-arm AUC ≥ 0.65 and every arm |pBias| &lt; 0.02</text>
+    <text class="tsub" x="576" y="588">4 · zero regression on control arms (kb, kb2 untouched)</text>
+    <text class="tsub" x="576" y="610">discipline: shadow first · DM tests clustered by window ·</text>
+    <text class="tsub" x="576" y="624">SPRT kill/keep · dated cutovers · history never rewritten</text>
+    <text class="tsub" x="576" y="644">(Diebold–Mariano 1995 · Wald 1945 · Dawid 1984)</text>
+    </g>
+  </svg>
+  <p class="mini">the live values these gates test against are the tier
+  tables above — same page, same refresh · full step/gate/falsification
+  table in <code>docs/SEV0_REMEDIATION.md</code></p>
 </section>
 
 <section>

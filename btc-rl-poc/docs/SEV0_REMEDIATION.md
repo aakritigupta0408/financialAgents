@@ -271,3 +271,36 @@ Trans. NN) · López de Prado 2018 (Wiley).
 Sizing & testing: Kelly 1956 · MacLean, Thorp & Ziemba 2011 · Wald
 1945 SPRT · Diebold & Mariano 1995 (JBES) · Dawid 1984 (JRSS A) ·
 Arnott, Harvey & Markowitz 2019 (JFDS).
+
+---
+
+## Execution plan — step order, metric gates, falsification branches
+
+Dependency order: M1 unlocks M3/M6; M2/M7 are independent vetoes; M4
+parallel-safe; M-T0 last. Every behavior change ships in shadow mode
+first; every superiority claim requires a window-clustered
+Diebold–Mariano test; kill/keep by SPRT.
+
+| Step | Metric | Baseline | Pass gate | n | If it does NOT move |
+|---|---|---|---|---|---|
+| 0 | Gambler v2 win% | 79.4% (tier) | >72.6% | 30 gated bets | gate was thin-sample luck -> research-only |
+| 0 | MLE idle rate | 0% (bet 7/7) | >=60% | 50 windows | raise PT6_MIN_EDGE_C stepwise |
+| 0 | Saver DD rate | -$2,354/day | <=40% of 25%-era | 3 days | losses not sizing-driven -> entry set |
+| 1 | per-arm pBias | +0.03..+0.11 | \|pBias\|<0.02 | trailing 100 | drift faster than refit -> shorten window |
+| 1 | refit intercept | kb7 -0.565 | \|a\|<0.10 on p_cal | trailing 100 | sigmoid shape wrong -> Beta calibration |
+| 1 | cross-arm AUC | 0.503 | >0.65 | 100 desk bids | FAIL BRANCH: vetoes-only + equal-weight top-Brier ensemble |
+| 2 | knife-edge loss share | 52.8% | <25% | 50 desk bids | tune veto 0.10 -> 0.08/0.12 |
+| 2 | desk EV/$1 vs shadow | +2.0% | +1pt, DM-sig | 50 bids | soften veto to size-discount |
+| 2 | 09h loss contribution | 31.2% | ~0, EV not worse | 2 weeks | hour drift -> drop M7, no whack-a-mole |
+| 3 | regret vs best fixed | 2.7%/$1 | <1%/$1 | rolling 100 | alpha too high -> halve share rate |
+| 3 | leader switches | 16/day | <4/day | 1 week | follows from alpha |
+| 4 | FP-FN gap | 9 pts | <3 pts | 100 decisions | lean is tier-1 -> escalate Step 5 |
+| 5 | t10 bias @h30 | +$45 | \|bias\|<$10 | trailing 200 | re-forms -> add BOCPD trigger |
+| 5 | band coverage @h30 | 65-73% | 77-83% | trailing 200 | exchangeability break -> regime jumps |
+| 6 | flow-feature weight | absent | non-zero, stable | 100 windows | no 15-min flow signal -> drop, document |
+| 6 | kb3 Brier | 0.221 | <=0.221 | 100 windows | noise-injecting -> drop immediately |
+
+Incident closes when, each on >=100 windows: herd-whipsaw loss share
+<40% (from 75.2%); desk EV/$1 >= +3% with maxDD < 2x half-Kelly
+prediction; cross-arm AUC >= 0.65 with every arm |pBias| < 0.02; zero
+regression on the untouched control arms (kb, kb2).
