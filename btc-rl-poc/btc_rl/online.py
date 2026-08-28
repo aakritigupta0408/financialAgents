@@ -391,18 +391,27 @@ def _treat_policies():
     p_cal (this arm's calibrated probability), regime_acc (trailing
     market accuracy, decision-time), ask_c, side.
     """
+    # Every policy prices from the SAME decision-time quote via
+    # _ask(side). Measured 2026-08-28: scoring the champion at the real
+    # ask it paid while challengers used the modelled ask handed them a
+    # 2.1c systematic discount, which alone inflated a challenger to
+    # +23% paired. Absolute EV here is therefore model-priced; the
+    # PAIRED DIFFERENCE — the only thing the SPRT tests — is fair.
+    def _ask(ctx, side):
+        return ctx["ask_c_yes"] if side == "yes" else ctx["ask_c_no"]
+
     def champion(ctx):
-        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
 
     def t_regime(ctx):                       # M8
         if ctx["regime_acc"] is not None and ctx["regime_acc"] < REGIME_FLOOR:
             return None
-        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
 
     def t_knife(ctx):                        # M2
         if ctx["mkt"] is not None and abs(ctx["mkt"] - 0.5) < KNIFE_BAND:
             return None
-        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
 
     def t_cal(ctx):                          # M1 routed to a decision
         pc = ctx.get("p_cal")
@@ -410,19 +419,33 @@ def _treat_policies():
             return None
         if max(pc, 1 - pc) < PT_TAU:         # calibrated gate
             return None
-        return {"side": "yes" if pc >= 0.5 else "no",
-                "ask_c": ctx["ask_c_yes"] if pc >= 0.5
-                else ctx["ask_c_no"]}
+        side = "yes" if pc >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
 
     def t_cheap(ctx):                        # M9 — the Underdog
-        if ctx["ask_c"] > 51:
+        a = _ask(ctx, ctx["side"])
+        if a > 51:
             return None
-        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+        return {"side": ctx["side"], "ask_c": a}
 
     def t_both(ctx):                         # M2 + M8 stacked
         if t_regime(ctx) is None or t_knife(ctx) is None:
             return None
-        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
+
+    def t_fshare(ctx):                       # M3 — Fixed-Share leader
+        r = ctx.get("fs_row")
+        if r is None:
+            return None
+        if max(r["p_up"], 1 - r["p_up"]) < PT_TAU:
+            return None
+        side = "yes" if r["p_up"] >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
+
+    def t_fshare_regime(ctx):                # M3 + M8, the combination
+        if t_regime(ctx) is None:
+            return None
+        return t_fshare(ctx)
 
     return [
         ("champion", "Champion — the live desk policy", champion,
@@ -437,10 +460,15 @@ def _treat_policies():
          "only enter at ask <= 51c, where break-even is far below 50%"),
         ("t_both", "M2+M8 · both vetoes", t_both,
          "stand down on knife-edge OR low-predictability regime"),
+        ("t_fshare", "M3 · Fixed-Share leader", t_fshare,
+         "leader by multiplicative expert weights, not a 10-bet streak"),
+        ("t_fs_reg", "M3+M8 · Fixed-Share + regime gate", t_fshare_regime,
+         "the expert-weighted leader, standing down in bad regimes"),
     ]
 
 
-def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen):
+def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
+                    fshare=None):
     """Score every treatment on each newly-settled DESK window.
 
     Paired by construction: all policies see the same window and the
@@ -477,12 +505,24 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen):
                      if t.get("actual") is not None
                      and t["ticker"] not in seen),
                     key=lambda t: t["close_ts"]):
-        rows = [r for r in by_tk.get(t["ticker"], [])
-                if r.get("variant") == t.get("leader")]
+        wrows = by_tk.get(t["ticker"], [])
+        rows = [r for r in wrows if r.get("variant") == t.get("leader")]
         if not rows:
             continue
         rows.sort(key=lambda r: -r["mins_left"])
         row = rows[0]
+        # decision-time row per arm for this window (Fixed-Share input)
+        per_arm = {}
+        for r in wrows:
+            v = r.get("variant")
+            if v not in PT_ARMS or (r.get("mins_left") or 99) > 12:
+                continue
+            if v not in per_arm or r["mins_left"] > per_arm[v]["mins_left"]:
+                per_arm[v] = r
+        fs_row = None
+        if fshare is not None:
+            ld = fshare.leader()          # weights from PAST windows only
+            fs_row = per_arm.get(ld)
         mkt = row["mkt_p_up"]
         ask_yes = 100 * mkt + 2.5
         ask_no = 100 * (1 - mkt) + 2.5
@@ -493,6 +533,7 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen):
             "regime_acc": regime_at.get(t["ticker"]),
             "side": t["side"], "ask_c": t["ask_c"],
             "ask_c_yes": ask_yes, "ask_c_no": ask_no,
+            "fs_row": fs_row,
         }
         outcome = t["actual"]
         evs = {}
@@ -509,6 +550,16 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen):
             # the incumbent is scored against itself: n and own EV are
             # real, its paired difference is 0 by construction
             tr.observe(evs.get(key), champ)
+        # Fixed-Share learns from this window only AFTER it was used to
+        # decide — the weights that picked fs_row came from prior
+        # windows, so there is no leakage.
+        if fshare is not None and per_arm:
+            losses = {}
+            for v, r in per_arm.items():
+                p = min(max(r["p_up"], 1e-6), 1 - 1e-6)
+                losses[v] = -(math.log(p) if outcome
+                              else math.log(1 - p))
+            fshare.update(losses)
         seen.add(t["ticker"])
         out.append({"ticker": t["ticker"], "close_ts": t["close_ts"],
                     "leader": t.get("leader"), "outcome": outcome,
@@ -1975,6 +2026,7 @@ def run(once: bool = False) -> None:
                                           edge=TREAT_EDGE,
                                           min_n=TREAT_MIN_N)
     treat_seen: set = set()
+    fshare = treatments.FixedShare(PT_ARMS)
     try:
         _tp = RESULTS_DIR / TREAT_STATE_NAME
         _td = json.loads(_tp.read_text()) if _tp.exists() else {}
@@ -1982,6 +2034,9 @@ def run(once: bool = False) -> None:
             if _k in treats:
                 treats[_k].load(_st)
         treat_seen = set(_td.get("seen") or [])
+        if _td.get("fshare"):
+            fshare = treatments.FixedShare.from_dict(_td["fshare"],
+                                                     PT_ARMS)
     except Exception:
         treat_seen = set()
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
@@ -2898,7 +2953,7 @@ def run(once: bool = False) -> None:
             # newly-settled windows, then check for a promotion
             try:
                 scored = _treat_evaluate(pt_trades, kb, kb_calib,
-                                         treats, treat_seen)
+                                         treats, treat_seen, fshare)
                 if scored:
                     with (RESULTS_DIR / TREAT_LOG_NAME).open("a") as fh:
                         for rec in scored:
@@ -2918,6 +2973,7 @@ def run(once: bool = False) -> None:
                     tmpt.write_text(json.dumps({
                         "treats": {k: t.to_dict()
                                    for k, t in treats.items()},
+                        "fshare": fshare.to_dict(),
                         "seen": sorted(treat_seen)[-4000:]}))
                     tmpt.replace(RESULTS_DIR / TREAT_STATE_NAME)
             except Exception as e:
@@ -3363,6 +3419,9 @@ def run(once: bool = False) -> None:
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
                 "treatments": [t.status() for t in treats.values()],
+                "fshare_w": {k: round(v, 4)
+                             for k, v in sorted(fshare.w.items(),
+                                                key=lambda x: -x[1])},
                 "kb_calib": {v: {"a": round(c.a, 4), "b": round(c.b, 4),
                                  "n": c.updates,
                                  "ll": (lambda m: None if m is None

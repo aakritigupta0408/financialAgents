@@ -190,6 +190,66 @@ class Treatment:
         self.promoted_at = d.get("promoted_at")
 
 
+class FixedShare:
+    """Herbster & Warmuth (1998) Fixed-Share over the arms.
+
+    Tracks the best SEQUENCE of experts rather than the best fixed one.
+    Weights update multiplicatively on each arm's log-loss, then a share
+    alpha of the mass is redistributed uniformly — that share is what
+    lets a previously-bad arm recover when the regime turns.
+
+    Chosen over "pick the best fixed arm" for a measured reason: on
+    2026-08-27 the best fixed arm was kb4 (+4.7%/$1); one day later kb4
+    was -3.7% and kb9 was the only arm above water. A frozen winner is
+    a losing policy in this market.
+
+    Chosen over a contextual bandit because we observe EVERY arm's
+    outcome on every window (full information, not bandit feedback), so
+    expert-advice machinery is the right frame and bandit exploration
+    would waste information we already have.
+    """
+
+    def __init__(self, arms, alpha: float = 0.08, eta: float = 1.2):
+        self.arms = list(arms)
+        self.alpha = alpha          # share redistributed each round
+        self.eta = eta              # learning rate on log-loss
+        self.w = {a: 1.0 / len(self.arms) for a in self.arms}
+
+    def leader(self):
+        return max(self.w, key=lambda a: self.w[a])
+
+    def update(self, losses: dict) -> None:
+        """losses: arm -> log-loss on the settled window (lower better).
+        Arms absent from the dict keep their weight (no evidence)."""
+        if not losses:
+            return
+        for a, l in losses.items():
+            if a in self.w:
+                self.w[a] *= math.exp(-self.eta * l)
+        tot = sum(self.w.values())
+        if tot <= 0 or not math.isfinite(tot):
+            self.w = {a: 1.0 / len(self.arms) for a in self.arms}
+            return
+        for a in self.w:
+            self.w[a] /= tot
+        # share step: mix a fraction of the mass back toward uniform
+        k = len(self.w)
+        pool = self.alpha / k
+        for a in self.w:
+            self.w[a] = (1 - self.alpha) * self.w[a] + pool
+
+    def to_dict(self) -> dict:
+        return {"alpha": self.alpha, "eta": self.eta, "w": self.w}
+
+    @classmethod
+    def from_dict(cls, d: dict, arms) -> "FixedShare":
+        f = cls(arms, alpha=d.get("alpha", 0.08), eta=d.get("eta", 1.2))
+        w = d.get("w") or {}
+        if set(w) == set(f.arms):
+            f.w = {a: float(w[a]) for a in f.arms}
+        return f
+
+
 def bet_ev(side: str, ask_c: float, outcome: int) -> float:
     """EV per $1 staked for one settled binary bet at a real ask.
     Fee follows the Kalshi form used everywhere else in this project."""

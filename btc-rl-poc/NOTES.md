@@ -458,3 +458,41 @@ TWO BUGS FOUND AND FIXED WHILE BUILDING IT:
 
 The second bug is the important one: it would have silently promoted a
 treatment into live trading on numerical noise.
+
+## 2026-08-28 — M3 Fixed-Share added; a 2.1c pricing bug was faking every win
+
+M3 (Herbster & Warmuth 1998) implemented in treatments.py and routed as
+two live treatments: t_fshare (expert-weighted leader) and t_fs_reg
+(that leader plus the regime gate). Weights update on each arm's
+log-loss AFTER the window was used to decide — no leakage. Chosen over
+"freeze the best arm" because the best fixed arm flipped sign in one
+day (kb4 +4.7% -> -3.7%), and over contextual bandits because we see
+every arm's outcome every window (full information, not bandit
+feedback).
+
+THE IMPORTANT FINDING — a 2.1c ask artifact was manufacturing nearly
+all challenger edge. The champion was scored at the REAL ask it paid
+while challengers priced from the modelled decision-time quote, handing
+them a systematic 2.1c discount (mean synthetic - real = -2.10c over
+150 paired windows). Under that bug:
+
+  M3 Fixed-Share    +23.52% paired   -> after fix   +1.17%
+  M9 Underdog       +10.61%          -> after fix   -5.03%
+  M2 knife-edge      +7.98%          -> after fix   -8.59%
+  M8 regime gate     +9.09%          -> after fix   +0.38%
+  M1 calibrated      -3.74%          -> after fix  -26.09%
+
+Fix: every policy, champion included, now prices from the same
+decision-time quote via _ask(side). Absolute EV is therefore
+model-priced (optimistic vs real fills); only the PAIRED DIFFERENCE is
+apples-to-apples, and that is the only thing the SPRT tests.
+
+After the fix only M8 (+0.38%) and M3 (+1.17%) are positive at all,
+both far from the promote boundary. Every mitigation we designed is
+now unproven on fair pricing. Had the framework shipped one commit
+earlier it would have auto-promoted a pricing artifact into live
+trading — the second near-miss auto-promotion in one day (the first
+was the SPRT variance collapse).
+
+Fixed-Share weights after backfill: kb2 .303, kb9 .177, kb4 .156,
+kb3 .130, kb7 .119, kb8 .115.

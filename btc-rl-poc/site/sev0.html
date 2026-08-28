@@ -415,6 +415,21 @@
     <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
   </table></div>
   <div id="tr-bars" style="margin-top:12px"></div>
+  <p class="sub small" style="margin-top:14px"><b>A 2.1¢ bug was
+  manufacturing almost every "win" here.</b> The champion was first
+  scored at the real ask it paid while challengers were priced from the
+  modelled quote — a systematic 2.1¢ discount to the challengers. Under
+  that bug M3 read <b>+23.5%</b> against the champion. Pricing every
+  policy from the same decision-time quote collapsed it to
+  <b>+1.2%</b>; M9 went +10.6% → −5.0%, M2 +8.0% → −8.6%, M1 −3.7% →
+  −26.1%. Only M8 and M3 remain positive at all, both far from
+  significance. Had the framework shipped one commit earlier it would
+  have auto-promoted a pricing artifact into live trading.</p>
+  <p class="mini"><b>Read the absolute EV column with care:</b> it is
+  now <i>model-priced</i> from the quote midpoint plus the standard
+  spread, so it runs optimistic against the fills the desk actually
+  gets. The <b>paired difference</b> is the number the SPRT tests and
+  the only one that is apples-to-apples.</p>
   <p class="mini">the evidence bar shows progress toward the promote
   boundary (green) or the reject boundary (red); a treatment that
   reaches either is auto-promoted or retired, stamped with the time and
