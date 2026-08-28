@@ -137,11 +137,18 @@ class Treatment:
     """
 
     def __init__(self, key: str, label: str, decide, rationale: str,
-                 edge: float = 0.02, min_n: int = 40):
+                 edge: float = 0.02, min_n: int = 40,
+                 baseline: bool = False):
         self.key = key
         self.label = label
         self.decide = decide
         self.rationale = rationale
+        # A baseline is paired against itself, so its difference is 0 by
+        # construction. Feeding that to the SPRT is not a no-op: a
+        # constant 0 accumulates evidence AGAINST "better by `edge`" and
+        # the baseline drifts to REJECT (measured: LLR -2.80). Baselines
+        # report n and own EV, and are never given a verdict.
+        self.baseline = baseline
         self.sprt = SPRT(edge=edge, min_n=min_n)
         self.n_bet = 0
         self.n_skip = 0
@@ -158,10 +165,13 @@ class Treatment:
         else:
             self.n_bet += 1
             self.ev_sum += own_ev
+        if self.baseline:
+            self.sprt.n += 1        # count windows, never accumulate LLR
+            return
         self.sprt.add(o - c)
 
     def status(self) -> dict:
-        v = self.sprt.verdict()
+        v = "baseline" if self.baseline else self.sprt.verdict()
         return {
             "key": self.key, "label": self.label,
             "rationale": self.rationale,

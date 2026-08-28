@@ -33,8 +33,9 @@ kb_calib = {v: PlattCalibrator.from_dict(d) for v, d in cd.items()}
 
 treats = {}
 for k, lab, fn, why in O._treat_policies():
-    treats[k] = treatments.Treatment(k, lab, fn, why, edge=O.TREAT_EDGE,
-                                     min_n=O.TREAT_MIN_N)
+    treats[k] = treatments.Treatment(
+        k, lab, fn, why, edge=O.TREAT_EDGE, min_n=O.TREAT_MIN_N,
+        baseline=k in ("champion", "champion_real"))
 seen = set()
 fshare = treatments.FixedShare(O.PT_ARMS)
 recs = O._treat_evaluate(pt, kb, kb_calib, treats, seen, fshare)

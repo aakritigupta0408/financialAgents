@@ -54,6 +54,12 @@ TREAT_EDGE = 0.02              # the win size worth switching for (EV/$1)
 REGIME_LOOKBACK = 20           # windows for the market-accuracy signal
 REGIME_FLOOR = 0.62            # stand down below this (M8)
 KNIFE_BAND = 0.10              # |mkt_p_up - 0.5| veto width (M2)
+# M10: decline a fill worse than the decision-time quote by more than
+# this. Motivated by measurement, not by tuning: execution costs 2.70
+# points of EV (real fills -9.73% vs model quotes -7.02%), more than
+# double the best paired treatment edge, and the worst 10% of fills
+# (mean slip +24c) lost $524 on their own.
+EXEC_MAX_SLIP_C = 3.0
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
@@ -447,6 +453,26 @@ def _treat_policies():
             return None
         return t_fshare(ctx)
 
+    # --- REAL-FILL basis -------------------------------------------
+    # These are execution policies, so they must be judged on the ask
+    # the desk ACTUALLY paid, and paired against a champion priced the
+    # same way. Mixing bases is what produced the 2.1c artifact.
+    def champion_real(ctx):
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"],
+                "basis": "real"}
+
+    def t_exec(ctx):                         # M10 — execution guard
+        slip = ctx["ask_c"] - _ask(ctx, ctx["side"])
+        if slip > EXEC_MAX_SLIP_C:
+            return None                      # decline a bad fill
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"],
+                "basis": "real"}
+
+    def t_exec_regime(ctx):                  # M10 + M8
+        if t_regime(ctx) is None:
+            return None
+        return t_exec(ctx)
+
     return [
         ("champion", "Champion — the live desk policy", champion,
          "leader's call at >=0.62 confidence, every biddable window"),
@@ -464,6 +490,14 @@ def _treat_policies():
          "leader by multiplicative expert weights, not a 10-bet streak"),
         ("t_fs_reg", "M3+M8 · Fixed-Share + regime gate", t_fshare_regime,
          "the expert-weighted leader, standing down in bad regimes"),
+        ("champion_real", "Champion at REAL fills (execution baseline)",
+         champion_real,
+         "the desk's actual entries at the ask it actually paid"),
+        ("t_exec", "M10 · execution guard", t_exec,
+         f"decline any fill worse than the quote by >{EXEC_MAX_SLIP_C}c"),
+        ("t_exec_reg", "M10+M8 · execution guard + regime gate",
+         t_exec_regime,
+         "decline bad fills AND stand down in bad regimes"),
     ]
 
 
@@ -536,7 +570,7 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
             "fs_row": fs_row,
         }
         outcome = t["actual"]
-        evs = {}
+        evs, basis = {}, {}
         for key, _lab, fn, _r in _treat_policies():
             try:
                 d = fn(ctx)
@@ -545,11 +579,21 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
             evs[key] = (None if d is None
                         else treatments.bet_ev(d["side"], d["ask_c"],
                                                outcome))
-        champ = evs.get("champion")
+            basis[key] = (d or {}).get("basis", "model")
+        # Pair each policy against the champion on ITS OWN pricing
+        # basis. Execution policies must be judged at the ask actually
+        # paid; model policies at the decision-time quote. Comparing
+        # across bases is exactly the 2.1c artifact that faked every
+        # earlier "win".
+        champ_by = {"model": evs.get("champion"),
+                    "real": evs.get("champion_real")}
+        # a policy that stood down has no basis of its own — pair it
+        # against the champion of the family it belongs to
+        FAMILY = {"champion_real": "real", "t_exec": "real",
+                  "t_exec_reg": "real"}
         for key, tr in treats.items():
-            # the incumbent is scored against itself: n and own EV are
-            # real, its paired difference is 0 by construction
-            tr.observe(evs.get(key), champ)
+            fam = FAMILY.get(key, "model")
+            tr.observe(evs.get(key), champ_by.get(fam))
         # Fixed-Share learns from this window only AFTER it was used to
         # decide — the weights that picked fs_row came from prior
         # windows, so there is no leakage.
@@ -2022,9 +2066,9 @@ def run(once: bool = False) -> None:
     # champion/challenger registry, restored across restarts
     treats: dict = {}
     for _k, _lab, _fn, _why in _treat_policies():
-        treats[_k] = treatments.Treatment(_k, _lab, _fn, _why,
-                                          edge=TREAT_EDGE,
-                                          min_n=TREAT_MIN_N)
+        treats[_k] = treatments.Treatment(
+            _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+            baseline=_k in ("champion", "champion_real"))
     treat_seen: set = set()
     fshare = treatments.FixedShare(PT_ARMS)
     try:
