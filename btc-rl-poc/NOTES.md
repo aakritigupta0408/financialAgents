@@ -385,3 +385,30 @@ Plan deltas: M7 dropped · M4 -> M4' (bands only) · M6 folded into M1 ·
 M2 demoted (payoff 52.8% -> 16.6%) · M3 promoted (best fixed arm
 flipped) · M8 + M9 added · all gates now regime-stratified, since a
 pooled sample mixes regimes and hid all of this.
+
+## 2026-08-28 — M1 shipped to SHADOW; two real bugs found; premise NOT confirmed
+
+PlattCalibrator (agents.py) + per-arm shadow layer in online.py. Every
+kb row now carries p_cal beside p_up; NOTHING trades on it. State in
+results/kb_calib.json, published in online_status.kb_calib.
+
+Two implementation bugs found by checking output instead of trusting it:
+1. Per-sample 2-parameter Newton is degenerate: the 2x2 Hessian from a
+   single observation is exactly rank-1 (det = w^2x^2 - (wx)^2 = 0), so
+   b is unidentifiable. Symptom: b froze at exactly 1.000 for all nine
+   arms while a drifted to -2.7. 
+2. Decayed-accumulator Newton overshoots: the gradient keeps
+   re-applying residuals computed at stale parameters. Symptom: a =
+   -0.64 vs the batch answer -0.13; b swung to 2.4.
+Shipped fix: sliding-window (150) batch refit every 5 updates. Bounded
+work, cannot overshoot, tracks drift by construction, and reproduces
+the offline audit's numbers by design (kb a -0.115/b 0.699 online vs
+-0.129/0.746 batch) so daemon and dashboard agree.
+
+SHADOW VERDICT (warm-start replay, prequential decayed log-loss):
+calibration HELPS ONLY kb7 (+0.0066), the most miscalibrated arm, and
+is marginally worse on the other eight (-0.004 to -0.021). M1's premise
+is NOT confirmed. Had we wired it into the decision tier on the
+strength of the 08/26 audit we would have shipped a regression. The
+shadow week continues; it earns the switch-over on live windows or it
+is dropped. This is the process working, not the hypothesis winning.

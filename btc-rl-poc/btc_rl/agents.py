@@ -6,10 +6,148 @@ Next     linear function approximation, then a small DQN (see README roadmap).
 """
 from __future__ import annotations
 
+import math
 import random
 from collections import defaultdict
 
 from . import config
+
+
+class PlattCalibrator:
+    """Online Platt scaling with a forgetting factor: maps a model's
+    stated probability p to a calibrated one, sigmoid(a + b*logit(p)).
+
+    Damped Newton steps on the log-loss with exponentially decayed
+    statistics, so the fit tracks a MOVING miscalibration instead of
+    averaging over regimes. Measured 2026-08-28: both a and b shifted
+    between the halves of four of six arms' histories (kb went
+    a+0.03/b0.56 -> a-0.45/b1.34), so a growing-window fit would lag
+    the very thing it corrects.
+
+    a=0, b=1 is the identity. b<1 shrinks over-extreme probabilities
+    toward 0.5 — which is exactly the tier-1 band under-dispersion
+    defect (bands cover 74-76% vs 80%), corrected at the point of use.
+
+    Platt 1999; Guo et al. 2017 (ICML) on why modern models need this;
+    Dawid 1984 for the prequential (test-then-train) discipline.
+    """
+
+    def __init__(self, decay: float = 0.985, lr: float = 0.35,
+                 warm: int = 25, window: int = 150, refit: int = 5):
+        self.a = 0.0
+        self.b = 1.0
+        self.decay = decay          # memory of the log-loss scoreboard
+        self.lr = lr                # (retained for state compatibility)
+        self.warm = warm            # identity until this many updates
+        self.window = window        # sliding refit window (windows)
+        self.refit = refit          # refit every k updates (cheap)
+        self.hist: list = []        # recent (p, y) pairs, <= window
+        self.updates = 0
+        self.n_eff = 0.0            # decayed sample count
+        self.ll = 0.0               # decayed log-loss (calibrated)
+        self.ll_raw = 0.0           # decayed log-loss (raw) — the control
+
+    @staticmethod
+    def _logit(p: float) -> float:
+        p = min(max(p, 1e-6), 1.0 - 1e-6)
+        return math.log(p / (1.0 - p))
+
+    @staticmethod
+    def _sig(z: float) -> float:
+        return 1.0 / (1.0 + math.exp(-max(-30.0, min(30.0, z))))
+
+    def predict(self, p: float) -> float:
+        """Calibrated probability. Identity while warming up, so a cold
+        calibrator can never make a live arm worse."""
+        if self.updates < self.warm:
+            return p
+        return self._sig(self.a + self.b * self._logit(p))
+
+    def update(self, p: float, y: int) -> None:
+        """Test-then-train: score the CURRENT fit on this outcome first
+        (the honest prequential number), then step toward it."""
+        x = self._logit(p)
+        pc = self.predict(p)
+        eps = 1e-9
+        self.ll = self.decay * self.ll - math.log(
+            max(eps, pc if y else 1.0 - pc))
+        self.ll_raw = self.decay * self.ll_raw - math.log(
+            max(eps, p if y else 1.0 - p))
+        self.n_eff = self.decay * self.n_eff + 1.0
+        self.updates += 1
+        self.hist.append((p, y))
+        if len(self.hist) > self.window:
+            self.hist.pop(0)
+        # Refit by BATCH Newton on the recent window. Rejected the
+        # incremental variants for concrete, measured reasons:
+        #  - per-sample 2-param Newton: Hessian is exactly rank-1
+        #    (det = w^2x^2 - (wx)^2 = 0), so b is unidentifiable and the
+        #    fit degenerates to intercept drift (measured: b stuck at
+        #    1.000 across all nine arms).
+        #  - decayed-accumulator Newton: the gradient keeps re-applying
+        #    residuals computed at stale parameters, compounding into
+        #    overshoot (measured: a = -0.64 vs the batch answer -0.13).
+        # A sliding window is bounded work, cannot overshoot, tracks
+        # drift by construction, and reproduces the offline fit the
+        # audit computes — so daemon and dashboard agree by design.
+        if len(self.hist) >= self.warm and self.updates % self.refit == 0:
+            self._refit()
+
+    def _refit(self) -> None:
+        a, b = 0.0, 1.0
+        xs = [(self._logit(p), y) for p, y in self.hist]
+        for _ in range(40):
+            g0 = g1 = h00 = h01 = h11 = 0.0
+            for x, y in xs:
+                m = self._sig(a + b * x)
+                w = m * (1.0 - m)
+                g0 += y - m
+                g1 += (y - m) * x
+                h00 += w
+                h01 += w * x
+                h11 += w * x * x
+            h00 += 1e-3             # ridge: keeps it invertible and pulls
+            h11 += 1e-3             # an unidentified fit toward identity
+            det = h00 * h11 - h01 * h01
+            if abs(det) < 1e-10:
+                break
+            da = (g0 * h11 - g1 * h01) / det
+            db = (g1 * h00 - g0 * h01) / det
+            a += da
+            b += db
+            if abs(da) + abs(db) < 1e-9:
+                break
+        if not (math.isfinite(a) and math.isfinite(b)):
+            return
+        self.a = max(-4.0, min(4.0, a))
+        self.b = max(0.15, min(4.0, b))
+
+    def mean_ll(self):
+        """(calibrated, raw) decayed mean log-loss — the shadow verdict.
+        Calibrated below raw means the layer is earning its place."""
+        if self.n_eff < 1:
+            return None
+        return self.ll / self.n_eff, self.ll_raw / self.n_eff
+
+    def to_dict(self) -> dict:
+        return {"a": self.a, "b": self.b, "updates": self.updates,
+                "n_eff": self.n_eff, "ll": self.ll, "ll_raw": self.ll_raw,
+                "decay": self.decay, "lr": self.lr, "warm": self.warm,
+                "window": self.window, "refit": self.refit,
+                "hist": [[round(p, 5), y] for p, y in self.hist]}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "PlattCalibrator":
+        c = cls(decay=d.get("decay", 0.985), lr=d.get("lr", 0.35),
+                warm=d.get("warm", 25), window=d.get("window", 150),
+                refit=d.get("refit", 5))
+        c.a, c.b = d.get("a", 0.0), d.get("b", 1.0)
+        c.updates = d.get("updates", 0)
+        c.n_eff = d.get("n_eff", 0.0)
+        c.ll = d.get("ll", 0.0)
+        c.ll_raw = d.get("ll_raw", 0.0)
+        c.hist = [(float(p), int(y)) for p, y in d.get("hist", [])]
+        return c
 
 
 class PersistenceAgent:

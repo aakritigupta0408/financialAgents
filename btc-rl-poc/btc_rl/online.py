@@ -29,7 +29,16 @@ from . import config
 from . import metrics as M
 from .history import append_history
 from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
-                     LSTMDistAgent, TabularQAgent)
+                     LSTMDistAgent, PlattCalibrator, TabularQAgent)
+
+# --- M1 (2026-08-28): per-arm calibration layer, SHADOW MODE ---------
+# Every kb row carries p_cal beside p_up; nothing reads p_cal to trade
+# yet. The shadow week answers one question with data: does calibrating
+# beat not calibrating (decayed log-loss, prequential)? Only then does
+# the decision tier switch over. See docs/SEV0_REMEDIATION.md M1.
+KB_CALIB_NAME = "kb_calib.json"
+KB_CALIB_ARMS = ("kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7",
+                 "kb8", "kb9")
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
@@ -1794,6 +1803,19 @@ def run(once: bool = False) -> None:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
         kb_policy = None
+    # M1 shadow calibrators — one per arm, restored across restarts
+    kb_calib: dict[str, PlattCalibrator] = {}
+    try:
+        _cp = RESULTS_DIR / KB_CALIB_NAME
+        _cd = json.loads(_cp.read_text()) if _cp.exists() else {}
+    except Exception:
+        _cd = {}
+    for _v in KB_CALIB_ARMS:
+        try:
+            kb_calib[_v] = (PlattCalibrator.from_dict(_cd[_v])
+                            if _v in _cd else PlattCalibrator())
+        except Exception:
+            kb_calib[_v] = PlattCalibrator()
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -2639,6 +2661,7 @@ def run(once: bool = False) -> None:
                         kb_made.add(("kbf", pm_mkt["ticker"], 0))
                     kb_changed = True
             logit_changed = False
+            calib_changed = False
             for r in kb:
                 if r["actual"] is not None or now_ts < r["close_ts"]:
                     continue
@@ -2674,6 +2697,13 @@ def run(once: bool = False) -> None:
                 if r.get("b8x") and len(r["b8x"]) == kb8_logit.dim:
                     kb8_logit.update(r["b8x"], outcome)
                     logit_changed = True
+                # M1 shadow: train this arm's calibrator on the outcome.
+                # Prequential — predict() was already stamped at write
+                # time, so the score recorded inside update() is honest.
+                _cal = kb_calib.get(r.get("variant") or "kb")
+                if _cal is not None:
+                    _cal.update(r["p_up"], outcome)
+                    calib_changed = True
                 kb_changed = True
             if logit_changed:
                 tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
@@ -2691,7 +2721,20 @@ def run(once: bool = False) -> None:
                 tmp8 = (RESULTS_DIR / KB8_LOGIT_PATH_NAME).with_suffix(".tmp8")
                 tmp8.write_text(json.dumps(kb8_logit.to_dict()))
                 tmp8.replace(RESULTS_DIR / KB8_LOGIT_PATH_NAME)
+            if calib_changed:
+                tmpc = (RESULTS_DIR / KB_CALIB_NAME).with_suffix(".tmpc")
+                tmpc.write_text(json.dumps(
+                    {v: c.to_dict() for v, c in kb_calib.items()}))
+                tmpc.replace(RESULTS_DIR / KB_CALIB_NAME)
             if kb_changed:
+                # M1 shadow stamp: p_cal on every unsettled row, so the
+                # calibrated number is recorded BEFORE the outcome is
+                # known. Nothing trades on it during the shadow week.
+                for r in kb:
+                    if r.get("actual") is None:
+                        c = kb_calib.get(r.get("variant") or "kb")
+                        if c is not None:
+                            r["p_cal"] = round(c.predict(r["p_up"]), 4)
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
@@ -3123,6 +3166,12 @@ def run(once: bool = False) -> None:
                               "kb7", "kb8", "kb9")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
+                "kb_calib": {v: {"a": round(c.a, 4), "b": round(c.b, 4),
+                                 "n": c.updates,
+                                 "ll": (lambda m: None if m is None
+                                        else [round(m[0], 4),
+                                              round(m[1], 4)])(c.mean_ll())}
+                             for v, c in kb_calib.items()},
                 "kbf": _class_prf(kb),
                 "sel_policy": {k: kb_policy.get(k) for k in
                                ("tuned_at", "kind", "theta", "precision",

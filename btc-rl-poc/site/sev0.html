@@ -387,6 +387,44 @@
   <div id="attr" style="margin-top:10px"><p class="mini">computing…</p></div>
 </section>
 
+<section id="m1shadow">
+  <h2>M1 shadow — is calibration actually earning its place?
+    <span class="pill pending" id="m1-chip">shadow</span></h2>
+  <p class="sub small">The calibration layer is <b>live but trading
+  nothing</b>: every kb row now carries <code>p_cal</code> beside
+  <code>p_up</code>, and each arm's (a, b) refits on a 150-window sliding
+  window. The verdict below is <b>prequential</b> — each window is scored
+  by the fit that existed <i>before</i> it settled, then trained on
+  (Dawid 1984). <b>LL</b> is decayed mean log-loss; lower is better, so
+  <b>gain = raw − calibrated</b> must be positive for the layer to
+  justify itself.</p>
+  <p class="sub small"><b>Honest status:</b> on the warm-start replay
+  calibration helped <b>only kb7</b> — the most miscalibrated arm — and
+  was marginally worse on the other eight. The premise is
+  <b>not yet confirmed</b>. This is precisely why M1 runs in shadow
+  rather than shipping: had we wired it straight into the decision tier
+  on the strength of the 08/26 audit, we would have shipped a
+  regression. The gate stands: it earns the switch-over or it is
+  dropped.</p>
+  <div class="scroll" style="margin-top:8px"><table id="m1-tbl">
+    <thead><tr><th>arm</th><th class="num">n</th>
+      <th class="num">a (intercept)</th><th class="num">b (slope)</th>
+      <th class="num">LL calibrated</th><th class="num">LL raw</th>
+      <th class="num">gain</th><th>verdict</th></tr></thead>
+    <tbody><tr><td colspan="8" class="mini">waiting for the daemon's
+      first settle…</td></tr></tbody>
+  </table></div>
+  <p class="mini">b &lt; 1 = the arm is overconfident and the layer
+  shrinks it toward 0.5 — the tier-1 under-dispersion defect corrected at
+  the point of use · two implementation bugs were found and fixed while
+  building this (a per-sample Newton step whose 2×2 Hessian is exactly
+  rank-1, so the slope was unidentifiable and froze at 1.000; then a
+  decayed-accumulator variant that re-applied stale residuals and
+  overshot to a = −0.64 against the batch answer −0.13). The shipped
+  version is a sliding-window batch refit, which reproduces the offline
+  audit's numbers by construction.</p>
+</section>
+
 <section id="plan">
   <h2>Execution plan — the fix pipeline, with metric gates</h2>
   <p class="sub small">Dependency-ordered: calibration (M1) is the unlock —
@@ -724,6 +762,35 @@ async function poll() {
     (ageS > 300 ? "stale" : "live") + " · refreshed " +
     new Date().toLocaleTimeString("en-US",
       { timeZone: "America/Los_Angeles", hour12: false }) + " PT";
+
+  // ---- M1 SHADOW scoreboard (from the daemon's own calibrators) ----
+  try {
+    const C = st.kb_calib || {};
+    const rows = Object.keys(C).filter(v => C[v] && C[v].n).map(v => {
+      const c = C[v], ll = c.ll;         // [calibrated, raw]
+      const gain = ll ? ll[1] - ll[0] : null;
+      return { v, c, ll, gain };
+    });
+    if (rows.length) {
+      const helped = rows.filter(r => r.gain > 0).length;
+      document.getElementById("m1-chip").textContent =
+        `shadow · helps ${helped}/${rows.length} arms`;
+      document.getElementById("m1-chip").className =
+        "pill " + (helped > rows.length / 2 ? "hit" : "pending");
+      document.querySelector("#m1-tbl tbody").innerHTML = rows.map(r =>
+        `<tr><td>${r.v}</td><td class="num">${r.c.n}</td>` +
+        `<td class="num">${r.c.a >= 0 ? "+" : ""}${r.c.a.toFixed(3)}</td>` +
+        `<td class="num" style="color:${r.c.b < 0.85
+          ? "var(--down)" : "inherit"}">${r.c.b.toFixed(3)}</td>` +
+        `<td class="num">${r.ll ? r.ll[0].toFixed(4) : "–"}</td>` +
+        `<td class="num">${r.ll ? r.ll[1].toFixed(4) : "–"}</td>` +
+        `<td class="num" style="color:${r.gain > 0 ? "var(--good-text)"
+          : "var(--down)"}">${r.gain == null ? "–"
+          : (r.gain >= 0 ? "+" : "") + r.gain.toFixed(4)}</td>` +
+        `<td>${r.gain > 0 ? '<span class="pill hit">helps</span>'
+          : '<span class="pill miss">no gain</span>'}</td></tr>`).join("");
+    }
+  } catch (e) {}
 
   // ---- RE-TRIAGE: day regimes, calibration drift, Step-0 gates ----
   try {
