@@ -412,3 +412,49 @@ is NOT confirmed. Had we wired it into the decision tier on the
 strength of the 08/26 audit we would have shipped a regression. The
 shadow week continues; it earns the switch-over on live windows or it
 is dropped. This is the process working, not the hypothesis winning.
+
+## 2026-08-28 — champion/challenger routing: everything now proves itself live
+
+btc_rl/treatments.py: every improvement runs as a TREATMENT on real
+live windows, paired against the incumbent, promoted only when the live
+stream crosses a sequential boundary. Nothing is adopted on backtest
+evidence again — three confident offline conclusions of ours have
+already been wrong (tier-1 RCA, the 09h "toxic hour", the calibration
+premise).
+
+Design: paired same-window scoring (regime cancels out of the
+difference — 08/27 showed one day can swamp an unpaired test);
+effective n = WINDOWS; Wald SPRT (1945) so continuous monitoring is
+valid; standing down is a real decision scoring 0, which is how a veto
+can win without betting; promotion is stamped and reversible and the
+loser keeps running so a regression stays visible.
+
+Treatments live: M8 regime gate, M2 knife-edge veto, M1 calibrated
+gate, M9 Underdog (cheap bids), M2+M8 stacked. Backfilled on 153
+settled desk windows, then the daemon continues the same computation.
+
+Backfill (NOT a verdict — all still COLLECTING):
+  champion            153 bets            EV -5.47%
+  M9 Underdog          10 bets, 143 skips EV +25.72%  (+7.15% paired)
+  M1 calibrated gate   55 bets,  98 skips EV  +3.82%  (+6.84% paired)
+  M8 regime gate       88 bets,  65 skips EV  +1.21%  (+6.16% paired)
+  M2+M8 both vetoes    17 bets, 136 skips EV  -7.72%  (+4.61% paired)
+  M2 knife-edge veto   39 bets, 114 skips EV  -6.47%  (+3.82% paired)
+
+TWO BUGS FOUND AND FIXED WHILE BUILDING IT:
+1. Regime signal measured at the wrong time. Market accuracy was being
+   read from whichever row landed last per ticker — rows near the close
+   where the market is trivially right (80-100%), so the gate never
+   fired once in 154 windows. Fixed to the decision-time row (earliest
+   inside the <=12-minute envelope); it now skips 65 of 153 and lifts
+   EV from -6.08% to +1.21%.
+2. SPRT divided by a near-zero variance. When early paired differences
+   are identical (both policies stand down => d = 0) the running
+   variance collapses and the LLR explodes: M1 hit LLR 123 on 154
+   windows and tripped a FALSE AUTO-PROMOTION. Fixed with a variance
+   floor (0.01, far below any real spread since paired EV differences
+   are O(1)) plus a 12-window warmup before scoring. LLRs are now
+   0.15-0.41 and nothing promotes on the backfill.
+
+The second bug is the important one: it would have silently promoted a
+treatment into live trading on numerical noise.

@@ -387,6 +387,43 @@
   <div id="attr" style="margin-top:10px"><p class="mini">computing…</p></div>
 </section>
 
+<section id="treatments">
+  <h2>Champion vs challengers — live on real traffic
+    <span class="pill pending" id="tr-chip">…</span></h2>
+  <p class="sub small">Every improvement now runs as a <b>treatment on
+  real live windows</b>, paired against the incumbent desk policy, and is
+  <b>promoted only when the live stream clears a sequential test</b> —
+  never on backtest evidence. Three of our own confident offline
+  conclusions have already been wrong (the tier-1 root cause, the "toxic
+  hour", the calibration premise), so nothing is adopted on a replay
+  again.</p>
+  <p class="sub small"><b>How it is judged.</b> All policies see the
+  <i>same</i> window and the <i>same</i> settled outcome, so the market
+  regime cancels out of the difference — 08/27 proved an unpaired
+  comparison can be swamped by one bad day. Effective n is
+  <b>windows</b>. The test is Wald's <b>SPRT</b> (1945): H₀ "no better"
+  vs H₁ "better by ≥2%/$1", accumulating evidence until it crosses a
+  boundary — valid under continuous monitoring, unlike a fixed-horizon
+  test re-checked every window. <b>Standing down is a real decision</b>
+  that scores 0 and risks nothing, which is how a veto treatment can win
+  without placing a single bet.</p>
+  <div class="scroll" style="margin-top:8px"><table id="tr-tbl">
+    <thead><tr><th>treatment</th><th class="num">windows</th>
+      <th class="num">bets</th><th class="num">stood down</th>
+      <th class="num">own EV/$1</th><th class="num">vs champion</th>
+      <th class="num">evidence (LLR)</th><th>status</th></tr></thead>
+    <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
+  </table></div>
+  <div id="tr-bars" style="margin-top:12px"></div>
+  <p class="mini">the evidence bar shows progress toward the promote
+  boundary (green) or the reject boundary (red); a treatment that
+  reaches either is auto-promoted or retired, stamped with the time and
+  the paired margin that earned it · a promoted challenger does not
+  delete the incumbent — the loser keeps running so a regression stays
+  visible · state: <code>results/treatments.json</code>, per-window
+  log: <code>results/treatments.jsonl</code></p>
+</section>
+
 <section id="m1shadow">
   <h2>M1 shadow — is calibration actually earning its place?
     <span class="pill pending" id="m1-chip">shadow</span></h2>
@@ -762,6 +799,57 @@ async function poll() {
     (ageS > 300 ? "stale" : "live") + " · refreshed " +
     new Date().toLocaleTimeString("en-US",
       { timeZone: "America/Los_Angeles", hour12: false }) + " PT";
+
+  // ---- CHAMPION / CHALLENGER scoreboard (daemon's own SPRT state) --
+  try {
+    const T = st.treatments || [];
+    const champ = T.find(t => t.key === "champion");
+    const chal = T.filter(t => t.key !== "champion");
+    if (chal.length) {
+      const promoted = chal.filter(t => t.verdict === "promote").length;
+      const lead = chal.filter(t => t.mean_diff > 0).length;
+      const chip = document.getElementById("tr-chip");
+      chip.textContent = promoted
+        ? `${promoted} promoted` : `${chal.length} under test · ${lead} ahead`;
+      chip.className = "pill " + (promoted ? "hit" : "pending");
+      const pct = v => v == null ? "–"
+        : (v >= 0 ? "+" : "") + (100 * v).toFixed(2) + "%";
+      const badge = v => v === "promote"
+        ? '<span class="pill hit">PROMOTED</span>'
+        : v === "reject" ? '<span class="pill bad">retired</span>'
+        : '<span class="pill pending">collecting</span>';
+      document.querySelector("#tr-tbl tbody").innerHTML =
+        (champ ? `<tr><td><b>champion — the live desk policy</b>` +
+          `<div class="mini">${champ.rationale}</div></td>` +
+          `<td class="num">${champ.n}</td><td class="num">${champ.n}</td>` +
+          `<td class="num">0</td>` +
+          `<td class="num">${pct(champ.own_ev)}</td>` +
+          `<td class="num">—</td><td class="num">—</td>` +
+          `<td><span class="pill">incumbent</span></td></tr>` : "") +
+        chal.sort((a, b) => (b.mean_diff || 0) - (a.mean_diff || 0))
+          .map(t => `<tr><td>${t.label}` +
+            `<div class="mini">${t.rationale}</div></td>` +
+            `<td class="num">${t.n}</td><td class="num">${t.bets}</td>` +
+            `<td class="num">${t.skips}</td>` +
+            `<td class="num">${pct(t.own_ev)}</td>` +
+            `<td class="num" style="color:${t.mean_diff > 0
+              ? "var(--good-text)" : "var(--down)"}">` +
+            `${pct(t.mean_diff)}</td>` +
+            `<td class="num">${t.llr.toFixed(2)} <span class="muted">` +
+            `of ${t.upper.toFixed(1)}</span></td>` +
+            `<td>${badge(t.verdict)}</td></tr>`).join("");
+      document.getElementById("tr-bars").innerHTML = chal.map(t => {
+        const up = t.llr >= 0;
+        const w = Math.min(100, 100 * Math.abs(
+          up ? t.llr / t.upper : t.llr / t.lower));
+        return `<div class="attr-row"><span>${t.label}</span>` +
+          `<div class="attr-bar"><i style="width:${w.toFixed(0)}%;` +
+          `background:${up ? "var(--good-text)" : "var(--down)"}"></i>` +
+          `</div><span class="num" style="text-align:right">` +
+          `${w.toFixed(0)}% to ${up ? "promote" : "reject"}</span></div>`;
+      }).join("");
+    }
+  } catch (e) {}
 
   // ---- M1 SHADOW scoreboard (from the daemon's own calibrators) ----
   try {

@@ -28,6 +28,7 @@ from pathlib import Path
 from . import config
 from . import metrics as M
 from .history import append_history
+from . import treatments
 from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
                      LSTMDistAgent, PlattCalibrator, TabularQAgent)
 
@@ -39,6 +40,20 @@ from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
 KB_CALIB_NAME = "kb_calib.json"
 KB_CALIB_ARMS = ("kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7",
                  "kb8", "kb9")
+
+# --- Champion/challenger routing (2026-08-28) ------------------------
+# Every improvement runs as a TREATMENT on real live windows, paired
+# against the incumbent desk policy, and is promoted only when the live
+# stream clears a sequential test. Nothing is adopted on backtest
+# evidence alone — the 08/26 audit's tier-1 root cause and the 09h
+# "toxic hour" both looked convincing offline and were wrong.
+TREAT_STATE_NAME = "treatments.json"
+TREAT_LOG_NAME = "treatments.jsonl"
+TREAT_MIN_N = 40               # no verdict before this many windows
+TREAT_EDGE = 0.02              # the win size worth switching for (EV/$1)
+REGIME_LOOKBACK = 20           # windows for the market-accuracy signal
+REGIME_FLOOR = 0.62            # stand down below this (M8)
+KNIFE_BAND = 0.10              # |mkt_p_up - 0.5| veto width (M2)
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
@@ -364,6 +379,143 @@ PT_MIN_REC = 5                         # min decisions to hold leadership
 # 63%, coverage 37%, persistently cold); it keeps predicting for the
 # record but no trader follows its calls.
 PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
+
+
+def _treat_policies():
+    """The challenger policies under live test, each a pure function of
+    decision-time context. Returning None means "stand down" — a real
+    decision that scores 0 and risks nothing, which is how a veto can
+    win on EV without ever placing a bet.
+
+    ctx keys: row (the leader's decision row), mkt (market P(up)),
+    p_cal (this arm's calibrated probability), regime_acc (trailing
+    market accuracy, decision-time), ask_c, side.
+    """
+    def champion(ctx):
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+
+    def t_regime(ctx):                       # M8
+        if ctx["regime_acc"] is not None and ctx["regime_acc"] < REGIME_FLOOR:
+            return None
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+
+    def t_knife(ctx):                        # M2
+        if ctx["mkt"] is not None and abs(ctx["mkt"] - 0.5) < KNIFE_BAND:
+            return None
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+
+    def t_cal(ctx):                          # M1 routed to a decision
+        pc = ctx.get("p_cal")
+        if pc is None:
+            return None
+        if max(pc, 1 - pc) < PT_TAU:         # calibrated gate
+            return None
+        return {"side": "yes" if pc >= 0.5 else "no",
+                "ask_c": ctx["ask_c_yes"] if pc >= 0.5
+                else ctx["ask_c_no"]}
+
+    def t_cheap(ctx):                        # M9 — the Underdog
+        if ctx["ask_c"] > 51:
+            return None
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+
+    def t_both(ctx):                         # M2 + M8 stacked
+        if t_regime(ctx) is None or t_knife(ctx) is None:
+            return None
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"]}
+
+    return [
+        ("champion", "Champion — the live desk policy", champion,
+         "leader's call at >=0.62 confidence, every biddable window"),
+        ("t_regime", "M8 · regime gate", t_regime,
+         "stand down when trailing-20 market accuracy < 0.62"),
+        ("t_knife", "M2 · knife-edge veto", t_knife,
+         "stand down when |market - 0.5| < 0.10"),
+        ("t_cal", "M1 · calibrated gate", t_cal,
+         "gate and side taken from p_cal, not raw p_up"),
+        ("t_cheap", "M9 · Underdog (cheap bids only)", t_cheap,
+         "only enter at ask <= 51c, where break-even is far below 50%"),
+        ("t_both", "M2+M8 · both vetoes", t_both,
+         "stand down on knife-edge OR low-predictability regime"),
+    ]
+
+
+def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen):
+    """Score every treatment on each newly-settled DESK window.
+
+    Paired by construction: all policies see the same window and the
+    same settled outcome, so the regime cancels out of the difference —
+    the thing 08/27 proved you cannot ignore. Effective n is windows.
+    Returns the list of newly scored window records (for the log).
+    """
+    by_tk = {}
+    for r in kb_rows:
+        if r.get("actual") is None or r.get("mkt_p_up") is None:
+            continue
+        by_tk.setdefault(r["ticker"], []).append(r)
+    # Trailing market accuracy, in settle order. Must be measured at
+    # DECISION time (the earliest row inside the <=12-minute entry
+    # envelope), not at whatever row happens to land last: near the
+    # close the market is trivially right, which inflates the signal to
+    # 80-100% and silently disables the gate. Measured while building
+    # this — the first version never fired once in 154 windows.
+    dtime = {}
+    for tk, rs in by_tk.items():
+        cand = [r for r in rs if (r.get("mins_left") or 99) <= 12]
+        if cand:
+            dtime[tk] = max(cand, key=lambda r: r["mins_left"])
+    order = sorted(dtime.values(), key=lambda r: r["close_ts"])
+    acc_hist, regime_at = [], {}
+    for r in order:
+        regime_at[r["ticker"]] = (
+            sum(acc_hist[-REGIME_LOOKBACK:]) / REGIME_LOOKBACK
+            if len(acc_hist) >= REGIME_LOOKBACK else None)
+        acc_hist.append(
+            1 if (r["mkt_p_up"] >= 0.5) == bool(r["actual"]) else 0)
+    out = []
+    for t in sorted((t for t in pt_trades
+                     if t.get("actual") is not None
+                     and t["ticker"] not in seen),
+                    key=lambda t: t["close_ts"]):
+        rows = [r for r in by_tk.get(t["ticker"], [])
+                if r.get("variant") == t.get("leader")]
+        if not rows:
+            continue
+        rows.sort(key=lambda r: -r["mins_left"])
+        row = rows[0]
+        mkt = row["mkt_p_up"]
+        ask_yes = 100 * mkt + 2.5
+        ask_no = 100 * (1 - mkt) + 2.5
+        cal = kb_calib.get(t.get("leader"))
+        ctx = {
+            "row": row, "mkt": mkt,
+            "p_cal": cal.predict(row["p_up"]) if cal else None,
+            "regime_acc": regime_at.get(t["ticker"]),
+            "side": t["side"], "ask_c": t["ask_c"],
+            "ask_c_yes": ask_yes, "ask_c_no": ask_no,
+        }
+        outcome = t["actual"]
+        evs = {}
+        for key, _lab, fn, _r in _treat_policies():
+            try:
+                d = fn(ctx)
+            except Exception:
+                d = None
+            evs[key] = (None if d is None
+                        else treatments.bet_ev(d["side"], d["ask_c"],
+                                               outcome))
+        champ = evs.get("champion")
+        for key, tr in treats.items():
+            # the incumbent is scored against itself: n and own EV are
+            # real, its paired difference is 0 by construction
+            tr.observe(evs.get(key), champ)
+        seen.add(t["ticker"])
+        out.append({"ticker": t["ticker"], "close_ts": t["close_ts"],
+                    "leader": t.get("leader"), "outcome": outcome,
+                    "regime_acc": ctx["regime_acc"],
+                    "ev": {k: (None if v is None else round(v, 4))
+                           for k, v in evs.items()}})
+    return out
 
 
 def _pt_leader(kb_rows: list[dict]) -> tuple[str, int, int] | None:
@@ -1816,6 +1968,22 @@ def run(once: bool = False) -> None:
                             if _v in _cd else PlattCalibrator())
         except Exception:
             kb_calib[_v] = PlattCalibrator()
+    # champion/challenger registry, restored across restarts
+    treats: dict = {}
+    for _k, _lab, _fn, _why in _treat_policies():
+        treats[_k] = treatments.Treatment(_k, _lab, _fn, _why,
+                                          edge=TREAT_EDGE,
+                                          min_n=TREAT_MIN_N)
+    treat_seen: set = set()
+    try:
+        _tp = RESULTS_DIR / TREAT_STATE_NAME
+        _td = json.loads(_tp.read_text()) if _tp.exists() else {}
+        for _k, _st in (_td.get("treats") or {}).items():
+            if _k in treats:
+                treats[_k].load(_st)
+        treat_seen = set(_td.get("seen") or [])
+    except Exception:
+        treat_seen = set()
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -2726,6 +2894,34 @@ def run(once: bool = False) -> None:
                 tmpc.write_text(json.dumps(
                     {v: c.to_dict() for v, c in kb_calib.items()}))
                 tmpc.replace(RESULTS_DIR / KB_CALIB_NAME)
+            # champion/challenger: score every treatment on the desk's
+            # newly-settled windows, then check for a promotion
+            try:
+                scored = _treat_evaluate(pt_trades, kb, kb_calib,
+                                         treats, treat_seen)
+                if scored:
+                    with (RESULTS_DIR / TREAT_LOG_NAME).open("a") as fh:
+                        for rec in scored:
+                            fh.write(json.dumps(rec) + "\n")
+                    for _k, _t in treats.items():
+                        if _k == "champion" or _t.promoted_at:
+                            continue
+                        if _t.sprt.verdict() == "promote":
+                            treatments.promote(_t)
+                            print(f"TREATMENT PROMOTED: {_k} "
+                                  f"({_t.label}) — mean paired EV diff "
+                                  f"{_t.sprt.mean:+.4f}/$1 over "
+                                  f"{_t.sprt.n} windows, LLR "
+                                  f"{_t.sprt.llr:.2f}", flush=True)
+                    tmpt = (RESULTS_DIR
+                            / TREAT_STATE_NAME).with_suffix(".tmpt")
+                    tmpt.write_text(json.dumps({
+                        "treats": {k: t.to_dict()
+                                   for k, t in treats.items()},
+                        "seen": sorted(treat_seen)[-4000:]}))
+                    tmpt.replace(RESULTS_DIR / TREAT_STATE_NAME)
+            except Exception as e:
+                print("treatment eval:", str(e)[:120], flush=True)
             if kb_changed:
                 # M1 shadow stamp: p_cal on every unsettled row, so the
                 # calibrated number is recorded BEFORE the outcome is
@@ -3166,6 +3362,7 @@ def run(once: bool = False) -> None:
                               "kb7", "kb8", "kb9")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
+                "treatments": [t.status() for t in treats.values()],
                 "kb_calib": {v: {"a": round(c.a, 4), "b": round(c.b, 4),
                                  "n": c.updates,
                                  "ll": (lambda m: None if m is None

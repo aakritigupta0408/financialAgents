@@ -50,6 +50,9 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("demo_fills.jsonl", None),
     ("metrics_history.jsonl", None),
     ("metrics.json", None),
+    ("kb_calib.json", None),
+    ("treatments.json", None),
+    ("treatments.jsonl", 2000),
     ("training_progress.jsonl", None),
     ("live_status.json", None),
 ]
