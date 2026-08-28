@@ -303,3 +303,38 @@ any cross-arm comparison; M2 knife-edge veto |mkt-0.5|<0.10; M3 sticky
 leader (evidence-based switching); M4 re-anchor t10/t2/t6/t11 drift
 priors; M5 sizing fixes (done: PT5 0.10, PT4 gate, PT6 margin);
 M6 asymmetric UP/DOWN gate while pBias>0; M7 09h PT hour policy.
+
+## 2026-08-28 — SEV-0 re-triage on 4 days (112 -> 248 desk bids)
+
+Three findings changed the plan:
+
+1. The loss was ONE DAY. Per-day win% vs the break-even actually paid:
+   08/25 76.1 vs 70.7 (+$383) · 08/26 68.5 vs 66.2 (+$331) · 08/27 56.4
+   vs 69.3 (-$1,403) · 08/28 77.1 vs 71.3 (+$86). Three of four days
+   above water; 08/27 is the entire drawdown. Market regime, not defect.
+
+2. The bias MOVES. Refitting each arm's halves separately: kb
+   a+0.03/b0.56 -> a-0.45/b1.34; kb2, kb4, kb9 likewise moved BOTH
+   intercept and slope; only kb7/kb8 stable. Family optimism halved
+   overnight (kb7 a -0.57 -> -0.35) while slopes fell below 1 — the
+   error MODE shifted from systematic optimism to overconfident spread.
+   => a one-time correction constant would already be stale; M1 must be
+   the online prequential tracker it was specced as. Evidence, not
+   assumption, now backs that design.
+
+3. The best fixed arm FLIPPED. Yesterday kb4 was best (+4.7%/$1) and
+   kb7 worst; today kb9 is the only positive (+5.2%) and kb4 is -3.7%.
+   "Freeze the best arm" is rejected outright; M3 (Fixed-Share, which
+   tracks the best SEQUENCE) is promoted.
+
+Loss causes diluted: herd whipsaw 75.2% -> 42.2%, knife-edge 52.8% ->
+16.6%, idiosyncratic 5.3% -> 31.4%. M2 re-scoped (smaller payoff).
+
+Step-0 gates: MLE PASS (84% idle of 147 windows, EV +13.5%/$1, the
+best on the desk) · Gambler v2 ON TRACK (80.0% win vs 73.8% break-even,
+EV +4.8%, +$4,522, n=25/30) · Saver recovering (-$1,968 -> +$28/day).
+
+Fixed a real defect found while cross-checking: the audit's attribution
+used the ungated tier-2 set while sev0.html used the desk's own >=0.62
+entry gate — two implementations disagreeing on the same metric. Python
+now uses the gated set; both agree (herd 42.2%/42%, knife 16.6%/17%).

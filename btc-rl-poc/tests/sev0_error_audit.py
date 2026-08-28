@@ -329,12 +329,27 @@ print()
 print("=" * 72)
 print("ATTRIBUTION · every losing desk bid tagged by root cause")
 print("=" * 72)
+# attribution uses the DESK'S OWN entry set (conf >= PT_TAU 0.62), not
+# the ungated tier-2 set — an arm that never cleared the gate never cost
+# us anything. This mirrors sev0.html's client-side computation exactly;
+# the two must agree or one of them is lying.
+GATE = 0.62
+decg = defaultdict(dict)
+for r in kb:
+    v = r.get("variant") or "kb"
+    if (v not in ARMS or v == "kb5" or r.get("actual") is None
+            or r.get("mins_left") is None or r["mins_left"] > 12
+            or max(r["p_up"], 1 - r["p_up"]) < GATE):
+        continue
+    tk = r["ticker"]
+    if tk not in decg[v] or r["mins_left"] > decg[v][tk]["mins_left"]:
+        decg[v][tk] = r
 wrong_by_win = defaultdict(set)
 tot_by_win = defaultdict(int)
 for v in ARMS:
     if v == "kb5":
         continue
-    for tk, d in dec[v].items():
+    for tk, d in decg[v].items():
         tot_by_win[tk] += 1
         if d["call"] != d["actual"]:
             wrong_by_win[tk].add(v)
@@ -343,7 +358,7 @@ for t in led["pt"]:
     if t["win"]:
         continue
     tk = t["ticker"]
-    d = dec.get(t.get("leader", ""), {}).get(tk)
+    d = decg.get(t.get("leader", ""), {}).get(tk)
     mk = d.get("mkt_p_up") if d else None
     hour = datetime.datetime.fromtimestamp(t["close_ts"], PT).hour
     herd = (len(wrong_by_win[tk]) / tot_by_win[tk]

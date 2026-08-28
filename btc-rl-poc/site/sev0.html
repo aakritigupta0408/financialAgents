@@ -104,8 +104,78 @@
         <td>live bug: p_win tracked the ask (+0.26 weight) so "EV&gt;0" always fired — meta-labeling discipline restored (López de Prado 2018)</td></tr>
       <tr><td>08-26 pm</td><td>SEV-0 declared; full-graph audit + this tracker shipped</td>
         <td>DFS of all tiers with quantitative metrics; root-cause chain established (below); 7 mitigations queued by leverage</td></tr>
+      <tr><td>08-28 am</td><td><b>Re-triage on 4 days of data</b> — M3 promoted, M2 re-scoped, M1 design confirmed</td>
+        <td>sample doubled (112 → 248 bids). Three findings forced changes: the bias moved between halves (online refit vindicated), the best fixed arm flipped sign (freeze-the-winner rejected), loss causes diluted (M2's payoff smaller). Step-0: MLE gate PASS, Gambler on track, Saver recovering</td></tr>
     </tbody>
   </table></div>
+</section>
+
+<section id="retriage">
+  <h2>Re-triage — 08/28, after four days of data
+    <span class="pill" id="rt-n">…</span></h2>
+  <p class="sub small">The desk has more than doubled its sample since the
+  incident opened (112 → <span id="rt-bids">…</span> settled bids). Three
+  findings changed the plan; all three are recomputed live below.</p>
+
+  <h3 style="font:600 14px var(--display);margin:14px 0 4px">
+    1 · The loss was one day, not a broken mechanism</h3>
+  <p class="sub small">Win rate vs the break-even implied by the prices
+  actually paid, per day. Three of four days cleared it. 08/27 alone
+  accounts for the entire drawdown — a market regime, not a code defect.</p>
+  <div class="scroll" style="margin-top:6px"><table id="rt-days">
+    <thead><tr><th>day (PT)</th><th class="num">bids</th>
+      <th class="num">win%</th><th class="num">break-even</th>
+      <th class="num">margin</th><th class="num">P&amp;L</th></tr></thead>
+    <tbody><tr><td colspan="6" class="mini">computing…</td></tr></tbody>
+  </table></div>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    2 · The bias is a moving target — which changes the M1 design</h3>
+  <p class="sub small">Splitting each arm's history in half and refitting
+  the correction curve separately: the intercept <i>and</i> slope move
+  between halves for most arms. Overnight the family-wide optimism halved
+  (kb7 a −0.57 → −0.35) while slopes fell below 1 — the error <b>mode</b>
+  shifted from "systematically optimistic" to "overconfident spread".
+  <b>Consequence:</b> a one-time correction constant would already be
+  stale. M1 must be an <i>online</i> tracker, refit every settle — which
+  is how it was specced (Platt 1999 fit prequentially, Dawid 1984), now
+  with direct evidence rather than assumption.</p>
+  <div class="scroll" style="margin-top:6px"><table id="rt-drift">
+    <thead><tr><th>arm</th><th class="num">first half a · b</th>
+      <th class="num">second half a · b</th><th>what moved</th></tr></thead>
+    <tbody><tr><td colspan="4" class="mini">computing…</td></tr></tbody>
+  </table></div>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    3 · The best fixed arm is not stable — which vindicates M3</h3>
+  <p class="sub small">Yesterday's counterfactual said "just hold kb4"
+  (+4.7%/$1, best of eight). On the fuller sample kb4 is
+  <b>negative</b> and kb9 is the only arm above water. Anyone who had
+  hard-coded yesterday's winner would be losing money today.
+  <b>Consequence:</b> this is the exact setting Fixed-Share was designed
+  for — tracking the best <i>sequence</i> of experts, not the best fixed
+  one (Herbster &amp; Warmuth 1998). M3's priority rises; "pick the best
+  arm and freeze it" is now explicitly rejected.</p>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    4 · Loss causes diluted — M2's expected payoff shrank</h3>
+  <p class="sub small">Herd whipsaw fell from 75.2% to
+  <span id="rt-herd">…</span> of loss dollars and knife-edge from 52.8% to
+  <span id="rt-knife">…</span>, while <b>idiosyncratic</b> losses rose
+  from 5.3% to <span id="rt-idio">…</span>. The concentrated, cheaply
+  fixable causes are a smaller share of a larger loss pool. M2 stays
+  (still the second-cheapest fix) but its gate target is re-based to the
+  live number — see the tracker.</p>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    Step-0 verdicts — the shipped fixes, judged on their own terms</h3>
+  <div class="scroll" style="margin-top:6px"><table id="rt-gates">
+    <thead><tr><th>shipped fix</th><th>pre-registered gate</th>
+      <th class="num">live reading</th><th>verdict</th></tr></thead>
+    <tbody><tr><td colspan="4" class="mini">computing…</td></tr></tbody>
+  </table></div>
+  <p class="mini">re-run locally: <code>python3 tests/gate_check.py</code>
+  — the same computation this section performs in the browser</p>
 </section>
 
 <section id="arch">
@@ -370,22 +440,26 @@
         <div class="cite">fractional Kelly under estimation error:
         Kelly 1956; MacLean, Thorp &amp; Ziemba 2011 · meta-labeling:
         López de Prado 2018</div></div>
-      <div class="chipstat done">shipped · live</div></div>
+      <div class="chipstat done">shipped · 2 of 3 gates clear</div></div>
     <div class="mit"><div class="mid">M1</div>
       <div><b>Per-arm online Platt layer</b> — maintain (a,b) per arm,
         prequentially refit each settle; all cross-arm comparison moves to
         calibrated p_cal. Acceptance: |pBias| &lt; 0.02 per arm and
         cross-arm AUC &gt; 0.65 on trailing 100 windows.
         <div class="cite">Platt 1999 · Guo et al. 2017 (ICML) ·
-        prequential: Dawid 1984 · Brier decomposition: Murphy 1973</div></div>
-      <div class="chipstat next">next up</div></div>
+        prequential: Dawid 1984 · Brier decomposition: Murphy 1973 ·
+        <b>08/28 re-triage: (a,b) measured moving between halves for 4 of
+        6 arms — online refit is now evidence-backed, not assumed</b></div></div>
+      <div class="chipstat next">next up · in build</div></div>
     <div class="mit"><div class="mid">M2</div>
       <div><b>Knife-edge veto</b> — no desk entry at |mkt−0.5| &lt; 0.10
         (41.6% wrong there; 52.8% of loss dollars). Acceptance: EV/$1 up
         with ≥60% coverage retained.
         <div class="cite">adverse selection near the pin:
-        Glosten &amp; Milgrom 1985</div></div>
-      <div class="chipstat next">next up</div></div>
+        Glosten &amp; Milgrom 1985 · <b>08/28 re-triage: knife-edge share
+        fell 52.8% → ~23%, so the gate target re-bases to the live
+        number; payoff is smaller than first scoped</b></div></div>
+      <div class="chipstat planned">re-scoped</div></div>
     <div class="mit"><div class="mid">M3</div>
       <div><b>Fixed-Share leader</b> — replace 10-bet churn with
         multiplicative expert weights + share rate (tracks the best
@@ -393,8 +467,10 @@
         the Follower control. Acceptance: regret vs best fixed arm
         &lt; 1%/$1 per 100 windows (churner today: 2.7%).
         <div class="cite">Herbster &amp; Warmuth 1998 ·
-        Cesa-Bianchi &amp; Lugosi 2006</div></div>
-      <div class="chipstat planned">designed</div></div>
+        Cesa-Bianchi &amp; Lugosi 2006 · <b>08/28 re-triage: the best
+        fixed arm flipped (kb4 +4.7% → −3.7%; kb9 now the only positive)
+        — "freeze the best arm" is rejected and M3's priority rises</b></div></div>
+      <div class="chipstat next">promoted</div></div>
     <div class="mit"><div class="mid">M4</div>
       <div><b>Re-anchor T1 drift priors</b> — per-arm trailing-bias
         recentering for t10 / t2@h30 / t11@h15 / t6; adaptive-conformal
@@ -557,6 +633,111 @@ async function poll() {
     (ageS > 300 ? "stale" : "live") + " · refreshed " +
     new Date().toLocaleTimeString("en-US",
       { timeZone: "America/Los_Angeles", hour12: false }) + " PT";
+
+  // ---- RE-TRIAGE: day regimes, calibration drift, Step-0 gates ----
+  try {
+    const dayOf = ts => new Date(ts * 1000).toLocaleDateString("en-US",
+      { timeZone: "America/Los_Angeles", month: "2-digit",
+        day: "2-digit" });
+    const settled = pt.filter(t => t.actual != null);
+    document.getElementById("rt-bids").textContent = settled.length;
+    document.getElementById("rt-n").textContent =
+      `${settled.length} settled desk bids`;
+    // 1 · per-day: win% vs the break-even actually paid
+    const D = {};
+    for (const t of settled) {
+      const k = dayOf(t.close_ts);
+      const d = (D[k] = D[k] || { n: 0, w: 0, p: 0, c: 0 });
+      d.n++; d.w += t.win; d.p += t.pnl_c;
+      d.c += t.stake_c / Math.max(1, t.contracts);
+    }
+    document.querySelector("#rt-days tbody").innerHTML =
+      Object.keys(D).sort().map(k => {
+        const d = D[k], wr = 100 * d.w / d.n, be = d.c / d.n;
+        const up = wr > be;
+        return `<tr><td>${k}</td><td class="num">${d.n}</td>` +
+          `<td class="num">${wr.toFixed(1)}%</td>` +
+          `<td class="num">${be.toFixed(1)}%</td>` +
+          `<td class="num" style="color:${up ? "var(--good-text)"
+            : "var(--down)"}">${wr - be >= 0 ? "+" : ""}` +
+          `${(wr - be).toFixed(1)} pts</td>` +
+          `<td class="num" style="color:${d.p >= 0 ? "var(--good-text)"
+            : "var(--down)"}">${money(d.p)}</td></tr>`;
+      }).join("");
+    // 2 · calibration drift: refit each arm's halves separately
+    const AR = ["kb", "kb2", "kb4", "kb7", "kb8", "kb9"];
+    const dc = {};
+    for (const r of kb) {
+      const v = r.variant || "kb";
+      if (!AR.includes(v) || r.actual == null
+          || r.mins_left == null || r.mins_left > 12) continue;
+      const d = (dc[v] = dc[v] || {});
+      if (!d[r.ticker] || r.mins_left > d[r.ticker].mins_left)
+        d[r.ticker] = r;
+    }
+    document.querySelector("#rt-drift tbody").innerHTML = AR.map(v => {
+      const ds = Object.values(dc[v] || {})
+        .sort((a, b) => a.close_ts - b.close_ts);
+      if (ds.length < 60) return "";
+      const h = Math.floor(ds.length / 2);
+      const f = ds.slice(0, h), s = ds.slice(h);
+      const [a1, b1] = platt(f.map(d => d.p_up), f.map(d => d.actual));
+      const [a2, b2] = platt(s.map(d => d.p_up), s.map(d => d.actual));
+      const mv = [];
+      if (Math.abs(a2 - a1) > 0.15) mv.push("intercept");
+      if (Math.abs(b2 - b1) > 0.25) mv.push("slope");
+      return `<tr><td>${v}</td>` +
+        `<td class="num">${a1 >= 0 ? "+" : ""}${a1.toFixed(2)} · ` +
+        `${b1.toFixed(2)}</td>` +
+        `<td class="num">${a2 >= 0 ? "+" : ""}${a2.toFixed(2)} · ` +
+        `${b2.toFixed(2)}</td>` +
+        `<td style="color:${mv.length ? "var(--down)" : "inherit"}">` +
+        `${mv.length ? mv.join(" + ") + " moved" : "stable"}</td></tr>`;
+    }).join("");
+    // 4 · Step-0 gate verdicts
+    const chip = (s, cls) => `<span class="chipstat ${cls}">${s}</span>`;
+    const g4 = pt4.filter(t => t.made_ts >= 1787788353
+      && t.actual != null);
+    const gw = g4.length ? 100 * g4.reduce((a, t) => a + t.win, 0)
+      / g4.length : 0;
+    const gbe = g4.length ? g4.reduce((a, t) =>
+      a + t.stake_c / Math.max(1, t.contracts), 0) / g4.length : 0;
+    const gstk = g4.reduce((a, t) => a + t.stake_c, 0);
+    const gpnl = g4.reduce((a, t) => a + t.pnl_c, 0);
+    const mAll = pt6, mBet = pt6.filter(t => !t.skipped);
+    const mIdle = 100 * (1 - mBet.length / Math.max(1, mAll.length));
+    const mS = mBet.filter(t => t.actual != null);
+    const mEV = mS.length ? 100 * mS.reduce((a, t) => a + t.pnl_c, 0)
+      / Math.max(1, mS.reduce((a, t) => a + t.stake_c, 0)) : 0;
+    const s5 = pt5.filter(t => t.actual != null);
+    const s5d = {};
+    for (const t of s5) {
+      const k = dayOf(t.close_ts);
+      s5d[k] = (s5d[k] || 0) + t.pnl_c;
+    }
+    const s5k = Object.keys(s5d).sort();
+    const s5last = s5k.length ? s5d[s5k[s5k.length - 1]] : 0;
+    const s5worst = Math.min(...Object.values(s5d));
+    document.querySelector("#rt-gates tbody").innerHTML =
+      `<tr><td>Gambler v2 — ≥0.77 gate + $10k reset</td>` +
+      `<td class="small muted">win% &gt; its own break-even, n≥30</td>` +
+      `<td class="num">${gw.toFixed(1)}% vs ${gbe.toFixed(1)}% · ` +
+      `EV ${(100 * gpnl / Math.max(1, gstk)).toFixed(1)}% · ` +
+      `${money(gpnl)}</td><td>${gw > gbe
+        ? (g4.length >= 30 ? chip("pass", "done")
+          : chip(`on track ${g4.length}/30`, "live"))
+        : chip("failing", "next")}</td></tr>` +
+      `<tr><td>MLE — 10¢ edge margin + shadow rows</td>` +
+      `<td class="small muted">idle ≥60% over ≥50 windows</td>` +
+      `<td class="num">${mIdle.toFixed(0)}% idle of ${mAll.length} · ` +
+      `EV ${mEV.toFixed(1)}%</td><td>${mIdle >= 60 && mAll.length >= 50
+        ? chip("pass", "done") : chip("pending", "live")}</td></tr>` +
+      `<tr><td>Saver — stake 25% → 10%</td>` +
+      `<td class="small muted">daily DD ≤40% of the 25%-era rate</td>` +
+      `<td class="num">worst ${money(s5worst)} → latest ` +
+      `${money(s5last)}</td><td>${s5last > 0.4 * s5worst
+        ? chip("pass", "done") : chip("pending", "live")}</td></tr>`;
+  } catch (e) {}
 
   // ---- TIER 1: worst signed-bias arms, live ----
   try {
@@ -796,10 +977,16 @@ async function poll() {
           `<span class="num" style="text-align:right">${money(cents)} · ` +
           `${(100 * cents / Math.max(1, lossTot)).toFixed(0)}%</span>` +
           `</div>`).join("") || '<p class="mini">no losses yet</p>';
-    // knife-edge share on the T3 statusbar
-    const ke = tags["knife-edge window"];
+    // knife-edge share on the T3 statusbar + re-triage prose numbers
+    const shareOf = k => tags[k]
+      ? (100 * tags[k][1] / Math.max(1, lossTot)).toFixed(0) + "%" : "–";
     document.getElementById("t3-knife").textContent =
-      ke ? (100 * ke[1] / Math.max(1, lossTot)).toFixed(0) + "%" : "–";
+      shareOf("knife-edge window");
+    const set = (id, v) => { const e = document.getElementById(id);
+      if (e) e.textContent = v; };
+    set("rt-herd", shareOf("herd whipsaw (≥¾ arms wrong)"));
+    set("rt-knife", shareOf("knife-edge window"));
+    set("rt-idio", shareOf("idiosyncratic"));
   } catch (e) {}
 }
 poll();
