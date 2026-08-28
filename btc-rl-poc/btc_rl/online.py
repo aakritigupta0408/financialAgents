@@ -3030,7 +3030,12 @@ def run(once: bool = False) -> None:
                     if r.get("actual") is None:
                         c = kb_calib.get(r.get("variant") or "kb")
                         if c is not None:
-                            r["p_cal"] = round(c.predict(r["p_up"]), 4)
+                            # field is p_m1, NOT p_cal: p_cal already
+                            # exists on kb/kb2 rows and is read by the
+                            # kb2 blend-weight fit, so stamping it here
+                            # silently changed live trading — the exact
+                            # thing shadow mode exists to prevent.
+                            r["p_m1"] = round(c.predict(r["p_up"]), 4)
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
