@@ -174,8 +174,65 @@
       <th class="num">live reading</th><th>verdict</th></tr></thead>
     <tbody><tr><td colspan="4" class="mini">computing…</td></tr></tbody>
   </table></div>
-  <p class="mini">re-run locally: <code>python3 tests/gate_check.py</code>
-  — the same computation this section performs in the browser</p>
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    5 · Two claims tested before changing anything — one failed</h3>
+  <p class="sub small"><b>Was 08/27 detectable in advance?</b> Yes.
+  Trailing-20-window market accuracy (an ex-ante signal — no hindsight)
+  below 0.62 flagged <b>63.6%</b> of 08/27's windows before entry, versus
+  <b>5.1%</b> on the good day 08/28. Market Brier confirms it: 0.224 on
+  08/27 vs 0.167 on 08/28. That discrimination earns a new mitigation
+  (M8, regime gate) — though 08/26 also flagged 59% while finishing
+  profitable, so it needs a proper backtest before it trades.</p>
+  <p class="sub small"><b>Is the "toxic hour" real?</b> <b>No — and M7 is
+  dropped.</b> Hours 09h and 14h looked persistently bad (bad on 2 of 3
+  days). But we <i>searched 24 hours</i>: at the desk's 32.5% loss rate,
+  a 3–4 bid day-cell looks "bad" 17.6% of the time, so an hour looks bad
+  on ≥2 of 3 days 8.2% of the time by luck — expected count from chance
+  alone <b>1.98 of 24</b>. We observed <b>2</b>.
+  <b>P(≥2 | chance) = 0.60.</b> Shipping M7 would have been data
+  dredging. It is removed from the plan, not deferred.</p>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    6 · Correction to our own root-cause chain
+    <span class="pill bad">supersedes 08/26</span></h3>
+  <p class="sub small">Asked whether the RL tier is tracked as well as the
+  rest, we found it is (every arm scored 99.2–100%, zero staleness) — and
+  in checking, found that <b>most RL arms never reach a trading
+  decision</b>. t2, t6, t7, t8, t9, t10, t11 are logged-only; the binary
+  tiers run off the consensus/horizon path plus the market anchor.
+  <b>The consequence is uncomfortable and worth stating plainly:</b> the
+  bullish drift we named as the root cause on 08/26 (t10 +$29, t11 +$41
+  bias @h15) lives entirely in arms that <i>never place a bet</i>. The
+  path that does feed decisions is near-unbiased (+$1.76 mean bias).
+  <b>Tier-1 directional drift cannot be the source of tier-2
+  optimism.</b></p>
+  <p class="sub small">What survives, and is now the corrected chain:
+  the decision-feeding arms' <b>80% bands only cover 74–76%</b> — σ is
+  too small. Converting a too-narrow forecast distribution into
+  P(above strike) pushes probabilities toward the extremes, which is
+  exactly the <b>slope b &lt; 1</b> measured at tier 2. It is a
+  <b>dispersion</b> defect, not a <b>direction</b> defect. M4 is re-aimed
+  accordingly: the drift-recentering half is dropped (cosmetic — those
+  arms trade nothing) and the adaptive-conformal band fix is promoted to
+  the real tier-1 work.</p>
+
+  <h3 style="font:600 14px var(--display);margin:18px 0 4px">
+    7 · Is any arm pure poison as a leader?</h3>
+  <p class="sub small"><b>No arm has zero wins</b> — but three lose money
+  when leading: kb8 (34 bids, 58.8% win vs 67.1% break-even, −$494),
+  kb2 (−$333) and the already-retired kb6 (−$364). None reach
+  significance (p = 0.20, 0.13, 0.46), so <b>none can be banned on this
+  evidence</b> — flagged for watch, not action. kb9 (+$275) and kb4
+  (+$195) are the profitable leaders.</p>
+  <p class="sub small">The decision-level scan turned up something more
+  valuable: <b>kb5 wins only 44.7% of its calls but returns +16.7% per $1
+  staked</b> — the best EV of any arm, because it buys deep longshots
+  where break-even is far below 50%. It is simultaneously our
+  most-wrong caller and our most profitable one. That reopens the
+  cheap-bid "Underdog" trader we scoped but never launched (M9).</p>
+  <p class="mini">re-run locally: <code>python3 tests/gate_check.py</code>,
+  <code>tests/regime_detect.py</code>, <code>tests/leader_audit.py</code>
+  — the same computations this section performs in the browser</p>
 </section>
 
 <section id="arch">
@@ -230,11 +287,16 @@
     <text class="flowlab fix" x="316" y="308">M1 calibration · M4 re-anchor</text>
     <!-- headline -->
     <text x="8" y="24" style="font:700 12px ui-sans-serif"
-      fill="var(--ink)">THE ROOT-CAUSE CHAIN</text>
-    <text x="8" y="44" class="tsub">stale bullish prior (T1) → probability
-      inflation (T2) → uncalibrated comparison + churn (T3) → stake
-      multiplication (T4) → losses concentrate in herd-whipsaw and
-      knife-edge windows</text>
+      fill="var(--ink)">THE ROOT-CAUSE CHAIN — CORRECTED 08/28</text>
+    <text x="8" y="44" class="tsub">band UNDER-DISPERSION on the
+      decision-feeding path (T1: σ too small, bands cover 74–76% vs 80%)
+      → over-extreme probabilities (T2: slope b &lt; 1) → uncalibrated
+      cross-arm comparison + churn (T3) → stake multiplication (T4)</text>
+    <text x="8" y="58" class="tsub" fill="var(--down)">superseded: the
+      original chain blamed a bullish drift prior — but the arms carrying
+      that drift (t10 +$29, t11 +$41 @h15) never reach a bet. The path
+      that does feed decisions is near-unbiased (+$1.76 mean). It is a
+      DISPERSION defect, not a DIRECTION defect.</text>
   </svg>
 </section>
 
@@ -471,26 +533,55 @@
         fixed arm flipped (kb4 +4.7% → −3.7%; kb9 now the only positive)
         — "freeze the best arm" is rejected and M3's priority rises</b></div></div>
       <div class="chipstat next">promoted</div></div>
-    <div class="mit"><div class="mid">M4</div>
-      <div><b>Re-anchor T1 drift priors</b> — per-arm trailing-bias
-        recentering for t10 / t2@h30 / t11@h15 / t6; adaptive-conformal
-        bands to restore 80% coverage. Acceptance: |bias| &lt; $10 @h30;
-        coverage 77–83%.
-        <div class="cite">drift adaptation: Gama et al. 2014 · adaptive
-        conformal: Gibbs &amp; Candès 2021 · CQR: Romano et al. 2019</div></div>
-      <div class="chipstat planned">designed</div></div>
+    <div class="mit"><div class="mid">M4′</div>
+      <div><b>Adaptive-conformal bands on the decision-feeding path</b>
+        <span class="pill">re-aimed 08/28</span> — restore 80% coverage
+        on consensus/h15 (currently 74–76%). The drift-recentering half
+        of the original M4 is <b>dropped</b>: it targeted t10/t2/t11/t6,
+        which never reach a bet. Acceptance: trailing-200 coverage
+        77–83% on the feeding path; tier-2 slope b → 1.0 ± 0.15.
+        <div class="cite">adaptive conformal: Gibbs &amp; Candès 2021 ·
+        CQR: Romano et al. 2019 · <b>08/28: this is now the true tier-1
+        defect — dispersion, not direction</b></div></div>
+      <div class="chipstat next">promoted</div></div>
+    <div class="mit"><div class="mid">M8</div>
+      <div><b>Regime gate</b> <span class="pill">new 08/28</span> —
+        stand down when trailing-20-window market accuracy &lt; 0.62.
+        Ex-ante discrimination measured: flagged 63.6% of 08/27's
+        windows (the −$1,403 day) vs 5.1% of 08/28's. Acceptance:
+        backtest must show it skips more loss than profit across all
+        four days — 08/26 flagged 59% while finishing green, so this is
+        <b>not</b> free.
+        <div class="cite">replaces the dropped M7 with a mechanism that
+        has a testable ex-ante signal rather than a clock</div></div>
+      <div class="chipstat next">to backtest</div></div>
+    <div class="mit"><div class="mid">M9</div>
+      <div><b>Cheap-longshot "Underdog" trader</b>
+        <span class="pill">new 08/28</span> — kb5 wins only 44.7% of its
+        calls yet returns <b>+16.7%/$1</b>, the desk's best EV, by
+        buying where break-even sits far below 50%. Ship as a new
+        treatment (additive; no existing trader altered). Acceptance:
+        EV/$1 &gt; 0 over 50 bets with maxDD under half-Kelly bound.
+        <div class="cite">longshot pricing / favourite-longshot bias:
+        Thaler &amp; Ziemba 1988, JEP · sizing: fractional Kelly</div></div>
+      <div class="chipstat next">to spec</div></div>
     <div class="mit"><div class="mid">M6</div>
-      <div><b>Asymmetric gate while the lean persists</b> — UP entries
-        need p_cal ≥ τ+0.03 vs DOWN at τ (FP 33% vs FN 24%). Sunsets
-        automatically when trailing pBias &lt; 0.02.
-        <div class="cite">measured FP/FN asymmetry, this audit</div></div>
-      <div class="chipstat planned">designed</div></div>
+      <div><b>Asymmetric gate</b> — <b>FOLDED INTO M1</b>. The lean is no
+        longer one-signed: kb3/kb4/kb8 now carry <i>positive</i>
+        intercepts (pessimistic) while kb7/kb9 stay optimistic. A fixed
+        "UP needs more" rule would be actively wrong for half the family;
+        a calibrated probability handles it per-arm automatically.
+        <div class="cite">retired as a separate step after the 08/28
+        calibration-drift measurement</div></div>
+      <div class="chipstat planned">folded into M1</div></div>
     <div class="mit"><div class="mid">M7</div>
-      <div><b>Hour policy</b> — stand down 09:00–10:00 PT (64% wrong;
-        the market's own 70%+ prices fail there too). Reviewed monthly —
-        hour effects are regime-loaded, not permanent truths.
-        <div class="cite">whipsaw-hour attribution, this audit</div></div>
-      <div class="chipstat planned">designed</div></div>
+      <div><b>Hour policy</b> — <b>DROPPED.</b> 09h/14h looked
+        persistently bad, but we searched 24 hours: chance alone yields
+        1.98 such hours and we found 2 (<b>p = 0.60</b>). Not deferred —
+        removed, because shipping it would be data dredging.
+        <div class="cite">multiple-comparisons discipline: Arnott,
+        Harvey &amp; Markowitz 2019, JFDS (backtest protocol)</div></div>
+      <div class="chipstat planned">dropped · not significant</div></div>
     <div class="mit"><div class="mid">M-T0</div>
       <div><b>Order-flow features at the kb boundary</b> — rolling
         taker-buy imbalance + divergence vs drift (the tape ran 75%

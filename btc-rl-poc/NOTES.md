@@ -338,3 +338,50 @@ Fixed a real defect found while cross-checking: the audit's attribution
 used the ungated tier-2 set while sev0.html used the desk's own >=0.62
 entry gate — two implementations disagreeing on the same metric. Python
 now uses the gated set; both agree (herd 42.2%/42%, knife 16.6%/17%).
+
+## 2026-08-28 (later) — plan revision + a correction to our own RCA
+
+Tested two claims before changing the plan; one failed, and a third
+finding overturned part of the 08/26 root-cause chain.
+
+Q: was 08/27 detectable ex ante? YES. Trailing-20-window market
+accuracy < 0.62 flagged 63.6% of 08/27's windows before entry vs 5.1%
+of 08/28's; market Brier 0.224 vs 0.167. -> new M8 regime gate. Not
+free: 08/26 flagged 59% and finished green, so it needs a backtest.
+
+Q: is the toxic hour real? NO. 09h/14h look bad on 2 of 3 days, but we
+searched 24 hours; at the desk's 32.5% loss rate a 3-4 bid day-cell
+looks bad 17.6% of the time => an hour looks "persistently bad" 8.2% of
+the time by luck => expected 1.98 of 24, observed 2, P(>=2 | chance) =
+0.60. M7 DROPPED, not deferred. Shipping it would be data dredging.
+
+CORRECTION TO THE 08/26 RCA. Asked whether the RL tier is tracked, we
+found it is (all arms scored 99.2-100%, zero staleness) AND that most
+RL arms never reach a trading decision: t2/t6/t7/t8/t9/t10/t11 are
+logged-only; the binary tiers run off consensus/horizon + the market
+anchor. So the "bullish drift prior" we named as the root cause lives
+in arms that never place a bet (t10 +$29, t11 +$41 bias @h15) while the
+decision-feeding path is near-unbiased (+$1.76 mean). Tier-1
+DIRECTIONAL drift cannot be the source of tier-2 optimism.
+
+Corrected chain: decision-feeding bands under-cover (74-76% vs 80%
+goal) => sigma too small => converting a too-narrow distribution into
+P(above strike) pushes probabilities to the extremes => the slope b < 1
+measured at tier 2. A DISPERSION defect, not a DIRECTION defect. M4
+re-aimed: drop drift-recentering of t10/t2/t11/t6 (cosmetic), promote
+the adaptive-conformal band fix on consensus/h15.
+
+Leader audit: no arm is pure poison (none has zero wins). kb8 is the
+worst leader (-$494, 58.8% vs 67.1% break-even) but p=0.20 — watch, do
+not ban. kb2 -$333 (p=0.13), kb6 -$364 (p=0.46, already retired).
+kb9 +$275 and kb4 +$195 are the profitable leaders.
+
+Best finding of the day: at decision level kb5 wins only 44.7% but
+returns +16.7%/$1 — the desk's best EV, from deep longshots where
+break-even is far below 50%. Our most-wrong caller is our most
+profitable one. -> new M9 "Underdog" cheap-bid trader (additive).
+
+Plan deltas: M7 dropped · M4 -> M4' (bands only) · M6 folded into M1 ·
+M2 demoted (payoff 52.8% -> 16.6%) · M3 promoted (best fixed arm
+flipped) · M8 + M9 added · all gates now regime-stratified, since a
+pooled sample mixes regimes and hid all of this.
