@@ -29,7 +29,7 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css",
          "ab_dashboard.html", "sev0.html", "metrics_lab.html",
-         "board.html", "glossary.js", "glossary.json"]
+         "board.html", "analyst.html", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -62,6 +62,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("incidents.jsonl", None),
     ("model_internals.json", None),
     ("board.json", None),
+    ("commentary.jsonl", None),
     ("site_manifest.json", None),
     ("treatments_board.json", None),
     ("metric_fixtures.json", None),
