@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Metrics Lab</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ---- ranking legend ---- */
+.ranklist { columns: 2; column-gap: 34px; margin: 10px 0 0 18px;
+  font-size: 12.5px; color: var(--ink-2); line-height: 1.7; }
+.ranklist li { break-inside: avoid; }
+@media (max-width: 700px) { .ranklist { columns: 1; } }
+/* ---- launch pipeline board ---- */
+.pipe { display: grid; gap: 14px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.pipe-col { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; }
+.pipe-col > .k { font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--muted); font-weight: 700;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 10px; display: flex; justify-content: space-between; }
+.tcard { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 11px; margin-bottom: 8px; }
+.tcard .nm { font-size: 12.5px; font-weight: 700; color: var(--ink); }
+.tcard .why { font-size: 11.5px; color: var(--muted); margin: 1px 0 6px;
+  line-height: 1.4; }
+.tcard .nums { font-size: 11.5px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; margin-top: 5px; }
+.llr-bar { position: relative; height: 7px; border-radius: 99px;
+  background: var(--grid); margin-top: 7px; overflow: hidden; }
+.llr-bar .fill { position: absolute; top: 0; bottom: 0; }
+.llr-bar .fill.pos { background: var(--up); }
+.llr-bar .fill.neg { background: var(--down); }
+.llr-bar .zero { position: absolute; top: -1px; bottom: -1px; width: 1.5px;
+  background: var(--axis); }
+.llr-lab { display: flex; justify-content: space-between; font-size: 10px;
+  color: var(--faint); font-variant-numeric: tabular-nums; margin-top: 3px; }
+.pipe-empty { font-size: 12.5px; color: var(--muted); padding: 6px 2px; }
+/* ---- pipeline flow strip ---- */
+.flow { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  font-size: 12.5px; color: var(--ink-2); margin-top: 10px; }
+.flow .step { border: 1px solid var(--border); background: var(--surface-2);
+  border-radius: 8px; padding: 4px 12px; font-weight: 600; }
+.flow .arr { color: var(--faint); }
+/* ---- reliability mini-cells ---- */
+.rel { white-space: nowrap; }
+/* ---- limits / honesty boxes ---- */
+.limits { border: 1px solid rgba(143,96,0,.35); background: rgba(143,96,0,.06);
+  border-radius: 10px; padding: 12px 16px; font-size: 13px;
+  line-height: 1.55; color: var(--ink-2); margin-top: 14px; }
+.limits b { color: var(--ink); }
+.gap-note { font-size: 12.5px; color: var(--series-4); margin-top: 8px;
+  font-variant-numeric: tabular-nums; }
+/* ---- rank badge on section headers ---- */
+.rank { font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  color: var(--muted); border: 1px solid var(--border); border-radius: 6px;
+  padding: 2px 8px; vertical-align: 3px; margin-left: 8px;
+  background: var(--surface-2); text-transform: uppercase; }
+/* ---- legend swatches for the drift chart ---- */
+.swatch { display: inline-block; width: 18px; height: 0;
+  border-top: 2.5px solid var(--ink-2); border-radius: 2px;
+  margin-right: 6px; vertical-align: 3px; }
+.swatch.dashed { border-top-style: dashed; }
+svg .series { fill: none; stroke-width: 2.2; stroke-linejoin: round; }
+svg .base { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; }
+svg .endpt { stroke: var(--surface); stroke-width: 2; }
+/* ---- retrain strip (same language as Training page) ---- */
+.rt-row { display: flex; gap: 3px; align-items: center; margin: 3px 0;
+  font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.rt-cell { width: 14px; height: 14px; border-radius: 4px;
+  background: var(--surface-2); }
+.rt-cell.kept { background: rgba(43,217,126,.55); }
+.rt-cell.rev { background: rgba(255,93,93,.5); }
+/* ---- model-internals weight bars ---- */
+.wbar { display: grid; grid-template-columns: 150px 1fr 60px; gap: 8px;
+  align-items: center; font-size: 12px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; margin: 3px 0; }
+.wbar .track { position: relative; height: 8px; border-radius: 99px;
+  background: var(--grid); overflow: hidden; }
+.wbar .track .fill { position: absolute; top: 0; bottom: 0; }
+h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
+  margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="metrics_lab.html">Metrics Lab</a><span class="spacer"></span><span class="tag">industry metrics</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">Evaluation · all tiers · ranked by decision impact</div>
+  <h1>Metrics Lab — every tier, industry metrics, every dimension</h1>
+  <p class="sub">One page that scores the whole ladder the way industry would —
+  and in the order the numbers actually matter for decisions. Everything below
+  is recomputed in your browser from the raw <code>results/*.jsonl</code> logs
+  every 15&nbsp;s. Cuts with too little history say so instead of showing thin
+  numbers.</p>
+</header>
+
+<section class="statusbar">
+  <div class="live-dot" id="dot"></div>
+  <div class="stat"><div class="k">Scored point forecasts</div><div class="bignum" id="s-preds">–</div></div>
+  <div class="stat"><div class="k">KB decision windows</div><div class="bignum" id="s-kb">–</div></div>
+  <div class="stat"><div class="k">Settled paper trades</div><div class="bignum" id="s-trades">–</div></div>
+  <div class="stat"><div class="k">Hourly retrains logged</div><div class="bignum" id="s-retrains">–</div></div>
+  <div class="stat"><div class="k">Refreshed</div><div class="bignum" id="s-upd">–</div></div>
+</section>
+
+<!-- ============ WHY THIS ORDER ============ -->
+<section>
+  <h2>Why this order</h2>
+  <p class="sub muted">Sections (and lead columns inside tables) follow the
+  desk's canonical decision-impact ranking — what would change a launch
+  decision comes first, upstream health last.</p>
+  <ol class="ranklist">
+    <li><a href="#sec-pipeline">Paired EV/$1 vs champion + SPRT progress</a> — the promotion currency</li>
+    <li><a href="#sec-revenue">Revenue per trade/day/week/month + max DD</a> — the business outcome</li>
+    <li><a href="#sec-kb">BSS vs market</a> — is there any skill at all</li>
+    <li><a href="#sec-kb">Brier vs market Brier</a></li>
+    <li><a href="#sec-kb">Calibration honesty</a> (Platt a·b, reliability buckets)</li>
+    <li><a href="#sec-intervals">Interval quality</a> — 80% coverage + pinball</li>
+    <li><a href="#sec-intervals">Point quality</a> — MSE / RMSE / bias / MASE</li>
+    <li><a href="#sec-kb">AUC</a> — ranking skill</li>
+    <li><a href="#sec-exec">Execution</a> — slippage vs decision quote</li>
+    <li><a href="#sec-drift">Drift &amp; regime cuts</a> — time-of-day, day-of-week, coverage over time</li>
+    <li><a href="#sec-mech">Mechanism health</a> — leader churn, idle/skip rates</li>
+    <li><a href="#sec-training">Training / validation losses</a> — upstream health</li>
+  </ol>
+</section>
+
+<!-- ============ 1 · LAUNCH PIPELINE BOARD ============ -->
+<section id="sec-pipeline">
+  <h2>Launch pipeline board<span class="rank">rank 1</span></h2>
+  <p class="sub muted">The standing rule for promoting any candidate policy,
+  visualized. A treatment must first beat the champion in offline replay, then
+  run a live paired A/B under a sequential probability-ratio test (SPRT), and
+  only a crossed boundary triggers the launch analysis. Bars show each
+  candidate's log-likelihood ratio between the reject (left) and accept
+  (right) boundaries — read fresh from <code>online_status.json</code> each
+  poll (they moved after the family-wise α correction); the tick is
+  LLR&nbsp;=&nbsp;0. Paired&nbsp;Δ/$1 is the promotion currency: the
+  treatment's EV per dollar minus the champion's on the <i>same windows</i>.</p>
+  <div class="flow">
+    <span class="step">1 · offline replay lift</span><span class="arr">→</span>
+    <span class="step">2 · live paired A/B (SPRT)</span><span class="arr">→</span>
+    <span class="step">3 · launch analysis</span>
+  </div>
+  <div class="pipe" id="pipe"><div class="pipe-empty">loading online_status.json…</div></div>
+  <p class="mini" id="pipe-note"></p>
+</section>
+
+<!-- ============ 2 · REVENUE ============ -->
+<section id="sec-revenue">
+  <h2>Traders &amp; revenue<span class="rank">rank 2</span></h2>
+  <p class="sub muted">Settled, non-skipped entries from each
+  <code>pt*_trades.jsonl</code>. Revenue is realized P&amp;L aggregated per
+  trade, per PT day, per ISO week and per calendar month (each cell is the
+  mean over that bucket size). EV/$1 is total P&amp;L per dollar staked;
+  max&nbsp;DD is the deepest peak-to-trough fall of cumulative P&amp;L.
+  The Gambler is scored on his v2 policy only (rows from the 2026-08-26
+  reset, <code>made_ts ≥ 1787788353</code>) — v1 history stays in the log
+  but doesn't count.</p>
+  <div class="scroll"><table id="t3-table" style="min-width:960px">
+    <thead><tr><th>Trader</th><th class="num">Trades</th>
+    <th class="num">$/trade</th><th class="num">$/day</th>
+    <th class="num">$/week</th><th class="num">$/month</th>
+    <th class="num">EV / $1</th><th class="num">Max DD</th></tr></thead>
+    <tbody><tr><td colspan="8" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="gap-note" id="t3-gap"></p>
+</section>
+
+<!-- ============ 3 · KB ARMS (BSS · Brier · calibration · AUC) ============ -->
+<section id="sec-kb">
+  <h2>Kalshi binary arms — skill, Brier, calibration, AUC<span class="rank">ranks 3–5 · 8</span></h2>
+  <p class="sub muted">One decision per market window from
+  <code>kalshi_binary_log.jsonl</code>: the <b>earliest</b> call inside the
+  ≤12-minute decision envelope (the same minute the desk commits — scoring
+  later rows would grade nearly-settled windows and flatter every arm),
+  settled windows only. Lead column is the <b>Brier skill score vs the
+  market</b> (BSS = 1 − Brier/Brier<sub>mkt</sub>; &gt;0 = skill beyond the
+  order book — the audit's <code>bss_vs_market</code>, recomputed live).
+  Calibration a·b are the live Platt coefficients from
+  <code>kb_calib.json</code> (honest ≈ a&nbsp;0, b&nbsp;1); reliability shows
+  mean stated p → realized frequency in three buckets. AUC is the
+  Mann-Whitney rank statistic (0.5 = no ranking skill).</p>
+  <div class="scroll"><table id="t2-table" style="min-width:1080px">
+    <thead><tr><th>Arm</th><th class="num">Windows</th>
+    <th class="num">BSS vs mkt</th>
+    <th class="num">Brier</th><th class="num">Market Brier</th>
+    <th class="num">Calib a · b</th>
+    <th>Reliability p̄→realized (low · mid · high)</th>
+    <th class="num">AUC</th><th class="num">Log loss</th></tr></thead>
+    <tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="t2-note"></p>
+</section>
+
+<!-- ============ 4 · TIER 1 — INTERVAL + POINT QUALITY ============ -->
+<section id="sec-intervals">
+  <h2>Price arms — interval quality, then point quality<span class="rank">ranks 6–7</span></h2>
+  <p class="sub muted">Every scored row of <code>prediction_log.jsonl</code>,
+  grouped family × horizon. Lead columns are the interval metrics (rank 6):
+  coverage is how often the actual landed inside the stated 80% band
+  [lo,&nbsp;hi]; pinball is the mean q10/q90 quantile loss in $ (lower =
+  sharper honest bands; the audit's <code>pinball</code>, recomputed live).
+  Then point quality (rank 7): MSE/RMSE in $² and $; bias is
+  mean(pred&nbsp;−&nbsp;actual); MASE is the arm's MAE over the persistence
+  baseline's MAE on the <i>same slots</i> (the
+  <span class="arm-tag rp">rp</span> family — predict "no change"; &lt;1
+  beats persistence).</p>
+  <div class="scroll"><table id="t1-table" style="min-width:900px">
+    <thead><tr><th>Arm</th><th>Horizon</th><th class="num">n</th>
+    <th class="num">80% cover</th><th class="num">Pinball $</th>
+    <th class="num">MSE $²</th><th class="num">RMSE $</th>
+    <th class="num">Bias $</th><th class="num">MASE</th></tr></thead>
+    <tbody><tr><td colspan="9" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="t1-note"></p>
+</section>
+
+<!-- ============ 5 · EXECUTION ============ -->
+<section id="sec-exec">
+  <h2>Execution — slippage vs the decision quote<span class="rank">rank 9</span></h2>
+  <p class="sub muted">Selection and execution are scored separately: the same
+  champion policy is valued at the quote it decided on and at the fill it
+  actually got, so the gap is pure execution. Live rows recompute every poll
+  from <code>online_status.json</code> and the trade logs; measured constants
+  from the SEV-0 audit are tagged <span class="pill pending">static · from
+  audit</span> and do not update.</p>
+  <div class="scroll"><table id="exec-table" style="min-width:680px">
+    <thead><tr><th>Metric</th><th class="num">Value</th><th>Source</th></tr></thead>
+    <tbody><tr><td colspan="3" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="exec-note"></p>
+</section>
+
+<!-- ============ 6 · DRIFT & REGIME CUTS ============ -->
+<section id="sec-drift">
+  <h2>Drift &amp; regime cuts<span class="rank">rank 10</span></h2>
+
+  <h3>Calibration drift — 80% band coverage over time (rolling 200 rows, h15)</h3>
+  <p class="sub muted small">Each point is the band hit-rate over the trailing
+  200 scored h15 slots. A well-calibrated 80% band tracks the dotted 0.80 line;
+  drift above = bands too wide (under-confident), below = too narrow.</p>
+  <div class="legend" id="drift-legend"></div>
+  <div id="drift-chart"><p class="muted small">loading…</p></div>
+
+  <h3>Time cuts — control arm at h15 (hour of day, PT)</h3>
+  <div class="scroll"><table id="t1-hod" style="min-width:900px"></table></div>
+  <h3>Time cuts — control arm at h15 (day of week, PT)</h3>
+  <div class="scroll"><table id="t1-dow" style="min-width:680px"></table></div>
+  <p class="gap-note" id="t1-cut-note"></p>
+
+  <h3>KB drift — Brier by day (PT)</h3>
+  <div class="scroll"><table id="t2-drift"></table></div>
+
+  <h3>KB time of day — control arm <span class="arm-tag control">kb</span>, 6-hour PT blocks</h3>
+  <div class="scroll"><table id="t2-tod"></table></div>
+  <p class="gap-note" id="t2-gap"></p>
+</section>
+
+<!-- ============ 7 · MECHANISM HEALTH ============ -->
+<section id="sec-mech">
+  <h2>Mechanism health — churn, idle &amp; skip rates<span class="rank">rank 11</span></h2>
+  <p class="sub muted">The plumbing behind the numbers: how often the desk's
+  leader hand-offs happen (churn — from consecutive entries in
+  <code>pt_trades.jsonl</code>), how the leadership has been distributed, and
+  how often each gate stands down (skips/n from the live treatment ledger).
+  High churn means the "best last 10" leader is unstable; a gate that skips
+  almost everything is really a different, thinner strategy.</p>
+  <div id="mech-lead" class="small" style="margin-top:10px"></div>
+  <h3>Gate idle / skip rates (live treatment ledger)</h3>
+  <div class="scroll"><table id="mech-skips" style="min-width:680px"></table></div>
+</section>
+
+<!-- ============ 8 · TRAINING & LOSS REGIME ============ -->
+<section id="sec-training">
+  <h2>Training &amp; loss regime<span class="rank">rank 12</span></h2>
+  <p class="sub muted">What each tier optimizes, and whether the hourly online
+  retrains are actually helping — the hold-out no-regression gate keeps an
+  update only when replay improved hold-out MSE.</p>
+
+  <h3>Loss functions in use (as documented in code)</h3>
+  <ul class="small" style="margin:8px 0 0 18px; color:var(--ink-2); line-height:1.7">
+    <li><b>Tier 1 price arms</b> — shaped prediction reward for the RL update
+      (<code>btc_rl/env.py&nbsp;reward()</code>, replayed with
+      <code>shaped=True</code> in <code>btc_rl/online.py</code>), promoted only
+      through the hourly <b>hold-out MSE no-regression gate</b> ("bad updates
+      revert", <code>btc_rl/online.py</code>).</li>
+    <li><b>Tier 2 KB logits</b> — online logistic regression, one SGD step per
+      settled call; "log-loss training keeps the output probability naturally
+      calibrated" (<code>btc_rl/agents.py · BinaryLogit</code>).</li>
+    <li><b>Calibrators</b> — online Platt scaling fit by damped Newton steps on
+      the <b>log-loss</b> with exponentially decayed statistics, so it tracks a
+      moving miscalibration (<code>btc_rl/agents.py · PlattCalibrator</code>).</li>
+  </ul>
+
+  <h3>Latest validation score per batch run</h3>
+  <div class="scroll"><table id="t5-runs"></table></div>
+  <p class="mini" id="t5-runs-note"></p>
+
+  <h3>The hourly retrain gate, across time</h3>
+  <div id="t5-strip" style="margin-top:10px"><p class="muted small">loading metrics_history.jsonl…</p></div>
+  <p class="mini" id="t5-strip-note"></p>
+  <div class="scroll"><table id="t5-gate"></table></div>
+</section>
+
+<!-- ============ LEAKAGE & METHOD ============ -->
+<section id="sec-method">
+  <h2>Leakage &amp; method</h2>
+  <p class="sub" style="max-width:78ch">Every number on this page is
+  <b>blind-forward</b>: a prediction is written to the log <i>before</i> its
+  outcome exists, and is scored only when the market later settles it. Four
+  rules keep hindsight out of the loop:</p>
+  <ul class="small" style="margin:10px 0 0 18px; color:var(--ink-2); line-height:1.7">
+    <li><b>Prequential test-then-train</b> — each arm is scored on a window
+      first, and only then may train on it; no row is ever scored by a model
+      that has already seen it.</li>
+    <li><b>Settle-ordered replays</b> — offline replays feed outcomes in
+      settlement order, so no update can peek past its own timestamp.</li>
+    <li><b>Decision-time-only features</b> — feature vectors are frozen at the
+      minute the call is made; nothing computed after <code>made_ts</code> can
+      enter them.</li>
+    <li><b>The ≤12-minute envelope</b> — one decision per window, taken inside
+      the same time envelope the live desk trades in, so evaluation and
+      execution see identical information.</li>
+  </ul>
+  <p class="small" style="margin-top:10px">The full audit of how these rules
+  were violated once, caught, and remediated is in
+  <a href="../docs/SEV0_REMEDIATION.md">docs/SEV0_REMEDIATION.md</a>.</p>
+  <div class="limits"><b>Limits — deliberately not shown.</b>
+    News impact per tier and per-feature attribution ship when
+    <code>model_internals.json</code> lands (once it does, the Model
+    internals section below renders them automatically); monthly seasonality
+    needs more than one month of data — not shown rather than shown thin.</div>
+</section>
+
+<!-- ============ MODEL INTERNALS ============ -->
+<section id="sec-internals">
+  <h2>Model internals</h2>
+  <div id="mi-body"><p class="muted small">checking for results/model_internals.json…</p></div>
+</section>
+
+<footer id="foot">Research study for education — not financial advice ·
+recomputed client-side from results/*.jsonl every 15 s</footer>
+</main>
+
+<script>
+"use strict";
+/* ---------- shared plumbing (site conventions) ---------- */
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" +
+  Math.floor(Date.now() / 15000);
+// compact $² formatter: 62 400 → "62.4k", 480 → "480"
+const fmtSq = v => v == null ? "–"
+  : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const f = (v, d) => v == null || !isFinite(v) ? "–" : v.toFixed(d);
+const fsign = (v, d) => v == null || !isFinite(v) ? "–"
+  : (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(d);
+const fmt$ = c => c == null ? "–"
+  : (c < 0 ? "−$" : "$") + Math.abs(c / 100)
+      .toLocaleString("en-US", { maximumFractionDigits: 0 });
+
+async function jsonl(u) {
+  try {
+    const r = await fetch(bust(u), { cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.text()).split("\n").filter(l => l.trim()).map(l => {
+      try { return JSON.parse(l); } catch { return null; }  // partial tail line
+    }).filter(Boolean);
+  } catch { return []; }
+}
+async function jget(u) {
+  try {
+    const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? await r.json() : null;
+  } catch { return null; }
+}
+
+/* PT time cuts — one formatter each, reused (Intl is slow per-call) */
+const TZ = "America/Los_Angeles";
+const fmtHour = new Intl.DateTimeFormat("en-US",
+  { timeZone: TZ, hour: "2-digit", hourCycle: "h23" });
+const fmtDow = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" });
+const fmtDate = new Intl.DateTimeFormat("en-CA",
+  { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+const fmtHM = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
+  { timeZone: TZ, hour: "2-digit", minute: "2-digit", hour12: false });
+const ptHour = ts => +fmtHour.format(new Date(ts * 1000));
+const ptDow = ts => fmtDow.format(new Date(ts * 1000));
+const ptDate = ts => fmtDate.format(new Date(ts * 1000));
+function isoWeek(dateStr) {              // "2026-08-25" -> "2026-W35"
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const day = (dt.getUTCDay() + 6) % 7;            // Mon=0
+  dt.setUTCDate(dt.getUTCDate() - day + 3);        // nearest Thursday
+  const jan4 = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+  const wk = 1 + Math.round(((dt - jan4) / 86400000
+    - 3 + ((jan4.getUTCDay() + 6) % 7)) / 7);
+  return dt.getUTCFullYear() + "-W" + String(wk).padStart(2, "0");
+}
+
+/* Mann-Whitney AUC with tie handling — same implementation as sev0.html */
+function auc(pos, neg) {
+  if (!pos.length || !neg.length) return null;
+  const all = pos.map(s => [s, 1]).concat(neg.map(s => [s, 0]))
+    .sort((a, b) => a[0] - b[0]);
+  let i = 0, rp = 0;
+  while (i < all.length) {
+    let j = i;
+    while (j < all.length && all[j][0] === all[i][0]) j++;
+    const r = (i + j + 1) / 2;
+    for (let k = i; k < j; k++) if (all[k][1]) rp += r;
+    i = j;
+  }
+  return (rp - pos.length * (pos.length + 1) / 2)
+    / (pos.length * neg.length);
+}
+const mean = a => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
+
+/* ============ 1 · launch pipeline board ============ */
+function renderPipeline(status) {
+  const el = document.getElementById("pipe");
+  const ts = status && status.treatments;
+  if (!ts || !ts.length) {
+    el.innerHTML = '<div class="pipe-empty">no treatments in online_status.json yet</div>';
+    return;
+  }
+  const APPROACH = 1.5;   // fixed milestone; the SPRT boundaries themselves are read per-row
+  const baselines = ts.filter(t => t.verdict === "baseline");
+  const cands = ts.filter(t => t.verdict !== "baseline");
+  const decided = cands.filter(t =>
+    (t.verdict && t.verdict !== "collecting") ||
+    t.llr >= t.upper || t.llr <= t.lower);
+  const near = cands.filter(t => !decided.includes(t) && Math.abs(t.llr) > APPROACH);
+  const collecting = cands.filter(t => !decided.includes(t) && !near.includes(t));
+  const card = t => {
+    const span = t.upper - t.lower || 1;
+    const zero = (0 - t.lower) / span * 100;
+    const pos = Math.max(0, Math.min(100, (t.llr - t.lower) / span * 100));
+    const lo = Math.min(zero, pos), w = Math.abs(pos - zero);
+    return '<div class="tcard"><div class="nm">' + esc(t.label) + '</div>' +
+      '<div class="why">' + esc(t.rationale || "") + '</div>' +
+      '<div class="nums"><b>paired Δ/$1 ' + fsign(t.mean_diff, 3) + '</b>' +
+        ' · own EV/$1 ' + fsign(t.own_ev, 3) + '</div>' +
+      '<div class="llr-bar"><span class="zero" style="left:' + zero.toFixed(1) +
+        '%"></span><span class="fill ' + (t.llr >= 0 ? "pos" : "neg") +
+        '" style="left:' + lo.toFixed(1) + '%;width:' + Math.max(w, 0.8).toFixed(1) +
+        '%"></span></div>' +
+      '<div class="llr-lab"><span>reject ' + f(t.lower, 2) + '</span>' +
+        '<span>LLR ' + f(t.llr, 2) + '</span>' +
+        '<span>accept ' + f(t.upper, 2) + '</span></div>' +
+      '<div class="nums">n ' + t.n + ' · bets ' + t.bets + ' · skips ' +
+        t.skips + '</div></div>';
+  };
+  const col = (name, list, empty) =>
+    '<div class="pipe-col"><div class="k"><span>' + name + '</span><span>' +
+    list.length + '</span></div>' +
+    (list.length ? list.map(card).join("")
+                 : '<div class="pipe-empty">' + empty + '</div>') + '</div>';
+  el.innerHTML =
+    col("Collecting", collecting, "none") +
+    col("Approaching boundary · |LLR| &gt; " + APPROACH, near,
+        "none yet — every candidate is still inside ±" + APPROACH) +
+    col("Decided", decided,
+        "no candidate has yet crossed a boundary; the launch-analysis page " +
+        "is generated when one does.");
+  const b0 = cands[0];
+  document.getElementById("pipe-note").textContent =
+    (b0 ? "Current SPRT boundaries (fresh from online_status.json, " +
+      "family-wise α-corrected): accept at LLR ≥ " + b0.upper.toFixed(2) +
+      ", reject at ≤ " + b0.lower.toFixed(2) + ". " : "") +
+    (baselines.length
+      ? "Baselines (LLR fixed at 0 by construction): " +
+        baselines.map(b => b.label).join(" · ")
+      : "");
+}
+
+/* ============ 2 · traders & revenue ============ */
+const TRADERS = [
+  ["pt",  "Follower — the $1K Desk",        "10% of funds on the leader"],
+  ["pt2", "Ladder — banks levels",          "same entries, profits banked ×10"],
+  ["pt3", "Disciplined — τ≥0.77",           "only top-confidence entries"],
+  ["pt4", "Gambler v2 — 33%, gated",        "v2 rows only (post-reset)"],
+  ["pt5", "Saver — skims 25% of wins",      "10% sizing, monotone savings"],
+  ["pt6", "MLE — supervised meta-trader",   "bets only when learned EV>0"],
+  ["pt7", "Patient — limit orders",         "same signal, passive execution"],
+  ["pt8", "Ideal — the composite",          "maker entry + ½-Kelly + regime gate"],
+];
+const PT4_RESET_TS = 1787788353;
+function renderTier3(tradeMap) {
+  let allDays = new Set(), allWeeks = new Set(), allMonths = new Set(), totTrades = 0;
+  const rows = TRADERS.map(([key, name, note]) => {
+    let t = (tradeMap[key] || []).filter(r => !r.skipped && r.pnl_c != null
+      && (r.actual === 0 || r.actual === 1));
+    if (key === "pt4") t = t.filter(r => r.made_ts >= PT4_RESET_TS);
+    t.sort((a, b) => (a.close_ts || a.made_ts) - (b.close_ts || b.made_ts));
+    totTrades += t.length;
+    const days = new Map(), weeks = new Map(), months = new Map();
+    let cum = 0, peak = 0, dd = 0, pnl = 0, stake = 0;
+    for (const r of t) {
+      pnl += r.pnl_c; stake += r.stake_c || 0;
+      cum += r.pnl_c; peak = Math.max(peak, cum); dd = Math.max(dd, peak - cum);
+      const d = ptDate(r.made_ts), w = isoWeek(d), m = d.slice(0, 7);
+      days.set(d, (days.get(d) || 0) + r.pnl_c);
+      weeks.set(w, (weeks.get(w) || 0) + r.pnl_c);
+      months.set(m, (months.get(m) || 0) + r.pnl_c);
+      allDays.add(d); allWeeks.add(w); allMonths.add(m);
+    }
+    if (!t.length) return "<tr><td><b>" + esc(name) + "</b><div class='small muted'>" +
+      esc(note) + "</div></td><td class='num'>0</td>" +
+      "<td class='num muted' colspan='6'>no settled trades yet</td></tr>";
+    const per = m => fmt$([...m.values()].reduce((s, v) => s + v, 0) / m.size);
+    return "<tr><td><b>" + esc(name) + "</b><div class='small muted'>" + esc(note) +
+      "</div></td><td class='num'>" + t.length + "</td>" +
+      "<td class='num'>" + fmt$(pnl / t.length) + "</td>" +
+      "<td class='num'>" + per(days) + " <span class='muted small'>(" + days.size + "d)</span></td>" +
+      "<td class='num'>" + per(weeks) + " <span class='muted small'>(" + weeks.size + "w)</span></td>" +
+      "<td class='num'>" + per(months) + " <span class='muted small'>(" + months.size + "mo)</span></td>" +
+      "<td class='num'>" + (stake > 0 ? fsign(pnl / stake, 3) : "–") + "</td>" +
+      "<td class='num'>" + fmt$(-dd) + "</td></tr>";
+  });
+  document.querySelector("#t3-table tbody").innerHTML = rows.join("");
+  document.getElementById("s-trades").textContent = totTrades.toLocaleString();
+  document.getElementById("t3-gap").textContent =
+    "Honesty note: settled history spans " + allDays.size + " PT day(s), " +
+    allWeeks.size + " ISO week(s), " + allMonths.size + " month(s). With a " +
+    "single week/month bucket those columns equal the running total — they " +
+    "become real averages only as history accrues. Skipped windows " +
+    "(limit never filled, stake 0) are excluded.";
+}
+
+/* ============ 3 · KB arms — BSS, Brier, calibration, AUC ============ */
+let KB_DECISIONS = new Map();   // arm -> settled decision rows (shared with drift cuts)
+function kbDecide(kb) {
+  // one decision per window: the EARLIEST call inside the ≤12-min envelope
+  // (the desk's commit minute — later rows are nearly settled and score
+  // flatteringly; the audit's brier_decision uses this same rule)
+  const best = new Map();
+  for (const r of kb) {
+    if (r.mins_left == null || r.mins_left > 12 || r.p_up == null) continue;
+    const k = r.ticker + "|" + r.variant;
+    const cur = best.get(k);
+    if (!cur || r.made_ts < cur.made_ts) best.set(k, r);
+  }
+  const byArm = new Map();
+  for (const r of best.values()) {
+    if (r.actual !== 0 && r.actual !== 1) continue;
+    if (!byArm.has(r.variant)) byArm.set(r.variant, []);
+    byArm.get(r.variant).push(r);
+  }
+  return byArm;
+}
+function renderTier2(kb, calib, audit) {
+  KB_DECISIONS = kbDecide(kb);
+  const byArm = KB_DECISIONS;
+  const arms = [...byArm.keys()].sort((a, b) =>
+    (parseInt(a.replace(/\D/g, "")) || 0) - (parseInt(b.replace(/\D/g, "")) || 0)
+    || a.localeCompare(b));
+  const auditT2 = (audit && audit.sections && audit.sections.tier2) || {};
+  document.getElementById("s-kb").textContent =
+    ((byArm.get("kb") || []).length || "–").toLocaleString();
+  const clamp = p => Math.max(1e-6, Math.min(1 - 1e-6, p));
+  document.querySelector("#t2-table tbody").innerHTML = arms.map(v => {
+    const rs = byArm.get(v);
+    const br = mean(rs.map(r => (r.p_up - r.actual) ** 2));
+    const withMkt = rs.filter(r => r.mkt_p_up != null);
+    const mbr = mean(withMkt.map(r => (r.mkt_p_up - r.actual) ** 2));
+    const bss = br != null && mbr > 0 ? 1 - br / mbr : null;
+    const aud = auditT2[v] && auditT2[v].bss_vs_market;
+    const ll = mean(rs.map(r => { const p = clamp(r.p_up);
+      return -(r.actual * Math.log(p) + (1 - r.actual) * Math.log(1 - p)); }));
+    const A = auc(rs.filter(r => r.actual === 1).map(r => r.p_up),
+                  rs.filter(r => r.actual === 0).map(r => r.p_up));
+    const cal = calib && calib[v];
+    const rel = [[0, 1 / 3], [1 / 3, 2 / 3], [2 / 3, 1.0001]].map(([lo, hi]) => {
+      const b = rs.filter(r => r.p_up >= lo && r.p_up < hi);
+      return b.length ? f(mean(b.map(r => r.p_up)), 2) + "→" +
+        f(mean(b.map(r => r.actual)), 2) + " (n" + b.length + ")" : "–";
+    }).join(" · ");
+    return "<tr><td><span class=\"arm-tag " + (v === "kb" ? "control" : "") +
+      '">' + esc(v) + "</span></td>" +
+      '<td class="num">' + rs.length + "</td>" +
+      '<td class="num"><span class="pill ' + (bss == null ? "miss"
+        : bss > 0 ? "ok" : "bad") + '" title="audit_report.json: ' +
+        (aud != null ? aud : "n/a") + '">' + fsign(bss, 3) + "</span></td>" +
+      '<td class="num">' + f(br, 4) + "</td>" +
+      '<td class="num">' + f(mbr, 4) + "</td>" +
+      '<td class="num">' + (cal ? f(cal.a, 2) + " · " + f(cal.b, 2) : "–") + "</td>" +
+      '<td class="rel small">' + rel + "</td>" +
+      '<td class="num">' + f(A, 3) + "</td>" +
+      '<td class="num">' + f(ll, 4) + "</td></tr>";
+  }).join("") || '<tr><td colspan="9" class="muted">no settled windows yet</td></tr>';
+  const dec = [...byArm.values()].flat();
+  const ts = dec.map(r => r.made_ts);
+  const span = ts.length ? (Math.max(...ts) - Math.min(...ts)) / 86400 : 0;
+  document.getElementById("t2-note").textContent =
+    "kalshi_binary_log.jsonl is a rolling window — settled decision rows span " +
+    span.toFixed(1) + " days. BSS > 0 = beats the order book's own probability; " +
+    "hover a BSS pill for the audit_report.json cross-check value (same rule, " +
+    "batch-computed). Calibration a·b from kb_calib.json — honest ≈ 0 · 1.";
+}
+
+/* ============ tier-1 price arms ============ */
+const FAM_ORDER = ["control", "rp", "t2", "t6", "t7", "t8", "t9", "t10",
+  "t11", "cal", "consensus"];
+const famOf = v => {
+  const m = v.match(/^(?:(.+)-)?h\d+$/);
+  return m ? (m[1] || "control") : v.replace(/-h\d+$/, "");
+};
+const pin = (y, q, tau) => y >= q ? tau * (y - q) : (1 - tau) * (q - y);
+
+function renderTier1(preds) {
+  const scored = preds.filter(r => r.actual != null && r.pred != null
+    && r.horizon != null);
+  document.getElementById("s-preds").textContent = scored.length.toLocaleString();
+  // persistence MAE per (horizon, slot) for MASE denominators
+  const rpAbs = new Map();
+  for (const r of scored) if (famOf(r.variant) === "rp")
+    rpAbs.set(r.horizon + "|" + r.made_ts, Math.abs(r.actual - r.pred));
+  const g = new Map();       // "fam|h" -> accumulator
+  for (const r of scored) {
+    const fam = famOf(r.variant), k = fam + "|" + r.horizon;
+    if (!g.has(k)) g.set(k, { fam, h: r.horizon, n: 0, se: 0, err: 0,
+      mn: 0, md: 0, mm: 0, cin: 0, cn: 0, pb: 0, pbn: 0 });
+    const a = g.get(k);
+    const e = r.pred - r.actual;
+    a.n++; a.se += e * e; a.err += e;
+    const den = rpAbs.get(r.horizon + "|" + r.made_ts)
+      ?? (r.price_now != null ? Math.abs(r.actual - r.price_now) : null);
+    if (den != null) { a.mn += Math.abs(e); a.md += den; a.mm++; }
+    if (r.lo != null && r.hi != null) {
+      a.cn++; if (r.actual >= r.lo && r.actual <= r.hi) a.cin++;
+      a.pb += (pin(r.actual, r.lo, 0.1) + pin(r.actual, r.hi, 0.9)) / 2; a.pbn++;
+    }
+  }
+  const rows = [...g.values()].sort((x, y) => x.h - y.h ||
+    FAM_ORDER.indexOf(x.fam) - FAM_ORDER.indexOf(y.fam));
+  const tag = fam => '<span class="arm-tag ' +
+    (fam === "control" ? "control" : esc(fam)) + '">' + esc(fam) + '</span>';
+  document.querySelector("#t1-table tbody").innerHTML = rows.map(a => {
+    const mse = a.se / a.n, mase = a.mm && a.md > 0 ? (a.mn / a.mm) / (a.md / a.mm) : null;
+    const cov = a.cn ? a.cin / a.cn : null;
+    const covCls = cov == null ? "" : Math.abs(cov - 0.8) <= 0.05 ? "ok"
+      : cov < 0.7 || cov > 0.92 ? "bad" : "miss";
+    return "<tr><td>" + tag(a.fam) + "</td><td>h" + a.h +
+      '</td><td class="num">' + a.n +
+      '</td><td class="num">' + (cov == null ? "–"
+        : '<span class="pill ' + covCls + '">' + (cov * 100).toFixed(1) + "%</span>") +
+      '</td><td class="num">' + f(a.pbn ? a.pb / a.pbn : null, 1) +
+      '</td><td class="num">' + fmtSq(mse) +
+      '</td><td class="num">' + f(Math.sqrt(mse), 1) +
+      '</td><td class="num">' + f(a.err / a.n, 1) +
+      '</td><td class="num">' + (a.fam === "rp" ? "1.000 (def)" : f(mase, 3)) +
+      "</td></tr>";
+  }).join("");
+  const ts = scored.map(r => r.made_ts), span = (Math.max(...ts) - Math.min(...ts)) / 86400;
+  document.getElementById("t1-note").textContent =
+    "prediction_log.jsonl is a rolling window — " + scored.length.toLocaleString() +
+    " scored rows spanning " + span.toFixed(1) + " days (" +
+    ptDate(Math.min(...ts)) + " → " + ptDate(Math.max(...ts)) + " PT). " +
+    "MASE uses slot-matched rp errors; rp shows 1.000 by definition. " +
+    "Pinball and 80% coverage are also published per h15 family in " +
+    "audit_report.json (sections.tier1) — same definitions, batch-computed.";
+
+  /* ---- time cuts: control h15 (rendered into the drift section) ---- */
+  const h15 = scored.filter(r => r.variant === "h15" && r.lo != null && r.hi != null);
+  const cutTable = (elId, keys, keyOf) => {
+    const b = new Map(keys.map(k => [k, { n: 0, inb: 0, se: 0 }]));
+    for (const r of h15) {
+      const a = b.get(keyOf(r.made_ts)); if (!a) continue;
+      a.n++; if (r.actual >= r.lo && r.actual <= r.hi) a.inb++;
+      const e = r.pred - r.actual; a.se += e * e;
+    }
+    document.getElementById(elId).innerHTML =
+      "<thead><tr><th></th>" + keys.map(k => '<th class="num">' + k + "</th>")
+        .join("") + "</tr></thead><tbody>" +
+      "<tr><td>n</td>" + keys.map(k => '<td class="num">' + b.get(k).n + "</td>").join("") + "</tr>" +
+      "<tr><td>80% cover</td>" + keys.map(k => { const a = b.get(k);
+        return '<td class="num">' + (a.n ? (a.inb / a.n * 100).toFixed(0) + "%" : "–") + "</td>"; }).join("") + "</tr>" +
+      "<tr><td>MSE $²</td>" + keys.map(k => { const a = b.get(k);
+        return '<td class="num">' + (a.n ? fmtSq(a.se / a.n) : "–") + "</td>"; }).join("") + "</tr>" +
+      "</tbody>";
+  };
+  cutTable("t1-hod", [...Array(24).keys()].map(h => String(h).padStart(2, "0")),
+    ts2 => String(ptHour(ts2)).padStart(2, "0"));
+  cutTable("t1-dow", ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"], ptDow);
+  document.getElementById("t1-cut-note").textContent =
+    "Honesty note: only " + span.toFixed(1) + " days of history — each weekday " +
+    "bucket is ~1 day of data and hour buckets mix very few days; read these " +
+    "as diagnostics, not seasonality. Week-of-month / monthly cuts: " +
+    "insufficient history (n=" + Math.ceil(span) + " days), not shown.";
+
+  /* ---- calibration drift chart: rolling 200-row coverage ---- */
+  const seriesOf = variant => {
+    const rows2 = scored.filter(r => r.variant === variant && r.lo != null)
+      .sort((a, b) => a.made_ts - b.made_ts);
+    const out = []; const W = 200; let inb = 0; const q = [];
+    for (const r of rows2) {
+      const hit = r.actual >= r.lo && r.actual <= r.hi ? 1 : 0;
+      q.push(hit); inb += hit;
+      if (q.length > W) inb -= q.shift();
+      if (q.length === W) out.push({ t: r.made_ts, v: inb / W });
+    }
+    return out.filter((_, i) => i % 5 === 0 || i === out.length - 1);
+  };
+  const DS = [
+    { label: "control · h15", color: "var(--series-2)", pts: seriesOf("h15") },
+    { label: "cal · h15", color: "var(--series-3)", pts: seriesOf("cal-h15") },
+  ].filter(s => s.pts.length > 1);
+  document.getElementById("drift-legend").innerHTML = DS.map(s =>
+    '<span><span class="swatch" style="border-top-color:' + s.color + '"></span>' +
+    s.label + "</span>") .join("") +
+    '<span><span class="swatch dashed"></span>0.80 target</span>';
+  document.getElementById("drift-chart").innerHTML = DS.length
+    ? driftChart(DS) : '<p class="muted small">needs ≥200 scored h15 rows — collecting.</p>';
+}
+
+function driftChart(DS) {
+  const W = 900, H = 210, L = 46, R = 70, T = 12, B = 26;
+  let ymin = 0.78, ymax = 0.82, tmin = Infinity, tmax = -Infinity;
+  for (const s of DS) for (const p of s.pts) {
+    ymin = Math.min(ymin, p.v); ymax = Math.max(ymax, p.v);
+    tmin = Math.min(tmin, p.t); tmax = Math.max(tmax, p.t);
+  }
+  const pad = (ymax - ymin) * 0.12 || 0.01; ymin -= pad; ymax += pad;
+  const X = t => L + (t - tmin) / Math.max(1, tmax - tmin) * (W - L - R);
+  const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
+  let g = "";
+  for (let i = 0; i <= 4; i++) {
+    const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+    g += '<line class="gridline" x1="' + L + '" y1="' + y + '" x2="' + (W - R) +
+      '" y2="' + y + '"/><text x="' + (L - 8) + '" y="' + (y + 4) +
+      '" text-anchor="end">' + (v * 100).toFixed(0) + "%</text>";
+  }
+  for (let i = 0; i <= 6; i++) {
+    const t = tmin + (tmax - tmin) * i / 6;
+    g += '<text x="' + X(t) + '" y="' + (H - 8) + '" text-anchor="middle">' +
+      ptDate(t).slice(5) + " " + fmtHM(t) + "</text>";
+  }
+  g += '<line class="axis" x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - R) +
+    '" y2="' + (H - B) + '"/>';
+  g += '<line class="base" x1="' + L + '" y1="' + Y(0.8) + '" x2="' + (W - R) +
+    '" y2="' + Y(0.8) + '"/>';
+  for (const s of DS) {
+    const d = s.pts.map((p, i) => (i ? "L" : "M") + X(p.t).toFixed(1) + "," +
+      Y(p.v).toFixed(1)).join("");
+    const last = s.pts[s.pts.length - 1];
+    g += '<path class="series" d="' + d + '" style="stroke:' + s.color + '"/>' +
+      '<circle class="endpt" cx="' + X(last.t).toFixed(1) + '" cy="' +
+      Y(last.v).toFixed(1) + '" r="4" style="fill:' + s.color + '">' +
+      "<title>" + s.label + " — " + (last.v * 100).toFixed(1) + "% at " +
+      fmtHM(last.t) + " PT</title></circle>" +
+      '<text x="' + (X(last.t) + 8).toFixed(1) + '" y="' +
+      (Y(last.v) + 4).toFixed(1) + '">' + (last.v * 100).toFixed(1) + "%</text>";
+  }
+  return '<svg viewBox="0 0 ' + W + " " + H +
+    '" role="img" aria-label="rolling 80% band coverage">' + g + "</svg>";
+}
+
+/* ============ KB drift cuts (Brier by day, time-of-day) ============ */
+function renderKbCuts() {
+  const byArm = KB_DECISIONS;
+  const arms = [...byArm.keys()].sort((a, b) =>
+    (parseInt(a.replace(/\D/g, "")) || 0) - (parseInt(b.replace(/\D/g, "")) || 0)
+    || a.localeCompare(b));
+  const dec = [...byArm.values()].flat();
+  const days = [...new Set(dec.map(r => ptDate(r.made_ts)))].sort();
+  document.getElementById("t2-drift").innerHTML =
+    "<thead><tr><th>Arm</th>" + days.map(d => '<th class="num">' + d.slice(5) +
+    "</th>").join("") + "</tr></thead><tbody>" +
+    arms.map(v => "<tr><td>" + esc(v) + "</td>" + days.map(d => {
+      const b = byArm.get(v).filter(r => ptDate(r.made_ts) === d);
+      return '<td class="num">' + (b.length >= 10
+        ? f(mean(b.map(r => (r.p_up - r.actual) ** 2)), 3) + " (n" + b.length + ")"
+        : b.length ? "n=" + b.length + " thin" : "–") + "</td>";
+    }).join("") + "</tr>").join("") + "</tbody>";
+
+  const ctl = byArm.get("kb") || [];
+  const blocks = [[0, 6], [6, 12], [12, 18], [18, 24]];
+  document.getElementById("t2-tod").innerHTML =
+    "<thead><tr><th>PT block</th><th class=\"num\">n</th>" +
+    '<th class="num">Accuracy</th><th class="num">Brier</th>' +
+    '<th class="num">Market Brier</th></tr></thead><tbody>' +
+    blocks.map(([lo, hi]) => {
+      const b = ctl.filter(r => { const h = ptHour(r.made_ts);
+        return h >= lo && h < hi; });
+      const acc = b.length ? b.filter(r => (r.p_up >= 0.5 ? 1 : 0) === r.actual)
+        .length / b.length : null;
+      return "<tr><td>" + String(lo).padStart(2, "0") + ":00–" +
+        String(hi).padStart(2, "0") + ':00</td><td class="num">' + b.length +
+        '</td><td class="num">' + (acc == null ? "–" : (acc * 100).toFixed(0) + "%") +
+        '</td><td class="num">' + f(mean(b.map(r => (r.p_up - r.actual) ** 2)), 3) +
+        '</td><td class="num">' + f(mean(b.filter(r => r.mkt_p_up != null)
+          .map(r => (r.mkt_p_up - r.actual) ** 2)), 3) + "</td></tr>";
+    }).join("") + "</tbody>";
+  const ts = dec.map(r => r.made_ts);
+  const span = ts.length ? (Math.max(...ts) - Math.min(...ts)) / 86400 : 0;
+  document.getElementById("t2-gap").textContent =
+    "Honesty note: the rolling KB log holds only ~" + span.toFixed(1) +
+    " days, so day and time-of-day cells are thin — cells with n<10 are " +
+    "flagged rather than trusted.";
+}
+
+/* ============ execution — slippage vs decision quote ============ */
+function renderExec(status, tradeMap) {
+  const rows = [];
+  const T = (status && status.treatments) || [];
+  const by = k => T.find(t => t.key === k);
+  const champ = by("champion"), champReal = by("champion_real");
+  if (champ && champReal && champ.own_ev != null && champReal.own_ev != null)
+    rows.push(["Execution leak — champion EV/$1 at decision quote minus at " +
+      "real fills (same windows)",
+      fsign(champ.own_ev - champReal.own_ev, 4) + " /$1",
+      '<span class="pill ok">live · paired ledger</span>']);
+  for (const [k, label] of [["t_exec", "M10 execution guard"],
+                            ["t_limit", "M11 maker limit"],
+                            ["t_exec_reg", "M10+M8 guard + regime"]]) {
+    const t = by(k);
+    if (t) rows.push(["Paired Δ/$1 of " + label + " (execution treatment)",
+      fsign(t.mean_diff, 3) + " /$1",
+      '<span class="pill ok">live · SPRT ledger</span>']);
+  }
+  // limit-order fill rates: skipped rows = the resting bid never filled
+  for (const [k, name] of [["pt7", "Patient (limit −2c)"],
+                           ["pt8", "Ideal (maker composite)"]]) {
+    const t = tradeMap[k] || [];
+    const attempts = t.filter(r => r.actual !== null && r.actual !== undefined);
+    const skipped = attempts.filter(r => r.skipped).length;
+    if (attempts.length)
+      rows.push([name + " — resting-bid fill rate",
+        (100 * (1 - skipped / attempts.length)).toFixed(0) + "% of " +
+        attempts.length + " windows",
+        '<span class="pill ok">live · trade log</span>']);
+  }
+  rows.push(["Late-entry slippage — ask paid vs first-quote ask (measured " +
+    "in the SEV-0 error audit)", "+9 c",
+    '<span class="pill pending">static · from audit</span>']);
+  rows.push(["Execution leak measured pre-remediation (decision quote vs " +
+    "fill, points of EV)", "2.70 pts",
+    '<span class="pill pending">static · from audit</span>']);
+  document.querySelector("#exec-table tbody").innerHTML = rows.map(r =>
+    "<tr><td>" + r[0] + '</td><td class="num">' + r[1] + "</td><td>" + r[2] +
+    "</td></tr>").join("");
+  document.getElementById("exec-note").textContent =
+    "Static rows are the audited constants that motivated the execution " +
+    "treatments (see SEV-0 page and btc_rl/online.py comments); they do not " +
+    "poll. Full per-trade slippage vs the KB decision-row quote ships when " +
+    "the decision-quote join lands in the trade logs.";
+}
+
+/* ============ mechanism health ============ */
+function renderMech(status, tradeMap) {
+  const trades = (tradeMap.pt || [])
+    .filter(r => r.leader).sort((a, b) => a.made_ts - b.made_ts);
+  let churn = 0;
+  const counts = new Map();
+  for (let i = 0; i < trades.length; i++) {
+    counts.set(trades[i].leader, (counts.get(trades[i].leader) || 0) + 1);
+    if (i && trades[i].leader !== trades[i - 1].leader) churn++;
+  }
+  let streak = 0;
+  for (let i = trades.length - 1; i >= 0 &&
+       trades[i].leader === trades[trades.length - 1].leader; i--) streak++;
+  const dist = [...counts.entries()].sort((a, b) => b[1] - a[1])
+    .map(([l, n]) => esc(l) + " " + (100 * n / trades.length).toFixed(0) + "%")
+    .join(" · ");
+  document.getElementById("mech-lead").innerHTML = !trades.length
+    ? '<p class="muted">no desk entries yet</p>'
+    : '<div class="statusbar">' +
+      '<div class="stat"><div class="k">Leader hand-offs</div><div class="bignum">' +
+        churn + " / " + (trades.length - 1) + " windows (" +
+        (100 * churn / Math.max(1, trades.length - 1)).toFixed(0) + "%)</div></div>" +
+      '<div class="stat"><div class="k">Current leader</div><div class="bignum">' +
+        esc(trades[trades.length - 1].leader) + " · " + streak +
+        "-window streak</div></div></div>" +
+      '<p class="mini">leadership share of desk entries: ' + dist + "</p>";
+  const T = (status && status.treatments) || [];
+  document.getElementById("mech-skips").innerHTML =
+    "<thead><tr><th>Treatment</th><th class=\"num\">n</th>" +
+    '<th class="num">Bets</th><th class="num">Skips</th>' +
+    '<th class="num">Skip rate</th><th>Read</th></tr></thead><tbody>' +
+    T.filter(t => t.verdict !== "baseline").map(t => {
+      const sr = t.n ? t.skips / t.n : 0;
+      return "<tr><td>" + esc(t.label) + '</td><td class="num">' + t.n +
+        '</td><td class="num">' + t.bets + '</td><td class="num">' + t.skips +
+        '</td><td class="num">' + (sr * 100).toFixed(0) + "%</td><td>" +
+        (sr > 0.8 ? '<span class="pill bad">mostly idle — thin evidence</span>'
+         : sr > 0.4 ? '<span class="pill miss">selective</span>'
+         : '<span class="pill ok">active</span>') + "</td></tr>";
+    }).join("") + "</tbody>";
+}
+
+/* ============ training & loss regime ============ */
+function renderTier5(tp, mh) {
+  /* latest val score per batch run */
+  const runs = new Map();
+  for (const r of tp) {
+    const k = r.agent + "|h" + r.horizon;
+    const cur = runs.get(k);
+    if (!cur || r.ts > cur.ts) runs.set(k, r);
+  }
+  const ks = [...runs.keys()].sort();
+  let sawMse = false;
+  document.getElementById("t5-runs").innerHTML =
+    "<thead><tr><th>Run</th><th class=\"num\">Horizon</th>" +
+    '<th class="num">Final epoch</th><th class="num">Val MSE $²</th>' +
+    '<th class="num">Val MAE $</th><th class="num">Val hit rate</th></tr></thead><tbody>' +
+    ks.map(k => { const r = runs.get(k);
+      if (r.val_mse != null) sawMse = true;
+      return "<tr><td>" + esc(r.agent) + '</td><td class="num">' + r.horizon +
+        'm</td><td class="num">' + (r.epoch + 1) + "/" + r.epochs +
+        '</td><td class="num">' + (r.val_mse != null ? fmtSq(r.val_mse) : "–") +
+        '</td><td class="num">' + f(r.val_mae, 1) +
+        '</td><td class="num">' + (r.val_hit_rate != null
+          ? (r.val_hit_rate * 100).toFixed(1) + "%" : "–") + "</td></tr>";
+    }).join("") + "</tbody>";
+  document.getElementById("t5-runs-note").textContent = !tp.length
+    ? "no training_progress.jsonl rows yet"
+    : sawMse ? "runs logging val_mse show it; MAE-era runs show val_mae only."
+    : "Data gap: this training_progress.jsonl era logged val_mae only " +
+      "(no val_mse field) — MAE shown; never square an MAE to fake an MSE.";
+
+  /* hourly retrain gate history */
+  const rts = mh.filter(r => r.kind === "retrain" && r.gate);
+  document.getElementById("s-retrains").textContent = rts.length.toLocaleString();
+  if (!rts.length) {
+    document.getElementById("t5-strip").innerHTML =
+      '<p class="muted small">no retrain history yet</p>';
+    return;
+  }
+  const last = rts.slice(-24);
+  const arms = [...new Set(last.flatMap(x => Object.keys(x.gate)))].sort();
+  let out = "";
+  for (const a of arms) {
+    let cells = "";
+    for (const x of last) {
+      const gm = x.gate[a];
+      if (!gm) { cells += '<span class="rt-cell"></span>'; continue; }
+      const rev = Object.values(gm).some(v => v.reverted);
+      const ent = Object.entries(gm).filter(([, v]) => v.val_mse_before != null);
+      cells += '<span class="rt-cell ' + (rev ? "rev" : "kept") + '" title="' +
+        a + " @ " + fmtHM(x.ts) + " PT: " +
+        (ent.length ? ent.map(([h, v]) => h + " " + fmtSq(v.val_mse_before) +
+          "→" + fmtSq(v.val_mse_after) + " $²" + (v.reverted ? " reverted" : ""))
+          .join(" · ") : "MAE-era gate row") + '"></span>';
+    }
+    out += '<div class="rt-row"><span style="width:64px">' + esc(a) + "</span>" +
+      cells + "</div>";
+  }
+  document.getElementById("t5-strip").innerHTML = out;
+  let allN = 0, keptN = 0;
+  for (const x of rts) for (const gm of Object.values(x.gate)) {
+    allN++; if (!Object.values(gm).some(v => v.reverted)) keptN++;
+  }
+  const spanD = (rts[rts.length - 1].ts - rts[0].ts) / 86400;
+  document.getElementById("t5-strip-note").textContent =
+    rts.length + " hourly retrains over " + spanD.toFixed(1) + " days · " +
+    keptN + "/" + allN + " arm-gates kept their update (" +
+    (keptN / allN * 100).toFixed(0) + "%) — most updates SHOULD revert; " +
+    "the gate exists to make improvement monotone, not frequent. " +
+    "Strip shows the last " + last.length + " retrains (green kept, red reverted).";
+  /* last few gate decisions, before→after */
+  const flat = [];
+  for (const x of rts.slice(-3)) for (const [a, gm] of Object.entries(x.gate))
+    for (const [h, v] of Object.entries(gm)) if (v.val_mse_before != null)
+      flat.push({ ts: x.ts, a, h, ...v });
+  document.getElementById("t5-gate").innerHTML =
+    "<thead><tr><th>Retrain (PT)</th><th>Arm</th>" +
+    '<th class="num">Hold-out MSE before</th><th class="num">after</th>' +
+    "<th>Gate verdict</th></tr></thead><tbody>" +
+    flat.slice(-12).map(v => "<tr><td>" + fmtHM(v.ts) + "</td><td>" + esc(v.a) +
+      '</td><td class="num">' + fmtSq(v.val_mse_before) + " $²" +
+      '</td><td class="num">' + fmtSq(v.val_mse_after) + " $²</td><td>" +
+      (v.reverted ? '<span class="pill no">reverted</span>'
+                  : '<span class="pill ok">kept</span>') + "</td></tr>").join("") +
+    "</tbody>";
+}
+
+/* ============ model internals (may appear later) ============ */
+function renderInternals(mi) {
+  const el = document.getElementById("mi-body");
+  if (!mi) {
+    el.innerHTML = '<p class="sub muted">Introspection report pending — ' +
+      "<code>results/model_internals.json</code> has not been generated yet. " +
+      "When it lands, this section renders per-arm logit weights and the " +
+      "oracle-regret headline automatically.</p>";
+    return;
+  }
+  let html = '<p class="sub muted">Rendered from ' +
+    "<code>results/model_internals.json</code>" +
+    (mi.generated_ts ? " (generated " + fmtHM(mi.generated_ts) + " PT)" : "") +
+    ". Bars are online-logit weights per decision-time feature — the " +
+    "per-feature attribution each binary arm is actually using right now.</p>";
+  const o = mi.oracle || {};
+  const regret = o.regret ?? mi.oracle_regret ?? mi.regret;
+  if (regret != null)
+    html += '<div class="statusbar" style="margin:12px 0">' +
+      '<div class="stat"><div class="k">Oracle regret / $1</div><div class="bignum">' +
+        esc(Number(regret).toFixed(4)) + "</div></div>" +
+      (o.oracle_ev != null ? '<div class="stat"><div class="k">Oracle EV/$1</div>' +
+        '<div class="bignum">' + o.oracle_ev.toFixed(4) + "</div></div>" : "") +
+      (o.desk_ev != null ? '<div class="stat"><div class="k">Desk EV/$1</div>' +
+        '<div class="bignum">' + o.desk_ev.toFixed(4) + "</div></div>" : "") +
+      (o.windows != null ? '<div class="stat"><div class="k">Windows</div>' +
+        '<div class="bignum">' + o.windows + "</div></div>" : "") +
+      "</div>" +
+      (o.coverage_note ? '<p class="mini">' + esc(o.coverage_note) + "</p>" : "");
+  const armsObj = mi.logits || mi.arms || mi.weights || null;
+  if (armsObj && typeof armsObj === "object") {
+    for (const [arm, spec] of Object.entries(armsObj)) {
+      let ent;
+      if (Array.isArray(spec) && spec.length && typeof spec[0] === "object")
+        ent = spec.map(e => [e.feature, e.w]);           // [{feature, w}, …]
+      else if (Array.isArray(spec)) ent = spec.map((v, i2) => ["x" + i2, v]);
+      else ent = Object.entries(spec.weights || spec.w || spec);
+      ent = ent.filter(([, v]) => typeof v === "number");
+      if (!ent.length) continue;
+      const upd = mi.logit_updates && mi.logit_updates[arm];
+      const mx = Math.max(...ent.map(([, v]) => Math.abs(v))) || 1;
+      html += "<h3>" + esc(arm) +
+        (upd != null ? ' <span class="muted small">· ' +
+          Number(upd).toLocaleString() + " online updates</span>" : "") +
+        "</h3>" + ent.map(([k2, v]) => {
+        const zero = 50, w2 = Math.abs(v) / mx * 50;
+        const lo = v >= 0 ? zero : zero - w2;
+        return '<div class="wbar"><span>' + esc(k2) + '</span>' +
+          '<span class="track"><span class="fill" style="left:' + lo.toFixed(1) +
+          "%;width:" + Math.max(w2, 0.8).toFixed(1) + "%;background:" +
+          (v >= 0 ? "var(--series-2)" : "var(--series-3)") + '"></span></span>' +
+          '<span class="num">' + v.toFixed(3) + "</span></div>";
+      }).join("");
+    }
+  }
+  el.innerHTML = html;
+}
+
+/* ============ main poll loop — 15 s, cache-busted ============ */
+async function poll() {
+  try {
+    const [status, preds, kb, tp, mh, mi, calib, audit, ...trades] =
+      await Promise.all([
+        jget("../results/online_status.json"),
+        jsonl("../results/prediction_log.jsonl"),
+        jsonl("../results/kalshi_binary_log.jsonl"),
+        jsonl("../results/training_progress.jsonl"),
+        jsonl("../results/metrics_history.jsonl"),
+        jget("../results/model_internals.json"),
+        jget("../results/kb_calib.json"),
+        jget("../results/audit_report.json"),
+        ...TRADERS.map(([k]) => jsonl("../results/" + k + "_trades.jsonl")),
+      ]);
+    const tradeMap = Object.fromEntries(TRADERS.map(([k], i) => [k, trades[i]]));
+    renderPipeline(status);
+    renderTier3(tradeMap);
+    renderTier2(kb, calib, audit);
+    renderTier1(preds);
+    renderExec(status, tradeMap);
+    renderKbCuts();
+    renderMech(status, tradeMap);
+    renderTier5(tp, mh);
+    renderInternals(mi);
+    document.getElementById("dot").classList.toggle("stale",
+      !status || Date.now() / 1000 - (status.alive_at || 0) > 300);
+    document.getElementById("s-upd").textContent = fmtHM(Date.now() / 1000) + " PT";
+  } catch (e) {
+    document.getElementById("foot").textContent =
+      "recompute failed — " + e.message + " (retrying)";
+  }
+  setTimeout(poll, 15000);
+}
+poll();
+</script>
+</body>
+</html>
