@@ -3384,7 +3384,15 @@ def run(once: bool = False) -> None:
                                               dcap3)
                                           // (ask3 + fee3))
                                 if nc3 >= 1:
-                                    st3 = int(nc3 * (ask3 + fee3))
+                                    # BUG FIX 2026-08-29 (found by the
+                                    # independent reconciler's first
+                                    # run): int(nc3*(ask+fee)) FLOORS
+                                    # the order fee — 11 rows under-
+                                    # charged 1c each vs the spec
+                                    # ceil(7*C*p*(1-p)). Same form as
+                                    # every other trader now.
+                                    st3 = int(nc3 * ask3) \
+                                        + _order_fee_c(nc3, ask3)
                                     pt3_bankroll_c -= st3
                                     pt3_trades.append({
                                         "ticker": pm_mkt["ticker"],

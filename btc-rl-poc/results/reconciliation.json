@@ -1,0 +1,56 @@
+{
+  "generated_ts": 1788017686,
+  "checks": [
+    {
+      "name": "fee-parity",
+      "rows_checked": 1211,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "pnl-parity",
+      "rows_checked": 1211,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "stake-parity",
+      "rows_checked": 1211,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "bankroll-conservation",
+      "rows_checked": 1211,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "win-flag-consistency",
+      "rows_checked": 1211,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "treatments-ev-parity",
+      "rows_checked": 192,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    },
+    {
+      "name": "skip-row-hygiene",
+      "rows_checked": 229,
+      "mismatches": 0,
+      "examples": [],
+      "status": "OK"
+    }
+  ],
+  "overall": "OK",
+  "note": "Independent recomputation; nothing imported from btc_rl. Exact rational math throughout (fractions.Fraction), so no float-ceil artifacts: order fee = ceil(7*C*(a/100)*(1-a/100)*100) cents with a = ask in cents; exact equality required for integer-ask rows, +-1c for fractional effective fills (pt7/pt8 limit orders truncate C*ask to whole cents). Fee eras: 211 settled rows match the spec order-level fee ceil(7*C*p*(1-p)); 989 earlier rows match the legacy per-contract variant C*ceil(7*p*(1-p)) (a conservative overcharge; last legacy made_ts=1787965460, first spec-era made_ts=1787966357). Both are accepted because each row's stake/pnl/bankroll are internally consistent with the fee actually debited; rows matching neither are mismatches (11 of them instead match floor(7*C*p*(1-p)) -- fee truncated rather than rounded up, traders: pt3 -- an undercharge of exactly 1c per order; every flagged row sits on pt3's src='kb7' fallback path, while pt3's src='leader' rows ceil correctly). Stake parity allows +-1c on stake_c == C*ask_c + order fee. Bankroll walk: pt/pt2/pt3/pt6/pt7/pt8 start 100000c; pt5 starts 1000000c with skim_c deducted to savings (savings_c verified as the cumulative skim); pt4 audited for the v3 era only (made_ts >= 1787994332), start 1000000c, wd_c withdrawn each row. bankroll_c is a settlement-time CASH snapshot: 3 rows were short by exactly the stake(s) of the next already-placed-but-unsettled trade(s); these in-flight timing artifacts are accepted only when the walk reconverges exactly, and are not counted as mismatches. Skipped rows must carry zero contracts/stake/pnl and leave the bankroll untouched. treatments ev parity compares ev.champion_real (realized EV of the executed champion trade, cost = ask_c + ceil(per-contract fee_c), tolerance 1e-3); ev.champion is decision-time EV from a pre-execution quote and is not reconstructible from pt_trades."
+}

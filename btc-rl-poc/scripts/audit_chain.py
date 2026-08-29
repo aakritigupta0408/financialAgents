@@ -29,6 +29,7 @@ STEPS = [
     "scripts/emit_diagnosis.py",
     "scripts/emit_program.py",
     "scripts/emit_execution_ledger.py",
+    "scripts/reconcile.py",
     "scripts/emit_readiness.py",
 ]
 
