@@ -330,6 +330,10 @@ PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
 # History stays in the log untouched; rows made before PT4_RESET_TS
 # simply don't count toward the v2 bankroll. v2 rows are stamped pv:2.
 PT4_TAU = 0.77
+PT4_MIN_EDGE_C = 2.0   # v2.1 (2026-08-28): stated edge at the actual
+                       # fill must clear spread+fee noise — a constant
+                       # confidence gate alone can (and did) buy
+                       # negative-EV entries when price ran ahead
 PT4_RESET_TS = 1_787_788_353  # 2026-08-26 16:52 PT — v2 cutover
 PT4_RESET_C = 1_000_000       # $10,000 fresh v2 bankroll
 # Trader 5, the SAVER (2026-08-25): starts $10k, stakes 25% of playing
@@ -2894,16 +2898,27 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt3_bankroll_c,
                                             })
                                             pt3_tickers.add(pm_mkt["ticker"])
-                                    # Trader 4, the GAMBLER (policy v2,
-                                    # 2026-08-26): 33% of capital, but
-                                    # now ONLY at >=0.77 confidence —
-                                    # the Disciplined's gate — capped by
-                                    # the LIVE near-touch depth on the
-                                    # side he lifts; $500 fallback only
-                                    # if the book is dark
+                                    # Trader 4, the GAMBLER (policy
+                                    # v2.1, 2026-08-28): 33% of capital
+                                    # at >=0.77 confidence AND >=2c of
+                                    # stated edge at the ACTUAL fill.
+                                    # v2's constant-only gate placed a
+                                    # $1,911.85 stake at 79c where
+                                    # break-even was 80.2% vs conf
+                                    # 78.5% — negative EV by
+                                    # construction, because confidence
+                                    # and price co-move (for the
+                                    # market-anchored kb2 leader they
+                                    # are IDENTICAL, so a constant gate
+                                    # degenerates into a price
+                                    # threshold). Same lesson as pt6's
+                                    # margin gate, applied here.
                                     if (pm_mkt["ticker"] not in pt4_tickers
                                             and base_row["p_arm"]
-                                            >= PT4_TAU):
+                                            >= PT4_TAU
+                                            and base_row["p_arm"] * 100
+                                            >= askp + feep
+                                            + PT4_MIN_EDGE_C):
                                         st4cap = min(int(PT4_FRAC
                                                      * pt4_bankroll_c),
                                                      dcap)

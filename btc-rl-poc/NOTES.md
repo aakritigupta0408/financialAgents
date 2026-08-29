@@ -544,3 +544,25 @@ treatment health from raw ledgers every 10 min via cron (installed
 alongside the publisher) into results/audit_report.json, shipped by
 the publisher. metrics.json now carries mse/msse beside mae/mase
 (additive keys, nothing renamed out from under history).
+
+## 2026-08-28 — the 18:33 window: Gambler v2.1 (edge-at-fill gate)
+
+User flagged the 18:33 PT ledger row. Forensics (KXBTC15M-26AUG282145):
+pt4 entered at its own >=0.77 minute (18:35:33, conf 78.5%) — but by
+then the ask was 79c, break-even 80.2%: a $1,911.85 stake at -1.7 pts
+of stated edge. NEGATIVE EV BY CONSTRUCTION: a constant confidence
+gate ignores the price paid, and confidence and price co-move — for
+the market-anchored kb2 leader they are IDENTICAL (conf 0.685 = mkt
+0.685 in the same row), so any constant gate on a kb2 leader is just a
+price threshold. Every kb2-led follower entry that window carried edge
+= -(spread+fee): pt -2.0, pt5 -2.1, pt4 -1.7 pts. The only trader that
+declined was pt6 — the one whose gate compares confidence to price.
+
+Fix: PT4_MIN_EDGE_C = 2.0 — Gambler v2.1 requires conf >= 0.77 AND
+100*conf >= ask + fee + 2c at the actual fill. This also neutralizes
+the kb2 degeneracy automatically (kb2-led entries can never clear a
+positive margin). pt3's frozen pre-registered policy is deliberately
+untouched (it cleared +8.3 pts here); pt/pt2/pt5 stay as the
+uncorrected controls the curriculum needs. Ledger display now says
+"1st entry Xc — each trader fills at its own minute" instead of
+implying one desk-wide price.

@@ -1321,7 +1321,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
         : `<span class="muted">—</span>`}</td>` +
       `<td>${any.side === "yes" ? "YES" : "NO"} ≥ $` +
       `${Math.round(any.strike).toLocaleString()}` +
-      `<div class="mini">entry ${Math.round(any.ask_c)}¢</div></td>` +
+      `<div class="mini">1st entry ${Math.round(any.ask_c)}¢ — each ` +
+      `trader fills at its own minute</div></td>` +
       TRD.map(([k]) => cell(w[k], any.side)).join("") + `</tr>`;
   }).join("");
   // the bid ledger is ALWAYS shown — an empty book is information too
