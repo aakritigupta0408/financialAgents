@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Project Board</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+.kanban { display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.kcol { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 14px 8px; }
+.kcol h3 { font: 700 11px ui-sans-serif, system-ui;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 10px; display: flex;
+  justify-content: space-between; }
+.kcol h3 .cnt { color: var(--ink); }
+.kcard { border: 1px solid var(--grid); border-left: 3px solid var(--kc,
+  var(--border)); border-radius: 9px; padding: 9px 11px;
+  margin-bottom: 8px; font-size: 12.5px; line-height: 1.5;
+  background: var(--surface-2); }
+.kcard b { font-size: 12.5px; }
+.kcard .kwhy { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+.kcard.decision { border-left-color: var(--series-4);
+  background: rgba(143,96,0,.05); }
+.kcard.dead { opacity: .72; border-left-color: var(--down); }
+.kcard.done { border-left-color: var(--good-text); }
+.kcard.test { border-left-color: var(--series-2); }
+.kcard.active { border-left-color: var(--good-text); }
+.kcard.shadow { border-left-color: var(--muted); }
+.kbar { height: 5px; border-radius: 3px; background: rgba(22,32,44,.08);
+  overflow: hidden; margin-top: 6px; }
+.kbar > i { display: block; height: 100%; }
+.secgap { margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="board.html">Board</a><span class="spacer"></span><span class="tag">project board</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span>
+    the single source of "what exists" · <span id="asof">loading…</span></div>
+  <h1>Project Board</h1>
+  <p class="sub small">Everything the project contains, in one place, so
+  nothing solved is ever lost: what runs, what is under live test, what
+  awaits a human decision, and what died — <b>with the evidence that
+  killed it kept on the card</b>. Live items (treatments, incidents)
+  merge from the daemon's own status each refresh; lifecycle facts come
+  from the curated registry (<code>results/board.json</code>, updated
+  with every decision — the ledger behind it is
+  <code>docs/DECISIONS.md</code>).</p>
+</header>
+
+<section>
+  <h2>Waiting on the owner <span class="pill pending" id="dec-n">…</span></h2>
+  <p class="sub small">Policy calls only a human makes. Everything else
+  on this board proceeds without asking.</p>
+  <div id="decisions" class="secgap"></div>
+</section>
+
+<section>
+  <h2>Incidents <span class="pill" id="inc-n">…</span></h2>
+  <div id="incidents" class="secgap"></div>
+</section>
+
+<section>
+  <h2>The board</h2>
+  <p class="sub small">Cards never disappear — they move right. A dead
+  card keeps its cause of death; that is the point of this page.</p>
+  <div class="kanban" style="margin-top:12px">
+    <div class="kcol"><h3>ACTIVE <span class="cnt" id="c-act"></span></h3>
+      <div id="k-active"></div></div>
+    <div class="kcol"><h3>IN LIVE TEST <span class="cnt" id="c-test"></span></h3>
+      <div id="k-test"></div></div>
+    <div class="kcol"><h3>PROPOSED / NEXT <span class="cnt" id="c-prop"></span></h3>
+      <div id="k-prop"></div></div>
+    <div class="kcol"><h3>DONE / GATES PASSED <span class="cnt" id="c-done"></span></h3>
+      <div id="k-done"></div></div>
+    <div class="kcol"><h3>RETIRED / DEAD — with why <span class="cnt" id="c-dead"></span></h3>
+      <div id="k-dead"></div></div>
+  </div>
+  <p class="mini">treatments in the LIVE TEST column carry their SPRT
+  evidence bar (boundary read live — currently the family-wise-corrected
+  values, never hardcoded) · full metric detail:
+  <a href="metrics_lab.html">Metrics Lab</a> · incident detail:
+  <a href="sev0.html">SEV-0</a></p>
+</section>
+</main>
+
+<script>
+"use strict";
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
+  + Math.floor(Date.now() / 15000);
+const J = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? r.json() : null; } catch { return null; }
+};
+const JL = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.text()).split("\n").filter(l => l.trim())
+      .map(l => { try { return JSON.parse(l); } catch { return null; } })
+      .filter(Boolean);
+  } catch { return []; }
+};
+const card = (cls, title, why) =>
+  `<div class="kcard ${cls}"><b>${title}</b>` +
+  (why ? `<div class="kwhy">${why}</div>` : "") + `</div>`;
+
+async function poll() {
+  const [board, st, inc] = await Promise.all([
+    J("../results/board.json"),
+    J("../results/online_status.json"),
+    JL("../results/incidents.jsonl"),
+  ]);
+  const ageS = st ? Date.now() / 1000 - st.alive_at : 1e9;
+  document.getElementById("dot").className =
+    "live-dot" + (ageS > 300 ? " stale" : "");
+  document.getElementById("asof").textContent =
+    (board ? "registry " + board.updated + " · " : "") +
+    "daemon " + (ageS > 300 ? "stale" : "live");
+
+  // waiting on the owner
+  const dec = (board && board.open_decisions) || [];
+  document.getElementById("dec-n").textContent = dec.length + " open";
+  document.getElementById("decisions").innerHTML = dec.map(d =>
+    card("decision", d.q, d.context + " · id " + d.id)).join("")
+    || '<p class="mini">nothing waiting</p>';
+
+  // incidents
+  document.getElementById("inc-n").textContent =
+    inc.length + " on the ladder";
+  document.getElementById("incidents").innerHTML = inc.map(i =>
+    card(i.status && i.status.startsWith("actions") ? "test" : "dead",
+      `SEV-${i.sev} · ${i.title} — <span class="pill ${
+        i.status === "mitigating" || i.status === "actions-live"
+          ? "pending" : "hit"}">${i.status}</span>`,
+      i.rca)).join("");
+
+  // columns
+  const cols = { active: [], test: [], prop: [], done: [], dead: [] };
+  const put = (col, html) => cols[col].push(html);
+  for (const a of (board && board.arms) || []) {
+    if (a.status === "retired")
+      put("dead", card("dead", "arm " + a.id,
+        (a.why || "") + " · retired " + (a.date || "")));
+    else put("active", card("active", "arm " + a.id,
+      (a.role || "") + (a.note ? " · " + a.note : "")));
+  }
+  for (const t of (board && board.traders) || [])
+    put("active", card("active", t.id,
+      t.role + (t.flag ? " · ⚑ " + t.flag : "")));
+  for (const i of (board && board.infrastructure) || [])
+    put("active", card("active", i.id, i.note));
+  // live treatments -> IN TEST with SPRT bars
+  const T = (st && st.treatments) || [];
+  for (const t of T) {
+    if (t.verdict === "baseline") continue;
+    const up = t.llr >= 0;
+    const bound = up ? t.upper : t.lower;
+    const w = bound ? Math.min(100,
+      100 * Math.abs(t.llr / bound)).toFixed(0) : 0;
+    put("test", `<div class="kcard test"><b>${t.label}</b>` +
+      `<div class="kwhy">paired ${(100 * t.mean_diff).toFixed(2)}%/$1 · ` +
+      `${t.n} windows · LLR ${t.llr.toFixed(2)} of ` +
+      `${(bound || 0).toFixed(2)}</div>` +
+      `<div class="kbar"><i style="width:${w}%;background:${up
+        ? "var(--good-text)" : "var(--down)"}"></i></div></div>`);
+  }
+  for (const m of (board && board.mitigations) || []) {
+    const s = m.status;
+    if (s === "dead" || s === "dead-folded")
+      put("dead", card("dead", m.id, m.note));
+    else if (s === "done-gates-passing" || s === "shipped")
+      put("done", card("done", m.id, m.note));
+    else if (s === "proposed") put("prop", card("", m.id, m.note));
+    else if (s === "shadow-on-probation")
+      put("test", card("shadow", m.id + " (shadow, on probation)",
+        m.note));
+    // in-test mitigations already appear as live treatments above
+  }
+  for (const w of (board && board.workstreams) || []) {
+    if (w.status === "next" || w.status === "proposed"
+        || w.status === "designed" || w.status === "armed")
+      put("prop", card("", w.id + " · " + w.status, w.note));
+    else put("done", card("done", w.id, w.note));
+  }
+  for (const [k, el, cnt] of [["active", "k-active", "c-act"],
+      ["test", "k-test", "c-test"], ["prop", "k-prop", "c-prop"],
+      ["done", "k-done", "c-done"], ["dead", "k-dead", "c-dead"]]) {
+    document.getElementById(el).innerHTML = cols[k].join("")
+      || '<p class="mini">empty</p>';
+    document.getElementById(cnt).textContent = cols[k].length;
+  }
+}
+poll();
+setInterval(poll, 15000);
+</script>
+</body>
+</html>
