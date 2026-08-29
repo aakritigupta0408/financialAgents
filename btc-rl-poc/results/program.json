@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788013748,
+ "generated_ts": 1788013792,
  "counts": {
   "live": 13,
   "retire_candidates": 5,
@@ -516,35 +516,27 @@
    "name": "Edge band",
    "type": "EXPERIMENT",
    "tier_path": "T2\u2192T3\u2192T5",
-   "family": "decision-selection",
+   "family": null,
    "basis": "model",
    "problem": "stated edge is an anti-signal at the extremes (kb5 \u22120.096, pt6 \u22120.059 weights)",
    "hypothesis": "enter only when claimed edge sits in [2c, 12c] \u2014 enough to pay costs, not so much that the model is probably wrong",
-   "mechanism": "claimed edge must sit in [2c,12c] \u2014 extremes are model error, not opportunity",
-   "mechanism_check": {
-    "status": "NOT INSTRUMENTED",
-    "note": ""
-   },
+   "mechanism": null,
+   "mechanism_check": null,
    "parents": [],
    "children": [],
-   "effect": 0.00537,
-   "ci95_boot": [
-    -0.10629,
-    0.12047
-   ],
-   "p_gt0": 0.527,
-   "coverage": 0.0,
-   "llr": 0.0,
-   "n": 188,
+   "effect": null,
+   "ci95_boot": null,
+   "p_gt0": null,
+   "coverage": null,
+   "llr": null,
+   "n": null,
    "lifecycle": "LIVE \u2014 new challenger, collecting from zero",
-   "analysis_recommendation": "HOLD",
+   "analysis_recommendation": "CONTINUE",
    "recommendation_why": [
-    "coverage 0% \u2014 not comparable at deployment scale"
+    "collecting"
    ],
-   "attention": [
-    "coverage 0%"
-   ],
-   "retire_pressure": "HIGH",
+   "attention": [],
+   "retire_pressure": null,
    "incremental_vs_parent": null
   }
  ],

@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788013748,
+ "generated_ts": 1788013792,
  "question": "Where is the system failing?",
  "tiers": {
   "T1": {
@@ -391,35 +391,6 @@
     "stale \u2014 little movement toward a verdict",
     "dominated by M10+M8"
    ]
-  },
-  {
-   "key": "t_edgeband",
-   "m": "M13",
-   "tier": "T3",
-   "family": "decision-selection",
-   "parents": [],
-   "mechanism": "claimed edge must sit in [2c,12c] \u2014 extremes are model error, not opportunity",
-   "mechanism_check": {
-    "status": "NOT INSTRUMENTED",
-    "note": ""
-   },
-   "label": "M13 \u00b7 edge band (enough edge, not too much)",
-   "state": "INVALID",
-   "mean": 0.00537,
-   "ci95_boot": [
-    -0.10629,
-    0.12047
-   ],
-   "p_gt0": 0.527,
-   "coverage": 0.0,
-   "llr": 0.0,
-   "n": 188,
-   "retire_pressure": "HIGH",
-   "retire_flags": [
-    "too selective (<25% coverage)",
-    "stale \u2014 little movement toward a verdict",
-    "dominated by M8"
-   ]
   }
  ],
  "stop_continue": {
@@ -432,8 +403,7 @@
    "M11",
    "M2+M8",
    "M3+M8",
-   "M11+M8",
-   "M13"
+   "M11+M8"
   ],
   "continue": [
    "M8",
@@ -492,11 +462,11 @@
   }
  ],
  "experiment_debt": {
-  "running": 13,
+  "running": 12,
   "high_information": 3,
-  "retire_candidates": 10,
+  "retire_candidates": 9,
   "too_selective": 2,
-  "stale": 11
+  "stale": 10
  },
  "blind_spots": [
   {

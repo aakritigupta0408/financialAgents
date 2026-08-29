@@ -86,13 +86,17 @@ def _load_treats():
 
 
 def _pairs(rows, key, base_key):
-    """Per-window (own, base, row) with the daemon's None->0 scoring
-    convention applied for the diff, but Nones kept for completeness
-    and veto accounting."""
+    """Per-window (own, base, row). A row is a pair ONLY if the
+    treatment key exists in its ev map: an explicit None there is a
+    scored stand-down (EV 0 by pre-registration), but a MISSING key
+    means the policy did not exist when the window was scored —
+    counting that as a skip would fabricate history for newborn
+    treatments (caught 2026-08-29 when M13 acquired 187 phantom
+    windows on its first minute of life)."""
     out = []
     for r in rows:
         ev = r.get("ev") or {}
-        if key not in ev and base_key not in ev:
+        if key not in ev:
             continue
         out.append((ev.get(key), ev.get(base_key), r))
     return out

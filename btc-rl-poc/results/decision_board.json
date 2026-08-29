@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788013704,
+ "generated_ts": 1788013802,
  "config": {
   "edge": 0.02,
   "alpha": 0.003125,
@@ -13,15 +13,14 @@
  "integrity": {
   "rows": 188,
   "last_close_ts": 1788012900,
-  "age_min": 13.4,
+  "age_min": 15.0,
   "health": "green"
  },
  "summary": {
   "states": {
    "BASELINE": 2,
    "KEEP_TESTING": 10,
-   "HOLD": 2,
-   "INVALID": 1
+   "HOLD": 2
   },
   "best_candidate": "t_regime"
  },
@@ -1688,142 +1687,6 @@
    "state": "KEEP_TESTING",
    "state_reasons": [
     "collecting \u2014 trend losing, P(\u0394>0)\u22480.092"
-   ]
-  },
-  {
-   "n": 188,
-   "bets": 0,
-   "skips": 0,
-   "coverage": 0.0,
-   "mean": 0.00537,
-   "se": 0.05717,
-   "median": -0.2821,
-   "ci95": [
-    -0.10668,
-    0.11741
-   ],
-   "boot_ci95": [
-    -0.10629,
-    0.12047
-   ],
-   "p_gt0": 0.537,
-   "p_gt0_boot": 0.527,
-   "p_gt_edge_boot": 0.398,
-   "mde": 0.22957,
-   "power_at_edge": 0.009,
-   "top3_share": 0.049,
-   "completeness": {
-    "evaluable": 0,
-    "pct": 0.0,
-    "activity": {
-     "both_bet": 0,
-     "treatment_only_bet": 0,
-     "control_only_bet": 188,
-     "note": "skips are scored decisions (EV 0), not missing data"
-    }
-   },
-   "veto": {
-    "skips_scored": 188,
-    "losses_avoided": 65,
-    "wins_forgone": 123,
-    "control_ev_on_skipped": -1.0089,
-    "net_veto_per_window": 0.00537
-   },
-   "slices": [
-    {
-     "name": "regime<floor",
-     "n": 51,
-     "mean": 0.21003,
-     "se": 0.09862
-    },
-    {
-     "name": "regime>=floor",
-     "n": 119,
-     "mean": -0.1092,
-     "se": 0.07332
-    },
-    {
-     "name": "ET 00-06",
-     "n": 45,
-     "mean": -0.24726,
-     "se": 0.1253
-    },
-    {
-     "name": "ET 06-12",
-     "n": 58,
-     "mean": 0.05835,
-     "se": 0.10104
-    },
-    {
-     "name": "ET 12-18",
-     "n": 42,
-     "mean": 0.29777,
-     "se": 0.11835
-    },
-    {
-     "name": "ET 18-24",
-     "n": 43,
-     "mean": -0.08732,
-     "se": 0.10241
-    },
-    {
-     "name": "leader:kb2",
-     "n": 31,
-     "mean": 0.07641,
-     "se": 0.13725
-    },
-    {
-     "name": "leader:kb3",
-     "n": 17,
-     "mean": 0.29801,
-     "se": 0.19114
-    },
-    {
-     "name": "leader:kb4",
-     "n": 47,
-     "mean": -0.05118,
-     "se": 0.09979
-    },
-    {
-     "name": "leader:kb7",
-     "n": 31,
-     "mean": -0.04055,
-     "se": 0.13859
-    },
-    {
-     "name": "leader:kb8",
-     "n": 27,
-     "mean": 0.06064,
-     "se": 0.209
-    },
-    {
-     "name": "leader:kb9",
-     "n": 35,
-     "mean": -0.12573,
-     "se": 0.11175
-    }
-   ],
-   "worst_slice": {
-    "name": "ET 00-06",
-    "n": 45,
-    "mean": -0.24726,
-    "se": 0.1253
-   },
-   "powered_slices": 12,
-   "sign_consistency": "6/12",
-   "llr": 0.0,
-   "upper": 5.663,
-   "lower": -2.299,
-   "sprt_verdict": "collecting",
-   "own_ev": null,
-   "proj_windows_to_decision": null,
-   "key": "t_edgeband",
-   "label": "M13 \u00b7 edge band (enough edge, not too much)",
-   "basis": "model",
-   "rationale": "enter only when claimed edge is 2-12c \u2014 a huge stated edge is a model-error signature, not opportunity",
-   "state": "INVALID",
-   "state_reasons": [
-    "evaluable on only 0% of logged windows < 90%"
    ]
   }
  ]
