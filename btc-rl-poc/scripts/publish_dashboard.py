@@ -80,6 +80,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("program.json", None),
     ("readiness.json", None),
     ("execution_ledger.json", None),
+    ("exec_sensitivity.json", None),
     ("reconciliation.json", None),
     ("meta_monitors.json", None),
     ("leakage_canaries.json", None),

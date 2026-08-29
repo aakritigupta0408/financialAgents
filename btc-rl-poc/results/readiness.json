@@ -1,11 +1,10 @@
 {
- "generated_ts": 1788046293,
- "standard_version": "1.0.2",
+ "generated_ts": 1788046603,
+ "standard_version": "1.0.3",
  "system": {
   "level": "R1",
   "rule": "MIN over all critical planes \u2014 never averaged",
   "weakest_planes": [
-   "execution",
    "security"
   ],
   "qualification_frozen": false,
@@ -61,11 +60,11 @@
    "live_downgrades": []
   },
   "execution": {
-   "level": "R1",
-   "assessed": "R1",
+   "level": "R2",
+   "assessed": "R2",
    "target": "R8",
    "evidence": "model-basis quotes + real-fill family; measured -5.3c gap; execution ledger LIVE (531 orders, +1m/+5m markouts, adverse selection measured -0.9pp@1m, provenance-labeled)",
-   "blocker": "R2 gap: latency/quote-age sensitivity curves (\u00a730); fill-model calibration (E2, \u00a728) using the measured ~2c modeled-spread overstatement",
+   "blocker": "R3 gap: historical-replay validation of the E2 fill model against real recorded fills; sub-minute latency still UNAVAILABLE at data granularity",
    "live_downgrades": []
   },
   "risk_capital": {

@@ -1,0 +1,130 @@
+{
+  "generated_by": "scripts/emit_exec_sensitivity.py",
+  "directive": "master qualification \u00a728/\u00a730 (Phase 3) \u2014 quote-age sensitivity + execution models",
+  "determinism": {
+    "e3_seed": 20260829,
+    "e3_draw_order": "settled covered decisions sorted by (made_ts, ticker)"
+  },
+  "conventions": {
+    "modeled_ask": "100*mkt_p_up + 2.5c (yes) / 100*(1-mkt_p_up) + 2.5c (no), clipped to [1,99]c \u2014 MODELED",
+    "fee": "fee_c = 7 * (a/100) * (1 - a/100) per contract at executed ask a; ceil-at-order-level convention kept ceil-free fractional because everything is per-$1 (1-contract order, fractional fee)",
+    "ev_per_dollar": "(100*win - ask - fee)/ask per trade, averaged; win is the OBSERVED settled outcome"
+  },
+  "decision_set": {
+    "source": "results/pt_trades.jsonl (champion) joined to results/kalshi_binary_log.jsonl variant=kb \u2014 OBSERVED",
+    "settled_decisions": 359,
+    "covered": 149,
+    "excluded_no_kb_path": 210,
+    "excluded_breakdown": {
+      "ticker_absent_from_kb_log": 209,
+      "no_minute_row_within_120s_before_decision": 1
+    },
+    "note": "Windows without kb path coverage are excluded \u2014 the kb log retains only recent windows; excluded decisions are counted, never interpolated."
+  },
+  "quote_age": {
+    "provenance": "DERIVED \u2014 repricing of OBSERVED decisions against the OBSERVED per-minute quote path at MODELED asks",
+    "sub_minute": {
+      "band": "0-60s",
+      "status": "UNAVAILABLE \u2014 per-minute data"
+    },
+    "ev_by_staleness": [
+      {
+        "delta_min": 0,
+        "ev_per_dollar": -0.001724,
+        "n": 149,
+        "excluded_no_path_minute": 0
+      },
+      {
+        "delta_min": 1,
+        "ev_per_dollar": 0.179913,
+        "n": 148,
+        "excluded_no_path_minute": 1
+      },
+      {
+        "delta_min": 2,
+        "ev_per_dollar": 0.253273,
+        "n": 147,
+        "excluded_no_path_minute": 2
+      },
+      {
+        "delta_min": 3,
+        "ev_per_dollar": 0.327142,
+        "n": 139,
+        "excluded_no_path_minute": 10
+      },
+      {
+        "delta_min": 5,
+        "ev_per_dollar": 0.420592,
+        "n": 43,
+        "excluded_no_path_minute": 106
+      }
+    ],
+    "ev_by_delay": [
+      {
+        "delta_min": 0,
+        "ev_per_dollar": -0.001724,
+        "n": 149,
+        "excluded_no_path_minute": 0
+      },
+      {
+        "delta_min": 1,
+        "ev_per_dollar": 0.008221,
+        "n": 149,
+        "excluded_no_path_minute": 0
+      },
+      {
+        "delta_min": 2,
+        "ev_per_dollar": 0.020146,
+        "n": 147,
+        "excluded_no_path_minute": 2
+      },
+      {
+        "delta_min": 3,
+        "ev_per_dollar": -0.019435,
+        "n": 147,
+        "excluded_no_path_minute": 2
+      },
+      {
+        "delta_min": 5,
+        "ev_per_dollar": -0.006504,
+        "n": 143,
+        "excluded_no_path_minute": 6
+      }
+    ],
+    "definition": "staleness \u0394: the SAME side priced at the quote \u0394 minutes BEFORE the decision minute (older/staler quote); delay \u0394: at the quote \u0394 minutes AFTER (delayed execution). \u0394=0 is the E1 baseline. Points with no minute row are excluded per point."
+  },
+  "execution_models": {
+    "E1_taker_at_book": {
+      "ev_per_dollar": -0.001724,
+      "n": 149,
+      "label": "MODELED \u2014 current registry convention, ask = 100p + 2.5c"
+    },
+    "E2_calibrated": {
+      "ev_per_dollar": 0.026584,
+      "n": 149,
+      "ask_correction_c": -1.9938,
+      "label": "DERIVED \u2014 measured mean slippage_vs_model_c from execution_ledger.json (n=251) \u2014 modeled ask minus the measured ~2.0c overstatement"
+    },
+    "E3_stress": {
+      "ev_per_dollar": -0.037706,
+      "n": 132,
+      "no_fills": 17,
+      "extra_spread_c": 2.5,
+      "no_fill_rate": 0.1,
+      "label": "STRESS \u2014 modeled ask + 2.5c (double spread) and 10% seeded random no-fill"
+    },
+    "oracle_mid_fill": {
+      "ev_per_dollar": 0.034053,
+      "n": 149,
+      "label": "NON-REALISTIC \u2014 diagnostic only, never for qualification (fill at mid = 100p)"
+    }
+  },
+  "verdict": {
+    "edge_survives_E2": true,
+    "edge_survives_E3": false,
+    "staleness_crossing_min": null,
+    "delay_crossing_min": 3,
+    "crossing_definition": "first tested \u0394 where curve EV < E1 baseline EV minus 0.01 $/1 (1c per $1)",
+    "summary": "Champion edge survives under E2 (0.0266/$1) and FAILS under E3 stress (-0.0377/$1); staleness EV first drops >1c/$1 below the E1 baseline (-0.0017/$1) at no tested staleness (<=5 min)."
+  }
+}

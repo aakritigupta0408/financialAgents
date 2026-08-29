@@ -9,7 +9,10 @@
 # (results/readiness.json, emitted by scripts/emit_readiness.py).
 # The UI never decides readiness. UNKNOWN is never GREEN.
 
-version: 1.0.2
+version: 1.0.3
+# 1.0.3 (2026-08-29): execution R1->R2 — quote-age sensitivity curves
+# + E1/E2/E3 models live (survives E2 +2.7c, fails E3 -3.8c; the
+# momentum-inflated-ask finding). Ratified in DECISIONS.md.
 # 1.0.2 (2026-08-29): evidence updates ratified in DECISIONS.md —
 # SRM gate live (deficits/dupes → INVALID), leakage-canary + placebo
 # suite 6/6 PASS on cron, monitor-of-monitors on independent cron,
@@ -76,9 +79,9 @@ planes:
     evidence: paired same-window A/B with SPRT, family-wise alpha, 190+ windows
     blocker_to_next: "R7 gap: soak criteria (§61) — SRM now live"
   execution:
-    assessed: R1
+    assessed: R2
     evidence: model-basis quotes + real-fill family; measured -5.3c gap; execution ledger LIVE (531 orders, +1m/+5m markouts, adverse selection measured -0.9pp@1m, provenance-labeled)
-    blocker_to_next: "R2 gap: latency/quote-age sensitivity curves (§30); fill-model calibration (E2, §28) using the measured ~2c modeled-spread overstatement"
+    blocker_to_next: "R3 gap: historical-replay validation of the E2 fill model against real recorded fills; sub-minute latency still UNAVAILABLE at data granularity"
   risk_capital:
     assessed: R3
     evidence: per-trader caps, Kelly fractions, v3 sweep conservation invariant
