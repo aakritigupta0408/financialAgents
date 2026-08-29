@@ -1,5 +1,5 @@
 {
- "generated_ts": 1787992202,
+ "generated_ts": 1788013704,
  "config": {
   "edge": 0.02,
   "alpha": 0.003125,
@@ -11,24 +11,25 @@
   "note": "CI/P(gt0) use a normal approximation on the paired mean plus a seeded bootstrap; MDE/power use the family-wise alpha, one-sided."
  },
  "integrity": {
-  "rows": 168,
-  "last_close_ts": 1787990400,
-  "age_min": 30.0,
+  "rows": 188,
+  "last_close_ts": 1788012900,
+  "age_min": 13.4,
   "health": "green"
  },
  "summary": {
   "states": {
    "BASELINE": 2,
    "KEEP_TESTING": 10,
-   "HOLD": 2
+   "HOLD": 2,
+   "INVALID": 1
   },
-  "best_candidate": "t_exec_reg"
+  "best_candidate": "t_regime"
  },
  "execution_waterfall": {
-  "windows": 168,
-  "decision_ev_per_1": -0.02464,
-  "realized_ev_per_1": -0.07371,
-  "execution_gap_per_1": -0.04907
+  "windows": 188,
+  "decision_ev_per_1": -0.00537,
+  "realized_ev_per_1": -0.06354,
+  "execution_gap_per_1": -0.05818
  },
  "treatments": [
   {
@@ -39,74 +40,74 @@
    "state_reasons": [
     "incumbent \u2014 the yardstick"
    ],
-   "n": 168,
-   "bets": 168,
-   "own_ev": -0.02465,
-   "mean_ev_all_windows": -0.02464
+   "n": 188,
+   "bets": 188,
+   "own_ev": -0.00537,
+   "mean_ev_all_windows": -0.00537
   },
   {
-   "n": 168,
-   "bets": 119,
-   "skips": 49,
-   "coverage": 0.708,
-   "mean": 0.05958,
-   "se": 0.03007,
+   "n": 188,
+   "bets": 137,
+   "skips": 51,
+   "coverage": 0.729,
+   "mean": 0.05697,
+   "se": 0.02742,
    "median": 0.0,
    "ci95": [
-    0.00065,
-    0.11852
+    0.00322,
+    0.11073
    ],
    "boot_ci95": [
-    -0.00019,
-    0.11967
+    0.00589,
+    0.11135
    ],
-   "p_gt0": 0.976,
-   "p_gt0_boot": 0.973,
-   "p_gt_edge_boot": 0.902,
-   "mde": 0.12075,
-   "power_at_edge": 0.019,
-   "top3_share": 0.094,
+   "p_gt0": 0.981,
+   "p_gt0_boot": 0.987,
+   "p_gt_edge_boot": 0.907,
+   "mde": 0.11013,
+   "power_at_edge": 0.022,
+   "top3_share": 0.09,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 119,
+     "both_bet": 137,
      "treatment_only_bet": 0,
-     "control_only_bet": 49,
+     "control_only_bet": 51,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 49,
-    "losses_avoided": 21,
-    "wins_forgone": 28,
-    "control_ev_on_skipped": -10.01,
-    "net_veto_per_window": 0.05958
+    "skips_scored": 51,
+    "losses_avoided": 22,
+    "wins_forgone": 29,
+    "control_ev_on_skipped": -10.7113,
+    "net_veto_per_window": 0.05697
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.20429,
-     "se": 0.10084
+     "n": 51,
+     "mean": 0.21003,
+     "se": 0.09862
     },
     {
      "name": "regime>=floor",
-     "n": 101,
+     "n": 119,
      "mean": 0.0,
      "se": 0.0
     },
     {
      "name": "ET 00-06",
-     "n": 39,
+     "n": 45,
      "mean": 0.0,
      "se": 0.0
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.0624,
-     "se": 0.04821
+     "n": 58,
+     "mean": 0.05943,
+     "se": 0.04061
     },
     {
      "name": "ET 12-18",
@@ -122,39 +123,39 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": -0.00926,
-     "se": 0.08776
+     "n": 31,
+     "mean": 0.01396,
+     "se": 0.08884
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.20502,
-     "se": 0.13263
+     "n": 17,
+     "mean": 0.1809,
+     "se": 0.1177
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": 0.00682,
-     "se": 0.06106
+     "n": 47,
+     "mean": 0.00638,
+     "se": 0.05712
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.1073,
-     "se": 0.06676
+     "n": 31,
+     "mean": 0.10384,
+     "se": 0.06466
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.17391,
-     "se": 0.08081
+     "n": 27,
+     "mean": 0.14815,
+     "se": 0.06967
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.0117,
-     "se": 0.0117
+     "n": 35,
+     "mean": -0.00902,
+     "se": 0.00902
     }
    ],
    "worst_slice": {
@@ -164,85 +165,85 @@
     "se": 0.06139
    },
    "powered_slices": 12,
-   "sign_consistency": "7/12",
-   "llr": 1.184,
+   "sign_consistency": "8/12",
+   "llr": 1.254,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": 0.04932,
-   "proj_windows_to_decision": 590,
+   "own_ev": 0.07081,
+   "proj_windows_to_decision": 618,
    "key": "t_regime",
    "label": "M8 \u00b7 regime gate",
    "basis": "model",
    "rationale": "stand down when trailing-20 market accuracy < 0.62",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend winning, P(\u0394>0)\u22480.976"
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.981"
    ]
   },
   {
-   "n": 168,
-   "bets": 120,
-   "skips": 48,
-   "coverage": 0.714,
-   "mean": 0.00384,
-   "se": 0.03793,
+   "n": 188,
+   "bets": 130,
+   "skips": 58,
+   "coverage": 0.691,
+   "mean": -0.01023,
+   "se": 0.03693,
    "median": 0.0,
    "ci95": [
-    -0.0705,
-    0.07818
+    -0.08262,
+    0.06216
    ],
    "boot_ci95": [
-    -0.06962,
-    0.07659
+    -0.08247,
+    0.06167
    ],
-   "p_gt0": 0.54,
-   "p_gt0_boot": 0.543,
-   "p_gt_edge_boot": 0.339,
-   "mde": 0.15232,
+   "p_gt0": 0.391,
+   "p_gt0_boot": 0.382,
+   "p_gt_edge_boot": 0.202,
+   "mde": 0.14832,
    "power_at_edge": 0.014,
-   "top3_share": 0.078,
+   "top3_share": 0.065,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 120,
+     "both_bet": 130,
      "treatment_only_bet": 0,
-     "control_only_bet": 48,
+     "control_only_bet": 58,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 48,
-    "losses_avoided": 22,
-    "wins_forgone": 26,
-    "control_ev_on_skipped": -0.6449,
-    "net_veto_per_window": 0.00384
+    "skips_scored": 58,
+    "losses_avoided": 25,
+    "wins_forgone": 33,
+    "control_ev_on_skipped": 1.9235,
+    "net_veto_per_window": -0.01023
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.12922,
-     "se": 0.06525
+     "n": 51,
+     "mean": 0.14376,
+     "se": 0.06501
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.04672,
-     "se": 0.04984
+     "n": 119,
+     "mean": -0.06964,
+     "se": 0.04725
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.03108,
-     "se": 0.07683
+     "n": 45,
+     "mean": -0.01488,
+     "se": 0.07738
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": -0.03077,
-     "se": 0.07339
+     "n": 58,
+     "mean": -0.07698,
+     "se": 0.06605
     },
     {
      "name": "ET 12-18",
@@ -258,127 +259,127 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.05222,
-     "se": 0.10769
+     "n": 31,
+     "mean": 0.08111,
+     "se": 0.1052
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.01899,
-     "se": 0.12886
+     "n": 17,
+     "mean": 0.03797,
+     "se": 0.1339
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.0407,
-     "se": 0.06063
+     "n": 47,
+     "mean": -0.05855,
+     "se": 0.06003
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.04084,
-     "se": 0.08709
+     "n": 31,
+     "mean": 0.00595,
+     "se": 0.09117
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.10487,
-     "se": 0.13368
+     "n": 27,
+     "mean": 0.09606,
+     "se": 0.12355
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.11112,
-     "se": 0.07617
+     "n": 35,
+     "mean": -0.14599,
+     "se": 0.06601
     }
    ],
    "worst_slice": {
     "name": "leader:kb9",
-    "n": 27,
-    "mean": -0.11112,
-    "se": 0.07617
+    "n": 35,
+    "mean": -0.14599,
+    "se": 0.06601
    },
    "powered_slices": 12,
    "sign_consistency": "6/12",
-   "llr": -0.074,
+   "llr": -0.294,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.02914,
-   "proj_windows_to_decision": 4690,
+   "own_ev": -0.02257,
+   "proj_windows_to_decision": 1200,
    "key": "t_knife",
    "label": "M2 \u00b7 knife-edge veto",
    "basis": "model",
    "rationale": "stand down when |market - 0.5| < 0.10",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.54"
+    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.391"
    ]
   },
   {
-   "n": 168,
-   "bets": 22,
-   "skips": 146,
-   "coverage": 0.131,
-   "mean": 0.01214,
-   "se": 0.06262,
-   "median": -0.2195,
+   "n": 188,
+   "bets": 32,
+   "skips": 156,
+   "coverage": 0.17,
+   "mean": -0.00965,
+   "se": 0.05858,
+   "median": -0.21215,
    "ci95": [
-    -0.1106,
-    0.13488
+    -0.12446,
+    0.10516
    ],
    "boot_ci95": [
-    -0.11123,
-    0.13108
+    -0.12428,
+    0.10665
    ],
-   "p_gt0": 0.577,
-   "p_gt0_boot": 0.588,
-   "p_gt_edge_boot": 0.463,
-   "mde": 0.25149,
+   "p_gt0": 0.435,
+   "p_gt0_boot": 0.419,
+   "p_gt_edge_boot": 0.306,
+   "mde": 0.23523,
    "power_at_edge": 0.008,
-   "top3_share": 0.078,
+   "top3_share": 0.076,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 22,
+     "both_bet": 32,
      "treatment_only_bet": 0,
-     "control_only_bet": 146,
+     "control_only_bet": 156,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 146,
-    "losses_avoided": 55,
-    "wins_forgone": 91,
-    "control_ev_on_skipped": -10.3345,
-    "net_veto_per_window": 0.06151
+    "skips_scored": 156,
+    "losses_avoided": 58,
+    "wins_forgone": 98,
+    "control_ev_on_skipped": -8.4409,
+    "net_veto_per_window": 0.0449
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.20429,
-     "se": 0.10084
+     "n": 51,
+     "mean": 0.21588,
+     "se": 0.09819
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.11151,
-     "se": 0.08437
+     "n": 119,
+     "mean": -0.13544,
+     "se": 0.07574
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.30525,
-     "se": 0.15449
+     "n": 45,
+     "mean": -0.25249,
+     "se": 0.14073
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.15097,
-     "se": 0.11624
+     "n": 58,
+     "mean": 0.03872,
+     "se": 0.1014
     },
     {
      "name": "ET 12-18",
@@ -394,127 +395,127 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.0676,
-     "se": 0.13358
+     "n": 31,
+     "mean": 0.0955,
+     "se": 0.12843
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.24703,
-     "se": 0.19668
+     "n": 17,
+     "mean": 0.23918,
+     "se": 0.18664
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.02489,
-     "se": 0.10443
+     "n": 47,
+     "mean": -0.06502,
+     "se": 0.10603
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": -0.0133,
-     "se": 0.12745
+     "n": 31,
+     "mean": -0.04645,
+     "se": 0.12765
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": -0.00562,
-     "se": 0.28358
+     "n": 27,
+     "mean": 0.00194,
+     "se": 0.24565
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.07417,
-     "se": 0.12375
+     "n": 35,
+     "mean": -0.12565,
+     "se": 0.10013
     }
    ],
    "worst_slice": {
     "name": "ET 00-06",
-    "n": 39,
-    "mean": -0.30525,
-    "se": 0.15449
+    "n": 45,
+    "mean": -0.25249,
+    "se": 0.14073
    },
    "powered_slices": 12,
-   "sign_consistency": "5/12",
-   "llr": -0.047,
+   "sign_consistency": "6/12",
+   "llr": -0.17,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.09547,
-   "proj_windows_to_decision": 5000,
+   "own_ev": -0.08823,
+   "proj_windows_to_decision": 2204,
    "key": "t_cal",
    "label": "M1 \u00b7 calibrated gate",
    "basis": "model",
    "rationale": "gate and side taken from p_cal, not raw p_up",
    "state": "HOLD",
    "state_reasons": [
-    "coverage 13% <25% \u2014 too selective to compare like-for-like"
+    "coverage 17% <25% \u2014 too selective to compare like-for-like"
    ]
   },
   {
-   "n": 168,
-   "bets": 25,
-   "skips": 143,
+   "n": 188,
+   "bets": 28,
+   "skips": 160,
    "coverage": 0.149,
-   "mean": 0.04871,
-   "se": 0.04815,
-   "median": -0.2195,
+   "mean": 0.0322,
+   "se": 0.04551,
+   "median": -0.22705,
    "ci95": [
-    -0.04567,
-    0.14309
+    -0.057,
+    0.12139
    ],
    "boot_ci95": [
-    -0.04078,
-    0.14254
+    -0.05268,
+    0.12491
    ],
-   "p_gt0": 0.844,
-   "p_gt0_boot": 0.843,
-   "p_gt_edge_boot": 0.73,
-   "mde": 0.19338,
-   "power_at_edge": 0.01,
-   "top3_share": 0.035,
+   "p_gt0": 0.76,
+   "p_gt0_boot": 0.761,
+   "p_gt_edge_boot": 0.621,
+   "mde": 0.18276,
+   "power_at_edge": 0.011,
+   "top3_share": 0.031,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 25,
+     "both_bet": 28,
      "treatment_only_bet": 0,
-     "control_only_bet": 143,
+     "control_only_bet": 160,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 143,
-    "losses_avoided": 48,
-    "wins_forgone": 95,
-    "control_ev_on_skipped": -8.183,
-    "net_veto_per_window": 0.04871
+    "skips_scored": 160,
+    "losses_avoided": 52,
+    "wins_forgone": 108,
+    "control_ev_on_skipped": -6.0533,
+    "net_veto_per_window": 0.0322
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.08184,
-     "se": 0.09136
+     "n": 51,
+     "mean": 0.09238,
+     "se": 0.08991
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": 0.02852,
-     "se": 0.06009
+     "n": 119,
+     "mean": 0.00041,
+     "se": 0.05535
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.1292,
-     "se": 0.07722
+     "n": 45,
+     "mean": -0.13137,
+     "se": 0.07414
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.10652,
-     "se": 0.10274
+     "n": 58,
+     "mean": 0.05913,
+     "se": 0.08807
     },
     {
      "name": "ET 12-18",
@@ -530,55 +531,55 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.01771,
-     "se": 0.12104
+     "n": 31,
+     "mean": 0.03919,
+     "se": 0.11799
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.17775,
-     "se": 0.16391
+     "n": 17,
+     "mean": 0.11923,
+     "se": 0.15198
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.00217,
-     "se": 0.09614
+     "n": 47,
+     "mean": 0.01359,
+     "se": 0.09263
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.07024,
-     "se": 0.11714
+     "n": 31,
+     "mean": 0.06797,
+     "se": 0.11332
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.19677,
-     "se": 0.11884
+     "n": 27,
+     "mean": 0.15898,
+     "se": 0.11396
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.05683,
-     "se": 0.11776
+     "n": 35,
+     "mean": -0.12077,
+     "se": 0.1026
     }
    ],
    "worst_slice": {
     "name": "ET 00-06",
-    "n": 39,
-    "mean": -0.1292,
-    "se": 0.07722
+    "n": 45,
+    "mean": -0.13137,
+    "se": 0.07414
    },
    "powered_slices": 12,
-   "sign_consistency": "8/12",
-   "llr": 0.178,
+   "sign_consistency": "9/12",
+   "llr": 0.059,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": 0.16171,
-   "proj_windows_to_decision": 4807,
+   "own_ev": 0.18016,
+   "proj_windows_to_decision": 5000,
    "key": "t_cheap",
    "label": "M9 \u00b7 Underdog (cheap bids only)",
    "basis": "model",
@@ -589,68 +590,68 @@
    ]
   },
   {
-   "n": 168,
-   "bets": 84,
-   "skips": 84,
-   "coverage": 0.5,
-   "mean": 0.02573,
-   "se": 0.04443,
+   "n": 188,
+   "bets": 93,
+   "skips": 95,
+   "coverage": 0.495,
+   "mean": 0.00775,
+   "se": 0.04239,
    "median": 0.0,
    "ci95": [
-    -0.06135,
-    0.11282
+    -0.07535,
+    0.09084
    ],
    "boot_ci95": [
-    -0.05923,
-    0.11141
+    -0.07537,
+    0.08864
    ],
-   "p_gt0": 0.719,
-   "p_gt0_boot": 0.716,
-   "p_gt_edge_boot": 0.528,
-   "mde": 0.17843,
-   "power_at_edge": 0.011,
-   "top3_share": 0.053,
+   "p_gt0": 0.572,
+   "p_gt0_boot": 0.543,
+   "p_gt_edge_boot": 0.358,
+   "mde": 0.17025,
+   "power_at_edge": 0.012,
+   "top3_share": 0.047,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 84,
+     "both_bet": 93,
      "treatment_only_bet": 0,
-     "control_only_bet": 84,
+     "control_only_bet": 95,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 84,
-    "losses_avoided": 34,
-    "wins_forgone": 50,
-    "control_ev_on_skipped": -4.3233,
-    "net_veto_per_window": 0.02573
+    "skips_scored": 95,
+    "losses_avoided": 37,
+    "wins_forgone": 58,
+    "control_ev_on_skipped": -1.4562,
+    "net_veto_per_window": 0.00775
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.20429,
-     "se": 0.10084
+     "n": 51,
+     "mean": 0.21003,
+     "se": 0.09862
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.04672,
-     "se": 0.04984
+     "n": 119,
+     "mean": -0.06964,
+     "se": 0.04725
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.03108,
-     "se": 0.07683
+     "n": 45,
+     "mean": -0.01488,
+     "se": 0.07738
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.02225,
-     "se": 0.08427
+     "n": 58,
+     "mean": -0.04191,
+     "se": 0.07374
     },
     {
      "name": "ET 12-18",
@@ -666,54 +667,54 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.02363,
-     "se": 0.12489
+     "n": 31,
+     "mean": 0.04473,
+     "se": 0.12141
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.15734,
-     "se": 0.1752
+     "n": 17,
+     "mean": 0.16005,
+     "se": 0.16923
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.02868,
-     "se": 0.08059
+     "n": 47,
+     "mean": -0.04729,
+     "se": 0.07796
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.08147,
-     "se": 0.09984
+     "n": 31,
+     "mean": 0.04527,
+     "se": 0.10313
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.14834,
-     "se": 0.13909
+     "n": 27,
+     "mean": 0.1331,
+     "se": 0.12791
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.12282,
-     "se": 0.07642
+     "n": 35,
+     "mean": -0.15501,
+     "se": 0.06604
     }
    ],
    "worst_slice": {
     "name": "leader:kb9",
-    "n": 27,
-    "mean": -0.12282,
-    "se": 0.07642
+    "n": 35,
+    "mean": -0.15501,
+    "se": 0.06604
    },
    "powered_slices": 12,
-   "sign_consistency": "7/12",
-   "llr": 0.11,
+   "sign_consistency": "6/12",
+   "llr": -0.072,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": 0.00217,
+   "own_ev": 0.0048,
    "proj_windows_to_decision": 5000,
    "key": "t_both",
    "label": "M2+M8 \u00b7 both vetoes",
@@ -721,72 +722,72 @@
    "rationale": "stand down on knife-edge OR low-predictability regime",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.719"
+    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.572"
    ]
   },
   {
-   "n": 168,
-   "bets": 112,
-   "skips": 56,
-   "coverage": 0.667,
-   "mean": -0.02241,
-   "se": 0.05129,
+   "n": 188,
+   "bets": 119,
+   "skips": 69,
+   "coverage": 0.633,
+   "mean": -0.04076,
+   "se": 0.04824,
    "median": 0.0,
    "ci95": [
-    -0.12294,
-    0.07812
+    -0.13531,
+    0.05379
    ],
    "boot_ci95": [
-    -0.12341,
-    0.07363
+    -0.13853,
+    0.05203
    ],
-   "p_gt0": 0.331,
-   "p_gt0_boot": 0.345,
-   "p_gt_edge_boot": 0.198,
-   "mde": 0.20598,
+   "p_gt0": 0.199,
+   "p_gt0_boot": 0.192,
+   "p_gt_edge_boot": 0.1,
+   "mde": 0.19373,
    "power_at_edge": 0.01,
-   "top3_share": 0.14,
+   "top3_share": 0.12,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 112,
+     "both_bet": 119,
      "treatment_only_bet": 0,
-     "control_only_bet": 56,
+     "control_only_bet": 69,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 56,
-    "losses_avoided": 22,
-    "wins_forgone": 34,
-    "control_ev_on_skipped": 2.2368,
-    "net_veto_per_window": -0.01331
+    "skips_scored": 69,
+    "losses_avoided": 25,
+    "wins_forgone": 44,
+    "control_ev_on_skipped": 6.1343,
+    "net_veto_per_window": -0.03263
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.15208,
-     "se": 0.0779
+     "n": 51,
+     "mean": 0.15987,
+     "se": 0.07719
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.11577,
-     "se": 0.07208
+     "n": 119,
+     "mean": -0.1369,
+     "se": 0.06468
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.27359,
-     "se": 0.14581
+     "n": 45,
+     "mean": -0.22506,
+     "se": 0.13339
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.0378,
-     "se": 0.07723
+     "n": 58,
+     "mean": -0.04788,
+     "se": 0.07036
     },
     {
      "name": "ET 12-18",
@@ -802,127 +803,127 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.00222,
-     "se": 0.137
+     "n": 31,
+     "mean": 0.0247,
+     "se": 0.13243
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.17778,
-     "se": 0.12543
+     "n": 17,
+     "mean": 0.17808,
+     "se": 0.13071
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.02417,
-     "se": 0.07105
+     "n": 47,
+     "mean": -0.04307,
+     "se": 0.0694
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": -0.03809,
-     "se": 0.09823
+     "n": 31,
+     "mean": -0.07044,
+     "se": 0.10037
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": -0.0422,
-     "se": 0.25293
+     "n": 27,
+     "mean": -0.02922,
+     "se": 0.22026
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.12294,
-     "se": 0.07587
+     "n": 35,
+     "mean": -0.18455,
+     "se": 0.06682
     }
    ],
    "worst_slice": {
     "name": "ET 00-06",
-    "n": 39,
-    "mean": -0.27359,
-    "se": 0.14581
+    "n": 45,
+    "mean": -0.22506,
+    "se": 0.13339
    },
    "powered_slices": 12,
-   "sign_consistency": "5/12",
-   "llr": -0.258,
+   "sign_consistency": "4/12",
+   "llr": -0.445,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.07059,
-   "proj_windows_to_decision": 1234,
+   "own_ev": -0.07288,
+   "proj_windows_to_decision": 733,
    "key": "t_fshare",
    "label": "M3 \u00b7 Fixed-Share leader",
    "basis": "model",
    "rationale": "leader by multiplicative expert weights, not a 10-bet streak",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.331"
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.199"
    ]
   },
   {
-   "n": 168,
-   "bets": 80,
-   "skips": 88,
-   "coverage": 0.476,
-   "mean": -0.00719,
-   "se": 0.05486,
+   "n": 188,
+   "bets": 87,
+   "skips": 101,
+   "coverage": 0.463,
+   "mean": -0.02715,
+   "se": 0.05131,
    "median": 0.0,
    "ci95": [
-    -0.11471,
-    0.10034
+    -0.12771,
+    0.07341
    ],
    "boot_ci95": [
-    -0.11283,
-    0.0978
+    -0.1315,
+    0.07354
    ],
-   "p_gt0": 0.448,
-   "p_gt0_boot": 0.457,
-   "p_gt_edge_boot": 0.302,
-   "mde": 0.22032,
-   "power_at_edge": 0.009,
-   "top3_share": 0.108,
+   "p_gt0": 0.298,
+   "p_gt0_boot": 0.285,
+   "p_gt_edge_boot": 0.16,
+   "mde": 0.20604,
+   "power_at_edge": 0.01,
+   "top3_share": 0.095,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 80,
+     "both_bet": 87,
      "treatment_only_bet": 0,
-     "control_only_bet": 88,
+     "control_only_bet": 101,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 88,
-    "losses_avoided": 33,
-    "wins_forgone": 55,
-    "control_ev_on_skipped": -1.9878,
-    "net_veto_per_window": 0.01183
+    "skips_scored": 101,
+    "losses_avoided": 36,
+    "wins_forgone": 65,
+    "control_ev_on_skipped": 1.9097,
+    "net_veto_per_window": -0.01016
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.20429,
-     "se": 0.10084
+     "n": 51,
+     "mean": 0.21003,
+     "se": 0.09862
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.11577,
-     "se": 0.07208
+     "n": 119,
+     "mean": -0.1369,
+     "se": 0.06468
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.27359,
-     "se": 0.14581
+     "n": 45,
+     "mean": -0.22506,
+     "se": 0.13339
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.09081,
-     "se": 0.08665
+     "n": 58,
+     "mean": -0.00766,
+     "se": 0.07723
     },
     {
      "name": "ET 12-18",
@@ -938,62 +939,62 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": -0.02452,
-     "se": 0.14407
+     "n": 31,
+     "mean": -0.00031,
+     "se": 0.13897
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.27169,
-     "se": 0.14172
+     "n": 17,
+     "mean": 0.26094,
+     "se": 0.14318
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.02368,
-     "se": 0.0848
+     "n": 47,
+     "mean": -0.04261,
+     "se": 0.08181
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.00254,
-     "se": 0.1107
+     "n": 31,
+     "mean": -0.03111,
+     "se": 0.11224
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.00127,
-     "se": 0.25697
+     "n": 27,
+     "mean": 0.00782,
+     "se": 0.22354
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.13464,
-     "se": 0.07604
+     "n": 35,
+     "mean": -0.19357,
+     "se": 0.0667
     }
    ],
    "worst_slice": {
     "name": "ET 00-06",
-    "n": 39,
-    "mean": -0.27359,
-    "se": 0.14581
+    "n": 45,
+    "mean": -0.22506,
+    "se": 0.13339
    },
    "powered_slices": 12,
-   "sign_consistency": "6/12",
-   "llr": -0.066,
+   "sign_consistency": "4/12",
+   "llr": -0.23,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.06685,
-   "proj_windows_to_decision": 5000,
+   "own_ev": -0.07028,
+   "proj_windows_to_decision": 1583,
    "key": "t_fs_reg",
    "label": "M3+M8 \u00b7 Fixed-Share + regime gate",
    "basis": "model",
    "rationale": "the expert-weighted leader, standing down in bad regimes",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.448"
+    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.298"
    ]
   },
   {
@@ -1004,74 +1005,74 @@
    "state_reasons": [
     "incumbent \u2014 the yardstick"
    ],
-   "n": 168,
-   "bets": 168,
-   "own_ev": -0.07372,
-   "mean_ev_all_windows": -0.07371
+   "n": 188,
+   "bets": 188,
+   "own_ev": -0.06355,
+   "mean_ev_all_windows": -0.06354
   },
   {
-   "n": 168,
-   "bets": 121,
-   "skips": 47,
-   "coverage": 0.72,
-   "mean": 0.0382,
-   "se": 0.02843,
+   "n": 188,
+   "bets": 130,
+   "skips": 58,
+   "coverage": 0.691,
+   "mean": 0.03435,
+   "se": 0.02765,
    "median": 0.0,
    "ci95": [
-    -0.01752,
-    0.09393
+    -0.01984,
+    0.08855
    ],
    "boot_ci95": [
-    -0.01541,
-    0.09447
+    -0.01759,
+    0.08944
    ],
-   "p_gt0": 0.91,
-   "p_gt0_boot": 0.922,
-   "p_gt_edge_boot": 0.732,
-   "mde": 0.11418,
-   "power_at_edge": 0.021,
-   "top3_share": 0.101,
+   "p_gt0": 0.893,
+   "p_gt0_boot": 0.903,
+   "p_gt_edge_boot": 0.697,
+   "mde": 0.11103,
+   "power_at_edge": 0.022,
+   "top3_share": 0.084,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 121,
+     "both_bet": 130,
      "treatment_only_bet": 0,
-     "control_only_bet": 47,
+     "control_only_bet": 58,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 47,
-    "losses_avoided": 18,
-    "wins_forgone": 29,
-    "control_ev_on_skipped": -6.418,
-    "net_veto_per_window": 0.0382
+    "skips_scored": 58,
+    "losses_avoided": 21,
+    "wins_forgone": 37,
+    "control_ev_on_skipped": -6.4586,
+    "net_veto_per_window": 0.03435
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.0867,
-     "se": 0.05753
+     "n": 51,
+     "mean": 0.10291,
+     "se": 0.05811
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.01408,
-     "se": 0.03237
+     "n": 119,
+     "mean": -0.02001,
+     "se": 0.03127
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.01412,
-     "se": 0.0562
+     "n": 45,
+     "mean": 0.01758,
+     "se": 0.05905
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.10313,
-     "se": 0.05675
+     "n": 58,
+     "mean": 0.05581,
+     "se": 0.05018
     },
     {
      "name": "ET 12-18",
@@ -1087,54 +1088,54 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.07293,
-     "se": 0.09549
+     "n": 31,
+     "mean": 0.10049,
+     "se": 0.09416
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.06667,
-     "se": 0.06667
+     "n": 17,
+     "mean": 0.10294,
+     "se": 0.08319
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": 0.00521,
-     "se": 0.04708
+     "n": 47,
+     "mean": -0.00078,
+     "se": 0.04441
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": -0.02429,
-     "se": 0.04277
+     "n": 31,
+     "mean": -0.04088,
+     "se": 0.04457
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.15639,
-     "se": 0.10051
+     "n": 27,
+     "mean": 0.15513,
+     "se": 0.09392
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": 0.00761,
-     "se": 0.06412
+     "n": 35,
+     "mean": -0.03689,
+     "se": 0.05364
     }
    ],
    "worst_slice": {
-    "name": "ET 18-24",
-    "n": 43,
-    "mean": -0.03974,
-    "se": 0.04425
+    "name": "leader:kb7",
+    "n": 31,
+    "mean": -0.04088,
+    "se": 0.04457
    },
    "powered_slices": 12,
-   "sign_consistency": "8/12",
-   "llr": 0.074,
+   "sign_consistency": "7/12",
+   "llr": 0.046,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.04931,
+   "own_ev": -0.04222,
    "proj_windows_to_decision": 5000,
    "key": "t_exec",
    "label": "M10 \u00b7 execution guard",
@@ -1142,72 +1143,72 @@
    "rationale": "decline any fill worse than the quote by >3.0c",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend winning, P(\u0394>0)\u22480.91"
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.893"
    ]
   },
   {
-   "n": 168,
-   "bets": 86,
-   "skips": 82,
-   "coverage": 0.512,
-   "mean": 0.07619,
-   "se": 0.03722,
+   "n": 188,
+   "bets": 94,
+   "skips": 94,
+   "coverage": 0.5,
+   "mean": 0.06652,
+   "se": 0.03509,
    "median": 0.0,
    "ci95": [
-    0.00323,
-    0.14914
+    -0.00226,
+    0.13531
    ],
    "boot_ci95": [
-    0.0036,
-    0.15237
+    -0.00016,
+    0.1377
    ],
-   "p_gt0": 0.98,
-   "p_gt0_boot": 0.982,
-   "p_gt_edge_boot": 0.942,
-   "mde": 0.14947,
-   "power_at_edge": 0.014,
-   "top3_share": 0.059,
+   "p_gt0": 0.971,
+   "p_gt0_boot": 0.974,
+   "p_gt_edge_boot": 0.912,
+   "mde": 0.14093,
+   "power_at_edge": 0.015,
+   "top3_share": 0.052,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 86,
+     "both_bet": 94,
      "treatment_only_bet": 0,
-     "control_only_bet": 82,
+     "control_only_bet": 94,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 82,
-    "losses_avoided": 32,
-    "wins_forgone": 50,
-    "control_ev_on_skipped": -12.7991,
-    "net_veto_per_window": 0.07619
+    "skips_scored": 94,
+    "losses_avoided": 35,
+    "wins_forgone": 59,
+    "control_ev_on_skipped": -12.5064,
+    "net_veto_per_window": 0.06652
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.21693,
-     "se": 0.09838
+     "n": 51,
+     "mean": 0.22149,
+     "se": 0.09637
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.01408,
-     "se": 0.03237
+     "n": 119,
+     "mean": -0.02001,
+     "se": 0.03127
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.01412,
-     "se": 0.0562
+     "n": 45,
+     "mean": 0.01758,
+     "se": 0.05905
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.15448,
-     "se": 0.06815
+     "n": 58,
+     "mean": 0.08902,
+     "se": 0.05881
     },
     {
      "name": "ET 12-18",
@@ -1223,39 +1224,39 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": 0.07417,
-     "se": 0.11191
+     "n": 31,
+     "mean": 0.09089,
+     "se": 0.10967
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.19793,
-     "se": 0.13471
+     "n": 17,
+     "mean": 0.21876,
+     "se": 0.13071
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.01199,
-     "se": 0.06773
+     "n": 47,
+     "mean": -0.01688,
+     "se": 0.0636
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.09185,
-     "se": 0.07943
+     "n": 31,
+     "mean": 0.07151,
+     "se": 0.07947
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.24335,
-     "se": 0.11169
+     "n": 27,
+     "mean": 0.2292,
+     "se": 0.10283
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.0054,
-     "se": 0.06548
+     "n": 35,
+     "mean": -0.04693,
+     "se": 0.05437
     }
    ],
    "worst_slice": {
@@ -1265,85 +1266,85 @@
     "se": 0.06181
    },
    "powered_slices": 12,
-   "sign_consistency": "7/12",
-   "llr": 0.591,
+   "sign_consistency": "8/12",
+   "llr": 0.545,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": 0.00483,
-   "proj_windows_to_decision": 1338,
+   "own_ev": 0.00595,
+   "proj_windows_to_decision": 1652,
    "key": "t_exec_reg",
    "label": "M10+M8 \u00b7 execution guard + regime gate",
    "basis": "real",
    "rationale": "decline bad fills AND stand down in bad regimes",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend winning, P(\u0394>0)\u22480.98"
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.971"
    ]
   },
   {
-   "n": 168,
-   "bets": 117,
-   "skips": 51,
-   "coverage": 0.696,
-   "mean": -0.03681,
-   "se": 0.03341,
+   "n": 188,
+   "bets": 132,
+   "skips": 56,
+   "coverage": 0.702,
+   "mean": -0.03842,
+   "se": 0.0313,
    "median": 0.0,
    "ci95": [
-    -0.10229,
-    0.02867
+    -0.09976,
+    0.02292
    ],
    "boot_ci95": [
-    -0.10096,
-    0.02957
+    -0.09887,
+    0.0242
    ],
-   "p_gt0": 0.135,
-   "p_gt0_boot": 0.133,
-   "p_gt_edge_boot": 0.046,
-   "mde": 0.13416,
-   "power_at_edge": 0.016,
-   "top3_share": 0.12,
+   "p_gt0": 0.11,
+   "p_gt0_boot": 0.108,
+   "p_gt_edge_boot": 0.032,
+   "mde": 0.12568,
+   "power_at_edge": 0.018,
+   "top3_share": 0.107,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 117,
+     "both_bet": 132,
      "treatment_only_bet": 0,
-     "control_only_bet": 51,
+     "control_only_bet": 56,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 51,
+    "skips_scored": 56,
     "losses_avoided": 3,
-    "wins_forgone": 48,
-    "control_ev_on_skipped": 22.789,
-    "net_veto_per_window": -0.13565
+    "wins_forgone": 53,
+    "control_ev_on_skipped": 26.0685,
+    "net_veto_per_window": -0.13866
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": -0.06443,
-     "se": 0.03765
+     "n": 51,
+     "mean": -0.06776,
+     "se": 0.03648
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.03967,
-     "se": 0.04915
+     "n": 119,
+     "mean": -0.0399,
+     "se": 0.04422
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": 0.05569,
-     "se": 0.09568
+     "n": 45,
+     "mean": 0.02734,
+     "se": 0.08696
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": -0.02508,
-     "se": 0.05521
+     "n": 58,
+     "mean": -0.02072,
+     "se": 0.04802
     },
     {
      "name": "ET 12-18",
@@ -1359,127 +1360,127 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": -0.10796,
-     "se": 0.06679
+     "n": 31,
+     "mean": -0.11063,
+     "se": 0.06282
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": -0.10627,
-     "se": 0.07841
+     "n": 17,
+     "mean": -0.13138,
+     "se": 0.07611
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.00452,
-     "se": 0.06193
+     "n": 47,
+     "mean": -0.01985,
+     "se": 0.06164
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": -0.04589,
-     "se": 0.08403
+     "n": 31,
+     "mean": -0.03522,
+     "se": 0.08197
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.12622,
-     "se": 0.12465
+     "n": 27,
+     "mean": 0.09632,
+     "se": 0.11251
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.10319,
-     "se": 0.07679
+     "n": 35,
+     "mean": -0.06104,
+     "se": 0.06486
     }
    ],
    "worst_slice": {
-    "name": "leader:kb2",
-    "n": 29,
-    "mean": -0.10796,
-    "se": 0.06679
+    "name": "leader:kb3",
+    "n": 17,
+    "mean": -0.13138,
+    "se": 0.07611
    },
    "powered_slices": 12,
    "sign_consistency": "2/12",
-   "llr": -1.092,
+   "llr": -1.22,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.08824,
-   "proj_windows_to_decision": 172,
+   "own_ev": -0.06237,
+   "proj_windows_to_decision": 155,
    "key": "t_limit",
    "label": "M11 \u00b7 maker limit (rest 2c below, fill or skip)",
    "basis": "model",
    "rationale": "never cross the spread; fill only on price improvement",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend losing, P(\u0394>0)\u22480.135"
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.11"
    ]
   },
   {
-   "n": 168,
-   "bets": 82,
-   "skips": 86,
-   "coverage": 0.488,
-   "mean": 0.04157,
-   "se": 0.04374,
+   "n": 188,
+   "bets": 96,
+   "skips": 92,
+   "coverage": 0.511,
+   "mean": 0.03693,
+   "se": 0.04057,
    "median": 0.0,
    "ci95": [
-    -0.04416,
-    0.1273
+    -0.04259,
+    0.11646
    ],
    "boot_ci95": [
-    -0.0407,
-    0.12797
+    -0.04046,
+    0.11538
    ],
-   "p_gt0": 0.829,
-   "p_gt0_boot": 0.818,
-   "p_gt_edge_boot": 0.672,
-   "mde": 0.17565,
-   "power_at_edge": 0.011,
-   "top3_share": 0.078,
+   "p_gt0": 0.819,
+   "p_gt0_boot": 0.811,
+   "p_gt_edge_boot": 0.644,
+   "mde": 0.16294,
+   "power_at_edge": 0.012,
+   "top3_share": 0.071,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 82,
+     "both_bet": 96,
      "treatment_only_bet": 0,
-     "control_only_bet": 86,
+     "control_only_bet": 92,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 86,
-    "losses_avoided": 24,
-    "wins_forgone": 62,
-    "control_ev_on_skipped": 6.9134,
-    "net_veto_per_window": -0.04115
+    "skips_scored": 92,
+    "losses_avoided": 25,
+    "wins_forgone": 67,
+    "control_ev_on_skipped": 9.1929,
+    "net_veto_per_window": -0.0489
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.20429,
-     "se": 0.10084
+     "n": 51,
+     "mean": 0.21003,
+     "se": 0.09862
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.03967,
-     "se": 0.04915
+     "n": 119,
+     "mean": -0.0399,
+     "se": 0.04422
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": 0.05569,
-     "se": 0.09568
+     "n": 45,
+     "mean": 0.02734,
+     "se": 0.08696
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.04284,
-     "se": 0.07221
+     "n": 58,
+     "mean": 0.04804,
+     "se": 0.0619
     },
     {
      "name": "ET 12-18",
@@ -1495,127 +1496,127 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": -0.05588,
-     "se": 0.10218
+     "n": 31,
+     "mean": -0.02965,
+     "se": 0.10176
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.14267,
-     "se": 0.1575
+     "n": 17,
+     "mean": 0.08828,
+     "se": 0.14591
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": 0.03086,
-     "se": 0.0829
+     "n": 47,
+     "mean": 0.01327,
+     "se": 0.0805
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": 0.05173,
-     "se": 0.10753
+     "n": 31,
+     "mean": 0.05925,
+     "se": 0.10428
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": 0.30013,
-     "se": 0.14167
+     "n": 27,
+     "mean": 0.24447,
+     "se": 0.12812
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": -0.12403,
-     "se": 0.07596
+     "n": 35,
+     "mean": -0.07711,
+     "se": 0.06461
     }
    ],
    "worst_slice": {
-    "name": "leader:kb9",
-    "n": 27,
-    "mean": -0.12403,
-    "se": 0.07596
+    "name": "ET 18-24",
+    "n": 43,
+    "mean": -0.11365,
+    "se": 0.07912
    },
    "powered_slices": 12,
    "sign_consistency": "8/12",
-   "llr": 0.373,
+   "llr": 0.363,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": 0.03468,
-   "proj_windows_to_decision": 2212,
+   "own_ev": 0.06182,
+   "proj_windows_to_decision": 2569,
    "key": "t_limit_reg",
    "label": "M11+M8 \u00b7 maker limit + regime gate",
    "basis": "model",
    "rationale": "the Ideal trader's execution core, SPRT-verified",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend winning, P(\u0394>0)\u22480.829"
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.819"
    ]
   },
   {
-   "n": 168,
-   "bets": 115,
-   "skips": 53,
-   "coverage": 0.685,
-   "mean": -0.0466,
-   "se": 0.05192,
+   "n": 188,
+   "bets": 124,
+   "skips": 64,
+   "coverage": 0.66,
+   "mean": -0.06412,
+   "se": 0.04831,
    "median": 0.0,
    "ci95": [
-    -0.14837,
-    0.05517
+    -0.1588,
+    0.03056
    ],
    "boot_ci95": [
-    -0.15147,
-    0.04814
+    -0.15879,
+    0.02628
    ],
-   "p_gt0": 0.185,
-   "p_gt0_boot": 0.182,
-   "p_gt_edge_boot": 0.096,
-   "mde": 0.20852,
-   "power_at_edge": 0.009,
-   "top3_share": 0.154,
+   "p_gt0": 0.092,
+   "p_gt0_boot": 0.085,
+   "p_gt_edge_boot": 0.035,
+   "mde": 0.19399,
+   "power_at_edge": 0.01,
+   "top3_share": 0.135,
    "completeness": {
-    "evaluable": 168,
+    "evaluable": 188,
     "pct": 1.0,
     "activity": {
-     "both_bet": 115,
+     "both_bet": 124,
      "treatment_only_bet": 0,
-     "control_only_bet": 53,
+     "control_only_bet": 64,
      "note": "skips are scored decisions (EV 0), not missing data"
     }
    },
    "veto": {
-    "skips_scored": 53,
-    "losses_avoided": 21,
-    "wins_forgone": 32,
-    "control_ev_on_skipped": 1.8668,
-    "net_veto_per_window": -0.01111
+    "skips_scored": 64,
+    "losses_avoided": 23,
+    "wins_forgone": 41,
+    "control_ev_on_skipped": 6.0921,
+    "net_veto_per_window": -0.0324
    },
    "slices": [
     {
      "name": "regime<floor",
-     "n": 49,
-     "mean": 0.09509,
-     "se": 0.07701
+     "n": 51,
+     "mean": 0.11097,
+     "se": 0.07609
     },
     {
      "name": "regime>=floor",
-     "n": 101,
-     "mean": -0.15628,
-     "se": 0.07124
+     "n": 119,
+     "mean": -0.17655,
+     "se": 0.06305
     },
     {
      "name": "ET 00-06",
-     "n": 39,
-     "mean": -0.22672,
-     "se": 0.15797
+     "n": 45,
+     "mean": -0.19245,
+     "se": 0.14033
     },
     {
      "name": "ET 06-12",
-     "n": 44,
-     "mean": 0.09899,
-     "se": 0.08263
+     "n": 58,
+     "mean": -0.00089,
+     "se": 0.07477
     },
     {
      "name": "ET 12-18",
@@ -1631,62 +1632,198 @@
     },
     {
      "name": "leader:kb2",
-     "n": 29,
-     "mean": -0.02718,
-     "se": 0.13987
+     "n": 31,
+     "mean": 0.00683,
+     "se": 0.13482
     },
     {
      "name": "leader:kb3",
-     "n": 15,
-     "mean": 0.21772,
-     "se": 0.11734
+     "n": 17,
+     "mean": 0.25093,
+     "se": 0.11395
     },
     {
      "name": "leader:kb4",
-     "n": 44,
-     "mean": -0.12132,
-     "se": 0.05104
+     "n": 47,
+     "mean": -0.13967,
+     "se": 0.05113
     },
     {
      "name": "leader:kb7",
-     "n": 30,
-     "mean": -0.10426,
-     "se": 0.08179
+     "n": 31,
+     "mean": -0.13447,
+     "se": 0.08468
     },
     {
      "name": "leader:kb8",
-     "n": 23,
-     "mean": -0.08076,
-     "se": 0.2712
+     "n": 27,
+     "mean": -0.0991,
+     "se": 0.23195
     },
     {
      "name": "leader:kb9",
-     "n": 27,
-     "mean": 0.00063,
-     "se": 0.10272
+     "n": 35,
+     "mean": -0.08922,
+     "se": 0.08785
     }
    ],
    "worst_slice": {
     "name": "ET 00-06",
-    "n": 39,
-    "mean": -0.22672,
-    "se": 0.15797
+    "n": 45,
+    "mean": -0.19245,
+    "se": 0.14033
    },
    "powered_slices": 12,
-   "sign_consistency": "5/12",
-   "llr": -0.707,
+   "sign_consistency": "4/12",
+   "llr": -0.908,
    "upper": 5.663,
    "lower": -2.299,
    "sprt_verdict": "collecting",
-   "own_ev": -0.10409,
-   "proj_windows_to_decision": 351,
+   "own_ev": -0.10536,
+   "proj_windows_to_decision": 269,
    "key": "t_evlead",
    "label": "M12 \u00b7 EV-ranked leader (costs, not win rate)",
    "basis": "model",
    "rationale": "follow the arm with the best trailing EV/$1 at real costs",
    "state": "KEEP_TESTING",
    "state_reasons": [
-    "collecting \u2014 trend losing, P(\u0394>0)\u22480.185"
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.092"
+   ]
+  },
+  {
+   "n": 188,
+   "bets": 0,
+   "skips": 0,
+   "coverage": 0.0,
+   "mean": 0.00537,
+   "se": 0.05717,
+   "median": -0.2821,
+   "ci95": [
+    -0.10668,
+    0.11741
+   ],
+   "boot_ci95": [
+    -0.10629,
+    0.12047
+   ],
+   "p_gt0": 0.537,
+   "p_gt0_boot": 0.527,
+   "p_gt_edge_boot": 0.398,
+   "mde": 0.22957,
+   "power_at_edge": 0.009,
+   "top3_share": 0.049,
+   "completeness": {
+    "evaluable": 0,
+    "pct": 0.0,
+    "activity": {
+     "both_bet": 0,
+     "treatment_only_bet": 0,
+     "control_only_bet": 188,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "veto": {
+    "skips_scored": 188,
+    "losses_avoided": 65,
+    "wins_forgone": 123,
+    "control_ev_on_skipped": -1.0089,
+    "net_veto_per_window": 0.00537
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 51,
+     "mean": 0.21003,
+     "se": 0.09862
+    },
+    {
+     "name": "regime>=floor",
+     "n": 119,
+     "mean": -0.1092,
+     "se": 0.07332
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.24726,
+     "se": 0.1253
+    },
+    {
+     "name": "ET 06-12",
+     "n": 58,
+     "mean": 0.05835,
+     "se": 0.10104
+    },
+    {
+     "name": "ET 12-18",
+     "n": 42,
+     "mean": 0.29777,
+     "se": 0.11835
+    },
+    {
+     "name": "ET 18-24",
+     "n": 43,
+     "mean": -0.08732,
+     "se": 0.10241
+    },
+    {
+     "name": "leader:kb2",
+     "n": 31,
+     "mean": 0.07641,
+     "se": 0.13725
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.29801,
+     "se": 0.19114
+    },
+    {
+     "name": "leader:kb4",
+     "n": 47,
+     "mean": -0.05118,
+     "se": 0.09979
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.04055,
+     "se": 0.13859
+    },
+    {
+     "name": "leader:kb8",
+     "n": 27,
+     "mean": 0.06064,
+     "se": 0.209
+    },
+    {
+     "name": "leader:kb9",
+     "n": 35,
+     "mean": -0.12573,
+     "se": 0.11175
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.24726,
+    "se": 0.1253
+   },
+   "powered_slices": 12,
+   "sign_consistency": "6/12",
+   "llr": 0.0,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": null,
+   "proj_windows_to_decision": null,
+   "key": "t_edgeband",
+   "label": "M13 \u00b7 edge band (enough edge, not too much)",
+   "basis": "model",
+   "rationale": "enter only when claimed edge is 2-12c \u2014 a huge stated edge is a model-error signature, not opportunity",
+   "state": "INVALID",
+   "state_reasons": [
+    "evaluable on only 0% of logged windows < 90%"
    ]
   }
  ]

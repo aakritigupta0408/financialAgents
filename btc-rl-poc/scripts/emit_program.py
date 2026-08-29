@@ -106,6 +106,24 @@ META = {
                         hypothesis="passive entry works once bad "
                         "regimes are filtered",
                         parents=["t_limit", "t_regime"]),
+    "t_edgeband": dict(m="M13", name="Edge band", path="T2→T3→T5",
+                       problem="stated edge is an anti-signal at the "
+                       "extremes (kb5 −0.096, pt6 −0.059 weights)",
+                       hypothesis="enter only when claimed edge sits "
+                       "in [2c, 12c] — enough to pay costs, not so "
+                       "much that the model is probably wrong",
+                       parents=[]),
+}
+
+# Lifecycle rulings — OWNER decisions only (2026-08-29, "all 4"):
+# the analysis layer recommends; the human moves lifecycle (§33).
+LIFECYCLE = {
+    "t_limit": "RETIRED (standalone) — evidence keeps accruing for "
+               "the record; no promotion path",
+    "t_fshare": "RETIRED (branch)",
+    "t_fs_reg": "RETIRED (branch)",
+    "t_evlead": "REDESIGN — objective right, implementation losing",
+    "t_edgeband": "LIVE — new challenger, collecting from zero",
 }
 
 
@@ -248,7 +266,7 @@ def main():
             "effect": t.get("mean"), "ci95_boot": t.get("ci95_boot"),
             "p_gt0": t.get("p_gt0"), "coverage": cov,
             "llr": t.get("llr"), "n": t.get("n"),
-            "lifecycle": "LIVE",
+            "lifecycle": LIFECYCLE.get(key, "LIVE"),
             "analysis_recommendation": rec,
             "recommendation_why": why,
             "attention": attention,
@@ -256,21 +274,14 @@ def main():
             "incremental_vs_parent": inc_by_combo.get(key),
         })
 
-    # decision inbox — only actionable items
+    # decision inbox — only actionable items. The four 08-29 asks were
+    # ALL RATIFIED by the owner ("all 4"): M11 retired standalone,
+    # M3 branch retired, M12 sent to redesign, M13 Edge Band created.
     inbox = [
-        {"kind": "RETIRE?", "id": "M11",
-         "ask": "standalone maker limit — evidence negative, "
-         "mechanism contradicted; keep M11+M8 as a conditional-effect "
-         "study only?"},
-        {"kind": "RETIRE?", "id": "M3 branch",
-         "ask": "Fixed-Share standalone AND M3+M8 both negative — "
-         "does M8 remove the need for leader stabilization?"},
-        {"kind": "REDESIGN?", "id": "M12",
-         "ask": "EV-ranked leader: objective right, implementation "
-         "losing — redesign or drop?"},
-        {"kind": "ARCHITECTURE", "id": "D-edge-band → M13?",
-         "ask": "edge anti-signal replicates in kb5 and pt6 — create "
-         "M13 Edge Band (min<=edge<=max instead of a floor)?"},
+        {"kind": "RESOLVED", "id": "M11 · M3 · M12 · M13",
+         "ask": "owner ratified all four 08-29 — M11 retired "
+         "(standalone), M3 branch retired, M12 in redesign, M13 Edge "
+         "Band live and collecting"},
     ]
 
     knowledge = [
@@ -308,6 +319,26 @@ def main():
          "looked_good": "UP-recall 63%",
          "failed": "coverage 37%, calibration slope 0.33 ≈ noise",
          "lesson": "classification recall alone is not skill"},
+        {"id": "M11 (standalone)", "type": "EXPERIMENT",
+         "retired": "2026-08-29",
+         "looked_good": "paying less than the ask sounds free",
+         "failed": "−4.7c/$1 paired; win-given-fill falls 68%→47% "
+         "with bid depth (adverse selection measured)",
+         "root_cause": "a resting bid fills preferentially when the "
+         "market has just repriced the call down (Glosten–Milgrom)",
+         "lesson": "passive entry alone does not repair execution; "
+         "M11+M8 lives on only as a conditional-effect study",
+         "do_not_revisit_unless": "fill/queue model changes"},
+        {"id": "M3 branch (Fixed-Share)", "type": "EXPERIMENT",
+         "retired": "2026-08-29",
+         "looked_good": "Herbster–Warmuth tracking beats frozen "
+         "winners in theory; leader churn was 38%",
+         "failed": "M3 −2.2c standalone; M3+M8 −7.1c vs M8 alone "
+         "(P(inc>0)=6%) — it actively interfered with the regime gate",
+         "lesson": "stabilizing the leader overrode exactly the arm "
+         "switches the regime filter needed",
+         "do_not_revisit_unless": "a selection objective change "
+         "(M12 redesign) reopens the question"},
         {"id": "M7", "type": "EXPERIMENT", "retired": "2026-08-28",
          "looked_good": "a 'cursed hour' with 64% errors",
          "failed": "p=0.60 under multiplicity — 24 hours searched, "

@@ -63,7 +63,14 @@ TREAT_MAX_CONCURRENT = 16
 TREAT_ALPHA = 0.05 / TREAT_MAX_CONCURRENT
 REGIME_LOOKBACK = 20           # windows for the market-accuracy signal
 REGIME_FLOOR = 0.62            # stand down below this (M8)
-KNIFE_BAND = 0.10              # |mkt_p_up - 0.5| veto width (M2)
+KNIFE_BAND = 0.10
+# M13 edge band (2026-08-29, D-edge-band ratified): pre-registered,
+# never fitted. Floor 2c = the Gambler v2.1 evidence (stated edge
+# below fees+spread loses); ceiling 12c = the anti-signal evidence
+# (claimed edges beyond ~12c live where kb5/pt6 regressions say the
+# model, not the market, is wrong).
+M13_MIN_EDGE_C = 2.0
+M13_MAX_EDGE_C = 12.0              # |mkt_p_up - 0.5| veto width (M2)
 # M10: decline a fill worse than the decision-time quote by more than
 # this. Motivated by measurement, not by tuning: execution costs 2.70
 # points of EV (real fills -9.73% vs model quotes -7.02%), more than
@@ -600,6 +607,25 @@ def _treat_policies():
         side = "yes" if r["p_up"] >= 0.5 else "no"
         return {"side": side, "ask_c": _ask(ctx, side)}
 
+    def t_edgeband(ctx):                     # M13 — edge BAND (owner
+        # decision D-edge-band, ratified 2026-08-29). Evidence: both
+        # edge-gated models weight their own stated edge NEGATIVELY
+        # (kb5 claimed_edge -0.096, pt6 conf_minus_ask -0.059) — when
+        # the model claims a huge edge over the crowd, it is usually
+        # the model that is wrong. So the floor becomes a band:
+        # too little claimed edge can't pay the costs; too much is a
+        # model-error signature. Band registered here, never fitted.
+        r = ctx.get("row")
+        if r is None or r.get("p_up") is None:
+            return None
+        conf = max(r["p_up"], 1 - r["p_up"])
+        a = _ask(ctx, ctx["side"])
+        fee = 7 * (a / 100.0) * (1 - a / 100.0)
+        edge = conf * 100 - (a + fee)
+        if not (M13_MIN_EDGE_C <= edge <= M13_MAX_EDGE_C):
+            return None
+        return {"side": ctx["side"], "ask_c": a}
+
     return [
         ("champion", "Champion — the live desk policy", champion,
          "leader's call at >=0.62 confidence, every biddable window"),
@@ -634,6 +660,11 @@ def _treat_policies():
         ("t_evlead", "M12 · EV-ranked leader (costs, not win rate)",
          t_evlead,
          "follow the arm with the best trailing EV/$1 at real costs"),
+        ("t_edgeband", "M13 · edge band (enough edge, not too much)",
+         t_edgeband,
+         f"enter only when claimed edge is {M13_MIN_EDGE_C:.0f}-"
+         f"{M13_MAX_EDGE_C:.0f}c — a huge stated edge is a model-error"
+         " signature, not opportunity"),
     ]
 
 

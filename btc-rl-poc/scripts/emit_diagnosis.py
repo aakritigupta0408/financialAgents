@@ -67,6 +67,10 @@ TMAP = {
     "t_limit_reg": dict(m="M11+M8", tier="T4", family="compound",
                         parents=["t_limit", "t_regime"],
                         mechanism="passive entry + regime gate"),
+    "t_edgeband": dict(m="M13", tier="T3", family="decision-selection",
+                       parents=[],
+                       mechanism="claimed edge must sit in [2c,12c] — "
+                       "extremes are model error, not opportunity"),
 }
 
 
@@ -174,8 +178,8 @@ def main():
     out_t = []
     for key, meta in TMAP.items():
         a = treats.get(key)
-        if not a:
-            continue
+        if not a or not a.get("n"):
+            continue        # no evidence yet — a newborn is not a verdict
         level, flags = retire_pressure(a)
         mech = {"status": "NOT INSTRUMENTED", "note": ""}
         if key in ("t_regime", "t_both", "t_fs_reg", "t_exec_reg",
