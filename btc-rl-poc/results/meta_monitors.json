@@ -1,84 +1,96 @@
 {
- "generated_ts": 1788046200,
+ "generated_ts": 1788046440,
  "overall": "HEALTHY",
  "monitors": [
   {
    "artifact": "online_status.json",
    "source": "daemon heartbeat",
    "cadence_s": 30,
-   "age_s": 3,
+   "age_s": 6,
    "status": "HEALTHY"
   },
   {
    "artifact": "audit_report.json",
    "source": "audit chain step 1",
    "cadence_s": 600,
-   "age_s": 597,
+   "age_s": 238,
    "status": "HEALTHY"
   },
   {
    "artifact": "decision_board.json",
    "source": "audit chain (SRM gate)",
    "cadence_s": 600,
-   "age_s": 594,
+   "age_s": 235,
    "status": "HEALTHY"
   },
   {
    "artifact": "invariants.json",
    "source": "invariant wall",
    "cadence_s": 600,
-   "age_s": 593,
+   "age_s": 234,
    "status": "HEALTHY"
   },
   {
    "artifact": "reconciliation.json",
    "source": "independent reconciler",
    "cadence_s": 600,
-   "age_s": 588,
+   "age_s": 229,
    "status": "HEALTHY"
   },
   {
    "artifact": "readiness.json",
    "source": "readiness machine",
    "cadence_s": 600,
-   "age_s": 588,
+   "age_s": 147,
    "status": "HEALTHY"
   },
   {
    "artifact": "execution_ledger.json",
    "source": "markout ledger",
    "cadence_s": 600,
-   "age_s": 588,
+   "age_s": 229,
    "status": "HEALTHY"
   },
   {
    "artifact": "world.json",
    "source": "world/clock emitter",
    "cadence_s": 600,
-   "age_s": 593,
+   "age_s": 233,
    "status": "HEALTHY"
   },
   {
    "artifact": "model_internals.json",
    "source": "hourly introspection",
    "cadence_s": 3600,
-   "age_s": 596,
+   "age_s": 836,
    "status": "HEALTHY"
   },
   {
    "artifact": "metrics_history.jsonl",
    "source": "retrain history append",
    "cadence_s": 3600,
-   "age_s": 1721,
+   "age_s": 1961,
    "status": "HEALTHY"
   },
   {
    "artifact": "online_status.alive_at",
    "source": "daemon inner heartbeat",
    "cadence_s": 30,
-   "age_s": 3,
+   "age_s": 6,
    "status": "HEALTHY"
   }
  ],
+ "slo": {
+  "compliant": [
+   "critical_ledger_integrity",
+   "duplicate_decisions_zero",
+   "future_data_violations_zero",
+   "reconciliation_ok",
+   "unresolved_sev0_zero"
+  ],
+  "breached": [],
+  "unknown": [],
+  "note": "snapshot per run; burn rate from slo_history.jsonl as it accrues"
+ },
  "note": "independent cron line \u2014 watches the watchers; UNKNOWN is never green"
 }

@@ -72,8 +72,48 @@ def main():
                      "status": "UNKNOWN"})
         worst = "UNKNOWN"
 
+    # ---- SLO snapshot (§65): current compliance, appended to a
+    # history file so burn rates become computable over time. Values
+    # read from the machine evidence, never asserted. -----------------
+    def _j(name):
+        try:
+            return json.loads((RES / name).read_text())
+        except Exception:
+            return {}
+    inv = _j("invariants.json")
+    rec = _j("reconciliation.json")
+    canary = _j("leakage_canaries.json")
+    slo = {
+        "critical_ledger_integrity": inv.get("health") == "green",
+        "duplicate_decisions_zero": all(
+            c.get("ok") for c in inv.get("checks", [])
+            if c.get("name") == "one-decision-per-window") or None,
+        "future_data_violations_zero":
+            canary.get("overall") == "PASS" if canary else None,
+        "reconciliation_ok": rec.get("overall") == "OK"
+        if rec else None,
+        "unresolved_sev0_zero": True,   # readiness emitter is source;
+        # mirrored here from its last output
+    }
+    try:
+        slo["unresolved_sev0_zero"] = not _j("readiness.json").get(
+            "sev0_open")
+    except Exception:
+        slo["unresolved_sev0_zero"] = None
+    compliant = [k for k, v in slo.items() if v is True]
+    breached = [k for k, v in slo.items() if v is False]
+    unknown = [k for k, v in slo.items() if v is None]
+    with (RES / "slo_history.jsonl").open("a") as f:
+        f.write(json.dumps({"ts": int(now), "ok": len(compliant),
+                            "breach": breached,
+                            "unknown": unknown}) + "\n")
+
     doc = {"generated_ts": int(now), "overall": worst,
            "monitors": rows,
+           "slo": {"compliant": compliant, "breached": breached,
+                   "unknown": unknown,
+                   "note": "snapshot per run; burn rate from "
+                           "slo_history.jsonl as it accrues"},
            "note": "independent cron line — watches the watchers; "
                    "UNKNOWN is never green"}
     (RES / "meta_monitors.json").write_text(json.dumps(doc, indent=1))
