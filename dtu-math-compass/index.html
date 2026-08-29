@@ -1,0 +1,546 @@
+<title>DTU Math Compass</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;0,700;1,400&family=Libre+Franklin:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#FAFBFD;
+    --paper-raised:#FFFFFF;
+    --ink:#16233B;
+    --ink-soft:#44536E;
+    --muted:#5B6B85;
+    --line:#D8E0EC;
+    --grid:#E7ECF4;
+    --accent:#2451D6;
+    --accent-soft:#E8EDFB;
+    --amber:#B7791F;
+    --amber-soft:#F7EEDD;
+    --green:#1F7A4D;
+    --green-soft:#E2F1E8;
+    --violet:#6B3FA0;
+    --violet-soft:#EFE8F7;
+    --rose:#A83A5B;
+    --rose-soft:#F8E7EC;
+    --shadow:0 1px 2px rgba(22,35,59,.06),0 4px 14px rgba(22,35,59,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0E1626;
+      --paper-raised:#162034;
+      --ink:#DCE4F2;
+      --ink-soft:#AAB8D0;
+      --muted:#8595B2;
+      --line:#2A3A57;
+      --grid:#18243C;
+      --accent:#7C9BFF;
+      --accent-soft:#1C2B4F;
+      --amber:#E0A94E;
+      --amber-soft:#3A2E14;
+      --green:#5FBF8F;
+      --green-soft:#12301F;
+      --violet:#B18AE0;
+      --violet-soft:#2A1E3D;
+      --rose:#E08AA5;
+      --rose-soft:#3A1B26;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0E1626;
+    --paper-raised:#162034;
+    --ink:#DCE4F2;
+    --ink-soft:#AAB8D0;
+    --muted:#8595B2;
+    --line:#2A3A57;
+    --grid:#18243C;
+    --accent:#7C9BFF;
+    --accent-soft:#1C2B4F;
+    --amber:#E0A94E;
+    --amber-soft:#3A2E14;
+    --green:#5FBF8F;
+    --green-soft:#12301F;
+    --violet:#B18AE0;
+    --violet-soft:#2A1E3D;
+    --rose:#E08AA5;
+    --rose-soft:#3A1B26;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 14px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;scroll-padding-top:76px}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Libre Franklin",-apple-system,"Segoe UI",Roboto,sans-serif;
+    font-size:16px;line-height:1.65;
+  }
+  h1,h2,h3{font-family:"STIX Two Text",Georgia,"Times New Roman",serif;text-wrap:balance;margin:0}
+  code{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace;font-size:.9em}
+  a{color:var(--accent)}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+
+  nav{
+    position:sticky;top:0;z-index:10;
+    background:var(--paper);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-inner{display:flex;align-items:center;gap:20px;height:56px}
+  .brand{font-family:"STIX Two Text",Georgia,serif;font-weight:700;font-size:18px;color:var(--ink);text-decoration:none;white-space:nowrap}
+  .brand em{font-style:italic;color:var(--accent)}
+  .nav-links{display:flex;gap:4px;overflow-x:auto;margin-left:auto}
+  .nav-links a{
+    color:var(--ink-soft);text-decoration:none;font-size:13.5px;font-weight:500;
+    padding:6px 11px;border-radius:6px;white-space:nowrap;
+  }
+  .nav-links a:hover{background:var(--accent-soft);color:var(--accent)}
+
+  header.hero{
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      var(--paper);
+    background-size:28px 28px,28px 28px,auto;
+    border-bottom:1px solid var(--line);
+  }
+  .hero-inner{padding:72px 0 60px;position:relative}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:0 0 14px;
+  }
+  h1{font-size:clamp(34px,5.5vw,54px);font-weight:700;line-height:1.12;max-width:16em}
+  .hero-sub{max-width:44em;font-size:17.5px;color:var(--ink-soft);margin:18px 0 0}
+  .hero-note{font-size:14px;color:var(--muted);margin:14px 0 0;max-width:46em}
+  .hero-eq{
+    position:absolute;right:0;top:34px;
+    font-family:"STIX Two Text",Georgia,serif;font-style:italic;font-size:28px;
+    color:var(--muted);opacity:.5;line-height:1.8;text-align:right;user-select:none;
+  }
+  @media (max-width:880px){.hero-eq{display:none}}
+  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:30px}
+  .stat{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:8px;
+    padding:10px 18px;box-shadow:var(--shadow);
+  }
+  .stat b{font-family:"STIX Two Text",Georgia,serif;font-size:22px;display:block;line-height:1.2}
+  .stat span{font-size:12.5px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+
+  section{padding:56px 0 8px}
+  .sec-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  h2{font-size:30px;font-weight:700}
+  .course-code{
+    font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;
+    color:var(--accent);background:var(--accent-soft);
+    padding:3px 10px;border-radius:6px;letter-spacing:.06em;
+  }
+  .sec-sub{color:var(--muted);font-size:15px;margin:0 0 26px;max-width:52em}
+
+  .legend{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:26px 0 0}
+  .legend p{margin:0;font-size:13.5px;color:var(--muted);margin-right:4px}
+
+  .units{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:18px}
+  .unit{
+    background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;
+    padding:22px 22px 18px;box-shadow:var(--shadow);
+  }
+  .unit-no{
+    font-family:"IBM Plex Mono",monospace;font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);margin:0;
+  }
+  .unit h3{font-size:20.5px;font-weight:600;margin:4px 0 8px}
+  .topics{font-size:14px;color:var(--ink-soft);margin:0 0 14px;line-height:1.6}
+  .res-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+  .res-list li{display:flex;gap:9px;align-items:baseline;font-size:14.5px;line-height:1.5}
+  .res-list a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line)}
+  .res-list a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+  .res-list .why{color:var(--muted)}
+  .tag{
+    flex:none;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;
+    letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 8px;border-radius:5px;position:relative;top:-1px;
+  }
+  .tag.video{background:var(--rose-soft);color:var(--rose)}
+  .tag.book{background:var(--green-soft);color:var(--green)}
+  .tag.notes{background:var(--accent-soft);color:var(--accent)}
+  .tag.tool{background:var(--violet-soft);color:var(--violet)}
+  .tag.practice{background:var(--amber-soft);color:var(--amber)}
+
+  .lib{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+  .lib-col{background:var(--paper-raised);border:1px solid var(--line);border-radius:10px;padding:22px;box-shadow:var(--shadow)}
+  .lib-col h3{font-size:19px;font-weight:600;margin:0 0 4px}
+  .lib-col .col-sub{font-size:13px;color:var(--muted);margin:0 0 14px}
+
+  .plays{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px 18px}
+  .play{border-left:3px solid var(--accent);padding:2px 0 2px 18px}
+  .play h3{font-size:18px;font-weight:600;margin:0 0 6px}
+  .play p{margin:0;font-size:14.5px;color:var(--ink-soft)}
+
+  footer{
+    margin-top:64px;border-top:1px solid var(--line);
+    padding:30px 0 48px;font-size:13.5px;color:var(--muted);
+  }
+  footer p{max-width:60em;margin:0 0 10px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+</style>
+
+<nav>
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">DTU <em>Math</em> Compass</a>
+    <div class="nav-links">
+      <a href="#sem1">Sem 1</a>
+      <a href="#sem2">Sem 2</a>
+      <a href="#year2">Year 2</a>
+      <a href="#year34">Years 3–4</a>
+      <a href="#library">Core library</a>
+      <a href="#playbook">Study playbook</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="wrap hero-inner">
+    <div class="hero-eq" aria-hidden="true">
+      ∮<sub>C</sub> F·dr = ∬<sub>S</sub> (∇×F)·dS<br>
+      ℒ{f(t)} = ∫₀<sup>∞</sup> e<sup>−st</sup> f(t) dt<br>
+      det(A − λI) = 0
+    </div>
+    <p class="eyebrow">Delhi Technological University · B.Tech, All Four Years</p>
+    <h1>Every unit of Engineering Mathematics, with the best free resource for it.</h1>
+    <p class="hero-sub">The mathematics you'll meet across the whole DTU B.Tech — MA101 and MA102 in first year, then PDEs, complex analysis, probability, numerical methods, discrete math and optimization — each unit paired with hand-picked free lectures, open textbooks, notes, and practice: NPTEL, MIT OCW, 3Blue1Brown, Dr. Gajendra Purohit, OpenStax and more. Stuck on a topic? Jump to its unit and pick the format that suits you.</p>
+    <p class="hero-note">Unit titles follow the common DTU scheme; course codes and semester placement vary by branch and batch, so cross-check the current syllabus on <a href="http://dtu.ac.in">dtu.ac.in</a>. The topics themselves are what's examined, whatever the code.</p>
+    <div class="stats">
+      <div class="stat"><b>4</b><span>years covered</span></div>
+      <div class="stat"><b>16</b><span>syllabus units</span></div>
+      <div class="stat"><b>70+</b><span>free resources</span></div>
+      <div class="stat"><b>₹0</b><span>total cost</span></div>
+    </div>
+    <div class="legend">
+      <p>Every link is tagged by format:</p>
+      <span class="tag video">Video</span>
+      <span class="tag book">Free book</span>
+      <span class="tag notes">Notes / blog</span>
+      <span class="tag tool">Tool</span>
+      <span class="tag practice">Practice</span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section id="sem1">
+    <div class="sec-head">
+      <h2>Year 1, Semester 1 · Mathematics-I</h2>
+      <span class="course-code">MA101</span>
+    </div>
+    <p class="sec-sub">Series, single- and multi-variable differential calculus, and matrices. The linear algebra unit especially pays off for the rest of your degree — machine learning, signals, and mechanics all lean on it.</p>
+    <div class="units">
+
+      <article class="unit">
+        <p class="unit-no">Unit 1</p>
+        <h3>Infinite Series</h3>
+        <p class="topics">Sequences and series · comparison, ratio, root and Raabe's tests · alternating series · absolute and conditional convergence · power series.</p>
+        <ul class="res-list">
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/Classes/CalcII/SeriesIntro.aspx">Paul's Online Notes — Series &amp; Sequences</a> <span class="why">— the clearest written walkthrough of every convergence test, with solved examples.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+sequence+and+series+convergence">Dr. Gajendra Purohit — Sequence &amp; Series</a> <span class="why">— exam-style solved problems in Hindi/English, close to DTU question patterns.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/18-01sc-single-variable-calculus-fall-2010/">MIT OCW 18.01SC — Single Variable Calculus</a> <span class="why">— Unit 5 covers infinite series, with recitation problems.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://openstax.org/details/books/calculus-volume-2">OpenStax Calculus Vol. 2 (Ch. 5–6)</a> <span class="why">— free, rigorous, with exercises and answers.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 2</p>
+        <h3>Single-Variable Calculus</h3>
+        <p class="topics">Rolle's and mean value theorems · Taylor's and Maclaurin's theorems with remainders · indeterminate forms and L'Hôpital's rule · maxima and minima.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDMsr9K-rj53DwVRMYO3t5Yr">3Blue1Brown — Essence of Calculus</a> <span class="why">— watch this first; builds the intuition every theorem hangs on.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@ProfessorLeonard/playlists">Professor Leonard — Calculus 1</a> <span class="why">— full university lectures; unhurried and thorough on MVT and Taylor.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/Classes/CalcI/CalcI.aspx">Paul's Online Notes — Calculus I</a> <span class="why">— quick revision with practice problems per topic.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://openstax.org/details/books/calculus-volume-1">OpenStax Calculus Vol. 1</a> <span class="why">— free replacement for a standard calculus text.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 3</p>
+        <h3>Multivariable Differential Calculus</h3>
+        <p class="topics">Partial derivatives · Euler's theorem on homogeneous functions · total derivative and chain rule · Jacobians · Taylor's theorem in two variables · maxima/minima · Lagrange multipliers.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.khanacademy.org/math/multivariable-calculus">Khan Academy — Multivariable Calculus</a> <span class="why">— many of these videos were made by Grant Sanderson (3Blue1Brown); superb visual intuition for partials and Lagrange multipliers.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+partial+differentiation+euler+theorem">Dr. Gajendra Purohit — Partial Differentiation</a> <span class="why">— Euler's theorem and Jacobians drilled the way Indian university papers ask them.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/">MIT OCW 18.02SC — Multivariable Calculus</a> <span class="why">— complete course with problem sets and exams.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://openstax.org/details/books/calculus-volume-3">OpenStax Calculus Vol. 3 (Ch. 4)</a> <span class="why">— differentiation of functions of several variables, free.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 4</p>
+        <h3>Matrices &amp; Linear Algebra</h3>
+        <p class="topics">Rank and elementary transformations · consistency of linear systems · eigenvalues and eigenvectors · Cayley–Hamilton theorem · diagonalization.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab">3Blue1Brown — Essence of Linear Algebra</a> <span class="why">— makes eigenvectors and determinants visual; three hours that change how you see the whole unit.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/">Gilbert Strang — MIT 18.06 Linear Algebra</a> <span class="why">— the most famous linear algebra lectures ever recorded.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="http://linear.ups.edu/">Beezer — A First Course in Linear Algebra</a> <span class="why">— free open textbook with hundreds of exercises.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://www.math.brown.edu/streil/papers/LADW/LADW.html">Treil — Linear Algebra Done Wrong</a> <span class="why">— free; a step deeper, great if the unit clicks and you want more.</span></span></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="sem2">
+    <div class="sec-head">
+      <h2>Year 1, Semester 2 · Mathematics-II</h2>
+      <span class="course-code">MA102</span>
+    </div>
+    <p class="sec-sub">Integration in higher dimensions, vector fields, and differential equations — the mathematical toolkit of every core engineering course that follows, from electromagnetics to control systems.</p>
+    <div class="units">
+
+      <article class="unit">
+        <p class="unit-no">Unit 1</p>
+        <h3>Multiple Integrals</h3>
+        <p class="topics">Double and triple integrals · change of order and change of variables · areas and volumes · beta and gamma functions.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+double+integral+change+of+order">Dr. Gajendra Purohit — Multiple Integrals</a> <span class="why">— change-of-order problems solved exactly like exam questions.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/Classes/CalcIII/MultipleIntegralsIntro.aspx">Paul's Online Notes — Multiple Integrals</a> <span class="why">— careful region setups, the part students actually lose marks on.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/18-02sc-multivariable-calculus-fall-2010/">MIT OCW 18.02SC — Units 3–4</a> <span class="why">— double/triple integrals with worked recitations.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://www.geogebra.org/3d">GeoGebra 3D</a> <span class="why">— plot the region before you integrate; wrong limits are the #1 error.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 2</p>
+        <h3>Vector Calculus</h3>
+        <p class="topics">Gradient, divergence, curl · line, surface and volume integrals · Green's theorem · Stokes' theorem · Gauss divergence theorem.</p>
+        <ul class="res-list">
+          <li><span class="tag notes">Notes</span><span><a href="https://mathinsight.org/thread/multivar">Math Insight — Vector Calculus</a> <span class="why">— interactive applets that let you <em>see</em> divergence and curl; nothing else comes close.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+vector+calculus+green+stokes+gauss">Dr. Gajendra Purohit — Vector Calculus</a> <span class="why">— Green's/Stokes'/Gauss problems in exam format.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=trefor+bazett+vector+calculus+playlist">Dr. Trefor Bazett — Vector Calculus</a> <span class="why">— short, visual, English-language topic videos.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://betterexplained.com/articles/vector-calculus-understanding-the-gradient/">BetterExplained — Understanding the Gradient</a> <span class="why">— why ∇f points uphill, in plain words.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 3</p>
+        <h3>Ordinary Differential Equations</h3>
+        <p class="topics">First-order ODEs (exact, linear, Bernoulli) · higher-order linear equations with constant coefficients · variation of parameters · Euler–Cauchy equations.</p>
+        <ul class="res-list">
+          <li><span class="tag book">Book</span><span><a href="https://digitalcommons.trinity.edu/mono/8/">Trench — Elementary Differential Equations</a> <span class="why">— a complete, free ODE textbook with a solutions manual.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/18-03sc-differential-equations-fall-2011/">MIT OCW 18.03SC — Differential Equations</a> <span class="why">— the full course, problem sets included.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+differential+equations+playlist">Dr. Gajendra Purohit — Differential Equations</a> <span class="why">— every standard solvable type, with tricks for speed.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/Classes/DE/DE.aspx">Paul's Online Notes — Differential Equations</a> <span class="why">— revision-friendly summaries of each method.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Unit 4</p>
+        <h3>Laplace Transforms</h3>
+        <p class="topics">Definition and properties · transforms of derivatives and integrals · inverse transforms · convolution theorem · solving ODEs by Laplace transform.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+laplace+transform+playlist">Dr. Gajendra Purohit — Laplace Transform</a> <span class="why">— the go-to playlist for this unit in Indian universities.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.khanacademy.org/math/differential-equations/laplace-transform">Khan Academy — Laplace Transform</a> <span class="why">— builds from the definition up, step by step.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@Eigensteve">Steve Brunton — Engineering Math</a> <span class="why">— why engineers use transforms at all; connects Laplace to the control systems you'll meet later.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://www.wolframalpha.com/">WolframAlpha</a> <span class="why">— check any transform instantly (<code>laplace transform of t^2 sin(t)</code>).</span></span></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="year2">
+    <div class="sec-head">
+      <h2>Year 2 · Mathematics-III and core applied math</h2>
+    </div>
+    <p class="sec-sub">Third and fourth semester bring the applied core: PDEs and Fourier methods, complex variables, probability, and numerical computation. Exact course codes and pairings depend on your branch — every branch meets these four areas somewhere in second year.</p>
+    <div class="units">
+
+      <article class="unit">
+        <p class="unit-no">Sem 3 · Common</p>
+        <h3>PDEs &amp; Fourier Series</h3>
+        <p class="topics">Fourier series and half-range expansions · formation of PDEs · separation of variables · wave, heat and Laplace equations · Fourier transforms.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/watch?v=r6sGWTCMz2k">3Blue1Brown — But what is a Fourier series?</a> <span class="why">— the visual intuition that makes the whole unit click.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@Eigensteve/playlists">Steve Brunton — Fourier Analysis &amp; PDEs</a> <span class="why">— beautifully filmed playlists connecting Fourier methods to real engineering.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+fourier+series+partial+differential+equations">Dr. Gajendra Purohit — Fourier Series &amp; PDE</a> <span class="why">— exam-pattern solved problems for every standard equation.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/Classes/DE/IntroPDE.aspx">Paul's Online Notes — Partial Differential Equations</a> <span class="why">— separation of variables worked slowly and carefully.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Sem 3–4 · Branch-dependent</p>
+        <h3>Complex Analysis</h3>
+        <p class="topics">Analytic functions · Cauchy–Riemann equations · complex integration and Cauchy's theorem · Taylor and Laurent series · residues and contour integration.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+complex+analysis+playlist">Dr. Gajendra Purohit — Complex Analysis</a> <span class="why">— exam-oriented coverage of the standard units.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://open.umn.edu/opentextbooks/textbooks/a-first-course-in-complex-analysis">Beck et al. — A First Course in Complex Analysis</a> <span class="why">— free open textbook, gentle and complete.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=nptel+complex+analysis+iit">NPTEL — Complex Analysis (IIT lectures)</a> <span class="why">— full-length IIT courses matching the Indian syllabus.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://complex-analysis.com/">complex-analysis.com</a> <span class="why">— free interactive book; drag points and watch mappings deform.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Sem 3–4 · Common</p>
+        <h3>Probability &amp; Statistics</h3>
+        <p class="topics">Random variables · binomial, Poisson and normal distributions · expectation and moments · correlation and regression · sampling and hypothesis testing.</p>
+        <ul class="res-list">
+          <li><span class="tag book">Book</span><span><a href="https://www.probabilitycourse.com/">Introduction to Probability (probabilitycourse.com)</a> <span class="why">— a full free textbook, readable online, with solved problems.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/6-041sc-probabilistic-systems-analysis-and-applied-probability-fall-2013/">MIT OCW 6.041SC — Applied Probability</a> <span class="why">— Tsitsiklis's legendary probability course.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://seeing-theory.brown.edu/">Seeing Theory (Brown)</a> <span class="why">— interactive visualizations of every core probability idea.</span></span></li>
+          <li><span class="tag practice">Practice</span><span><a href="https://www.khanacademy.org/math/statistics-probability">Khan Academy — Statistics &amp; Probability</a> <span class="why">— graded exercises for distributions and hypothesis testing.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Sem 4 · Common</p>
+        <h3>Numerical Methods</h3>
+        <p class="topics">Bisection, Newton–Raphson · interpolation (Newton, Lagrange) · numerical differentiation and integration · Euler and Runge–Kutta for ODEs · solving linear systems.</p>
+        <ul class="res-list">
+          <li><span class="tag notes">Notes</span><span><a href="https://nm.mathforcollege.com/">Numerical Methods for STEM (Prof. Kaw)</a> <span class="why">— free full course: videos, notes, and quizzes per method.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=nptel+numerical+methods+iit">NPTEL — Numerical Methods (IIT lectures)</a> <span class="why">— matches Indian university syllabi unit for unit.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gajendra+purohit+numerical+methods">Dr. Gajendra Purohit — Numerical Analysis</a> <span class="why">— Newton–Raphson and interpolation in exam format.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://colab.research.google.com/">Google Colab</a> <span class="why">— implement each method in Python; coding Runge–Kutta once teaches more than ten solved examples.</span></span></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="year34">
+    <div class="sec-head">
+      <h2>Years 3–4 · Electives, applications, GATE</h2>
+    </div>
+    <p class="sec-sub">By third year the math turns branch-specific: discrete structures for the CSE family, optimization for everyone, ML math if you're heading that way — and GATE engineering mathematics if you're aiming at M.Tech or PSUs.</p>
+    <div class="units">
+
+      <article class="unit">
+        <p class="unit-no">CSE · IT · SE · MCE</p>
+        <h3>Discrete Mathematics</h3>
+        <p class="topics">Logic and proofs · set theory and relations · combinatorics · graph theory · recurrence relations · algebraic structures.</p>
+        <ul class="res-list">
+          <li><span class="tag book">Book</span><span><a href="https://discrete.openmathbooks.org/">Levin — Discrete Mathematics: An Open Introduction</a> <span class="why">— the standard free discrete math text.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2010/">MIT OCW 6.042J — Math for Computer Science</a> <span class="why">— discrete math as CSE actually uses it.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=neso+academy+discrete+mathematics">Neso Academy — Discrete Mathematics</a> <span class="why">— topic-wise videos popular with Indian CSE students.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">All branches</p>
+        <h3>Optimization &amp; Operations Research</h3>
+        <p class="topics">Linear programming and the simplex method · duality · transportation and assignment problems · intro to convex and nonlinear optimization.</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=nptel+operations+research+iit">NPTEL — Operations Research (IIT lectures)</a> <span class="why">— simplex, duality and transportation done syllabus-style.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://web.stanford.edu/~boyd/cvxbook/">Boyd &amp; Vandenberghe — Convex Optimization</a> <span class="why">— the free classic, with Stanford lecture videos linked from the same page.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://www.geeksforgeeks.org/operations-research-tutorial/">GeeksforGeeks — Operations Research</a> <span class="why">— quick written summaries per technique.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Electives · Projects</p>
+        <h3>Mathematics for Machine Learning</h3>
+        <p class="topics">Linear algebra revisited · matrix calculus · probability for ML · gradient-based optimization — the math behind the ML electives and your major project.</p>
+        <ul class="res-list">
+          <li><span class="tag book">Book</span><span><a href="https://mml-book.github.io/">Deisenroth et al. — Mathematics for Machine Learning</a> <span class="why">— the free book written exactly for this gap.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi">3Blue1Brown — Neural Networks</a> <span class="why">— see the first-year linear algebra and calculus working inside a network.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://explained.ai/matrix-calculus/">The Matrix Calculus You Need for Deep Learning</a> <span class="why">— free paper-length tutorial by Parr &amp; Howard.</span></span></li>
+        </ul>
+      </article>
+
+      <article class="unit">
+        <p class="unit-no">Final year</p>
+        <h3>GATE Engineering Mathematics</h3>
+        <p class="topics">The GATE math section is a weighted replay of years 1–2: linear algebra, calculus, ODEs, probability, numerical methods — roughly 13–15% of the paper.</p>
+        <ul class="res-list">
+          <li><span class="tag practice">Practice</span><span><a href="https://gate.iitr.ac.in/">GATE official site — syllabus &amp; previous papers</a> <span class="why">— the actual syllabus and past questions; start here, not with coaching PDFs.</span></span></li>
+          <li><span class="tag practice">Practice</span><span><a href="https://www.geeksforgeeks.org/engineering-mathematics-tutorials/">GeeksforGeeks — Engineering Mathematics</a> <span class="why">— topic-wise GATE questions with solutions.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/results?search_query=gate+engineering+mathematics+one+shot">GATE Engineering Math one-shots</a> <span class="why">— fast revision passes once the concepts are already in place.</span></span></li>
+        </ul>
+      </article>
+
+    </div>
+  </section>
+
+  <section id="library">
+    <div class="sec-head">
+      <h2>Core library</h2>
+    </div>
+    <p class="sec-sub">The channels, books, and sites worth knowing across every unit — subscribe once, use for all four years.</p>
+    <div class="lib">
+
+      <div class="lib-col">
+        <h3>Channels &amp; vlogs</h3>
+        <p class="col-sub">Video, from intuition to exam drills</p>
+        <ul class="res-list">
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@3blue1brown">3Blue1Brown</a> <span class="why">— animated intuition; start every unit here.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@gajendrapurohit">Dr. Gajendra Purohit</a> <span class="why">— the most-followed Indian engineering-math channel; exam-style solutions.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@mitocw">MIT OpenCourseWare</a> <span class="why">— complete courses: 18.01, 18.02, 18.03, 18.06.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@nptel-noc">NPTEL-NOC</a> <span class="why">— IIT lectures aligned with Indian syllabi; free certification exams too.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@ProfessorLeonard">Professor Leonard</a> <span class="why">— full-length calculus lectures, patient and complete.</span></span></li>
+          <li><span class="tag video">Video</span><span><a href="https://www.youtube.com/@blackpenredpen">blackpenredpen</a> <span class="why">— integration technique and problem-solving fluency.</span></span></li>
+        </ul>
+      </div>
+
+      <div class="lib-col">
+        <h3>Free books</h3>
+        <p class="col-sub">Legally free, complete textbooks</p>
+        <ul class="res-list">
+          <li><span class="tag book">Book</span><span><a href="https://openstax.org/subjects/math">OpenStax Calculus Vols. 1–3</a> <span class="why">— covers MA101 + MA102 calculus end to end.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="http://linear.ups.edu/">A First Course in Linear Algebra (Beezer)</a> <span class="why">— the matrices unit and beyond.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://digitalcommons.trinity.edu/mono/8/">Elementary Differential Equations (Trench)</a> <span class="why">— ODEs + Laplace, with a solutions manual.</span></span></li>
+          <li><span class="tag book">Book</span><span><a href="https://activecalculus.org/">Active Calculus</a> <span class="why">— learn-by-doing calculus with embedded exercises.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://tutorial.math.lamar.edu/">Paul's Online Math Notes</a> <span class="why">— Calc I–III + ODEs; the single best written reference.</span></span></li>
+          <li><span class="tag notes">Notes</span><span><a href="https://betterexplained.com/">BetterExplained</a> <span class="why">— the "aha" behind e, i, ∇, and more.</span></span></li>
+        </ul>
+      </div>
+
+      <div class="lib-col">
+        <h3>Tools &amp; practice</h3>
+        <p class="col-sub">Check work, visualize, drill for exams</p>
+        <ul class="res-list">
+          <li><span class="tag tool">Tool</span><span><a href="https://www.desmos.com/calculator">Desmos</a> <span class="why">— instant 2D graphing; builds function intuition.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://www.geogebra.org/">GeoGebra</a> <span class="why">— 3D surfaces, vector fields, regions of integration.</span></span></li>
+          <li><span class="tag tool">Tool</span><span><a href="https://www.wolframalpha.com/">WolframAlpha</a> <span class="why">— verify any derivative, integral, or transform.</span></span></li>
+          <li><span class="tag practice">Practice</span><span><a href="https://www.khanacademy.org/math">Khan Academy</a> <span class="why">— graded exercise sets with instant feedback.</span></span></li>
+          <li><span class="tag practice">Practice</span><span><a href="https://www.geeksforgeeks.org/engineering-mathematics-tutorials/">GeeksforGeeks — Engineering Mathematics</a> <span class="why">— GATE-style questions; university papers borrow the same patterns.</span></span></li>
+          <li><span class="tag practice">Practice</span><span><a href="http://dtu.ac.in">DTU previous-year papers</a> <span class="why">— from the library/portal and seniors; the highest-signal practice there is.</span></span></li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <section id="playbook">
+    <div class="sec-head">
+      <h2>Study playbook</h2>
+    </div>
+    <p class="sec-sub">How toppers actually use these resources — a sequence, not a pile.</p>
+    <div class="plays">
+      <div class="play">
+        <h3>Intuition before procedure</h3>
+        <p>For each new unit, watch the visual treatment first (3Blue1Brown, Math Insight), <em>then</em> learn the solving procedure. Methods stick when you know what they mean.</p>
+      </div>
+      <div class="play">
+        <h3>One written + one video reference</h3>
+        <p>Pick a single book or notes source and a single channel per unit and go deep. Hopping between five playlists is procrastination wearing a productivity costume.</p>
+      </div>
+      <div class="play">
+        <h3>Tutorial sheets are the syllabus</h3>
+        <p>DTU mid-sem and end-sem questions track the tutorial sheets closely. Solve every sheet problem yourself before touching any external practice.</p>
+      </div>
+      <div class="play">
+        <h3>Previous-year papers, timed</h3>
+        <p>Two weeks before exams, switch entirely to past DTU papers under exam timing. Patterns repeat — change of order of integration and Cayley–Hamilton show up almost every year.</p>
+      </div>
+      <div class="play">
+        <h3>Verify with tools, don't lean on them</h3>
+        <p>Use WolframAlpha to <em>check</em> answers after solving by hand, never to skip the hand-solving. The exam hall has no search bar.</p>
+      </div>
+      <div class="play">
+        <h3>Teach one topic per unit</h3>
+        <p>Explain Lagrange multipliers or the convolution theorem to a friend without notes. If you can't, you've recognized it, not learned it.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>An independent study guide for DTU students — not affiliated with Delhi Technological University. Syllabus outlines reflect the common first-year scheme; the official, current syllabus lives at <a href="http://dtu.ac.in">dtu.ac.in</a>. All linked resources are free and belong to their respective creators.</p>
+    <p>Found a better resource for a unit? Add it — this page is meant to grow.</p>
+  </div>
+</footer>
