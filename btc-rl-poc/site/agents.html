@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Agent HQ</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+.cards { display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.acard { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 16px 18px; }
+.acard.human { border: 1.5px solid rgba(143,96,0,.55);
+  background: rgba(143,96,0,.05); }
+.acard h3 { font: 500 18px var(--display); color: var(--ink);
+  margin-bottom: 2px; }
+.acard .rolechip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 10px; }
+.acard.human .rolechip { color: var(--series-4);
+  border-color: rgba(143,96,0,.45); }
+.arow { display: grid; grid-template-columns: 84px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55; margin-top: 9px; }
+.arow .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--faint); padding-top: 2px; }
+.arow .v { color: var(--ink-2); }
+.arow .v.cannot { color: var(--down); }
+.arow .v code { font-size: 11px; }
+.arow .v .age { font-weight: 650; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.stream { max-width: 66rem; }
+.sitem { display: grid; grid-template-columns: 1fr auto; gap: 4px 18px;
+  padding: 11px 2px; border-bottom: 1px solid var(--grid);
+  align-items: baseline; }
+.sitem:last-child { border-bottom: none; }
+.sitem .who { font-size: 13.5px; font-weight: 650; color: var(--ink); }
+.sitem .stime { font-size: 11.5px; color: var(--muted); text-align:
+  right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sitem .sbody { grid-column: 1 / -1; font-size: 13px;
+  color: var(--ink-2); line-height: 1.55; max-width: 74ch; }
+.sitem .sev { grid-column: 1 / -1; font-size: 11px;
+  color: var(--muted); }
+.sitem .sev code { font-size: 10.5px; }
+@media (max-width: 560px) {
+  .sitem { grid-template-columns: 1fr; }
+  .sitem .stime { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="clock.html">Clock</a><a class="nav here" href="agents.html">Agent HQ</a><span class="spacer"></span><span class="tag">who does what</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">the autonomous team</div>
+  <h1>Agent HQ</h1>
+  <p class="sub small">Who acts, on what trigger, with what authority
+  — and the one thing none of them can do: <b>change live policy</b>.
+  Every promotion, retirement, or policy change terminates with the
+  human. The cards below are read from <code>world.json</code>; the
+  activity stream is stitched client-side from the same ledgers every
+  other page uses.</p>
+</header>
+
+<section>
+  <h2>The roster <span class="pill pending" id="a-count">…</span></h2>
+  <div class="cards" id="cards"><p class="mini">loading
+  world.json…</p></div>
+</section>
+
+<section>
+  <h2>Activity stream <span class="pill" id="s-count">…</span></h2>
+  <p class="sub small">One reverse-chronological feed across the
+  agents: analyst notes, settled windows, the last retrain, and the
+  experiment board's current verdict. Timestamps are shown in both PT
+  and IST — the owner is in India, trading US markets.</p>
+  <div class="stream" id="stream"><p class="mini">merging
+  ledgers…</p></div>
+</section>
+
+<section>
+  <h2>Measuring the agents</h2>
+  <p class="sub small">The agents grade the models all day; grading
+  the agents themselves is a queued workstream. The rows exist now so
+  the gap stays visible — per the site's integrity rule, a metric that
+  isn't computed yet says so instead of showing an invented number.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>metric</th><th>what it would measure</th>
+      <th class="num">value</th></tr></thead>
+    <tbody>
+      <tr><td>proposal acceptance rate</td><td class="small muted">of
+        the analyst's treatment/retirement proposals, how many the
+        owner accepted</td>
+        <td class="num"><span class="pill miss">not yet
+        metered</span></td></tr>
+      <tr><td>unsupported-claim rate</td><td class="small muted">analyst
+        notes whose evidence line fails re-verification</td>
+        <td class="num"><span class="pill miss">not yet
+        metered</span></td></tr>
+      <tr><td>cost per agent run</td><td class="small muted">LLM tokens
+        per analyst note / builder task (see The Bill on the Clock
+        page)</td>
+        <td class="num"><span class="pill miss">not yet
+        metered</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>Authority boundaries are quoted from <code>world.json</code>,
+which mirrors PROGRAM.md §3 and DECISIONS.md. If a card and the repo
+ever disagree, the repo wins.</footer>
+</main>
+
+<script>
+"use strict";
+const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
+const jf = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+const jl = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
+    .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
+      catch { return null; } }).filter(Boolean)).catch(() => []);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+const fmtZone = (ts, tz) => new Intl.DateTimeFormat("en-US",
+  { timeZone: tz, month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit" }).format(new Date(ts * 1000));
+const both = ts => ts == null ? "—"
+  : fmtZone(ts, "America/Los_Angeles") + " PT · " +
+    fmtZone(ts, "Asia/Kolkata") + " IST";
+
+function ageText(ts) {
+  if (ts == null) return null;
+  const s = Date.now() / 1000 - ts;
+  if (s < 60) return "<1 min ago";
+  const m = s / 60;
+  if (m < 90) return m.toFixed(m < 10 ? 1 : 0) + " min ago";
+  const h = m / 60;
+  if (h < 48) return h.toFixed(1) + " h ago";
+  return (h / 24).toFixed(1) + " d ago";
+}
+
+function renderCards(w) {
+  if (!w || !Array.isArray(w.agents)) return;
+  document.getElementById("a-count").textContent =
+    w.agents.length + " agents";
+  document.getElementById("cards").innerHTML = w.agents.map(a => {
+    const human = /human|owner/i.test(a.name || "") ||
+      a.role === "governance";
+    const age = ageText(a.last_ts);
+    return `<div class="acard${human ? " human" : ""}">` +
+      `<h3>${esc(a.name ?? "—")}</h3>` +
+      `<span class="rolechip">${esc(a.role ?? "—")}</span>` +
+      `<div class="arow"><span class="k">trigger</span>` +
+      `<span class="v">${esc(a.trigger ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">authority</span>` +
+      `<span class="v">${esc(a.authority ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">cannot</span>` +
+      `<span class="v cannot">${esc(a.cannot ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">last seen</span>` +
+      `<span class="v">${age ? `<span class="age">${age}</span>`
+        : "session-based"}</span></div>` +
+      `<div class="arow"><span class="k">evidence</span>` +
+      `<span class="v"><code>${esc(a.evidence ?? "—")}</code>` +
+      `</span></div></div>`;
+  }).join("");
+}
+
+function renderStream(notes, treats, os, db) {
+  const items = [];
+  for (const n of notes) {
+    if (n.ts == null) continue;
+    items.push({ ts: n.ts,
+      who: "🔭 Fable — " + (n.topic || "analyst note"),
+      body: n.text || "", ev: n.evidence || null });
+  }
+  for (const t of treats.slice(-8)) {
+    if (t.close_ts == null) continue;
+    items.push({ ts: t.close_ts,
+      who: "⚖️ Evaluator — settled " + (t.ticker || "window"),
+      body: "leader " + (t.leader ?? "—") + ", outcome " +
+        (t.outcome === 1 ? "ABOVE" : t.outcome === 0 ? "BELOW" : "—") +
+        " the strike; window scored and appended to the treatment" +
+        " ledger.", ev: "treatments.jsonl" });
+  }
+  const rt = os && os.last_retrain;
+  if (rt && rt.arms) {
+    let kept = 0, rev = 0, tot = 0;
+    for (const hs of Object.values(rt.arms))
+      for (const v of Object.values(hs)) {
+        tot++; v && v.reverted ? rev++ : kept++;
+      }
+    const ts = rt.at ? Date.parse(rt.at) / 1000 : null;
+    if (ts) items.push({ ts,
+      who: "🏭 Trainer — kept " + kept + ", reverted " + rev +
+        " of " + tot + " arms",
+      body: "Hourly gated retrain: each candidate scored on the" +
+        " incumbent's holdout; only improvements shipped." +
+        (os.retrains_this_session != null ? " " +
+          os.retrains_this_session + " retrains this session." : ""),
+      ev: "online_status.last_retrain" });
+  }
+  const states = db && db.summary && db.summary.states;
+  if (states && db.generated_ts != null) {
+    items.push({ ts: db.generated_ts,
+      who: "🧪 Experimenter — states: " + Object.entries(states)
+        .map(([k, v]) => v + " " + k).join(", "),
+      body: "Decision board refreshed" +
+        (db.summary.best_candidate ? "; best candidate " +
+          db.summary.best_candidate : "") + ".",
+      ev: "decision_board.json" });
+  }
+  items.sort((a, b) => b.ts - a.ts);
+  document.getElementById("s-count").textContent =
+    items.length + " events";
+  document.getElementById("stream").innerHTML = items.map(i =>
+    `<div class="sitem"><span class="who">${esc(i.who)}</span>` +
+    `<span class="stime">${both(i.ts)}</span>` +
+    `<span class="sbody">${esc(i.body)}</span>` +
+    (i.ev ? `<span class="sev">evidence: <code>${esc(i.ev)}` +
+      `</code></span>` : "") + `</div>`).join("") ||
+    `<p class="mini">no events yet</p>`;
+}
+
+async function poll() {
+  const [w, notes, treats, os, db] = await Promise.all([
+    jf("../results/world.json"),
+    jl("../results/commentary.jsonl"),
+    jl("../results/treatments.jsonl"),
+    jf("../results/online_status.json"),
+    jf("../results/decision_board.json")]);
+  renderCards(w);
+  renderStream(notes || [], treats || [], os, db);
+}
+poll();
+setInterval(poll, 15000);
+</script>
+<script src="glossary.js" defer></script>
+</body>
+</html>

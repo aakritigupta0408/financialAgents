@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — The System Clock</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* cadence column — the backend rendered as a clock face of rows */
+.cadence { display: flex; flex-direction: column; }
+.crow { display: grid; grid-template-columns: 112px 1fr auto;
+  gap: 6px 18px; align-items: baseline; padding: 14px 2px;
+  border-bottom: 1px solid var(--grid); }
+.crow:last-child { border-bottom: none; }
+.crow.red { background: rgba(209,60,60,.06);
+  border-left: 3px solid var(--down); padding-left: 12px;
+  border-radius: 8px; }
+.cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
+  monospace; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 8px; text-align: center; align-self: start; }
+.cwhat { font-size: 14px; color: var(--ink); font-weight: 600; }
+.cmeta { grid-column: 2; font-size: 12.5px; color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.cmeta code { font-size: 11.5px; color: var(--ink-2); }
+.cdetail { grid-column: 2; font-size: 12px; color: var(--muted);
+  max-width: 62ch; line-height: 1.55; }
+.cright { text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.hdot { display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.hdot.green { background: var(--good); }
+.hdot.amber { background: var(--series-4); }
+.hdot.red { background: var(--down); }
+.owner-chip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 9px; }
+.age { font-weight: 650; color: var(--ink); }
+.warnline { grid-column: 2; font-size: 12px; color: var(--down);
+  font-weight: 600; }
+.retr td.better { color: var(--good-text); }
+.retr td.worse { color: var(--muted); }
+.bill td.amt { font-variant-numeric: tabular-nums; }
+.bill .pill { white-space: nowrap; }
+@media (max-width: 640px) {
+  .crow { grid-template-columns: 1fr; }
+  .cmeta, .cdetail, .warnline { grid-column: 1; }
+  .cright { text-align: left; }
+  .cbadge { justify-self: start; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><a class="nav here" href="clock.html">Clock</a><a class="nav" href="agents.html">Agent HQ</a><span class="spacer"></span><span class="tag">what runs when</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">everything that runs</div>
+  <h1>The System Clock</h1>
+  <p class="sub small">The whole backend, laid out as a clock face of
+  cadences — every process that fires on a timer, who owns it, and the
+  artifact that proves it ran. Ages below are computed live against
+  your clock, not copied from a log. If a row can't prove itself, it
+  says so in plain text rather than pretending.</p>
+</header>
+
+<section>
+  <h2>The cadences <span class="pill pending" id="clk-count">…</span></h2>
+  <p class="mini" id="clk-gen">loading world.json…</p>
+  <div class="cadence" id="cadence"><p class="mini">reading the
+  clock…</p></div>
+</section>
+
+<section>
+  <h2>The last retrain, dissected
+    <span class="pill" id="rt-counts">…</span></h2>
+  <p class="sub small">Every hour the daemon trains a candidate for
+  each neural arm and scores it on the same holdout as the incumbent.
+  A retrain only ships if the candidate beats the incumbent on that
+  holdout; reverts are the gate working, not failure.</p>
+  <div class="scroll"><table class="retr" id="rt-tbl">
+    <thead><tr><th>arm</th><th>horizon</th>
+      <th class="num">val MSE before</th>
+      <th class="num">val MSE after</th>
+      <th>verdict</th></tr></thead>
+    <tbody><tr><td colspan="5" class="mini">loading
+      online_status.json…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="rt-when">…</p>
+</section>
+
+<section>
+  <h2>The Bill <span class="pill ok" id="bill-total">…</span></h2>
+  <p class="sub small">Running cost today is <b>$0 in marginal
+  spend</b> — the market data is public or demo-environment, the
+  compute is self-hosted, and the publishing is a free tier. The one
+  line that isn't metered is LLM tokens, and that row says
+  <i>not metered</i> instead of guessing a number.</p>
+  <div class="scroll"><table class="bill" id="bill-tbl">
+    <thead><tr><th>item</th><th class="num">amount</th>
+      <th>basis</th></tr></thead>
+    <tbody><tr><td colspan="3" class="mini">loading
+      world.json…</td></tr></tbody>
+  </table></div>
+</section>
+
+<footer>Every row above is emitted by the backend into
+<code>world.json</code> and <code>online_status.json</code>; this page
+only renders them. Nothing here is typed in by hand.</footer>
+</main>
+
+<script>
+"use strict";
+const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
+const jf = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+let lastWorld = null;
+
+function ageText(ts) {
+  if (ts == null) return null;
+  const s = Date.now() / 1000 - ts;
+  if (s < 0) return "just now";
+  if (s < 60) return "<1 min ago";
+  const m = s / 60;
+  if (m < 90) return m.toFixed(m < 10 ? 1 : 0) + " min ago";
+  const h = m / 60;
+  if (h < 48) return h.toFixed(1) + " h ago";
+  return (h / 24).toFixed(1) + " d ago";
+}
+
+function renderClock() {
+  const w = lastWorld;
+  if (!w || !Array.isArray(w.clock)) return;
+  document.getElementById("clk-count").textContent =
+    w.clock.length + " cadences";
+  const f = w.facts || {};
+  document.getElementById("clk-gen").textContent =
+    "snapshot written " + (ageText(w.generated_ts) || "—") +
+    (f.poll_seconds != null ? " · daemon poll " + f.poll_seconds + "s"
+      : "") +
+    (f.retrain_every_s != null ? " · retrain every " +
+      Math.round(f.retrain_every_s / 60) + " min" : "") +
+    (f.windows_scored != null ? " · " + f.windows_scored +
+      " windows scored" : "");
+  document.getElementById("cadence").innerHTML = w.clock.map(r => {
+    const red = r.health === "red";
+    const age = ageText(r.last_run_ts);
+    const dot = `<span class="hdot ${esc(r.health || "amber")}"></span>`;
+    const cron = r.in_crontab === true ? " · in crontab"
+      : r.in_crontab === false ? " · NOT in crontab" : "";
+    return `<div class="crow${red ? " red" : ""}">` +
+      `<span class="cbadge">${esc(r.every ?? "—")}</span>` +
+      `<span class="cwhat">${esc(r.what ?? "—")}</span>` +
+      `<span class="cright">${dot}${esc(r.health ?? "unknown")}` +
+      ` · <span class="age">${age ?? "—"}</span></span>` +
+      `<span class="cmeta"><span class="owner-chip">` +
+      `${esc(r.owner ?? "—")}</span>` +
+      `<code>${esc(r.source ?? "—")}</code>` +
+      `<span>${cron.slice(3)}</span></span>` +
+      (red ? `<span class="warnline">⚠ this cadence reports` +
+        ` unhealthy — check its source above</span>` : "") +
+      (r.detail ? `<span class="cdetail">${esc(r.detail)}</span>`
+        : "") +
+      `</div>`;
+  }).join("");
+}
+
+function renderBill() {
+  const w = lastWorld;
+  if (!w || !Array.isArray(w.costs)) return;
+  const metered = w.costs.filter(c => c.amount != null);
+  const total = metered.reduce((a, c) => a + c.amount, 0);
+  document.getElementById("bill-total").textContent =
+    "$" + total.toFixed(2) + " metered · " +
+    (w.costs.length - metered.length) + " not metered";
+  document.querySelector("#bill-tbl tbody").innerHTML =
+    w.costs.map(c => {
+      const amt = c.amount == null
+        ? `<span class="pill miss">not metered</span>`
+        : `<b>$${c.amount.toFixed(c.amount === 0 ? 0 : 2)}</b>`;
+      return `<tr><td>${esc(c.item ?? "—")}</td>` +
+        `<td class="num amt">${amt}</td>` +
+        `<td class="small muted">${esc(c.basis ?? "—")}</td></tr>`;
+    }).join("");
+}
+
+function renderRetrain(os) {
+  const rt = os && os.last_retrain;
+  if (!rt || !rt.arms) return;
+  const rows = [];
+  let kept = 0, rev = 0;
+  for (const [arm, hs] of Object.entries(rt.arms)) {
+    for (const [h, v] of Object.entries(hs)) {
+      if (!v) continue;
+      const r = !!v.reverted;
+      r ? rev++ : kept++;
+      rows.push(`<tr><td><span class="arm-tag">${esc(arm)}</span>` +
+        `</td><td>${esc(h)}</td>` +
+        `<td class="num">${v.val_mse_before ?? "–"}</td>` +
+        `<td class="num ${r ? "worse" : "better"}">` +
+        `${v.val_mse_after ?? "–"}</td>` +
+        `<td><span class="pill ${r ? "miss" : "ok"}">` +
+        `${r ? "REVERTED" : "KEPT"}</span></td></tr>`);
+    }
+  }
+  document.querySelector("#rt-tbl tbody").innerHTML = rows.join("");
+  document.getElementById("rt-counts").textContent =
+    kept + " kept · " + rev + " reverted";
+  const when = rt.at ? new Date(rt.at) : null;
+  document.getElementById("rt-when").textContent =
+    (when ? "last retrain " + when.toLocaleString("en-US",
+      { timeZone: "America/Los_Angeles", month: "short",
+        day: "numeric", hour: "2-digit", minute: "2-digit" }) + " PT"
+      : "last retrain time unknown") +
+    (rt.train_episodes != null ? " · " + rt.train_episodes +
+      " train / " + rt.val_episodes + " val episodes" : "") +
+    (os.retrains_this_session != null ? " · " +
+      os.retrains_this_session + " retrains this session" : "");
+}
+
+async function poll() {
+  const [w, os] = await Promise.all([
+    jf("../results/world.json"),
+    jf("../results/online_status.json")]);
+  if (w) lastWorld = w;
+  renderClock();
+  renderBill();
+  if (os) renderRetrain(os);
+}
+poll();
+setInterval(poll, 15000);
+setInterval(renderClock, 10000); // ages tick between polls
+</script>
+<script src="glossary.js" defer></script>
+</body>
+</html>

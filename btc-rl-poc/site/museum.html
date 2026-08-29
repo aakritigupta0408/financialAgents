@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Museum of Failed Ideas</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ————— museum gallery within the ticker-desk system ————— */
+.wingnote { font-size: 13px; color: var(--muted); max-width: 70ch; }
+
+.mode-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin-top: 14px; }
+.mode-bar .lbl { font-size: 11px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); }
+
+.room { position: relative; padding: 24px 24px 20px; overflow: hidden; }
+.room + .room { margin-top: 4px; }
+.room-head { display: flex; align-items: baseline; gap: 14px;
+  flex-wrap: wrap; padding-right: 120px; }
+.room-no { font: 600 13px/1 ui-sans-serif, system-ui;
+  letter-spacing: .16em; color: var(--faint); text-transform: uppercase;
+  white-space: nowrap; }
+.room-no b { display: inline-block; min-width: 30px; text-align: center;
+  font: 650 15px/28px var(--display); color: var(--ink-2);
+  border: 1px solid var(--border); border-radius: 50%;
+  width: 30px; height: 30px; margin-right: 8px; vertical-align: -8px;
+  background: var(--surface-2); }
+.room h2 { font-size: 21px; }
+.room .lesson { font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* the verdict stamp — inked museum label, slightly rotated */
+.stamp { position: absolute; top: 22px; right: 18px;
+  transform: rotate(6deg); font: 800 11px/1.2 ui-sans-serif, system-ui;
+  letter-spacing: .14em; text-transform: uppercase; text-align: center;
+  color: var(--down); border: 2px solid var(--down); border-radius: 6px;
+  padding: 6px 10px; max-width: 150px; opacity: .82;
+  box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px rgba(209,60,60,.25); }
+.stamp small { display: block; font-weight: 600; font-size: 9px;
+  letter-spacing: .1em; color: var(--down); opacity: .8; margin-top: 2px; }
+
+/* the two plaques */
+.plaques { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.plaque { flex: 1 1 300px; border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px 16px 12px; background: var(--surface-2);
+  transition: opacity .25s, box-shadow .25s; }
+@media (prefers-reduced-motion: reduce) { .plaque { transition: none; } }
+.plaque .ptag { font-size: 10px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.plaque p { font-size: 14px; line-height: 1.65; color: var(--ink-2); }
+.plaque.kid { border-left: 3px solid var(--series-5); }
+.plaque.kid p { font-family: var(--display); font-size: 15.5px;
+  color: var(--ink); }
+.plaque.eng { border-left: 3px solid var(--series-4); }
+.plaque.eng p { font-size: 13.5px; font-variant-numeric: tabular-nums; }
+
+/* Explore mode: kid plaque first & bright, engineer plaque quiet */
+body.mode-explore .plaque.kid { order: 0;
+  box-shadow: 0 1px 6px rgba(22,32,44,.07); }
+body.mode-explore .plaque.eng { order: 1; opacity: .58; }
+/* Engineer mode: the reverse */
+body.mode-engineer .plaque.eng { order: 0;
+  box-shadow: 0 1px 6px rgba(22,32,44,.07); }
+body.mode-engineer .plaque.kid { order: 1; opacity: .58; }
+.plaque:hover { opacity: 1 !important; }
+
+.evline { margin-top: 12px; font-size: 11.5px; color: var(--muted); }
+.evline code { font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; }
+
+.exit-note { border-left: 3px solid var(--series-1); }
+@media (max-width: 620px) {
+  .room-head { padding-right: 0; }
+  .stamp { position: static; display: inline-block; margin-top: 12px;
+    transform: rotate(-3deg); }
+}
+</style>
+</head>
+<body class="mode-explore">
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><a class="nav here" href="museum.html">Museum</a><span class="spacer"></span><span class="tag">falsification record</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">where dead ideas teach</div>
+  <h1>The Museum of Failed Ideas</h1>
+  <p class="sub small">Every exhibit below is a real hypothesis this
+  system tried, measured, and killed. They stay on display because a
+  deleted failure teaches nothing — the plaques are frozen, dated, and
+  each one points at the evidence that killed it.</p>
+  <div class="mode-bar" role="group" aria-label="plaque emphasis">
+    <span class="lbl">Read the plaques as</span>
+    <button class="chip on" id="m-explore" type="button">Explore</button>
+    <button class="chip" id="m-engineer" type="button">Engineer</button>
+    <span class="wingnote">both plaques stay on every exhibit — this
+    only chooses which one leads.</span>
+  </div>
+</header>
+
+<!-- ————————————— EXHIBIT 1 ————————————— -->
+<section class="room">
+  <div class="stamp">Superstition<small>verdict · dropped</small></div>
+  <div class="room-head"><span class="room-no"><b>1</b>exhibit</span>
+    <h2>The Toxic Hour</h2>
+    <span class="lesson">superstition vs multiplicity</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>9 AM looked cursed — the robots kept losing then. But if you
+      search 24 different hours for a cursed one, luck alone makes
+      about two hours look cursed. We found exactly two.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>Searched 24 hourly buckets for regime-toxic hours. Under the
+      null, ~1.98 false "bad hours" are expected from multiplicity
+      alone; we found 2. Binomial multiplicity test: p&nbsp;=&nbsp;0.60.
+      Mitigation DROPPED, not deferred (2026-08-28).</p></div>
+  </div>
+  <div class="evline">evidence: <code>tests/regime_detect.py</code> ·
+    <code>DECISIONS.md M7 row</code></div>
+</section>
+
+<!-- ————————————— EXHIBIT 2 ————————————— -->
+<section class="room">
+  <div class="stamp">Right too late<small>verdict · retired</small></div>
+  <div class="room-head"><span class="room-no"><b>2</b>exhibit</span>
+    <h2>The Late Genius</h2>
+    <span class="lesson">skill without a payout window</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>One robot, kbf, made the most accurate predictions of
+      everyone — three minutes before the answer, when it was too late
+      to bet. Being right when it no longer matters pays nothing.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>Best Brier in the system (0.097) and AUC 0.93 — yet
+      −$0.41 per $1 at real costs. Its skill lives at T−3&nbsp;min,
+      after market convergence, where no tradable edge remains.
+      Retired.</p></div>
+  </div>
+  <div class="evline">evidence:
+    <code><a href="analyst.html">analyst.html</a> representativeness table</code> ·
+    <code>model_internals.json</code></div>
+</section>
+
+<!-- ————————————— EXHIBIT 3 ————————————— -->
+<section class="room">
+  <div class="stamp">The free option you sold<small>verdict · measured live</small></div>
+  <div class="room-head"><span class="room-no"><b>3</b>exhibit</span>
+    <h2>The Cheap Limit Order</h2>
+    <span class="lesson">adverse selection</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>Paying less sounded smarter — rest a lower bid and wait. But
+      your cheap order gets filled fastest exactly when the market has
+      just learned you're wrong.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>Naive resting limit (pt7 mechanism), replayed paired:
+      −5.2%/$1 vs simply taking the ask. Shipped anyway as M11 to
+      measure the bleed live — on schedule — beside a defended
+      variant (pt8, fill-time confidence recheck).
+      Glosten–Milgrom&nbsp;1985.</p></div>
+  </div>
+  <div class="evline">evidence: <code>M11 backfill</code> ·
+    <code>commentary.jsonl 08-29 note</code></div>
+</section>
+
+<!-- ————————————— EXHIBIT 4 ————————————— -->
+<section class="room">
+  <div class="stamp">The cure was the disease<small>verdict · retirement filed</small></div>
+  <div class="room-head"><span class="room-no"><b>4</b>exhibit</span>
+    <h2>The Helpful Fixer</h2>
+    <span class="lesson">calibration chasing drift</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>We built a helper to make the robots' confidence more honest.
+      Measured properly, it made every single robot worse — so we
+      filed the paperwork to retire our own invention.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>Platt layer (M1): prequential log-loss worse than raw for all
+      9 arms (+0.034..+0.164, kb7 worst). The fitted direction flipped
+      within a day — miscalibration drifts faster than the fit.
+      Retirement proposal filed by its own author (D-m1-future).</p></div>
+  </div>
+  <div class="evline">evidence: <code>DECISIONS.md proposal queue</code> ·
+    <code>MODEL_INTERNALS.md §calibration</code></div>
+</section>
+
+<!-- ————————————— EXHIBIT 5 ————————————— -->
+<section class="room">
+  <div class="stamp">Loud, narrow, retired<small>verdict · retired</small></div>
+  <div class="room-head"><span class="room-no"><b>5</b>exhibit</span>
+    <h2>The One-Eyed Forecaster</h2>
+    <span class="lesson">asymmetric skill</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>Robot kb6 was great at shouting "UP!" and mostly blind the
+      rest of the time — right often when it spoke, but it only spoke
+      on a third of the questions.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>UP-recall 63% with coverage 37%; calibration slope
+      0.33&nbsp;≈&nbsp;noise. Retired from trading 2026-08-25.</p></div>
+  </div>
+  <div class="evline">evidence: <code>DECISIONS.md kb6/kbf row</code></div>
+</section>
+
+<!-- ————————————— EXHIBIT 6 ————————————— -->
+<section class="room">
+  <div class="stamp">Division by almost-zero<small>verdict · fixed</small></div>
+  <div class="room-head"><span class="room-no"><b>6</b>exhibit</span>
+    <h2>The Certainty Machine</h2>
+    <span class="lesson">variance collapse</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>One scoreboard started screaming "PROMOTE THIS!" — not
+      because the idea was good, but because two ideas kept tying, and
+      a formula dividing by almost-zero screams.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>Identical early paired diffs → Welford s²→0 → SPRT LLR
+      exploded to 123 on 154 windows: a false auto-promotion on pure
+      numerical noise. Fixed with VAR_FLOOR&nbsp;0.01 plus a 12-window
+      warmup.</p></div>
+  </div>
+  <div class="evline">evidence:
+    <code>btc_rl/treatments.py VAR_FLOOR comment</code></div>
+</section>
+
+<section class="exit-note">
+  <h2>Why this room exists</h2>
+  <p class="sub small">The falsification record <em>is</em> the
+  product — a lab that only displays wins is an ad. The live failures
+  continue on <a href="sev0.html">SEV-0</a>, the governance that kills
+  ideas sits with the <a href="board.html">Board</a>, and every verdict
+  above has a dated row in
+  <a href="home_classic.html">DECISIONS</a>
+  (<code>docs/DECISIONS.md</code> in the repo).</p>
+</section>
+
+<footer>Frozen historical results · plaques do not refresh · BTC 7PM
+Oracle, NYU Deep Learning course project.</footer>
+</main>
+
+<script>
+"use strict";
+(function () {
+  var KEY = "museumMode";
+  var be = document.getElementById("m-explore");
+  var bn = document.getElementById("m-engineer");
+  function apply(mode) {
+    var eng = mode === "engineer";
+    document.body.classList.toggle("mode-engineer", eng);
+    document.body.classList.toggle("mode-explore", !eng);
+    be.classList.toggle("on", !eng);
+    bn.classList.toggle("on", eng);
+    be.setAttribute("aria-pressed", String(!eng));
+    bn.setAttribute("aria-pressed", String(eng));
+    try { localStorage.setItem(KEY, eng ? "engineer" : "explore"); }
+    catch (e) { /* private mode: no persistence */ }
+  }
+  be.addEventListener("click", function () { apply("explore"); });
+  bn.addEventListener("click", function () { apply("engineer"); });
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved === "engineer" ? "engineer" : "explore");
+})();
+</script>
+<script src="glossary.js" defer></script>
+</body>
+</html>
