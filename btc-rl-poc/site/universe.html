@@ -65,11 +65,92 @@
 /* explore mode hides dense engineer annotations; both classes swap */
 body.mode-explore .engx { display: none; }
 body.mode-engineer .exx { display: none; }
-/* ---- detail panel ---- */
-#detail { display: none; }
-#detail.open { display: block; }
+/* ---- card head rows ---- */
+.cardhead { display: flex; align-items: flex-start; gap: 18px;
+  flex-wrap: wrap; margin-bottom: 10px; }
+.cardhead .grow { flex: 1; min-width: 220px; }
+.cardhead h2 { margin: 0; }
+/* ---- card 2: tabs ---- */
+.tabrow { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.tabpane { display: none; }
+.tabpane.on { display: block; }
+/* runtime rows — pattern shared with the Clock page */
+.cadence { display: flex; flex-direction: column; }
+.crow { display: grid; grid-template-columns: 112px 1fr auto;
+  gap: 6px 18px; align-items: baseline; padding: 12px 2px;
+  border-bottom: 1px solid var(--grid); }
+.crow:last-child { border-bottom: none; }
+.crow.red { background: rgba(209,60,60,.06);
+  border-left: 3px solid var(--down); padding-left: 12px;
+  border-radius: 8px; }
+.cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
+  monospace; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 8px; text-align: center; align-self: start; }
+.cwhat { font-size: 14px; color: var(--ink); font-weight: 600; }
+.cmeta { grid-column: 2; font-size: 12.5px; color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.cright { text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.hdot { display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 6px; }
+.hdot.green { background: var(--good); }
+.hdot.amber { background: var(--series-4); }
+.hdot.red { background: var(--down); }
+.owner-chip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 9px; }
+.age { font-weight: 650; color: var(--ink); }
+/* lifecycle flow */
+.flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.stage { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 10px 14px; min-width: 128px;
+  flex: 1 1 128px; }
+.stage b { display: block; font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink); }
+.stage .sdesc { font-size: 12px; color: var(--muted); margin-top: 3px;
+  line-height: 1.45; }
+.stage .scount { font-size: 12.5px; color: var(--series-2);
+  font-weight: 650; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.flowarr { align-self: center; color: var(--faint); font-size: 16px; }
+/* lineage chain */
+.chain { display: flex; flex-wrap: wrap; gap: 6px 8px;
+  align-items: center; }
+.chain .node { font: 650 12.5px ui-monospace, Menlo, monospace;
+  color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 8px; padding: 5px 11px; }
+.chain .carr { color: var(--series-2); font-weight: 700; }
+.worked { border: 1px dashed var(--border); border-radius: 12px;
+  padding: 12px 15px; margin-top: 14px; font-size: 13px;
+  color: var(--ink-2); line-height: 1.7; }
+.worked b { color: var(--ink); }
+.worked .carr { color: var(--series-2); }
+/* ---- card 3: component explorer ---- */
+.selrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin: 4px 0 14px; }
+.selrow select { font: 600 13px ui-sans-serif, system-ui;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 5px 12px; max-width: 100%; }
 #crumb { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
 #crumb a { cursor: pointer; }
+.modelmeta { display: grid; grid-template-columns: 130px 1fr;
+  gap: 7px 16px; font-size: 13px; margin-top: 12px; }
+.modelmeta .mk { font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted); font-weight: 600;
+  padding-top: 2px; }
+.modelmeta .mv { color: var(--ink-2); overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .crow { grid-template-columns: 1fr; }
+  .cmeta { grid-column: 1; }
+  .cright { text-align: left; }
+  .cbadge { justify-self: start; }
+  .modelmeta { grid-template-columns: 1fr; gap: 2px 0; }
+  .modelmeta .mk { margin-top: 8px; }
+}
 .kidline { font: 400 17px/1.55 var(--display); color: var(--ink);
   max-width: 64ch; margin: 6px 0 10px; }
 .kidline.tail { font-size: 14.5px; color: var(--ink-2);
@@ -101,12 +182,21 @@ body.mode-engineer .exx { display: none; }
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
-<header class="maphead">
+<header>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span> the world map</div>
+  <h1>The Quant Universe</h1>
+  <p class="sub">The whole system in three cards — the map, how it runs,
+  and a component explorer. Click any region to open it below.
+  <span id="asof" class="muted small"></span></p>
+</header>
+
+<!-- ═══ CARD 1 — THE SYSTEM MAP ═══ -->
+<section id="card-map" aria-label="the system map">
+<div class="cardhead">
   <div class="grow">
-    <div class="eyebrow"><span class="live-dot" id="dot"></span> the world map</div>
-    <h1>The Quant Universe</h1>
-    <p class="sub">The whole system as one world — zoom from continent to
-    machine. Click any region to open it. <span id="asof" class="muted small"></span></p>
+    <h2>The system map</h2>
+    <p class="mini" style="margin-top:4px">One geometry, two label sets —
+    flip the toggle and the same world reads at two depths.</p>
   </div>
   <div>
     <div class="modetog" role="group" aria-label="map mode">
@@ -116,9 +206,8 @@ body.mode-engineer .exx { display: none; }
     <div class="modehint exx">friendly names · for anyone twelve and up</div>
     <div class="modehint engx">same geometry · real component names + config</div>
   </div>
-</header>
-
-<section id="map" aria-label="system atlas">
+</div>
+<div id="map" aria-label="system atlas">
 <!--
   REGION → EMITTED-HEALTH MAPPING (world.json emits 6 region healths; the
   map draws 9 landmasses):
@@ -396,18 +485,112 @@ body.mode-engineer .exx { display: none; }
 <p class="mini engx">Status dots derive from <code>world.json</code> region
   healths (6 emitted healths mapped onto 9 landmasses — mapping documented
   in the page source). Click any node for the level-2 panel.</p>
-</section>
-
-<!-- ═══ zoom level 2 — region detail ═══ -->
-<section id="detail" aria-live="polite">
-  <div id="crumb"></div>
-  <div id="panel-body"><p class="mini">loading…</p></div>
-</section>
-
-<!-- ═══ weather strip ═══ -->
-<section id="storms">
-  <h2>Weather report</h2>
+</div>
+<div id="storms">
+  <h3 style="margin:16px 0 2px">Weather report</h3>
   <div id="storms-body"><p class="mini">reading the sky…</p></div>
+</div>
+</section>
+
+<!-- ═══ CARD 2 — HOW THE SYSTEM RUNS ═══ -->
+<section id="card-runs" aria-label="how the system runs">
+<div class="cardhead">
+  <div class="grow">
+    <h2>How the system runs</h2>
+    <p class="mini" style="margin-top:4px">Three views of the same machine:
+    what fires on a timer, how an idea earns its way to live traffic, and
+    the path a single datum travels.</p>
+  </div>
+</div>
+<div class="tabrow" role="tablist" aria-label="how the system runs">
+  <button class="chip" id="tabbtn-runtime" data-tab="runtime" role="tab"
+    type="button">Runtime</button>
+  <button class="chip" id="tabbtn-lifecycle" data-tab="lifecycle" role="tab"
+    type="button">Learning lifecycle</button>
+  <button class="chip" id="tabbtn-lineage" data-tab="lineage" role="tab"
+    type="button">Data lineage</button>
+</div>
+
+<div class="tabpane" id="tab-runtime" role="tabpanel">
+  <p class="mini" id="run-gen">loading world.json…</p>
+  <div class="cadence" id="cadence"><p class="mini">reading the clock…</p></div>
+</div>
+
+<div class="tabpane" id="tab-lifecycle" role="tabpanel">
+  <p class="sub small" style="margin:2px 0 12px">Every model and policy
+  change walks the same road; nothing skips a stage. Counts are live from
+  the experiment program and the decision board.</p>
+  <div class="flow" id="flow">
+    <div class="stage"><b>Idea</b>
+      <div class="sdesc">a hypothesis is written down before any code runs</div>
+      <div class="scount" id="lc-idea">—</div></div>
+    <span class="flowarr">→</span>
+    <div class="stage"><b>Offline</b>
+      <div class="sdesc">backtest / replay against the recorded ledgers</div>
+      <div class="scount" id="lc-offline">replay-gated</div></div>
+    <span class="flowarr">→</span>
+    <div class="stage"><b>Shadow</b>
+      <div class="sdesc">runs on live data, logged only — no orders</div>
+      <div class="scount" id="lc-shadow">logged-only</div></div>
+    <span class="flowarr">→</span>
+    <div class="stage"><b>Live A/B</b>
+      <div class="sdesc">paired against the champion in the treatment arena</div>
+      <div class="scount" id="lc-ab">—</div></div>
+    <span class="flowarr">→</span>
+    <div class="stage"><b>Promote / retire</b>
+      <div class="sdesc">SPRT verdicts only — nothing is promoted on vibes</div>
+      <div class="scount" id="lc-promote">—</div></div>
+    <span class="flowarr">→</span>
+    <div class="stage"><b>Monitor</b>
+      <div class="sdesc">audited every 10 min; regressions reopen the loop</div>
+      <div class="scount" id="lc-monitor">—</div></div>
+  </div>
+  <p class="mini" id="lc-note" style="margin-top:12px"></p>
+</div>
+
+<div class="tabpane" id="tab-lineage" role="tabpanel">
+  <p class="sub small" style="margin:2px 0 12px">Every published number can
+  be traced backwards along this chain to raw, append-only rows.</p>
+  <div class="chain">
+    <span class="node">source</span><span class="carr">→</span>
+    <span class="node">feature</span><span class="carr">→</span>
+    <span class="node">model</span><span class="carr">→</span>
+    <span class="node">policy</span><span class="carr">→</span>
+    <span class="node">trade</span><span class="carr">→</span>
+    <span class="node">experiment</span><span class="carr">→</span>
+    <span class="node">metric</span><span class="carr">→</span>
+    <span class="node">decision</span>
+  </div>
+  <div class="worked"><b>One real walk down the chain:</b><br>
+    Coinbase candle <span class="carr">→</span> σ_h15
+    <span class="carr">→</span> kb8 P(up)
+    <span class="carr">→</span> champion YES @ 67¢
+    <span class="carr">→</span> <code>treatments.jsonl</code> row
+    <span class="carr">→</span> paired Δ
+    <span class="carr">→</span> decision board</div>
+  <p class="mini" style="margin-top:12px">Rows are appended, never edited —
+  the audit chain recomputes every metric from the raw books, so the
+  daemon can never grade its own homework.</p>
+</div>
+</section>
+
+<!-- ═══ CARD 3 — COMPONENT EXPLORER ═══ -->
+<section id="card-explorer" aria-label="component explorer" aria-live="polite">
+<div class="cardhead">
+  <div class="grow">
+    <h2>Component explorer</h2>
+    <p class="mini" style="margin-top:4px">Zoom level 2 — pick a region of
+    the map, or a single model from the registry.</p>
+  </div>
+</div>
+<div class="selrow" id="region-chips"></div>
+<div class="selrow">
+  <label class="mini" for="model-pick">or one model:</label>
+  <select id="model-pick"><option value="">— model registry —</option></select>
+</div>
+<div id="crumb"></div>
+<div id="panel-body"><p class="mini">Click a landmass on the map, a region
+chip, or pick a model to open its card.</p></div>
 </section>
 
 <footer>

@@ -32,7 +32,7 @@ PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "board.html", "analyst.html", "home_classic.html", "glossary.js", "glossary.json", "nav.js",
          "universe.html", "clock.html", "agents.html", "museum.html",
          "instrument.html", "watchtower.html", "ledgers.html",
-         "diagnosis.html"]
+         "diagnosis.html", "paper.html", "archive.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -161,7 +161,11 @@ def sync_main() -> None:
         _git(SITE_REPO, "add", *staged)
         _git(SITE_REPO, "commit", "-q", "-m",
              f"btc-oracle hourly sync {time.strftime('%Y-%m-%d %H:%M')}")
-        _git(SITE_REPO, "push", "-q", _push_url(SITE_REPO), "HEAD")
+        # explicit refspec: a detached-HEAD checkout made bare "HEAD"
+        # unresolvable remotely (2026-08-29) — the push failed every
+        # minute and stacked local sync commits until reattached
+        _git(SITE_REPO, "push", "-q", _push_url(SITE_REPO),
+             "HEAD:refs/heads/main")
         print("main: synced")
     STAMP.touch()
 
