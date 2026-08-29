@@ -3,99 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — Home</title>
+<title>BTC 7PM Oracle — Playground</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---- the instrument: seven scenes, three depths ---- */
+/* ---- the playground: fun first, science always ---- */
 .scene-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
 .scene-tag b { color: var(--ink); }
-.q { font: 400 24px/1.25 var(--display); color: var(--ink); margin: 0; }
-.q .strike-amt { font-variant-numeric: tabular-nums; }
-.depths { display: flex; gap: 18px; flex-wrap: wrap; font-size: 12px;
-  color: var(--muted); margin-top: 10px; }
-.depths b { color: var(--ink-2); font-size: 10.5px; letter-spacing: .14em;
-  text-transform: uppercase; }
-details.audit { margin-top: 12px; }
-details.audit > summary { font-size: 11px; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--faint); }
-details.audit > summary:hover { color: var(--ink-2); }
-details.audit .mini { margin-top: 6px; }
-/* verdict row */
-.verdict-row { display: flex; gap: 14px; align-items: baseline;
-  flex-wrap: wrap; margin: 10px 0 2px; }
-.verdict-word { font: 650 30px/1 var(--display); color: var(--ink); }
-.act { font-size: 12px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; padding: 5px 14px; border-radius: 999px; }
-.act.trade { color: var(--good-text); background: rgba(12,138,77,.10);
-  border: 1px solid rgba(12,138,77,.35); }
-.act.hold { color: var(--muted); background: var(--surface-2);
-  border: 1px solid var(--border); }
-.nowrow { display: flex; gap: 30px; flex-wrap: wrap; margin: 14px 0 4px; }
-.nowrow .stat .bignum { font-size: 22px; }
-/* argument diagram */
-.arg svg text { fill: var(--ink-2); }
-/* last-window strip */
-.lastline { display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
-.lastline .res { font: 650 26px/1 var(--display); }
-.res.won { color: var(--good-text); } .res.lost { color: var(--down); }
-.glyphs { font-size: 17px; letter-spacing: 6px; font-variant-numeric: tabular-nums; }
-.glyphs .w { color: var(--good-text); } .glyphs .l { color: var(--down); }
-/* ablation registry */
-.abl { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
-  gap: 8px; margin: 12px 0 4px; }
-.abl > div { border: 1px solid var(--border); border-radius: 10px;
-  padding: 8px 12px; background: var(--surface-2); font-size: 12px;
-  color: var(--ink-2); line-height: 1.45; }
-.abl .g { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+
+/* 01 · hero */
+.hero-q { font: 400 clamp(26px, 4.6vw, 44px)/1.18 var(--display);
+  color: var(--ink); margin: 6px 0 10px; max-width: 21em; }
+.hero-sub { color: var(--ink-2); max-width: 62ch; font-size: 15px; }
+.badges { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 4px; }
+.badge { font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; padding: 6px 14px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-2); }
+.badge.b-live { color: var(--good-text); border-color: rgba(12,138,77,.4);
+  background: rgba(12,138,77,.08); }
+.badge.b-fake { color: var(--series-4); border-color: rgba(143,96,0,.4);
+  background: rgba(143,96,0,.07); }
+.badge.b-exp { color: var(--series-2); border-color: rgba(36,97,184,.4);
+  background: rgba(36,97,184,.07); }
+.state-tbl { margin-top: 14px; }
+.state-tbl table { min-width: 620px; }
+.state-tbl .verdict { font-weight: 800; letter-spacing: .04em; }
+
+/* 02 · play */
+.playgrid { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
+.playq { font: 400 clamp(21px, 3vw, 30px)/1.25 var(--display); color: var(--ink); }
+.play-stats { display: flex; gap: 26px; flex-wrap: wrap; margin: 12px 0 4px; }
+.pickrow { display: flex; gap: 12px; margin: 14px 0 6px; }
+.pickbtn { flex: 0 1 190px; font: 800 20px/1 ui-sans-serif, system-ui;
+  letter-spacing: .06em; padding: 18px 10px; border-radius: 16px;
+  border: 2px solid var(--border); background: var(--surface);
+  cursor: pointer; color: var(--ink-2);
+  transition: transform .12s ease, border-color .12s ease; }
+.pickbtn:hover { transform: translateY(-2px); }
+.pickbtn.yes { border-color: rgba(12,138,77,.5); color: var(--good-text); }
+.pickbtn.no  { border-color: rgba(209,60,60,.5); color: var(--down); }
+.pickbtn.picked { background: var(--surface-2); border-width: 3px;
+  transform: none; }
+.pickbtn:disabled { opacity: .45; cursor: default; transform: none; }
+.pickbtn small { display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; color: var(--muted); margin-top: 6px; }
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px; margin-top: 12px; }
+.compare > div { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 10px 14px; }
+.compare .who { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
   text-transform: uppercase; color: var(--muted); }
-.abl b { color: var(--ink); }
-.sw2 { display: inline-block; width: 9px; height: 9px; border-radius: 3px;
-  margin-right: 5px; vertical-align: -1px; }
-#race-wrap { position: relative; }
-#race-tip { position: absolute; pointer-events: none; display: none;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 6px 18px rgba(22,32,44,.12);
-  padding: 8px 12px; font-size: 11.5px; line-height: 1.6; z-index: 5;
-  font-variant-numeric: tabular-nums; white-space: nowrap; }
-/* scatter headline */
-.headline { font: 400 28px/1.2 var(--display); color: var(--ink); margin: 2px 0 0; }
-.pair { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 10px; }
-.pair > div { border-top: 2px solid var(--ink); padding-top: 8px; min-width: 200px; }
-.pair b { font: 700 21px/1.2 var(--display); font-variant-numeric: tabular-nums; }
-.pair span { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
-/* falsification timeline */
-.tl { list-style: none; margin: 12px 0 0; padding: 0; position: relative; }
-.tl::before { content: ""; position: absolute; left: 84px; top: 4px; bottom: 4px;
-  width: 1px; background: var(--border); }
-.tl li { display: flex; gap: 16px; padding: 5px 0; font-size: 13px;
-  color: var(--ink-2); align-items: baseline; }
-.tl .d { flex: 0 0 66px; text-align: right; font-size: 11px; font-weight: 700;
-  letter-spacing: .08em; color: var(--muted); font-variant-numeric: tabular-nums; }
-.tl .m { flex: 0 0 20px; text-align: center; position: relative; }
-.tl .m.x { color: var(--down); } .tl .m.live { color: var(--good-text); }
-/* scale equation */
-.eq { display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-  margin: 14px 0 4px; font-variant-numeric: tabular-nums; }
-.eq .term { text-align: center; padding: 9px 14px; border: 1px solid var(--border);
-  border-radius: 12px; background: var(--surface-2); }
-.eq .term b { display: block; font: 650 25px/1.15 var(--display); }
-.eq .term span { font-size: 10px; font-weight: 700; letter-spacing: .13em;
-  text-transform: uppercase; color: var(--muted); display: block;
-  max-width: 170px; margin: 0 auto; line-height: 1.5; }
-.eq .op { font: 400 26px var(--display); color: var(--muted); }
-.eq .term.verdict-t { border-color: currentColor; }
-.eq b.neg, .neg { color: var(--down); } .eq b.pos, .pos { color: var(--good-text); }
-/* footer status strip */
-.status-strip { display: flex; gap: 26px; flex-wrap: wrap; align-items: center;
-  font-size: 12.5px; color: var(--ink-2); }
-.status-strip .on::before { content: "● "; color: var(--good-text); }
-.status-strip .off::before { content: "○ "; color: var(--muted); }
-.links-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-.research-banner { font-size: 11.5px; padding: 6px 14px; }
+.compare .say { font: 650 22px/1.25 var(--display); color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.compare .say.yes { color: var(--good-text); } .compare .say.no { color: var(--down); }
+.lasttime { margin-top: 12px; border-left: 3px solid var(--series-2);
+  padding: 6px 14px; font-size: 13.5px; color: var(--ink-2);
+  background: var(--surface-2); border-radius: 0 10px 10px 0; }
+.lasttime b.right { color: var(--good-text); } .lasttime b.wrong { color: var(--down); }
+
+/* 03 · traders */
+.crew { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px; margin-top: 10px; }
+.trader { border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 15px 10px; background: var(--surface-2); position: relative;
+  border-top: 3px solid var(--border); }
+.trader .face { font-size: 25px; line-height: 1; }
+.trader .tname { font: 650 18px/1.2 var(--display); color: var(--ink); margin-top: 4px; }
+.trader .tgrp { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); }
+.trader .tsay { font-size: 12.5px; color: var(--ink-2); font-style: italic;
+  margin: 5px 0 7px; }
+main > section { padding: 17px 20px; }
+main { gap: 14px; }
+.trader .teq { font-variant-numeric: tabular-nums; font-weight: 700;
+  font-size: 15px; color: var(--ink); }
+.trader .tret { font-variant-numeric: tabular-nums; font-weight: 700; }
+.tret.up { color: var(--good-text); } .tret.dn { color: var(--down); }
+.trader .oops { font-size: 11.5px; color: var(--muted); margin-top: 8px;
+  border-top: 1px dashed var(--border); padding-top: 7px; line-height: 1.5; }
+.trader .oops b { font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--faint); display: block; margin-bottom: 2px; }
+
+/* 04 · wallet lab */
+.rulechips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.walletline { display: flex; gap: 24px; flex-wrap: wrap; align-items: baseline;
+  margin-top: 8px; }
+.walletline .final { font: 650 34px/1 var(--display);
+  font-variant-numeric: tabular-nums; }
+#wallet-chart .rule-path { stroke-dasharray: 2200; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  #wallet-chart .rule-path.animate { animation: drawline 1.6s ease-out; }
+  @keyframes drawline { from { stroke-dashoffset: 2200; } to { stroke-dashoffset: 0; } }
+}
+
+/* 05 · mini world */
+.worldlink { display: block; border: none !important; }
+.worldlink:hover .wmap-frame { border-color: var(--series-2); }
+.wmap-frame { border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface-2); padding: 8px 10px 4px; }
+.wmap-cap { text-align: center; font-size: 12.5px; color: var(--series-2);
+  font-weight: 700; margin: 6px 0 8px; }
+
+/* 06 · lab now */
+.labrows { display: grid; gap: 6px; margin-top: 8px; }
+.labrow { display: flex; gap: 12px; align-items: baseline; font-size: 13.5px;
+  color: var(--ink-2); border-bottom: 1px solid var(--grid); padding: 5px 0; }
+.labrow .lwho { flex: 0 0 108px; font-weight: 700; color: var(--ink); }
+.ldot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--faint); align-self: center; }
+.ldot.g { background: var(--good); } .ldot.a { background: var(--series-4); }
+
+/* 07 · museum + incidents */
+.museum3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px; margin-top: 10px; }
+.mus { border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px;
+  background: var(--surface-2); color: inherit; }
+a.mus { border-bottom: 1px solid var(--border) !important; }
+a.mus:hover { border-color: var(--series-2) !important; }
+.mus .mt { font: 650 17px/1.2 var(--display); color: var(--ink); }
+.mus .mv { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--down); }
+.mus p { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+.incrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+
+/* 08 · explore */
+.grid-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px; margin-top: 10px; }
+.glink { border: 1px solid var(--border) !important; border-radius: 12px;
+  padding: 11px 14px; background: var(--surface-2); color: var(--ink) !important;
+  font-weight: 700; font-size: 13.5px; }
+.glink:hover { border-color: var(--series-2) !important; }
+.glink span { display: block; font-weight: 400; font-size: 11.5px;
+  color: var(--muted); margin-top: 2px; }
+.integrity { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); }
+.integrity span::before { content: "◆ "; color: var(--series-2); }
+
 svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
   fill: var(--faint); }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+@media (max-width: 560px) {
+  .pickbtn { flex: 1 1 40%; }
+  .walletline .final { font-size: 27px; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important;
+  transition: none !important; } }
 </style>
 </head>
 <body>
@@ -117,127 +169,127 @@ svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
-<header>
+
+<!-- ============ 01 · HERO — THE QUANT UNIVERSE ============ -->
+<section>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
-    Live scientific instrument · <span id="asof">loading…</span></div>
-  <h1>Prediction → Decision → Outcome → Evidence → Falsification</h1>
-  <div class="depths">
-    <div><b>Glance</b> — the headlines</div>
-    <div><b>Explore</b> — the charts &amp; toggles</div>
-    <div><b>Audit</b> — the ⌄ drawers &amp; <a href="ab_dashboard.html">ledgers</a> · classic full-density view: <a href="home_classic.html">home_classic</a></div>
+    The Quant Universe · <span id="asof">loading…</span></div>
+  <h1 class="hero-q">Can AI learn when to predict, when to bet — and when to do nothing?</h1>
+  <p class="hero-sub">This site is a real research desk that trades <b>fake
+  money</b> on a <b>real market</b> — Bitcoin, every 15 minutes, around the
+  clock. Robot traders make predictions, place paper bets, get graded, and the
+  ideas that fail get killed in public. Everything below is live data;
+  nothing is made up.</p>
+  <div class="badges">
+    <span class="badge b-live">● Live data</span>
+    <span class="badge b-fake">Fake money</span>
+    <span class="badge b-exp">Real experiments</span>
   </div>
-</header>
-
-<!-- ============ 01 · NOW ============ -->
-<section>
-  <div class="scene-tag"><b>01 · Now</b> · the live question</div>
-  <h2 class="q" id="s1-q">Will Bitcoin finish this window above <span class="strike-amt">$—</span>?</h2>
-  <div id="prob-axis"><p class="mini">reading online_status.json…</p></div>
-  <div class="verdict-row">
-    <span class="verdict-word" id="s1-lean">—</span>
-    <span class="act hold" id="s1-act">—</span>
-    <span class="mini" id="s1-gate" style="margin:0"></span>
+  <div class="state-tbl scroll" id="sci-state">
+    <p class="mini">reading the audit…</p>
   </div>
-  <div class="nowrow">
-    <div class="stat"><div class="k">BTC now</div><div class="bignum" id="s1-px">—</div></div>
-    <div class="stat"><div class="k">Strike</div><div class="bignum" id="s1-strike">—</div></div>
-    <div class="stat"><div class="k">Window closes in</div><div class="bignum" id="s1-left">—</div></div>
+</section>
+
+<!-- ============ 02 · PLAY THIS WINDOW ============ -->
+<section>
+  <div class="scene-tag"><b>02 · Play this window</b> · beat the robots (no money, just bragging rights)</div>
+  <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
+  <div class="play-stats">
+    <div class="stat"><div class="k">BTC now</div><div class="bignum" id="play-px">—</div></div>
+    <div class="stat"><div class="k">The line to beat</div><div class="bignum" id="play-strike2">—</div></div>
+    <div class="stat"><div class="k">Window closes in</div><div class="bignum" id="play-left">—</div></div>
   </div>
-  <div id="px-chart"></div>
-  <details class="audit"><summary>Audit · raw market view</summary>
-    <p class="mini" id="s1-audit">—</p></details>
-</section>
-
-<!-- ============ 02 · WHY ============ -->
-<section>
-  <div class="scene-tag"><b>02 · Why</b> · the trade / abstain argument</div>
-  <div class="arg" id="arg-diagram"><p class="mini">assembling the evidence…</p></div>
-</section>
-
-<!-- ============ 03 · LAST WINDOW ============ -->
-<section>
-  <div class="scene-tag"><b>03 · Last window</b> · the loop closes</div>
-  <div class="lastline" id="s3-line"><p class="mini">reading pt_trades.jsonl…</p></div>
-  <p class="mini" id="s3-strip"></p>
-  <details class="audit"><summary>Audit · last 10 settled desk bets</summary>
-    <div class="scroll" id="s3-table"></div></details>
-</section>
-
-<!-- ============ 04 · POLICY EXPERIMENT ============ -->
-<section>
-  <div class="scene-tag"><b>04 · Policy experiment</b> · one signal, eight ways to act on it</div>
-  <div class="abl" id="abl"></div>
-  <div class="legend" style="margin-top:12px">
-    <button class="chip on" id="v-ret">Return since policy start (%)</button>
-    <button class="chip" id="v-usd">Bankroll $</button>
+  <div class="pickrow">
+    <button class="pickbtn yes" id="btn-yes" type="button">YES ⬆<small>finishes above</small></button>
+    <button class="pickbtn no" id="btn-no" type="button">NO ⬇<small>finishes below</small></button>
   </div>
-  <div id="race-wrap">
-    <div id="race-chart"><p class="mini">loading the race…</p></div>
-    <div id="race-tip"></div>
+  <div id="compare-card"></div>
+  <div id="lasttime"></div>
+  <div id="play-chart"></div>
+  <p class="mini" id="play-src">strike + model probability from
+  <code>online_status.json .pm</code> · gate τ from
+  <code>site_manifest.json .config</code> · your pick stays in your browser only</p>
+</section>
+
+<!-- ============ 03 · MEET THE TRADERS ============ -->
+<section>
+  <div class="scene-tag"><b>03 · Meet the traders</b> · eight robots, one lesson each — live money (fake) on every card</div>
+  <div class="crew" id="crew"><p class="mini">reading the eight ledgers…</p></div>
+  <p class="mini">equity = start capital + every settled paper bet in that robot's
+  append-only ledger (<code>results/pt*_trades.jsonl</code>) · Gambler shows
+  policy v2 only · abstentions and unfilled limit orders excluded from money ·
+  full race on <a href="instrument.html">the Instrument</a></p>
+</section>
+
+<!-- ============ 04 · YOUR $1,000 LAB ============ -->
+<section>
+  <div class="scene-tag"><b>04 · Your $1,000 lab</b> · pick a rule, replay the real last <span id="w-n">—</span> windows</div>
+  <p class="sub small" style="margin-top:0">Start with $1,000 of fake money and
+  bet $100 a window on the desk's own predictions — but <i>your</i> rule decides
+  which windows to sit out. Same real windows, same real prices; only the rule
+  differs.</p>
+  <div class="rulechips" id="rulechips" role="radiogroup" aria-label="wallet rule"></div>
+  <div id="wallet-chart"><p class="mini">reading treatments.jsonl…</p></div>
+  <div class="walletline" id="walletline"></div>
+  <div class="scroll" id="wallet-table"></div>
+  <p class="mini">same real windows, same real prices — only the rule differs;
+  $100 fake stake per window · EV series per policy from
+  <code>results/treatments.jsonl</code> (null = that rule skipped the window) ·
+  a wallet that hits $0 is busted and stops</p>
+</section>
+
+<!-- ============ 05 · THE WORLD ============ -->
+<section>
+  <div class="scene-tag"><b>05 · The world</b> · the whole machine drawn as a map</div>
+  <a class="worldlink" href="universe.html" aria-label="open the full world map">
+    <div class="wmap-frame" id="wmap"></div>
+    <div class="wmap-cap">walk the full map →</div>
+  </a>
+</section>
+
+<!-- ============ 06 · THE LAB IS WORKING NOW ============ -->
+<section>
+  <div class="scene-tag"><b>06 · The lab is working right now</b> · who did what, how recently</div>
+  <div class="labrows" id="labrows"><p class="mini">reading world.json…</p></div>
+</section>
+
+<!-- ============ 07 · WHAT WE LEARNED + WHAT BROKE ============ -->
+<section>
+  <div class="scene-tag"><b>07 · What we learned (and what broke)</b> · real failed ideas, kept on display</div>
+  <div class="museum3">
+    <a class="mus" href="museum.html"><span class="mv">dropped</span>
+      <div class="mt">The Toxic Hour</div>
+      <p>9 AM looked cursed. But if you search 24 hours for a cursed one, luck
+      alone makes about two look cursed — we found exactly two (p=0.60).</p></a>
+    <a class="mus" href="museum.html"><span class="mv">retired</span>
+      <div class="mt">The Late Genius</div>
+      <p>One robot was the most accurate of all — three minutes before the
+      answer, when it was too late to bet. Right-too-late pays nothing.</p></a>
+    <a class="mus" href="museum.html"><span class="mv">measured live</span>
+      <div class="mt">The Cheap Limit Order</div>
+      <p>Paying less sounded smarter — but the cheap bid gets filled fastest
+      exactly when the market just learned you're wrong.</p></a>
   </div>
-  <div class="scroll" id="board"></div>
-  <details class="audit"><summary>Audit · what counts as a trade</summary>
-    <p class="mini">Equity = start capital + cumulative settled pnl_c per desk ledger
-    (<code>results/pt*_trades.jsonl</code>). Saver's banked skims stay in equity.
-    Gambler shows policy v2 only (rows with made_ts ≥ 1787788353: gate + $10k reset).
-    MLE / Patient / Ideal rows flagged <code>skipped:true</code> are abstentions or
-    unfilled limit orders — excluded from money views. Today = settled pnl since
-    midnight PT.</p></details>
+  <div class="incrow" id="incrow"><span class="mini">reading incidents.jsonl…</span></div>
 </section>
 
-<!-- ============ 05 · DOES PREDICTION BECOME PROFIT? ============ -->
+<!-- ============ 08 · EXPLORE EVERYTHING ============ -->
 <section>
-  <div class="scene-tag"><b>05 · Does prediction become profit?</b></div>
-  <p class="headline">Accuracy is not edge.</p>
-  <div id="scatter"><p class="mini">reading model_internals.json…</p></div>
-  <div class="pair" id="s5-pair"></div>
-  <details class="audit"><summary>Audit · per-arm probability quality vs economics</summary>
-    <div class="scroll" id="s5-table"></div></details>
-</section>
-
-<!-- ============ 06 · WHAT WE'VE LEARNED ============ -->
-<section>
-  <div class="scene-tag"><b>06 · What we've learned</b> · the falsification record</div>
-  <ul class="tl">
-    <li><span class="d">AUG 21</span><span class="m x">✕</span><span>price direction alone: 48–54% — no signal</span></li>
-    <li><span class="d">AUG 22</span><span class="m x">✕</span><span>always betting: −EV after fees — accuracy isn't enough</span></li>
-    <li><span class="d">AUG 25</span><span class="m x">✕</span><span>five foundation-model upgrades: all tied — bigger ≠ better</span></li>
-    <li><span class="d">AUG 26</span><span class="m">◆</span><span>SEV-0: the audit era begins</span></li>
-    <li><span class="d">AUG 28</span><span class="m x">✕</span><span>toxic-hour theory: p=0.60 — data dredging, dropped</span></li>
-    <li><span class="d">AUG 28</span><span class="m x">✕</span><span>naive maker orders: −5.2%/$1 paired — better price ≠ better fills</span></li>
-    <li><span class="d">NOW</span><span class="m live">●</span><span>confidence gates + execution guards — running live under SPRT</span></li>
-  </ul>
-  <p class="mini">frozen results, dated at retirement · full record on <a href="sev0.html">SEV-0</a> and <a href="ab_dashboard.html">Results</a></p>
-</section>
-
-<!-- ============ 07 · CAN IT SCALE? ============ -->
-<section>
-  <div class="scene-tag"><b>07 · Can it scale?</b> · computed, not asserted</div>
-  <div class="eq" id="s7-eq"><p class="mini">computing from the desk ledger…</p></div>
-  <p class="mini">Any compounding scenario is hypothetical until the measured win
-  rate exceeds the real execution break-even.</p>
-  <details class="audit"><summary>Counterfactual simulations</summary>
-    <p class="mini">The worked $2M problem set, detection-aware stealth model and
-    ladder plan live on the <a href="home_classic.html">classic view</a>; the audit
-    methodology on <a href="sev0.html">SEV-0</a>; per-arm economics in the
-    <a href="metrics_lab.html">Metrics Lab</a>.</p></details>
-</section>
-
-<!-- ============ FOOTER STATUS STRIP ============ -->
-<section>
-  <div class="status-strip" id="sys">
-    <span class="on" id="sys-cb">Coinbase LIVE</span>
-    <span class="on">Kalshi sandbox AUTHENTICATED</span>
-    <span class="on">Ledger APPEND-ONLY</span>
-    <span class="off">Production trading DISABLED</span>
+  <div class="scene-tag"><b>08 · Explore everything</b> · every claim above has a deeper room behind it</div>
+  <div class="grid-links">
+    <a class="glink" href="instrument.html">The Instrument<span>the scientific-instrument view of this page</span></a>
+    <a class="glink" href="universe.html">World Map<span>the whole system as one atlas</span></a>
+    <a class="glink" href="metrics_lab.html">Decision Board<span>every metric, with uncertainty</span></a>
+    <a class="glink" href="board.html">Experiment Board<span>what's testing, holding, killed</span></a>
+    <a class="glink" href="agents.html">Agent HQ<span>who is allowed to do what</span></a>
+    <a class="glink" href="clock.html">System Clock<span>every scheduled heartbeat</span></a>
+    <a class="glink" href="museum.html">Museum of Failures<span>dead ideas, honest plaques</span></a>
+    <a class="glink" href="analyst.html">The Analyst<span>inside the models' heads</span></a>
+    <a class="glink" href="home_classic.html">Classic Ledgers<span>the full-density original</span></a>
   </div>
-  <div class="links-row">
-    <a class="chip" href="ab_dashboard.html">Ledger</a>
-    <a class="chip" href="metrics_lab.html">Models</a>
-    <a class="chip" href="sev0.html">Methodology</a>
-    <a class="chip" href="analyst.html">Analyst</a>
-    <a class="chip" href="board.html">Board</a>
-    <a class="chip" href="home_classic.html">Classic view</a>
+  <div class="integrity">
+    <span>paper only</span><span>append-only ledgers</span>
+    <span>forward-tested</span><span>every claim traceable</span>
   </div>
 </section>
 
@@ -248,7 +300,7 @@ NYU Deep Learning course project · data: Coinbase, Kalshi, OKX, Deribit
 
 <script>
 "use strict";
-/* helpers — same conventions as the classic page */
+/* helpers — same conventions as the instrument page */
 const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" +
   Math.floor(Date.now() / 15000) * 15;
 async function jget(p) {
@@ -266,133 +318,257 @@ async function jsonl(p) {
 const $id = i => document.getElementById(i);
 const moneyC = c => (c < 0 ? "−$" : "$") +
   Math.abs(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });
+const money = v => (v < 0 ? "−$" : "$") +
+  Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
 const fmtPT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
   { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
     hour12: false });
 const esc = s => String(s).replace(/[&<>]/g,
   c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const ageTxt = s => s < 0 ? "future-stamped" : s < 90 ? Math.round(s) + "s ago"
+  : s < 5400 ? Math.round(s / 60) + "m ago" : s < 172800
+  ? (s / 3600).toFixed(1) + "h ago" : Math.round(s / 86400) + "d ago";
 
-/* the eight desks as ablation questions — fixed categorical order/colors */
+/* the eight desks — same starts, cuts and skip rules as the instrument page */
 const DESKS = [
-  { id: "pt",  name: "Follower",    grp: "Signal selection",
-    q: "does chasing the hot model work?",      start: 100000, c: "var(--series-1)" },
-  { id: "pt3", name: "Disciplined", grp: "Confidence",
-    q: "does a 77% gate save you?",             start: 100000, c: "var(--series-2)" },
-  { id: "pt4", name: "Gambler",     grp: "Sizing",
-    q: "does betting big beat betting smart?",  start: 1000000, c: "var(--series-3)",
-    cut: 1787788353, note: "v2" },
-  { id: "pt5", name: "Saver",       grp: "Capital",
-    q: "does banking wins protect capital?",    start: 1000000, c: "var(--series-4)" },
-  { id: "pt7", name: "Patient",     grp: "Execution",
-    q: "does a better price beat a fast fill?", start: 100000, c: "var(--series-5)",
-    skips: true },
-  { id: "pt8", name: "Ideal",       grp: "Composite",
-    q: "do all the lessons stack?",             start: 100000, c: "var(--series-6)",
-    skips: true },
-  { id: "pt6", name: "MLE",         grp: "Learning",
-    q: "can a model learn when to bet?",        start: 100000, c: "var(--series-7)",
-    skips: true },
-  { id: "pt2", name: "Ladder",      grp: "Compounding",
-    q: "does compounding survive drawdowns?",   start: 100000, c: "var(--series-8)" },
+  { id: "pt",  name: "Follower", emo: "🦊", grp: "Momentum / selection",
+    say: "“I follow whoever's been hottest.”", start: 100000, c: "var(--series-1)",
+    oops: "I chased the arms that just echoed the market — a hot streak isn't skill." },
+  { id: "pt2", name: "Ladder", emo: "🐢", grp: "Compounding",
+    say: "“I climb by compounding.”", start: 100000, c: "var(--series-8)",
+    oops: "Compounding grew my stakes right into the Aug 27 losing streak — the ladder works both ways." },
+  { id: "pt3", name: "Disciplined", emo: "🦉", grp: "Selective prediction",
+    say: "“I wait for high confidence.”", start: 100000, c: "var(--series-2)",
+    skips: false,
+    oops: "I only bet at ≥77% confidence — but my confident entries cost more than my win rate paid back." },
+  { id: "pt4", name: "Gambler", emo: "🐉", grp: "Sizing / variance",
+    say: "“Good predictions can still go badly if I bet too big.”",
+    start: 1000000, c: "var(--series-3)", cut: 1787788353,
+    oops: "I put $1,911 on one window at negative edge. The prediction was fine. The bet size wasn't." },
+  { id: "pt5", name: "Saver", emo: "🐿️", grp: "Capital protection",
+    say: "“I bank my wins.”", start: 1000000, c: "var(--series-4)",
+    oops: "I skimmed every win into the bank — while my table stakes kept bleeding a little every window." },
+  { id: "pt7", name: "Patient", emo: "🦩", grp: "Execution / limit orders",
+    say: "“I bid low and wait.”", start: 100000, c: "var(--series-5)", skips: true,
+    oops: "My low bids got filled exactly when the market repriced against me. A cheap fill is a warning." },
+  { id: "pt6", name: "MLE", emo: "🤖", grp: "Learned abstention",
+    say: "“I learned when to say no.”", start: 100000, c: "var(--series-7)", skips: true,
+    oops: "My biggest early mistake was betting at all. Now I say no 84% of the time — and it's my whole edge." },
+  { id: "pt8", name: "Ideal", emo: "👑", grp: "All lessons stacked",
+    say: "“All the lessons, stacked.”", start: 100000, c: "var(--series-6)", skips: true,
+    oops: "Almost every window fails one of my tests — so I barely trade. Doing nothing is a position too." },
 ];
 
-let TAU = null, TAU_SRC = "";   /* trade gate — read from manifest, never hardcoded */
-let raceView = "ret";
-let cdTimer = null, cdClose = null;
+/* wallet rules → EV keys in treatments.jsonl */
+const RULES = [
+  { k: "champion", name: "Follow every window",
+    kid: "bet the desk's call every single window" },
+  { k: "t_regime", name: "Skip shaky markets",
+    kid: "sit out when the market itself has been guessing badly" },
+  { k: "t_knife",  name: "Skip coin-flips",
+    kid: "sit out when the price is basically 50/50" },
+  { k: "t_cheap",  name: "Only cheap prices",
+    kid: "only bet when the contract is cheap" },
+  { k: "t_limit",  name: "Bid low & wait",
+    kid: "post a lower price and hope someone takes it" },
+];
 
-/* ---------- scene 01 · NOW ---------- */
-function drawNow(st, prices) {
-  const pm = (st || {}).pm || null;
-  const box = $id("prob-axis");
-  const closeTs = pm && pm.close_time ? Date.parse(pm.close_time) / 1000 : null;
-  const px = st && (st.price_now || (st.brti && st.brti.price));
-  $id("s1-px").textContent = px
-    ? "$" + px.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
-  if (!pm || pm.strike == null || pm.model_p_up == null
-      || (closeTs && closeTs * 1000 < Date.now())) {
-    $id("s1-q").innerHTML = "Between windows — waiting for the next 15-minute contract.";
-    box.innerHTML = '<p class="mini">no live market view in online_status.json right now</p>';
-    $id("s1-lean").textContent = "—";
-    $id("s1-act").textContent = "STANDING BY";
-    $id("s1-act").className = "act hold";
-    $id("s1-strike").textContent = "—"; $id("s1-left").textContent = "—";
-    return;
+let TAU = null, TAU_SRC = "";
+let cdTimer = null, cdClose = null;
+let S = {};                      /* latest fetched data */
+let walletRule = "t_regime";
+let walletFirstDraw = true;
+
+/* ---------- 01 · scientific state ---------- */
+function drawSciState() {
+  const rows = [];
+  /* market-relative edge — best BSS across tier-2 arms in the audit */
+  let edge = 'NOT ESTABLISHED — market-relative audit not published';
+  let edgeClass = "muted";
+  const t2 = S.audit && S.audit.sections && S.audit.sections.tier2;
+  if (t2) {
+    let bk = null, bv = -Infinity;
+    for (const [k, v] of Object.entries(t2))
+      if (v && v.bss_vs_market != null && v.bss_vs_market > bv) {
+        bv = v.bss_vs_market; bk = k; }
+    if (bk != null)
+      edge = `NOT ESTABLISHED <span class="muted">(best arm vs the market: BSS ${bv >= 0 ? "+" : "−"}${Math.abs(bv).toFixed(3)}, ${esc(bk)}${bv > 0 ? " — positive this sample, no significance yet" : ""})</span>`;
   }
-  const p = pm.model_p_up;                      // model P(finish above strike)
-  const conf = Math.max(p, 1 - p);
-  const mkt = pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;   // market mid, 0..1
-  $id("s1-q").innerHTML = 'Will Bitcoin finish this window above ' +
-    '<span class="strike-amt">$' +
-    pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 }) + "</span>?";
-  $id("s1-strike").textContent = "$" +
-    pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  /* countdown */
-  cdClose = closeTs;
-  if (!cdTimer) cdTimer = setInterval(() => {
-    if (!cdClose) return;
-    const s = Math.max(0, cdClose - Date.now() / 1000);
-    $id("s1-left").textContent =
-      Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
-  }, 1000);
-  const s0 = Math.max(0, closeTs - Date.now() / 1000);
-  $id("s1-left").textContent =
-    Math.floor(s0 / 60) + ":" + String(Math.floor(s0 % 60)).padStart(2, "0");
-  /* verdict */
-  const lean = p >= 0.5 ? "YES lean" : "NO lean";
-  const gated = TAU != null && conf >= TAU;
-  $id("s1-lean").textContent = lean;
-  $id("s1-act").textContent = TAU == null ? "GATE UNKNOWN" : gated ? "TRADE" : "NO TRADE";
-  $id("s1-act").className = "act " + (gated ? "trade" : "hold");
-  $id("s1-gate").textContent = TAU == null
-    ? "trade gate not present in site_manifest.json config"
-    : `confidence ${(100 * conf).toFixed(1)}% vs gate τ ${TAU} (${TAU_SRC})`;
-  /* the probability rendered physically: 0–100 axis, abstain band, dots */
-  const W = 920, H = 96, L = 30, R = 30, ax = 58;
-  const X = v => L + v * (W - L - R);
-  let g = `<line x1="${L}" x2="${W - R}" y1="${ax}" y2="${ax}" class="axis"/>`;
-  for (const v of [0, .25, .5, .75, 1])
-    g += `<line x1="${X(v)}" x2="${X(v)}" y1="${ax - 4}" y2="${ax + 4}" class="axis"/>` +
-      `<text x="${X(v)}" y="${ax + 20}" text-anchor="middle">${100 * v}%</text>`;
-  if (TAU != null) {
-    /* abstain band between the two gates */
-    g += `<rect x="${X(1 - TAU)}" y="${ax - 13}" width="${X(TAU) - X(1 - TAU)}"
-      height="26" fill="var(--grid)"/>`;
-    for (const t of [1 - TAU, TAU])
-      g += `<line x1="${X(t)}" x2="${X(t)}" y1="${ax - 16}" y2="${ax + 16}"
-        stroke="var(--series-4)" stroke-width="1.6" stroke-dasharray="4 3"/>`;
-    g += `<text x="${X(TAU)}" y="${ax - 22}" text-anchor="middle"
-      style="fill:var(--series-4)">trade gate ${(100 * TAU).toFixed(0)}%</text>` +
-      `<text x="${X((1) / 2)}" y="${ax + 2}" text-anchor="middle" dy="2"
-      class="qlab" style="display:none"></text>` +
-      `<text x="${X(0.5)}" y="${ax - 18}" text-anchor="middle" class="qlab">abstain zone</text>`;
+  rows.push(["Market-relative edge", edge,
+    '<a href="metrics_lab.html">audit tier-2</a>']);
+  /* best challenger */
+  let ch = "—";
+  const db = S.db;
+  if (db && db.summary && db.summary.best_candidate) {
+    const key = db.summary.best_candidate;
+    const t = (db.treatments || []).find(x => x.key === key);
+    ch = esc(t && t.label ? t.label : key);
+  } else ch = "not published in decision_board.json";
+  rows.push(["Best challenger policy", ch, '<a href="metrics_lab.html">decision board</a>']);
+  /* live experiments */
+  let ex = "not published";
+  if (db && db.summary && db.summary.states) {
+    const st = db.summary.states;
+    const live = Object.entries(st).filter(([k]) => k !== "BASELINE")
+      .reduce((a, [, v]) => a + v, 0);
+    ex = `<b>${live}</b> live <span class="muted">(${Object.entries(st)
+      .map(([k, v]) => v + " " + k.toLowerCase().replace("_", "-")).join(" · ")})</span>`;
   }
-  const clampX = x => Math.max(L + 34, Math.min(W - R - 34, x));
-  if (mkt != null)
-    g += `<circle cx="${X(mkt)}" cy="${ax}" r="4" fill="none"
-      stroke="var(--ink-2)" stroke-width="1.6"><title>market mid ${(100 * mkt).toFixed(1)}%</title></circle>` +
-      `<text x="${clampX(X(mkt))}" y="${ax + 34}" text-anchor="middle">market ${(100 * mkt).toFixed(1)}%</text>`;
-  const dotCol = p >= 0.5 ? "var(--up)" : "var(--down)";
-  g += `<line x1="${X(p)}" x2="${X(p)}" y1="${ax - 26}" y2="${ax}"
-    stroke="${dotCol}" stroke-width="1.4"/>` +
-    `<circle cx="${X(p)}" cy="${ax}" r="8" fill="${dotCol}"
-    stroke="var(--surface)" stroke-width="2"><title>model P(above) ${(100 * p).toFixed(1)}%</title></circle>` +
-    `<text x="${clampX(X(p))}" y="${ax - 32}" text-anchor="middle"
-    style="fill:${dotCol};font-weight:700">model ${(100 * p).toFixed(1)}%</text>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="model probability on a 0 to 100 percent axis with the trade gate">${g}</svg>`;
-  $id("s1-audit").innerHTML =
-    `<code>${esc(pm.ticker || "?")}</code> · strike ${pm.strike} · ` +
-    `model_p_up ${p} · yes_bid/ask ${pm.yes_bid}/${pm.yes_ask}¢ · ` +
-    `closes ${closeTs ? fmtPT(closeTs) + " PT" : "?"} · ` +
-    `source <code>online_status.json .pm</code> · gate from ` +
-    `<code>site_manifest.json .config</code>`;
-  drawPx(prices, st, pm);
+  rows.push(["Experiments running", ex, '<a href="board.html">board</a>']);
+  /* open incidents */
+  const inc = S.incidents || [];
+  const open = inc.filter(i => String(i.status || "").toLowerCase() !== "closed");
+  rows.push(["Open incidents",
+    inc.length ? `<b>${open.length}</b> open <span class="muted">(worst: SEV-${Math.min(...open.map(i => i.sev))})</span>`
+      : "incidents.jsonl unavailable",
+    '<a href="sev0.html">SEV log</a>']);
+  /* open human decisions */
+  rows.push(["Decisions waiting on the human",
+    S.board && S.board.open_decisions
+      ? `<b>${S.board.open_decisions.length}</b>` : "board.json unavailable",
+    '<a href="board.html">open decisions</a>']);
+  /* system health = worst region */
+  let health = "world.json unavailable";
+  if (S.world && S.world.regions) {
+    const rank = { green: 0, amber: 1, red: 2 };
+    let worst = null;
+    for (const [, r] of Object.entries(S.world.regions))
+      if (!worst || (rank[r.status] || 0) > (rank[worst.status] || 0)) worst = r;
+    if (worst) health = `<span class="verdict" style="color:${
+      worst.status === "green" ? "var(--good-text)" :
+      worst.status === "amber" ? "var(--series-4)" : "var(--down)"}">${
+      worst.status.toUpperCase()}</span> <span class="muted">— ${
+      worst.status === "green" ? "all regions green" : esc(worst.label || "")}</span>`;
+  }
+  rows.push(["System health", health, '<a href="universe.html">world map</a>']);
+  $id("sci-state").innerHTML =
+    `<table><thead><tr><th colspan="3">Current scientific state — live, not marketing</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td style="white-space:nowrap"><b>${r[0]}</b></td>` +
+      `<td>${r[1]}</td><td style="white-space:nowrap">${r[2]}</td></tr>`).join("") +
+    `</tbody></table>`;
 }
 
-/* compact live tape — simplified from the classic page */
-function drawPx(prices, st, pm) {
-  const box = $id("px-chart");
+/* ---------- 02 · play this window ---------- */
+const PICK_KEY = "oracle_playground_pick";
+function getPick() {
+  try { return JSON.parse(localStorage.getItem(PICK_KEY)); } catch { return null; }
+}
+function setPick(p) { try { localStorage.setItem(PICK_KEY, JSON.stringify(p)); } catch {} }
+
+function drawPlay() {
+  const st = S.st, pm = (st || {}).pm || null;
+  const closeTs = pm && pm.close_time ? Date.parse(pm.close_time) / 1000 : null;
+  const live = pm && pm.strike != null && pm.model_p_up != null
+    && !(closeTs && closeTs * 1000 < Date.now());
+  const px = st && (st.price_now || (st.brti && st.brti.price));
+  $id("play-px").textContent = px
+    ? "$" + px.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
+  const by = $id("btn-yes"), bn = $id("btn-no");
+  if (!live) {
+    $id("play-q").innerHTML = "Between windows — the next 15-minute question arrives in a moment.";
+    $id("play-strike").textContent = ""; $id("play-strike2").textContent = "—";
+    $id("play-left").textContent = "—";
+    by.disabled = bn.disabled = true;
+    $id("compare-card").innerHTML =
+      '<p class="mini">no live contract in online_status.json right now — nothing to bet on, so we say so</p>';
+  } else {
+    const strike = "$" + pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 });
+    $id("play-q").innerHTML = "Will Bitcoin finish this window above <span id=\"play-strike\">" + strike + "</span>?";
+    $id("play-strike2").textContent = strike;
+    by.disabled = bn.disabled = false;
+    cdClose = closeTs;
+    if (!cdTimer) cdTimer = setInterval(() => {
+      if (!cdClose) return;
+      const s = Math.max(0, cdClose - Date.now() / 1000);
+      $id("play-left").textContent =
+        Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
+    }, 1000);
+    const s0 = Math.max(0, closeTs - Date.now() / 1000);
+    $id("play-left").textContent =
+      Math.floor(s0 / 60) + ":" + String(Math.floor(s0 % 60)).padStart(2, "0");
+    drawCompare();
+  }
+  drawLastTime();
+  drawPlayChart();
+}
+
+function pickSide(side) {
+  const pm = S.st && S.st.pm;
+  if (!pm || pm.model_p_up == null) return;
+  const mkt = pm.yes_bid != null && pm.yes_ask != null
+    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
+  setPick({ ticker: pm.ticker, side, strike: pm.strike,
+    model_p: pm.model_p_up, mkt, ts: Math.floor(Date.now() / 1000) });
+  drawCompare();
+}
+$id("btn-yes").onclick = () => pickSide("yes");
+$id("btn-no").onclick = () => pickSide("no");
+
+function drawCompare() {
+  const pm = S.st && S.st.pm, box = $id("compare-card");
+  const pick = getPick();
+  const by = $id("btn-yes"), bn = $id("btn-no");
+  by.classList.remove("picked"); bn.classList.remove("picked");
+  if (!pm || !pick || pick.ticker !== pm.ticker) {
+    box.innerHTML = '<p class="mini">pick a side — then see whether the crowd and the model agree with you</p>';
+    return;
+  }
+  (pick.side === "yes" ? by : bn).classList.add("picked");
+  const p = pm.model_p_up;
+  const conf = Math.max(p, 1 - p);
+  const mkt = pm.yes_bid != null && pm.yes_ask != null
+    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
+  const gated = TAU != null && conf >= TAU;
+  const deskSide = p >= 0.5 ? "YES" : "NO";
+  const cell = (who, say, cls, sub) =>
+    `<div><div class="who">${who}</div><div class="say ${cls || ""}">${say}</div>` +
+    `<div class="mini" style="margin-top:2px">${sub}</div></div>`;
+  box.innerHTML = `<div class="compare">` +
+    cell("You chose", pick.side.toUpperCase(), pick.side, "locked for this window") +
+    cell("Market says", mkt == null ? "no quote" : (100 * mkt).toFixed(0) + "% YES",
+      mkt == null ? "" : mkt >= 0.5 ? "yes" : "no",
+      mkt == null ? "yes_bid/ask absent" : "mid of yes bid/ask") +
+    cell("Model says", (100 * p).toFixed(0) + "% YES", p >= 0.5 ? "yes" : "no",
+      "leader arm, this window") +
+    cell("The desk", TAU == null ? "GATE?" : gated ? "TRADE " + deskSide : "ABSTAIN",
+      TAU == null ? "" : gated ? (deskSide === "YES" ? "yes" : "no") : "",
+      TAU == null ? "τ missing from manifest"
+        : `confidence ${(100 * conf).toFixed(0)}% vs gate τ ${TAU}`) +
+    `</div>`;
+}
+
+function drawLastTime() {
+  const box = $id("lasttime");
+  const pick = getPick();
+  const pm = S.st && S.st.pm;
+  if (!pick) { box.innerHTML = ""; return; }
+  if (pm && pick.ticker === pm.ticker) { box.innerHTML = ""; return; }
+  const row = (S.treatments || []).find(r => r.ticker === pick.ticker);
+  if (!row) {
+    box.innerHTML = `<div class="lasttime">your last pick
+      (<code>${esc(pick.ticker || "?")}</code>) isn't in the settled ledger —
+      either it settles in a moment or that window wasn't scored</div>`;
+    return;
+  }
+  const yesWon = row.outcome === 1;
+  const right = (pick.side === "yes") === yesWon;
+  const mktRight = pick.mkt == null ? null : (pick.mkt >= 0.5) === yesWon;
+  const modRight = pick.model_p == null ? null : (pick.model_p >= 0.5) === yesWon;
+  const verd = v => v == null ? "?" : v ? "right" : "wrong";
+  box.innerHTML = `<div class="lasttime"><b>Last time:</b> you chose
+    ${pick.side.toUpperCase()} and were
+    <b class="${right ? "right" : "wrong"}">${right ? "RIGHT" : "WRONG"}</b>
+    (BTC finished ${yesWon ? "above" : "below"} the line) · the market
+    (${pick.mkt == null ? "?" : (100 * pick.mkt).toFixed(0) + "% YES"}) was
+    ${verd(mktRight)} · the model
+    (${pick.model_p == null ? "?" : (100 * pick.model_p).toFixed(0) + "% YES"}) was
+    ${verd(modRight)} · settled ${fmtPT(row.close_ts)} PT</div>`;
+}
+
+/* slim live tape with the strike line */
+function drawPlayChart() {
+  const box = $id("play-chart");
+  const prices = S.prices, st = S.st, pm = st && st.pm;
   if (!prices || prices.length < 10) {
     box.innerHTML = '<p class="mini">price series unavailable (recent_prices.json)</p>';
     return;
@@ -402,439 +578,316 @@ function drawPx(prices, st, pm) {
       && st.alive_at > series[series.length - 1].ts)
     series = series.concat([{ ts: st.alive_at, c: st.brti.price }]);
   const t1 = series[series.length - 1].ts;
-  const pts = series.filter(q => q.ts >= t1 - 3 * 3600);
-  const W = 920, H = 200, L = 10, R = 62, T = 12, B = 22;
+  const pts = series.filter(q => q.ts >= t1 - 90 * 60);
+  const W = 920, H = 132, L = 10, R = 64, T = 12, B = 20;
   const xmin = pts[0].ts, xmax = t1;
   let ymin = Infinity, ymax = -Infinity;
   for (const q of pts) { ymin = Math.min(ymin, q.c); ymax = Math.max(ymax, q.c); }
   if (pm && pm.strike) { ymin = Math.min(ymin, pm.strike); ymax = Math.max(ymax, pm.strike); }
-  const pad = (ymax - ymin) * .1 || 10; ymin -= pad; ymax += pad;
+  const pad = (ymax - ymin) * .12 || 10; ymin -= pad; ymax += pad;
   const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
   const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
-  const last = pts[pts.length - 1].c, up = last >= pts[0].c;
-  const col = up ? "var(--up)" : "var(--down)";
+  const last = pts[pts.length - 1].c;
+  const above = pm && pm.strike ? last >= pm.strike : null;
+  const col = above == null ? "var(--ink-2)" : above ? "var(--up)" : "var(--down)";
   let d = "";
   for (let i = 0; i < pts.length; i++)
     d += (i ? "L" : "M") + X(pts[i].ts).toFixed(1) + "," + Y(pts[i].c).toFixed(1);
   let g = "";
-  for (let i = 1; i <= 3; i++) {
-    const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
+  for (let i = 1; i <= 2; i++) {
+    const v = ymin + (ymax - ymin) * i / 3, y = Y(v);
     g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gridline"/>` +
       `<text x="${W - R + 8}" y="${y + 4}">$${Math.round(v).toLocaleString()}</text>`;
   }
   for (let ts = Math.ceil(xmin / 1800) * 1800; ts <= xmax; ts += 1800)
     g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle">${fmtPT(ts)}</text>`;
-  g += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"
-    stroke-linejoin="round" stroke-linecap="round"/>`;
   if (pm && pm.strike) {
     const ys = Y(pm.strike);
     g += `<line x1="${L}" x2="${W - R}" y1="${ys}" y2="${ys}"
       stroke="var(--series-4)" stroke-dasharray="5 5" stroke-width="1.4"/>` +
-      `<text x="${L + 4}" y="${ys - 5}" style="fill:var(--series-4)">strike $${Math.round(pm.strike).toLocaleString()}</text>`;
+      `<text x="${L + 4}" y="${ys - 5}" style="fill:var(--series-4)">the line · $${Math.round(pm.strike).toLocaleString()}</text>`;
   }
-  g += `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}"/>`;
-  /* crosshair */
-  g += `<g id="pxx" style="display:none">
-    <line id="pxxl" y1="${T}" y2="${H - B}" stroke="var(--axis)" stroke-width="1"/>
-    <circle id="pxxd" r="4" fill="var(--ink)" stroke="var(--surface)" stroke-width="1.5"/>
-    <rect id="pxxr" y="${T}" rx="5" width="118" height="20" fill="var(--ink)"/>
-    <text id="pxxt" y="${T + 14}" style="fill:var(--page);font-weight:600"></text></g>`;
-  box.innerHTML = `<svg id="px-svg" viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="BTC price, last 3 hours, with the window strike">${g}</svg>`;
-  const svg = $id("px-svg");
-  const near = ts => { let b = pts[0];
-    for (const q of pts) if (Math.abs(q.ts - ts) < Math.abs(b.ts - ts)) b = q;
-    return b; };
-  svg.onmousemove = e => {
-    const rect = svg.getBoundingClientRect();
-    const fx = (e.clientX - rect.left) / rect.width * W;
-    const xg = $id("pxx");
-    if (fx < L || fx > W - R) { xg.style.display = "none"; return; }
-    const q = near(xmin + (fx - L) / (W - L - R) * (xmax - xmin));
-    const cx = X(q.ts), cy = Y(q.c);
-    xg.style.display = "";
-    $id("pxxl").setAttribute("x1", cx); $id("pxxl").setAttribute("x2", cx);
-    $id("pxxd").setAttribute("cx", cx); $id("pxxd").setAttribute("cy", cy);
-    const rx = Math.min(W - R - 122, Math.max(L, cx - 59));
-    $id("pxxr").setAttribute("x", rx); $id("pxxt").setAttribute("x", rx + 8);
-    $id("pxxt").textContent =
-      `$${q.c.toLocaleString(undefined, { maximumFractionDigits: 0 })}  ${fmtPT(q.ts)}`;
-  };
-  svg.onmouseleave = () => { $id("pxx").style.display = "none"; };
+  g += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"
+    stroke-linejoin="round" stroke-linecap="round"/>` +
+    `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}"/>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="BTC price over the last 90 minutes against the window strike">${g}</svg>`;
 }
 
-/* ---------- scene 02 · WHY — the argument diagram ---------- */
-function drawArgument(st, man) {
-  const el = $id("arg-diagram");
-  const pm = (st || {}).pm || null;
-  const expired = pm && pm.close_time
-    && Date.parse(pm.close_time) < Date.now();
-  if (!pm || pm.model_p_up == null || expired) {
-    el.innerHTML = '<p class="mini">no live window — the argument re-forms when the next contract opens</p>';
-    return;
-  }
-  const p = pm.model_p_up, conf = Math.max(p, 1 - p);
-  const side = p >= 0.5 ? "YES" : "NO";
-  const mkt = pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
-  const mktAgrees = mkt == null ? null : (mkt >= 0.5) === (p >= 0.5);
-  const fl = man && man.floors && man.floors.market ? man.floors.market : null;
-  const floor = man && man.config ? man.config.REGIME_FLOOR : null;
-  const regimeOK = fl && floor != null ? fl.accuracy >= floor : null;
-  const gated = TAU != null && conf >= TAU;
-  const decision = TAU == null ? null : gated && regimeOK !== false;
-  const W = 920, H = 250, bw = 386, bh = 66;
-  const okc = v => v == null ? "var(--muted)"
-    : v ? "var(--good-text)" : "var(--down)";
-  const box = (y, tag, big, sub, ok) =>
-    `<rect x="10" y="${y}" width="${bw}" height="${bh}" rx="12"
-      fill="var(--surface-2)" stroke="var(--border)"/>` +
-    `<rect x="10" y="${y}" width="4" height="${bh}" rx="2" fill="${okc(ok)}"/>` +
-    `<text x="28" y="${y + 20}" class="qlab">${tag}</text>` +
-    `<text x="28" y="${y + 40}" style="font-size:14.5px;font-weight:700;fill:var(--ink)">${big}</text>` +
-    `<text x="28" y="${y + 56}" style="font-size:11px;fill:var(--muted)">${sub}</text>`;
-  let g = box(14, "model evidence",
-    `arm confidence ${(100 * conf).toFixed(1)}% → ${side}`,
-    TAU == null ? "gate unavailable in manifest config"
-      : `${gated ? "clears" : "below"} the τ ${TAU} entry gate`, gated);
-  g += box(96, "market evidence",
-    mkt == null ? "no quote" :
-      `crowd prices ${(100 * mkt).toFixed(0)}% YES`,
-    mkt == null ? "yes_bid/ask absent" :
-      mktAgrees ? "agrees with the model side" : "the crowd is on the other side",
-    mktAgrees);
-  g += box(178, "regime evidence",
-    fl ? `market accuracy ${(100 * fl.accuracy).toFixed(0)}% · last ${fl.n_windows}`
-       : "regime read unavailable",
-    fl && floor != null
-      ? `${regimeOK ? "above" : "below"} the ${(100 * floor).toFixed(0)}% floor` +
-        (fl.m8_gate_active ? " · M8 gate ACTIVE" : "")
-      : "floors.market absent from site_manifest.json", regimeOK);
-  /* converging arrows */
-  const dx = 640, dyc = 125;
-  for (const yc of [47, 129, 211])
-    g += `<path d="M${10 + bw},${yc} C ${10 + bw + 90},${yc} ${dx - 100},${dyc} ${dx - 8},${dyc + (yc - 129) * 0.12}"
-      fill="none" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#arr)"/>`;
-  const dcol = decision == null ? "var(--muted)" : decision ? "var(--good-text)" : "var(--ink-2)";
-  g += `<rect x="${dx}" y="${dyc - 52}" width="270" height="104" rx="14"
-    fill="var(--surface)" stroke="${dcol}" stroke-width="1.6"/>` +
-    `<text x="${dx + 135}" y="${dyc - 26}" text-anchor="middle" class="qlab">decision</text>` +
-    `<text x="${dx + 135}" y="${dyc + 10}" text-anchor="middle"
-      style="font-size:27px;font-weight:650;fill:${dcol};font-family:var(--display)">` +
-    `${decision == null ? "UNKNOWN" : decision ? "TRADE " + side : "ABSTAIN"}</text>` +
-    `<text x="${dx + 135}" y="${dyc + 38}" text-anchor="middle" style="font-size:11px;fill:var(--muted)">` +
-    (decision == null ? "gate unavailable"
-      : decision ? "gate cleared · regime open" :
-        !gated ? "confidence below the gate" : "regime floor closed") + `</text>`;
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="model, market and regime evidence converging into a trade or abstain decision">
-    <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7"
-    markerHeight="7" orient="auto"><path d="M0,0L8,4L0,8z" fill="var(--axis)"/></marker></defs>${g}</svg>`;
-}
-
-/* ---------- scene 03 · LAST WINDOW ---------- */
-function drawLast(ptr) {
-  const settled = ptr.filter(r => r.actual != null);
-  const el = $id("s3-line");
-  if (!settled.length) {
-    el.innerHTML = '<p class="mini">no settled desk bets yet</p>'; return;
-  }
-  const r = settled[settled.length - 1];
-  const won = !!r.win;
-  el.innerHTML =
-    `<span class="verdict-word">${r.side.toUpperCase()}</span>` +
-    `<span class="mini" style="margin:0">${(100 * Math.max(r.p_arm, 1 - r.p_arm)).toFixed(0)}%
-      confident · entry ${r.ask_c}¢ · leader ${esc(r.leader || "?")} ·
-      settled ${fmtPT(r.close_ts)} PT</span>` +
-    `<span class="res ${won ? "won" : "lost"}">${won ? "WON" : "LOST"}
-      ${(r.pnl_c >= 0 ? "+" : "−")}$${Math.abs(r.pnl_c / 100).toFixed(0)}</span>`;
-  const last10 = settled.slice(-10);
-  const wins = last10.filter(x => x.win).length;
-  $id("s3-strip").innerHTML = "previous 10: " +
-    `<span class="glyphs">` + last10.map(x =>
-      x.win ? '<span class="w">✓</span>' : '<span class="l">✕</span>').join("") +
-    `</span> ${wins}/${last10.length}`;
-  $id("s3-table").innerHTML =
-    `<table style="min-width:560px"><thead><tr><th>settled</th><th>side</th>
-    <th class="num">conf</th><th class="num">entry ¢</th><th class="num">pnl</th>
-    <th>leader</th></tr></thead><tbody>` +
-    last10.slice().reverse().map(x =>
-      `<tr><td>${fmtPT(x.close_ts)} PT</td><td>${x.side.toUpperCase()}</td>
-      <td class="num">${(100 * Math.max(x.p_arm, 1 - x.p_arm)).toFixed(0)}%</td>
-      <td class="num">${x.ask_c}</td>
-      <td class="num" style="color:${x.win ? "var(--good-text)" : "var(--down)"}">${moneyC(x.pnl_c)}</td>
-      <td>${esc(x.leader || "?")}</td></tr>`).join("") + "</tbody></table>";
-}
-
-/* ---------- scene 04 · POLICY EXPERIMENT ---------- */
+/* ---------- 03 · traders ---------- */
 function deskSeries(rows, d) {
   const settled = rows.filter(r => r.actual != null)
     .sort((a, b) => a.close_ts - b.close_ts);
   let eq = d.start;
-  const pts = settled.length
-    ? [{ ts: settled[0].made_ts, eq: d.start }] : [];
-  for (const r of settled) { eq += (r.pnl_c || 0); pts.push({ ts: r.close_ts, eq }); }
-  const dayKey = ts => new Date(ts * 1000).toLocaleDateString("en-US",
-    { timeZone: "America/Los_Angeles" });
-  const today = dayKey(Date.now() / 1000);
-  const todayPnl = settled.filter(r => dayKey(r.close_ts) === today)
-    .reduce((a, r) => a + (r.pnl_c || 0), 0);
-  return { pts, eq, n: settled.length, todayPnl };
+  for (const r of settled) eq += (r.pnl_c || 0);
+  return { eq, n: settled.length };
 }
-let raceData = null;
-function drawAbl() {
-  $id("abl").innerHTML = DESKS.map(d =>
-    `<div><span class="g"><span class="sw2" style="background:${d.c}"></span>${d.grp}</span><br>
-    <b>${d.name}${d.note ? " " + d.note : ""}</b> — ${d.q}</div>`).join("");
+function drawCrew() {
+  const raw = S.ledgers;
+  if (!raw) return;
+  $id("crew").innerHTML = DESKS.map(d => {
+    let rows = raw[d.id] || [];
+    if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
+    if (d.skips) rows = rows.filter(r => !r.skipped);
+    const hasData = rows.length > 0;
+    const s = deskSeries(rows, d);
+    const ret = 100 * (s.eq - d.start) / d.start;
+    const up = ret >= 0;
+    return `<div class="trader" style="border-top-color:${d.c}">
+      <div class="face">${d.emo}</div>
+      <div class="tname">${d.name}</div>
+      <div class="tgrp">${d.grp}</div>
+      <div class="tsay">${d.say}</div>
+      <div>${hasData
+        ? `<span class="teq">${moneyC(s.eq)}</span>
+           <span class="tret ${up ? "up" : "dn"}">${up ? "+" : ""}${ret.toFixed(1)}%</span>
+           <span class="mini" style="margin:0">· ${s.n} bets</span>`
+        : `<span class="mini" style="margin:0">ledger unavailable</span>`}</div>
+      <div class="oops"><b>My biggest mistake</b>${d.oops}</div>
+    </div>`;
+  }).join("");
 }
-function drawRace() {
-  if (!raceData) return;
-  const box = $id("race-chart");
-  const isRet = raceView === "ret";
-  const W = 920, H = 280, L = 52, R = 88, T = 14, B = 24;
-  let xmin = Infinity, xmax = -Infinity, ymin = Infinity, ymax = -Infinity;
-  const val = (d, p) => isRet ? 100 * (p.eq - d.start) / d.start : p.eq / 100;
-  for (const d of DESKS) {
-    const s = raceData[d.id];
-    if (!s || s.pts.length < 2) continue;
-    for (const p of s.pts) {
-      xmin = Math.min(xmin, p.ts); xmax = Math.max(xmax, p.ts);
-      ymin = Math.min(ymin, val(d, p)); ymax = Math.max(ymax, val(d, p));
+
+/* ---------- 04 · your $1,000 lab ---------- */
+function replayRule(rows, key) {
+  /* bank_{i+1} = bank_i + 100·ev_i ; null ev ⇒ skip; floor at 0 = busted */
+  let bank = 1000, busted = false, active = 0, skipped = 0;
+  const pts = [{ i: 0, bank }];
+  rows.forEach((r, idx) => {
+    const ev = busted ? null : (r.ev ? r.ev[key] : null);
+    if (ev == null || busted) { skipped += busted ? 0 : 1; }
+    else {
+      bank += 100 * ev; active++;
+      if (bank <= 0) { bank = 0; busted = true; }
     }
+    pts.push({ i: idx + 1, bank });
+  });
+  return { pts, final: bank, busted, active, skipped };
+}
+function drawWallet() {
+  const rows = S.treatments;
+  const box = $id("wallet-chart");
+  if (!rows || !rows.length) {
+    box.innerHTML = '<p class="mini">treatments.jsonl unavailable — the lab can\'t replay what it can\'t fetch, so nothing is shown</p>';
+    $id("walletline").innerHTML = ""; $id("wallet-table").innerHTML = "";
+    $id("rulechips").innerHTML = "";
+    return;
   }
-  if (!isFinite(xmin)) { box.innerHTML = '<p class="mini">no settled trades yet</p>'; return; }
-  if (isRet) { ymin = Math.min(ymin, 0); ymax = Math.max(ymax, 0); }
-  const pad = (ymax - ymin) * .08 || 1; ymin -= pad; ymax += pad;
-  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
-  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
+  const sorted = rows.slice().sort((a, b) => a.close_ts - b.close_ts);
+  $id("w-n").textContent = sorted.length;
+  const res = {};
+  for (const r of RULES) res[r.k] = replayRule(sorted, r.k);
+  /* chips */
+  $id("rulechips").innerHTML = RULES.map(r =>
+    `<button class="chip${r.k === walletRule ? " on" : ""}" data-rule="${r.k}"
+      role="radio" aria-checked="${r.k === walletRule}" type="button"
+      title="${esc(r.kid)}">${r.name}</button>`).join("");
+  for (const b of $id("rulechips").querySelectorAll("button"))
+    b.onclick = () => { walletRule = b.dataset.rule; walletFirstDraw = true; drawWallet(); };
+  /* chart: chosen rule vs follow-every baseline */
+  const chosen = res[walletRule], base = res.champion;
+  const W = 920, H = 215, L = 52, R = 16, T = 14, B = 24;
+  let ymin = 0, ymax = 1000;
+  for (const s of [chosen, base]) for (const p of s.pts)
+    { ymin = Math.min(ymin, p.bank); ymax = Math.max(ymax, p.bank); }
+  const pad = (ymax - ymin) * .08 || 40; ymax += pad;
+  const N = sorted.length;
+  const X = i => L + i / Math.max(1, N) * (W - L - R);
+  const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
   let g = "";
   for (let i = 0; i <= 4; i++) {
     const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
     g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gridline"/>` +
-      `<text x="${L - 6}" y="${y + 4}" text-anchor="end">${isRet
-        ? v.toFixed(0) + "%"
-        : "$" + Math.round(v).toLocaleString()}</text>`;
+      `<text x="${L - 6}" y="${y + 4}" text-anchor="end">$${Math.round(v).toLocaleString()}</text>`;
   }
-  if (isRet && ymin < 0 && ymax > 0)
-    g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" class="axis"/>`;
-  const dayStep = 86400;
-  for (let ts = Math.ceil(xmin / dayStep) * dayStep; ts <= xmax; ts += dayStep)
-    g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle">` +
-      new Date(ts * 1000).toLocaleDateString("en-US",
-        { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" }) +
-      `</text>`;
-  const ends = [];
-  for (const d of DESKS) {
-    const s = raceData[d.id];
-    if (!s || s.pts.length < 2) continue;
-    let path = "";
-    for (let i = 0; i < s.pts.length; i++)
-      path += (i ? "L" : "M") + X(s.pts[i].ts).toFixed(1) + "," +
-        Y(val(d, s.pts[i])).toFixed(1);
-    g += `<path d="${path}" fill="none" stroke="${d.c}" stroke-width="2"
-      stroke-linejoin="round" opacity=".9"/>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(1000)}" y2="${Y(1000)}"
+    stroke="var(--axis)" stroke-dasharray="3 4"/>` +
+    `<text x="${W - R - 4}" y="${Y(1000) - 5}" text-anchor="end" class="qlab">start $1,000</text>`;
+  const path = s => s.pts.map((p, j) =>
+    (j ? "L" : "M") + X(p.i).toFixed(1) + "," + Y(p.bank).toFixed(1)).join("");
+  if (walletRule !== "champion")
+    g += `<path d="${path(base)}" fill="none" stroke="var(--series-1)"
+      stroke-width="1.6" stroke-dasharray="5 4" opacity=".75"/>`;
+  g += `<path class="rule-path${walletFirstDraw ? " animate" : ""}" d="${path(chosen)}"
+    fill="none" stroke="var(--series-2)" stroke-width="2.4"
+    stroke-linejoin="round" pathLength="2200"/>`;
+  const mark = (s, colr, nm) => {
     const lastP = s.pts[s.pts.length - 1];
-    ends.push({ d, y: Y(val(d, lastP)), v: val(d, lastP) });
-  }
-  /* collision-relaxed end labels */
-  ends.sort((a, b) => a.y - b.y);
-  for (let i = 1; i < ends.length; i++)
-    if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
-  for (const e of ends)
-    g += `<text x="${W - R + 6}" y="${e.y + 4}" style="fill:${e.d.c};font-weight:700;font-size:11px">${e.d.name}</text>`;
-  box.innerHTML = `<svg id="race-svg" viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="equity race of the eight policies">${g}
-    <line id="racexl" y1="${T}" y2="${H - B}" stroke="var(--axis)"
-    stroke-width="1" style="display:none"/></svg>`;
-  /* crosshair tooltip */
-  const svg = $id("race-svg"), tip = $id("race-tip"), xl = $id("racexl");
-  svg.onmousemove = e => {
-    const rect = svg.getBoundingClientRect();
-    const fx = (e.clientX - rect.left) / rect.width * W;
-    if (fx < L || fx > W - R) { tip.style.display = "none"; xl.style.display = "none"; return; }
-    const t = xmin + (fx - L) / (W - L - R) * (xmax - xmin);
-    xl.style.display = ""; xl.setAttribute("x1", fx); xl.setAttribute("x2", fx);
-    const lines = [];
-    for (const d of DESKS) {
-      const s = raceData[d.id];
-      if (!s || !s.pts.length || s.pts[0].ts > t) continue;
-      let p = s.pts[0];
-      for (const q of s.pts) { if (q.ts <= t) p = q; else break; }
-      lines.push({ d, v: val(d, p) });
-    }
-    lines.sort((a, b) => b.v - a.v);
-    tip.innerHTML = `<b>${new Date(t * 1000).toLocaleString("en-US",
-      { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit",
-        hour: "2-digit", minute: "2-digit", hour12: false })} PT</b><br>` +
-      lines.map(l => `<span class="sw2" style="background:${l.d.c}"></span>` +
-        `${l.d.name} ${isRet ? l.v.toFixed(1) + "%"
-          : "$" + Math.round(l.v).toLocaleString()}`).join("<br>");
-    tip.style.display = "block";
-    const wrap = $id("race-wrap").getBoundingClientRect();
-    let lx = e.clientX - wrap.left + 16;
-    if (lx > wrap.width - 170) lx = e.clientX - wrap.left - 180;
-    tip.style.left = lx + "px";
-    tip.style.top = Math.max(0, e.clientY - wrap.top - 40) + "px";
+    return `<circle cx="${X(lastP.i)}" cy="${Y(lastP.bank)}" r="4" fill="${colr}"/>` +
+      (s.busted ? `<text x="${X(lastP.i) - 6}" y="${Y(0) - 8}" text-anchor="end"
+        style="fill:var(--down);font-weight:800">BUSTED 💥</text>` : "");
   };
-  svg.onmouseleave = () => { tip.style.display = "none"; xl.style.display = "none"; };
-}
-function drawBoard() {
-  if (!raceData) return;
-  const rows = DESKS.map(d => {
-    const s = raceData[d.id] || { eq: d.start, n: 0, todayPnl: 0 };
-    return { d, eq: s.eq, ret: 100 * (s.eq - d.start) / d.start,
-      today: s.todayPnl, n: s.n };
-  }).sort((a, b) => b.ret - a.ret);
-  $id("board").innerHTML =
-    `<table style="min-width:760px"><thead><tr><th>policy</th><th>hypothesis</th>
-    <th class="num">start capital</th><th class="num">equity</th>
-    <th class="num">return</th><th class="num">today</th>
-    <th class="num">settled</th></tr></thead><tbody>` +
-    rows.map(r =>
-      `<tr><td><span class="sw2" style="background:${r.d.c}"></span><b>${r.d.name}</b>
-        <span class="muted">· ${r.d.grp.toLowerCase()}</span></td>
-      <td class="muted">${r.d.q}</td>
-      <td class="num">$${(r.d.start / 100).toLocaleString()}</td>
-      <td class="num">${moneyC(r.eq)}</td>
-      <td class="num" style="color:${r.ret >= 0 ? "var(--good-text)" : "var(--down)"}">
-        ${r.ret >= 0 ? "+" : ""}${r.ret.toFixed(1)}%</td>
-      <td class="num" style="color:${r.today >= 0 ? "var(--good-text)" : "var(--down)"}">
-        ${r.today >= 0 ? "+" : ""}${moneyC(r.today).replace("$", "$")}</td>
-      <td class="num">${r.n}</td></tr>`).join("") + "</tbody></table>";
-}
-
-/* ---------- scene 05 · prediction vs profit ---------- */
-function drawScatter(mi) {
-  const box = $id("scatter");
-  const rep = mi && mi.representativeness;
-  if (!rep) {
-    box.innerHTML = '<p class="mini">introspection refresh pending — model_internals.json not available; this scene returns on the next publisher pass</p>';
-    $id("s5-pair").innerHTML = ""; $id("s5-table").innerHTML = "";
-    return;
-  }
-  const arms = Object.entries(rep)
-    .filter(([, v]) => v.brier_decision != null && v.ev_per_dollar != null)
-    .map(([k, v]) => ({ k, brier: v.brier_decision, ev: v.ev_per_dollar,
-      n: v.bet_evals }));
-  if (!arms.length) { box.innerHTML = '<p class="mini">no arms scored yet</p>'; return; }
-  const W = 920, H = 330, L = 60, R = 20, T = 30, B = 44;
-  const xv = a => 0.25 - a.brier;                    // right = sharper
-  let xmin = Math.min(...arms.map(xv)), xmax = Math.max(...arms.map(xv));
-  let ymin = Math.min(...arms.map(a => a.ev)), ymax = Math.max(...arms.map(a => a.ev));
-  ymax = Math.max(ymax, 0.02); ymin = Math.min(ymin, -0.02);
-  const xpad = (xmax - xmin) * .12 || .01, ypad = (ymax - ymin) * .1 || .01;
-  xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
-  const X = x => L + (x - xmin) / (xmax - xmin) * (W - L - R);
-  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
-  let g = "";
-  /* gridlines: x ticks labeled in honest Brier units */
-  const bTicks = [];
-  for (let b = Math.ceil((0.25 - xmax) * 50) / 50; b <= 0.25 - xmin; b += 0.02)
-    bTicks.push(b);
-  for (const b of bTicks) {
-    const x = X(0.25 - b);
-    if (x < L || x > W - R) continue;
-    g += `<line x1="${x}" x2="${x}" y1="${T}" y2="${H - B}" class="gridline"/>` +
-      `<text x="${x}" y="${H - B + 16}" text-anchor="middle">${b.toFixed(2)}</text>`;
-  }
-  for (const v of [ -0.4, -0.3, -0.2, -0.1, 0, 0.1 ]) {
-    if (v < ymin || v > ymax) continue;
-    const y = Y(v);
-    g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gridline"/>` +
-      `<text x="${L - 6}" y="${y + 4}" text-anchor="end">${v === 0 ? "$0" :
-        (v > 0 ? "+" : "−") + "$" + Math.abs(v).toFixed(2)}</text>`;
-  }
-  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" class="axis"/>`;
-  /* quadrant labels */
-  g += `<text x="${W - R - 6}" y="${T + 2}" text-anchor="end" class="qlab">sharp &amp; profitable — the goal</text>` +
-    `<text x="${W - R - 6}" y="${H - B - 8}" text-anchor="end" class="qlab">sharp but unprofitable — where we live</text>` +
-    `<text x="${L + 6}" y="${T + 2}" class="qlab">blunt but lucky</text>` +
-    `<text x="${L + 6}" y="${H - B - 8}" class="qlab">blunt &amp; unprofitable</text>`;
-  /* axis titles */
-  g += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle"
-    style="fill:var(--ink-2)">probability quality — Brier at decision (right = sharper)</text>` +
-    `<text x="14" y="${(T + H - B) / 2}" text-anchor="middle"
-    transform="rotate(-90 14 ${(T + H - B) / 2})" style="fill:var(--ink-2)">EV per $1 at real costs</text>`;
-  /* dots — polarity carried by status color + label, never color alone */
-  const labs = arms.map(a => ({ a, x: X(xv(a)), y: Y(a.ev) }));
-  for (const l of labs) {
-    const pos = l.a.ev > 0;
-    g += `<circle cx="${l.x}" cy="${l.y}" r="6" fill="${pos ? "var(--up)" : "var(--down)"}"
-      stroke="var(--surface)" stroke-width="2">
-      <title>${l.a.k} · Brier ${l.a.brier.toFixed(3)} · EV ${l.a.ev >= 0 ? "+" : ""}$${l.a.ev.toFixed(3)}/$1 · ${l.a.n} bet evals</title></circle>` +
-      `<text x="${l.x + 9}" y="${l.y - 6}" style="font-weight:700;font-size:11px;fill:var(--ink-2)">${l.a.k}</text>`;
-  }
+  g += mark(chosen, "var(--series-2)");
+  g += `<text x="${L}" y="${H - 4}" class="qlab">window 1</text>` +
+    `<text x="${W - R}" y="${H - 4}" text-anchor="end" class="qlab">window ${N}</text>`;
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="scatter of probability quality against expected value per dollar for each arm">${g}</svg>
-    <p class="mini">each dot = one arm · x from <code>model_internals.json
-    .representativeness[arm].brier_decision</code> (lower Brier = sharper, drawn
-    rightward) · y = <code>.ev_per_dollar</code> at logged asks + fees</p>`;
-  /* the paired example: best Brier vs its economics */
-  const best = arms.reduce((a, b) => (b.brier < a.brier ? b : a));
-  $id("s5-pair").innerHTML =
-    `<div><b>✓ Brier ${best.brier.toFixed(3)}</b><span>${best.k} — the sharpest
-      probability of the whole ladder</span></div>
-    <div><b class="${best.ev < 0 ? "neg" : "pos"}">${best.ev < 0 ? "✕ " : "✓ "}
-      ${best.ev >= 0 ? "+" : "−"}$${Math.abs(best.ev).toFixed(2)}/$1</b>
-      <span>the same arm, at real asks and fees — statistically impressive,
-      economically ${best.ev < 0 ? "losing" : "winning"}</span></div>`;
-  $id("s5-table").innerHTML =
-    `<table style="min-width:520px"><thead><tr><th>arm</th>
-    <th class="num">Brier @ decision</th><th class="num">EV / $1</th>
-    <th class="num">bet evals</th></tr></thead><tbody>` +
-    arms.slice().sort((a, b) => a.brier - b.brier).map(a =>
-      `<tr><td><b>${a.k}</b></td><td class="num">${a.brier.toFixed(4)}</td>
-      <td class="num" style="color:${a.ev >= 0 ? "var(--good-text)" : "var(--down)"}">
-        ${a.ev >= 0 ? "+" : ""}${a.ev.toFixed(4)}</td>
-      <td class="num">${a.n}</td></tr>`).join("") + "</tbody></table>";
+    aria-label="your $1,000 bankroll replayed under the chosen rule versus betting every window">${g}</svg>
+    <div class="legend"><span><span class="sw" style="background:var(--series-2)"></span>${
+      esc(RULES.find(r => r.k === walletRule).name)}</span>${
+      walletRule !== "champion" ? `<span><span class="sw" style="background:var(--series-1)"></span>Follow every window (baseline)</span>` : ""}</div>`;
+  walletFirstDraw = false;
+  const rr = RULES.find(r => r.k === walletRule);
+  $id("walletline").innerHTML =
+    `<span class="final" style="color:${chosen.busted ? "var(--down)" :
+      chosen.final >= 1000 ? "var(--good-text)" : "var(--ink)"}"
+      id="wallet-final">${chosen.busted ? "$0" : money(chosen.final)}</span>
+    <span class="mini" style="margin:0">${esc(rr.kid)} — ${chosen.busted
+      ? `you went bust after ${chosen.active} bets`
+      : `${chosen.active} bets taken · ${chosen.skipped} windows skipped`}</span>`;
+  $id("wallet-table").innerHTML =
+    `<table style="min-width:640px" id="wallet-tbl"><thead><tr><th>rule</th>
+    <th>kid translation</th><th class="num">final wallet</th><th class="num">bets</th>
+    <th class="num">skipped</th><th>result</th></tr></thead><tbody>` +
+    RULES.map(r => { const s = res[r.k];
+      return `<tr${r.k === walletRule ? ' style="background:var(--surface-2)"' : ""}>
+      <td><b>${r.name}</b></td><td class="muted">${r.kid}</td>
+      <td class="num" data-rule-final="${r.k}" style="color:${s.busted ? "var(--down)" :
+        s.final >= 1000 ? "var(--good-text)" : "var(--ink-2)"}">${s.busted ? "$0" : money(s.final)}</td>
+      <td class="num">${s.active}</td><td class="num">${s.skipped}</td>
+      <td>${s.busted ? '<span class="pill bad">BUSTED</span>'
+        : s.final >= 1000 ? '<span class="pill ok">AHEAD</span>'
+        : '<span class="pill miss">BEHIND</span>'}</td></tr>`; }).join("") +
+    `</tbody></table>`;
 }
 
-/* ---------- scene 07 · can it scale? ---------- */
-function drawScale(ptr) {
-  const el = $id("s7-eq");
-  const settled = ptr.filter(r => r.actual != null && r.contracts > 0);
-  if (settled.length < 20) {
-    el.innerHTML = '<p class="mini">collecting — needs 20 settled desk trades</p>';
+/* ---------- 05 · miniature world ---------- */
+function drawWorldMini() {
+  const regs = (S.world && S.world.regions) || {};
+  const dot = id => { const r = regs[id];
+    const c = !r ? "var(--faint)" : r.status === "green" ? "var(--good)"
+      : r.status === "amber" ? "var(--series-4)" : "var(--down)";
+    return c; };
+  const W = 920, H = 250;
+  $id("wmap").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="miniature map: market ocean flowing into forecast mountains and probability city, into decision HQ, execution port and capital town, down to ledger valley, with a learning loop back up">
+  <!-- ocean -->
+  <rect x="14" y="10" width="892" height="52" rx="12" fill="var(--series-2)" opacity=".09"/>
+  <path d="M30 42 q14 -8 28 0 q14 8 28 0 q14 -8 28 0" fill="none" stroke="var(--series-2)" stroke-width="1.4" opacity=".5"/>
+  <text x="34" y="30" style="font-weight:700;fill:var(--ink-2)">Market Ocean</text>
+  <text x="34" y="54" class="qlab">real BTC prices + real Kalshi quotes flow in</text>
+  <circle cx="886" cy="30" r="5" fill="${dot("market_ocean")}"/>
+  <!-- rivers down -->
+  <path d="M240 62 v22" stroke="var(--series-2)" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <path d="M660 62 v22" stroke="var(--series-2)" stroke-width="1.6" stroke-dasharray="4 4"/>
+  <!-- mountains -->
+  <g><path d="M80 132 l38 -44 l30 34 l22 -22 l34 32 z" fill="var(--series-7)" opacity=".22"/>
+  <path d="M80 132 l38 -44 l30 34 l22 -22 l34 32" fill="none" stroke="var(--series-7)" stroke-width="1.5"/>
+  <text x="88" y="152" style="font-weight:700;fill:var(--ink-2)">Forecast Mountains</text>
+  <text x="88" y="168" class="qlab">price-guessing robots</text>
+  <circle cx="216" cy="96" r="5" fill="${dot("forecast_country")}"/></g>
+  <!-- city -->
+  <g><rect x="560" y="96" width="18" height="36" fill="var(--series-3)" opacity=".3"/>
+  <rect x="584" y="84" width="18" height="48" fill="var(--series-3)" opacity=".45"/>
+  <rect x="608" y="104" width="18" height="28" fill="var(--series-3)" opacity=".3"/>
+  <text x="560" y="152" style="font-weight:700;fill:var(--ink-2)">Probability City</text>
+  <text x="560" y="168" class="qlab">yes/no-odds robots</text>
+  <circle cx="648" cy="92" r="5" fill="${dot("probability_city")}"/></g>
+  <!-- HQ -->
+  <g><rect x="330" y="92" width="150" height="52" rx="10" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
+  <text x="405" y="114" text-anchor="middle" style="font-weight:800;fill:var(--ink)">DECISION HQ</text>
+  <text x="405" y="132" text-anchor="middle" class="qlab">trade or do nothing?</text>
+  <circle cx="470" cy="102" r="5" fill="${dot("decision_hq")}"/></g>
+  <path d="M204 116 h118" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
+  <path d="M556 116 h-68" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
+  <!-- port + town -->
+  <g><path d="M700 196 h90 M712 196 v-16 M745 196 v-24 M778 196 v-16" stroke="var(--series-5)" stroke-width="2"/>
+  <text x="700" y="216" style="font-weight:700;fill:var(--ink-2)">Execution Port</text>
+  <text x="700" y="232" class="qlab">where bets meet real prices</text>
+  <circle cx="800" cy="184" r="5" fill="${dot("execution_port")}"/></g>
+  <g><circle cx="120" cy="196" r="12" fill="var(--series-4)" opacity=".3"/>
+  <path d="M108 196 a12 12 0 0 1 24 0" fill="none" stroke="var(--series-4)" stroke-width="1.6"/>
+  <text x="94" y="222" style="font-weight:700;fill:var(--ink-2)">Capital Town</text>
+  <text x="94" y="238" class="qlab">how much to risk</text></g>
+  <path d="M405 144 q-140 30 -250 42" fill="none" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
+  <path d="M405 144 q180 20 285 40" fill="none" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
+  <!-- valley -->
+  <g><path d="M330 226 q75 -26 150 0" fill="none" stroke="var(--series-8)" stroke-width="1.8"/>
+  <text x="345" y="216" style="font-weight:700;fill:var(--ink-2)">Ledger Valley</text>
+  <text x="345" y="243" class="qlab">every bet written down forever</text>
+  <circle cx="490" cy="214" r="5" fill="${dot("ledger_valley")}"/></g>
+  <!-- learning loop back up -->
+  <path d="M330 232 Q40 240 46 132" fill="none" stroke="var(--series-7)"
+    stroke-width="1.6" stroke-dasharray="7 6" marker-end="url(#mmarr2)"/>
+  <text x="26" y="80" class="qlab" style="fill:var(--series-7)">the loop: results retrain the robots</text>
+  <defs>
+    <marker id="mmarr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L8,4L0,8z" fill="var(--axis)"/></marker>
+    <marker id="mmarr2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L8,4L0,8z" fill="var(--series-7)"/></marker>
+  </defs></svg>`;
+}
+
+/* ---------- 06 · the lab is working now ---------- */
+function drawLabNow() {
+  const now = Date.now() / 1000;
+  const w = S.world, st = S.st, db = S.db;
+  const rows = [];
+  const row = (who, ok, text) => rows.push(
+    `<div class="labrow"><span class="ldot ${ok === true ? "g" : ok === false ? "a" : ""}"></span>
+    <span class="lwho">${who}</span><span>${text}</span></div>`);
+  /* data heartbeat */
+  if (st && st.alive_at) {
+    const a = now - st.alive_at;
+    row("Data", a < 300, `market heartbeat ${ageTxt(a)} — polls Coinbase + Kalshi every 30 s`);
+  } else row("Data", null, "online_status.json unavailable");
+  /* trainer */
+  const lr = st && st.last_retrain;
+  if (lr && lr.at) {
+    const a = now - Date.parse(lr.at) / 1000;
+    let kept = 0, rev = 0;
+    for (const arm of Object.values(lr.arms || {}))
+      for (const h of Object.values(arm)) h.reverted ? rev++ : kept++;
+    row("Trainer", a < 2.5 * 3600,
+      `last gated retrain ${ageTxt(a)} — kept ${kept} model updates, reverted ${rev} (worse on holdout)`);
+  } else row("Trainer", null, "no retrain record in online_status.json");
+  /* evaluator + watchdog + analyst-cron from world clock */
+  const clk = (w && w.clock) || [];
+  const find = s => clk.find(c => (c.owner || "").includes(s));
+  const aud = find("auditor");
+  if (aud) row("Evaluator", aud.health === "green",
+    `independent audit re-derived every metric ${aud.age_min != null ? Math.round(aud.age_min) + "m ago" : "(age unknown)"}`);
+  else row("Evaluator", null, "auditor entry missing from world.json clock");
+  const wdg = find("watchdog");
+  if (wdg) row("Watchdog", wdg.health === "green",
+    `guards the heartbeat every 5 min — logs only when it acts (last action ${wdg.last_run_ts ? ageTxt(now - wdg.last_run_ts) : "never"}; silence = health)`);
+  else row("Watchdog", null, "watchdog entry missing from world.json clock");
+  /* analyst — latest commentary note */
+  const com = S.commentary || [];
+  if (com.length) {
+    const ts = Math.max(...com.map(c => c.ts || 0));
+    const a = now - ts;
+    row("Analyst", a >= 0 && a < 26 * 3600, a < 0
+      ? `latest note is future-stamped (${new Date(ts * 1000).toLocaleString()}) — timestamp skew, shown as-is`
+      : `latest research note ${ageTxt(a)}: “${esc((com.find(c => c.ts === ts) || {}).topic || "")}”`);
+  } else row("Analyst", null, "commentary.jsonl unavailable");
+  /* experiments */
+  if (db && db.summary && db.summary.states) {
+    const a = db.generated_ts ? now - db.generated_ts : null;
+    row("Experiments", a != null && a < 3600,
+      Object.entries(db.summary.states).map(([k, v]) =>
+        `${v} ${k.toLowerCase().replace("_", "-")}`).join(" · ") +
+      (a != null ? ` — board refreshed ${ageTxt(a)}` : ""));
+  } else row("Experiments", null, "decision_board.json unavailable");
+  $id("labrows").innerHTML = rows.join("");
+}
+
+/* ---------- 07 · incidents strip ---------- */
+function drawIncidents() {
+  const inc = S.incidents || [];
+  const box = $id("incrow");
+  if (!inc.length) {
+    box.innerHTML = '<span class="mini">incidents.jsonl unavailable</span>';
     return;
   }
-  const wins = settled.filter(r => r.win).length;
-  const winP = wins / settled.length;
-  const be = settled.reduce((a, r) => a + r.stake_c / r.contracts, 0) / settled.length;
-  const edge = 100 * winP - be;                      // percentage points
-  const evPerDollar = edge / be;                     // per $1 staked
-  const ok = edge > 0;
-  el.innerHTML =
-    `<div class="term"><b>${(100 * winP).toFixed(1)}%</b>
-      <span>observed win · ${settled.length} settled</span></div>
-    <span class="op">−</span>
-    <div class="term"><b>${be.toFixed(1)}%</b>
-      <span>required break-even · mean cost/contract</span></div>
-    <span class="op">=</span>
-    <div class="term"><b class="${ok ? "pos" : "neg"}">${edge >= 0 ? "+" : "−"}${Math.abs(edge).toFixed(1)} pts</b>
-      <span>edge → EV ${evPerDollar >= 0 ? "+" : "−"}$${Math.abs(evPerDollar).toFixed(3)}/$1</span></div>
-    <span class="op">∴</span>
-    <div class="term verdict-t" style="color:${ok ? "var(--good-text)" : "var(--down)"}">
-      <b class="${ok ? "pos" : "neg"}">${ok ? "CLEARS BREAK-EVEN" : "DOES NOT SCALE"}</b>
-      <span>${ok ? "at current costs" : "(yet)"}</span></div>`;
+  box.innerHTML = inc.map(i => {
+    const open = String(i.status || "").toLowerCase() !== "closed";
+    return `<a class="chip" href="sev0.html" style="text-decoration:none">
+      <b style="color:var(--down)">SEV-${i.sev}</b>&nbsp; ${esc(i.title)}
+      &nbsp;<span class="pill ${open ? "pending" : "ok"}">${esc(i.status || "?")}</span></a>`;
+  }).join("") + '<span class="mini" style="margin:0;align-self:center">every breakage is public — <a href="sev0.html">the SEV log</a></span>';
 }
 
-/* ---------- footer status ---------- */
-function drawStatus(st, man) {
-  let cb = "Coinbase LIVE";
-  const now = Date.now() / 1000;
-  let last = null;   // freshest evidence the feed is alive: manifest tick
-  if (man && man.freshness && man.freshness.ticks)   // stamp vs daemon beat
-    last = man.freshness.ticks.last_ts;
-  if (st && st.alive_at) last = Math.max(last || 0, st.alive_at);
-  const age = last ? now - last : null;
-  const el = $id("sys-cb");
-  if (age != null) {
-    const stale = age > 300;
-    cb = `Coinbase ${stale ? "STALE" : "LIVE"} · tick ${age < 120
-      ? Math.round(age) + "s" : Math.round(age / 60) + "m"} ago`;
-    el.className = stale ? "off" : "on";
-  }
-  el.textContent = cb;
+/* ---------- header status ---------- */
+function drawAsOf() {
+  const st = S.st, now = Date.now() / 1000;
   const stale = !st || (now - (st.alive_at || 0)) > 300;
   $id("dot").className = "live-dot" + (stale ? " stale" : "");
   $id("asof").textContent = st && st.alive_at
@@ -844,12 +897,19 @@ function drawStatus(st, man) {
 
 /* ---------- boot ---------- */
 async function boot() {
-  const [st, man, prices, mi, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r] =
+  const [st, man, prices, audit, db, board, world, incidents, treatments,
+    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r] =
     await Promise.all([
       jget("../results/online_status.json"),
       jget("../results/site_manifest.json"),
       jget("../results/recent_prices.json"),
-      jget("../results/model_internals.json"),
+      jget("../results/audit_report.json"),
+      jget("../results/decision_board.json"),
+      jget("../results/board.json"),
+      jget("../results/world.json"),
+      jsonl("../results/incidents.jsonl"),
+      jsonl("../results/treatments.jsonl"),
+      jsonl("../results/commentary.jsonl"),
       jsonl("../results/pt_trades.jsonl"),
       jsonl("../results/pt2_trades.jsonl"),
       jsonl("../results/pt3_trades.jsonl"),
@@ -859,33 +919,23 @@ async function boot() {
       jsonl("../results/pt7_trades.jsonl"),
       jsonl("../results/pt8_trades.jsonl"),
     ]);
-  /* the trade gate, from the manifest — PT_TAU preferred; REGIME_FLOOR is the
-     published fallback (same disclosed value); no gate ⇒ say so, never invent */
   const cfg = man && man.config ? man.config : {};
   if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
   else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
   else { TAU = null; TAU_SRC = ""; }
-  const raw = { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
-    pt6: pt6r, pt7: pt7r, pt8: pt8r };
-  raceData = {};
-  for (const d of DESKS) {
-    let rows = raw[d.id] || [];
-    if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
-    if (d.skips) rows = rows.filter(r => !r.skipped);
-    raceData[d.id] = deskSeries(rows, d);
-  }
-  try { drawNow(st, prices); } catch (e) {}
-  try { drawArgument(st, man); } catch (e) {}
-  try { drawLast(ptr); } catch (e) {}
-  try { drawAbl(); drawRace(); drawBoard(); } catch (e) {}
-  try { drawScatter(mi); } catch (e) {}
-  try { drawScale(ptr); } catch (e) {}
-  try { drawStatus(st, man); } catch (e) {}
+  S = { st, man, prices, audit, db, board, world, incidents, treatments,
+    commentary,
+    ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
+      pt6: pt6r, pt7: pt7r, pt8: pt8r } };
+  try { drawAsOf(); } catch (e) {}
+  try { drawSciState(); } catch (e) {}
+  try { drawPlay(); } catch (e) {}
+  try { drawCrew(); } catch (e) {}
+  try { drawWallet(); } catch (e) {}
+  try { drawWorldMini(); } catch (e) {}
+  try { drawLabNow(); } catch (e) {}
+  try { drawIncidents(); } catch (e) {}
 }
-$id("v-ret").onclick = () => { raceView = "ret";
-  $id("v-ret").classList.add("on"); $id("v-usd").classList.remove("on"); drawRace(); };
-$id("v-usd").onclick = () => { raceView = "usd";
-  $id("v-usd").classList.add("on"); $id("v-ret").classList.remove("on"); drawRace(); };
 boot();
 setInterval(boot, 15000);
 </script>
