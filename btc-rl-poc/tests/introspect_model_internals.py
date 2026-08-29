@@ -344,6 +344,7 @@ def main():
         "calib": cal,
         "fshare_w": mt["fshare_w"],
         "evlead": mt["evlead"],
+        "treatments": mt["treatments"],
         "bandit_pulls": {k: v["pulls"] for k, v in bd["linucb"].items()},
         "linearq_pulls": {k: v["pulls"] for k, v in bd["linearq"].items()},
         "k_factors": bd["k_factors"],

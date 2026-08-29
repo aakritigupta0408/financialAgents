@@ -24,5 +24,21 @@ live-money policy terminates with them (PROGRAM.md §3).
 | 08-28 | SEV-1 logged; org charter (PROGRAM.md); this ledger created | TA directive | human | this document |
 
 Proposal queue (PORTFOLIO team writes here; human ratifies):
-- (none open — M10+M8 at LLR 0.76–1.24 is the nearest launch candidate;
-  a launch-analysis page auto-triggers at |LLR| ≥ 2.3/2.9)
+- **PROPOSE: retire or redesign M1 (Platt calibration layer).**
+  Evidence (introspection wave, 08-29 snapshot): prequential log-loss
+  is WORSE calibrated than raw for ALL NINE arms (+0.034..+0.164, kb7
+  worst) — the layer's own pre-registered success criterion is met by
+  nobody, and the fitted direction has flipped since 08-28 (b>1 now vs
+  b<1 then): the miscalibration drifts faster than the fit. Options:
+  (a) retire M1, keep raw p_up; (b) redesign with shorter memory;
+  (c) keep shadow-only as a drift instrument, never as an input.
+  Recommendation: (c) — it costs nothing and measures drift.
+- **PROPOSE: investigate the edge-anti-signal.** kb5's claimed_edge
+  weight −0.096 and pt6's conf_minus_ask −0.059: both edge-gated
+  models' own regressions score "stated edge" as predicting LOSSES
+  (adverse selection internalized — when you think you know better
+  than the price, you usually don't). If it replicates on more data,
+  the gates should invert from "edge floor" to "edge band" (too MUCH
+  claimed edge is also a red flag).
+- (nearest launch candidate: M10+M8 — boundaries now family-wise
+  corrected to 5.66, so the bar is properly higher)
