@@ -630,3 +630,19 @@ post-fill markout (1m/5m from ticks), capacity/depth metrics,
 offline→online retention tracker, Brier decomposition + ECE,
 risk–coverage curves, redundancy/kill board, factorial interaction
 for combo treatments.
+
+## 2026-08-29 — Quant Universe waves 1–2 shipped; Ladder≡Follower explained
+Wave 1: universe.html (atlas, Explore/Engineer lenses), clock.html
+(cadences + dissected retrain + honest bill), agents.html (authority
+cards + activity stream), museum.html (six frozen failure exhibits).
+Wave 2: home.html rebuilt as the Playground (play-this-window game,
+8 character cards, $1,000 wallet replaying real treatments.jsonl EV
+series — verified against an independent recompute to the cent);
+old 7-scene home preserved as instrument.html.
+Investigated (builder flag): pt_trades and pt2_trades carry identical
+(ticker, stake, pnl) series — CORRECT by construction: the Ladder
+trades the same PT_FRAC-of-bankroll entries as the Follower and only
+diverges when bankroll reaches 11x its level ($11,000) and a rung
+banks; both slid to $384 instead, banked_c=0, so the paths coincide
+on this sample. The ablation (does rung-banking protect a climb?)
+remains untested until a climb happens. No code change; not a bug.

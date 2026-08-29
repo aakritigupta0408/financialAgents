@@ -346,6 +346,14 @@ PT4_MIN_EDGE_C = 2.0   # v2.1 (2026-08-28): stated edge at the actual
                        # negative-EV entries when price ran ahead
 PT4_RESET_TS = 1_787_788_353  # 2026-08-26 16:52 PT — v2 cutover
 PT4_RESET_C = 1_000_000       # $10,000 fresh v2 bankroll
+# v3 (2026-08-29, owner decision D-gambler-sizing): the 33% stake
+# STAYS — the aggressive curriculum is the exhibit — but any settle
+# that lifts the bankroll above PT4_RESET_C sweeps the excess out as a
+# WITHDRAWAL (wd_c stamped on the settling row = the ledger), and
+# withdrawn cash can never be re-staked. Fresh $10k at the cutover;
+# v1/v2 history stays in the log untouched. Exposure is thereby
+# bounded at 0.33 x $10k forever, while the drawdown lessons remain.
+PT4_RESET2_TS = 1_787_994_332  # 2026-08-29 02:25 PT — v3 cutover
 # Trader 5, the SAVER (2026-08-25): starts $10k, stakes 25% of playing
 # bankroll (depth-capped like the whole desk), and SKIMS 25% of every
 # win into savings that never return to play; losses hit the bankroll
@@ -2243,14 +2251,19 @@ def run(once: bool = False) -> None:
         - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
-    # v2 bankroll: $10k reset at cutover — only v2-era trades count
+    # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
+    # count, and each settled row's recorded withdrawal (wd_c) left
+    # the bankroll when it happened. The ledger on disk is the truth.
+    pt4_withdrawn_c = sum(t.get("wd_c", 0) for t in pt4_trades
+                          if t.get("actual") is not None
+                          and t["made_ts"] >= PT4_RESET2_TS)
     pt4_bankroll_c = PT4_RESET_C \
-        + sum(t["pnl_c"] for t in pt4_trades
+        + sum(t["pnl_c"] - t.get("wd_c", 0) for t in pt4_trades
               if t.get("actual") is not None
-              and t["made_ts"] >= PT4_RESET_TS) \
+              and t["made_ts"] >= PT4_RESET2_TS) \
         - sum(t["stake_c"] for t in pt4_trades
               if t.get("actual") is None
-              and t["made_ts"] >= PT4_RESET_TS)
+              and t["made_ts"] >= PT4_RESET2_TS)
     pt5_trades = _load_kb_bets(PT5_LOG_NAME)
     pt5_tickers = {t["ticker"] for t in pt5_trades}
     pt5_savings_c = sum(t.get("skim_c", 0) for t in pt5_trades
@@ -3168,8 +3181,10 @@ def run(once: bool = False) -> None:
                                                 "contracts": nc4,
                                                 "stake_c": st4,
                                                 "depth_cap_c": dcap,
-                                                "pv": 2,
+                                                "pv": 3,
                                                 "bankroll_c": pt4_bankroll_c,
+                                                "withdrawn_c":
+                                                    pt4_withdrawn_c,
                                             })
                                             pt4_tickers.add(pm_mkt["ticker"])
                                     # Trader 5, the SAVER: 25% stakes,
@@ -3718,11 +3733,21 @@ def run(once: bool = False) -> None:
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
                 t["pnl_c"] = payout - t["stake_c"]
-                # pre-reset stragglers settle into the log but never
-                # touch the v2 bankroll (their stake wasn't debited)
-                if t["made_ts"] >= PT4_RESET_TS:
+                # pre-cutover stragglers settle into the log but never
+                # touch the v3 bankroll (their stake wasn't debited)
+                if t["made_ts"] >= PT4_RESET2_TS:
                     pt4_bankroll_c += payout
+                    # v3 profit sweep: anything above the $10k start is
+                    # withdrawn on the spot and can never be re-staked
+                    if pt4_bankroll_c > PT4_RESET_C:
+                        wd = pt4_bankroll_c - PT4_RESET_C
+                        pt4_withdrawn_c += wd
+                        pt4_bankroll_c = PT4_RESET_C
+                        t["wd_c"] = wd
+                    else:
+                        t["wd_c"] = 0
                     t["bankroll_c"] = pt4_bankroll_c
+                    t["withdrawn_c"] = pt4_withdrawn_c
                 pt4_changed = True
             if pt4_changed or (pt4_trades
                                and pt4_trades[-1]["actual"] is None

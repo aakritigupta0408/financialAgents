@@ -32,8 +32,14 @@ class PlattCalibrator:
     Dawid 1984 for the prequential (test-then-train) discipline.
     """
 
+    # v3 (2026-08-29, D-m1-future): SHADOW-ONLY drift instrument with
+    # SHORTER memory. The 150-window fit measurably lagged a
+    # miscalibration that flips direction within a day (worse-than-raw
+    # log-loss on all nine arms); 50 windows ~ half a trading day, so
+    # the fitted (a, b) now tracks the drift it is meant to display.
+    # p_m1 is never an input to any decision — it is instrumentation.
     def __init__(self, decay: float = 0.985, lr: float = 0.35,
-                 warm: int = 25, window: int = 150, refit: int = 5):
+                 warm: int = 20, window: int = 50, refit: int = 3):
         self.a = 0.0
         self.b = 1.0
         self.decay = decay          # memory of the log-loss scoreboard
@@ -138,15 +144,18 @@ class PlattCalibrator:
 
     @classmethod
     def from_dict(cls, d: dict) -> "PlattCalibrator":
-        c = cls(decay=d.get("decay", 0.985), lr=d.get("lr", 0.35),
-                warm=d.get("warm", 25), window=d.get("window", 150),
-                refit=d.get("refit", 5))
+        # Config sovereignty (same lesson as Treatment.load, 08-28):
+        # hyperparameters come from the CODE, only evidence is
+        # restored — otherwise persisted window/warm/refit silently
+        # override a retune forever after the first state save.
+        c = cls()
         c.a, c.b = d.get("a", 0.0), d.get("b", 1.0)
         c.updates = d.get("updates", 0)
         c.n_eff = d.get("n_eff", 0.0)
         c.ll = d.get("ll", 0.0)
         c.ll_raw = d.get("ll_raw", 0.0)
-        c.hist = [(float(p), int(y)) for p, y in d.get("hist", [])]
+        c.hist = [(float(p), int(y))
+                  for p, y in d.get("hist", [])][-c.window:]
         return c
 
 

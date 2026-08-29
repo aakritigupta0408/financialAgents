@@ -23,6 +23,9 @@ live-money policy terminates with them (PROGRAM.md §3).
 | 08-28 | M12 EV-ranked leader as treatment; Follower stays frozen | win-rate leaderboard seats market-echo arms 62%/day; control integrity | evidence + charter | live, flat backfill |
 | 08-28 | SEV-1 logged; org charter (PROGRAM.md); this ledger created | TA directive | human | this document |
 
+| 08-29 | Gambler v3 (D-gambler-sizing RESOLVED): 33% stake KEPT — the aggressive curriculum is the exhibit — but every settle that lifts the bankroll above the $10k start sweeps the excess to a withdrawal ledger (wd_c on the settling row, mirroring Saver's skim_c); withdrawals can never be re-staked; fresh $10k at PT4_RESET2_TS, v1/v2 history preserved. Exposure now bounded at 0.33×$10k forever | owner directive; SEV-1 finding was that sizing, not the gate, was the exposure — the sweep caps compounding risk while keeping the lesson | human | live (daemon restarted) |
+| 08-29 | M1 v3 (D-m1-future RESOLVED): redesigned with shorter memory (window 150→50, warm 20, refit 3) AND kept shadow-only as a drift instrument — p_m1 is never a decision input. from_dict made config-sovereign (evidence restored, hyperparameters from code) so the retune actually applies to restored state | owner directive; introspection showed the 150-window fit lagging a miscalibration that flips within a day | human | live (daemon restarted) |
+
 Proposal queue (PORTFOLIO team writes here; human ratifies):
 - **PROPOSE: retire or redesign M1 (Platt calibration layer).**
   Evidence (introspection wave, 08-29 snapshot): prequential log-loss

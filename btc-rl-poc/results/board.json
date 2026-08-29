@@ -6,13 +6,17 @@
    "id": "D-gambler-sizing",
    "q": "Does the Gambler keep 33% stakes (aggressive-curriculum exhibit, with its drawdowns as the lesson) or step down to a Kelly-consistent fraction?",
    "owner": "human",
-   "context": "SEV-1: two legitimate +edge bets lost -$3,454 at 33%; the gate works, the sizing is the exposure"
+   "context": "SEV-1: two legitimate +edge bets lost -$3,454 at 33%; the gate works, the sizing is the exposure",
+   "status": "resolved",
+   "resolution": "owner 08-29: KEEP 33% (the aggressive curriculum is the exhibit) + v3 profit sweep \u2014 any settle lifting bankroll above the $10k start is withdrawn on the spot (wd_c ledger on the row), withdrawals never re-staked, fresh $10k at cutover PT4_RESET2_TS"
   },
   {
    "id": "D-m1-future",
    "q": "M1 calibration layer: retire, redesign with shorter memory, or keep shadow-only as a drift instrument (recommended)?",
    "owner": "human",
-   "context": "introspection: calibrated log-loss WORSE than raw for all 9 arms; fitted direction flipped in one day"
+   "context": "introspection: calibrated log-loss WORSE than raw for all 9 arms; fitted direction flipped in one day",
+   "status": "resolved",
+   "resolution": "owner 08-29: redesign with SHORTER memory (150\u219250 windows, warm 20, refit 3) AND keep shadow-only as a drift instrument \u2014 p_m1 is never a decision input; config-sovereign from_dict so the retune actually takes effect"
   },
   {
    "id": "D-edge-band",
