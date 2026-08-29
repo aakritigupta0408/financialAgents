@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — The Ledgers</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.strip { display: flex; flex-wrap: wrap; gap: 26px; margin: 4px 0 2px; }
+.strip .stat .k { display: block; margin-bottom: 1px; }
+.sev-chip { display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; padding: 2px 9px; border-radius: 999px;
+  border: 1px solid var(--border); }
+.sev-chip.s01 { color: var(--down); background: rgba(255,93,93,.10);
+  border-color: rgba(209,60,60,.35); }
+.sev-chip.s23 { color: var(--series-4); background: rgba(143,96,0,.08);
+  border-color: rgba(143,96,0,.35); }
+.sev-chip.s4 { color: var(--ink-2); background: var(--surface-2); }
+.sev-chip.s5 { color: var(--muted); background: var(--surface-2); }
+.era { font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  padding: 1px 7px; border-radius: 6px; border: 1px solid var(--border);
+  color: var(--muted); background: var(--surface-2); }
+.era.v3 { color: var(--series-2); border-color: rgba(36,97,184,.4); }
+.era.v2 { color: var(--series-5); border-color: rgba(11,125,138,.4); }
+td.pos { color: var(--good-text); font-weight: 600; }
+td.neg { color: var(--down); font-weight: 600; }
+.skipnote { font-size: 11.5px; color: var(--faint); margin-left: 6px; }
+.resp { max-width: 34ch; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; display: inline-block; vertical-align: bottom; }
+.showall { margin-top: 10px; }
+.files code { margin-right: 10px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><span class="spacer"></span><span class="tag">the ledgers</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">ledger valley · every book, open</div>
+  <h1>The Ledgers</h1>
+  <p class="sub small">Every append-only paper book on the desk, readable
+  row by row, live. If it isn't written here, it didn't happen. Every
+  number below is fetched from the raw JSON/JSONL files — nothing is
+  computed offline or hardcoded except the documented policy-era epochs.</p>
+</header>
+
+<section>
+  <div class="tabs" id="tabs" role="tablist"></div>
+</section>
+
+<section id="view">
+  <p class="mini">loading the book…</p>
+</section>
+
+<footer>
+  <p>Prefer the old dense views? <a href="instrument.html">The
+  Instrument</a> · <a href="home_classic.html">Classic ledgers</a>.</p>
+  <p class="files" style="margin-top:6px">Raw books (fetch them yourself
+  from <code>results/</code>):
+  <code>pt_trades.jsonl</code> <code>pt2_trades.jsonl</code>
+  <code>pt3_trades.jsonl</code> <code>pt4_trades.jsonl</code>
+  <code>pt5_trades.jsonl</code> <code>pt6_trades.jsonl</code>
+  <code>pt7_trades.jsonl</code> <code>pt8_trades.jsonl</code>
+  <code>pb_bets.jsonl</code> <code>loss_reviews.jsonl</code>
+  <code>treatments.jsonl</code></p>
+</footer>
+</main>
+
+<script>
+"use strict";
+/* fetch pattern shared with live_online.html / analyst.html:
+   cache-busted, no-store, line-parsed, null-safe */
+const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
+const jf = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+const jl = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
+    .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
+      catch { return null; } }).filter(Boolean)).catch(() => []);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+/* pt4 policy eras. v2 cutover is the documented epoch from
+   btc_rl/online.py (PT4_RESET_TS, same constant metrics_lab.html uses);
+   v3 cutover (PT4_RESET2_TS) is published in site_manifest.json .config
+   and fetched below — this value is only the fallback. */
+let PT4_V2_TS = 1787788353;
+let PT4_V3_TS = 1787994332;
+
+const R = "../results/";
+const BOOKS = [
+  { id: "pt",  emo: "🦊", label: "Follower",     file: "pt_trades.jsonl",  kind: "trader" },
+  { id: "pt2", emo: "🐢", label: "Ladder",       file: "pt2_trades.jsonl", kind: "trader" },
+  { id: "pt3", emo: "🦉", label: "Disciplined",  file: "pt3_trades.jsonl", kind: "trader" },
+  { id: "pt4", emo: "🐉", label: "Gambler",      file: "pt4_trades.jsonl", kind: "trader" },
+  { id: "pt5", emo: "🐿", label: "Saver",        file: "pt5_trades.jsonl", kind: "trader" },
+  { id: "pt6", emo: "🤖", label: "MLE",          file: "pt6_trades.jsonl", kind: "trader" },
+  { id: "pt7", emo: "🦩", label: "Patient",      file: "pt7_trades.jsonl", kind: "trader" },
+  { id: "pt8", emo: "👑", label: "Ideal",        file: "pt8_trades.jsonl", kind: "trader" },
+  { id: "pb",  emo: "📗", label: "Conviction",   file: "pb_bets.jsonl",    kind: "pb" },
+  { id: "lr",  emo: "🔍", label: "Loss reviews", file: "loss_reviews.jsonl", kind: "lr" },
+  { id: "tw",  emo: "⚖️", label: "Windows",      file: "treatments.jsonl", kind: "tw" }
+];
+
+const cacheRows = {};   // book id -> parsed rows
+let lrSummary = null;   // loss_reviews.json (by_sev)
+let expanded = false;   // "show all" state, reset per tab
+
+const fmtWhen = ts => ts == null ? "—" :
+  new Date(ts * 1000).toLocaleString("en-US",
+    { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: false });
+const usd = c => c == null ? "—" :
+  (c < 0 ? "−" : "") + "$" + (Math.abs(c) / 100).toLocaleString("en-US",
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const usdSigned = c => c == null ? "—" : (c >= 0 ? "+" : "−") + usd(Math.abs(c)).replace("−", "");
+const num = (v, d) => v == null ? "—" : Number(v).toFixed(d);
+
+function currentBook() {
+  const h = location.hash.replace("#", "");
+  if (BOOKS.some(b => b.id === h)) return h;
+  const s = localStorage.getItem("ledgers.tab");
+  if (BOOKS.some(b => b.id === s)) return s;
+  return "pt";
+}
+
+function selectBook(id, push) {
+  localStorage.setItem("ledgers.tab", id);
+  if (push) history.replaceState(null, "", "#" + id);
+  expanded = false;
+  drawTabs(id);
+  render(id);
+}
+
+function drawTabs(sel) {
+  const t = document.getElementById("tabs");
+  t.innerHTML = BOOKS.map(b =>
+    `<button type="button" class="chip${b.id === sel ? " on" : ""}"` +
+    ` role="tab" aria-selected="${b.id === sel}" data-id="${b.id}">` +
+    `${b.emo} ${esc(b.label)}</button>`).join("");
+}
+document.getElementById("tabs").addEventListener("click", e => {
+  const btn = e.target.closest("button[data-id]");
+  if (btn) selectBook(btn.dataset.id, true);
+});
+window.addEventListener("hashchange", () => {
+  const h = location.hash.replace("#", "");
+  if (BOOKS.some(b => b.id === h)) selectBook(h, false);
+});
+
+async function rowsFor(book) {
+  if (!cacheRows[book.id]) cacheRows[book.id] = await jl(R + book.file);
+  return cacheRows[book.id];
+}
+
+const stat = (k, v, cls) =>
+  `<div class="stat"><span class="k">${k}</span>` +
+  `<span class="bignum${cls ? " " + cls : ""}">${v}</span></div>`;
+
+function resultCell(r) {
+  if (r.skipped) {
+    const why = r.limit_c != null
+      ? `<span class="skipnote">limit ${num(r.limit_c, 0)}¢ never filled</span>` : "";
+    return `<span class="pill miss">SKIPPED</span>${why}`;
+  }
+  if (r.win == null) return `<span class="pill pending">open</span>`;
+  return r.win
+    ? `<span class="pill ok">WON ${esc(usdSigned(r.pnl_c))}</span>`
+    : `<span class="pill bad">lost ${esc(usdSigned(r.pnl_c))}</span>`;
+}
+
+function eraChip(ts) {
+  if (ts >= PT4_V3_TS) return `<span class="era v3">v3</span>`;
+  if (ts >= PT4_V2_TS) return `<span class="era v2">v2</span>`;
+  return `<span class="era">v1</span>`;
+}
+
+function tableWrap(head, bodyRows, total) {
+  const shown = expanded ? bodyRows : bodyRows.slice(0, 50);
+  const more = !expanded && bodyRows.length > 50
+    ? `<div class="showall"><button type="button" class="btn" id="showall">` +
+      `show all ${total} rows</button></div>` : "";
+  return `<div class="scroll"><table><thead><tr>${head}</tr></thead>` +
+    `<tbody>${shown.join("")}</tbody></table></div>${more}`;
+}
+
+/* ------------------------------------------------ per-trader ledger -- */
+function renderTrader(book, rows) {
+  const settled = rows.filter(r => !r.skipped && r.win != null);
+  const wins = settled.filter(r => r.win === 1).length;
+  const pnl = settled.reduce((s, r) => s + (r.pnl_c || 0), 0);
+  const skipped = rows.filter(r => r.skipped).length;
+  const lastSettled = settled.length ? settled[settled.length - 1] : null;
+  const bank = lastSettled ? lastSettled.bankroll_c : null;
+
+  let extras = "";
+  if (book.id === "pt4") {
+    const wd = rows.reduce((s, r) => s + (r.wd_c || 0), 0);
+    extras += stat("💰 withdrawn", usd(wd));
+  }
+  if (book.id === "pt5") {
+    const withSav = rows.filter(r => r.savings_c != null);
+    extras += stat("banked", usd(withSav.length
+      ? withSav[withSav.length - 1].savings_c : null));
+  }
+  if (book.id === "pt2") {
+    const withBank = rows.filter(r => r.banked_c != null);
+    extras += stat("rungs banked", usd(withBank.length
+      ? withBank[withBank.length - 1].banked_c : null));
+  }
+  if (["pt6", "pt7", "pt8"].includes(book.id))
+    extras += stat("skipped", skipped);
+
+  const strip = `<div class="strip">` +
+    stat("rows", rows.length) + stat("settled", settled.length) +
+    stat("wins – losses", wins + " – " + (settled.length - wins)) +
+    stat("total pnl", usdSigned(pnl), pnl >= 0 ? "pos" : "neg") +
+    stat("bankroll", usd(bank)) + extras + `</div>`;
+
+  const isPt4 = book.id === "pt4";
+  const hasWd = isPt4;
+  const hasSkim = book.id === "pt5";
+  const head =
+    `<th>when (PT)</th>` + (isPt4 ? `<th>era</th>` : "") +
+    `<th>side</th><th class="num">ask¢</th><th class="num">conf</th>` +
+    `<th class="num">stake</th><th>result</th>` +
+    (hasWd ? `<th class="num">💰 wd</th>` : "") +
+    (hasSkim ? `<th class="num">💰 skim</th>` : "") +
+    `<th class="num">bankroll</th>`;
+
+  const body = rows.slice().reverse().map(r => {
+    const side = r.side == null ? "—" :
+      `<span class="pill ${r.side === "yes" ? "yes" : "no"}">` +
+      `${esc(String(r.side).toUpperCase())}</span>`;
+    return `<tr><td>${fmtWhen(r.made_ts)}</td>` +
+      (isPt4 ? `<td>${r.made_ts != null ? eraChip(r.made_ts) : "—"}</td>` : "") +
+      `<td>${side}</td>` +
+      `<td class="num">${num(r.ask_c, 0)}</td>` +
+      `<td class="num">${r.p_arm != null ? (100 * r.p_arm).toFixed(1) + "%" : "—"}</td>` +
+      `<td class="num">${usd(r.stake_c)}</td>` +
+      `<td>${resultCell(r)}</td>` +
+      (hasWd ? `<td class="num">${r.wd_c ? usd(r.wd_c) : "—"}</td>` : "") +
+      (hasSkim ? `<td class="num">${r.skim_c ? usd(r.skim_c) : "—"}</td>` : "") +
+      `<td class="num">${usd(r.bankroll_c)}</td></tr>`;
+  });
+
+  return `<h2>${book.emo} ${esc(book.label)} — <code>${esc(book.file)}</code></h2>` +
+    strip + tableWrap(head, body, rows.length);
+}
+
+/* --------------------------------------------------- conviction book -- */
+function renderPb(book, rows) {
+  const settled = rows.filter(r => r.win != null);
+  const wins = settled.filter(r => r.win === 1).length;
+  const pnl = settled.reduce((s, r) => s + (r.pnl_c || 0), 0);
+  const strip = `<div class="strip">` +
+    stat("rows", rows.length) + stat("settled", settled.length) +
+    stat("wins – losses", wins + " – " + (settled.length - wins)) +
+    stat("total pnl", (pnl >= 0 ? "+" : "−") + Math.abs(pnl).toFixed(1) + "¢",
+      pnl >= 0 ? "pos" : "neg") + `</div>`;
+
+  const head = `<th>ticker</th><th>when (PT)</th><th>side</th>` +
+    `<th class="num">price¢</th><th class="num">p(win)</th>` +
+    `<th>src</th><th>result</th>`;
+  const body = rows.slice().reverse().map(r => {
+    const side = r.side == null ? "—" :
+      `<span class="pill ${r.side === "yes" ? "yes" : "no"}">` +
+      `${esc(String(r.side).toUpperCase())}</span>`;
+    let res = `<span class="pill pending">open</span>`;
+    if (r.win != null) {
+      const p = r.pnl_c == null ? "" :
+        " " + (r.pnl_c >= 0 ? "+" : "−") + Math.abs(r.pnl_c).toFixed(1) + "¢";
+      res = r.win ? `<span class="pill ok">WON${p}</span>`
+                  : `<span class="pill bad">lost${p}</span>`;
+    }
+    return `<tr><td><code>${esc(r.ticker || "—")}</code></td>` +
+      `<td>${fmtWhen(r.made_ts)}</td><td>${side}</td>` +
+      `<td class="num">${num(r.price_c, 1)}</td>` +
+      `<td class="num">${r.p_win != null ? (100 * r.p_win).toFixed(1) + "%" : "—"}</td>` +
+      `<td>${esc(r.src || "—")}</td><td>${res}</td></tr>`;
+  });
+  return `<h2>${book.emo} Conviction Book — <code>${esc(book.file)}</code></h2>` +
+    `<p class="sub small">One paper contract per window at the quoted
+    price — the book of what the model believed, priced.</p>` +
+    strip + tableWrap(head, body, rows.length);
+}
+
+/* ------------------------------------------------------ loss reviews -- */
+function sevChip(sev) {
+  if (sev == null) return "—";
+  const cls = sev <= 1 ? "s01" : sev <= 3 ? "s23" : sev === 4 ? "s4" : "s5";
+  return `<span class="sev-chip ${cls}">SEV-${sev}</span>`;
+}
+function renderLr(book, rows) {
+  const bySev = (lrSummary && lrSummary.by_sev) || null;
+  const strip = `<div class="strip">` + stat("reviews", rows.length) +
+    (bySev ? Object.keys(bySev).sort().map(k =>
+      stat(k, bySev[k])).join("") : "") + `</div>`;
+  const head = `<th>when (PT)</th><th>trader</th><th>sev</th>` +
+    `<th>grade</th><th>dominant</th><th class="num">pnl</th><th>response</th>`;
+  /* the file is appended in per-trader batches — sort, don't reverse */
+  const body = rows.slice()
+    .sort((a, b) => (b.close_ts || 0) - (a.close_ts || 0)).map(r =>
+    `<tr><td>${fmtWhen(r.close_ts)}</td>` +
+    `<td>${esc(r.label || r.trader || "—")}</td>` +
+    `<td>${sevChip(r.sev)}</td>` +
+    `<td class="small">${esc(r.grade || "—")}</td>` +
+    `<td>${esc(r.dominant || "—")}</td>` +
+    `<td class="num neg">${usd(r.pnl_c)}</td>` +
+    `<td><span class="resp" title="${esc(r.response || "")}">` +
+    `${esc(r.response || "—")}</span></td></tr>`);
+  return `<h2>${book.emo} Loss reviews — <code>${esc(book.file)}</code></h2>` +
+    `<p class="sub small">Every settled loss on the desk gets a filed
+    review: severity, grade, dominant factor, and the written response.
+    Severity counts come from <code>loss_reviews.json</code>.</p>` +
+    strip + tableWrap(head, body, rows.length);
+}
+
+/* ---------------------------------------------------- window ledger -- */
+function renderTw(book, rows) {
+  const strip = `<div class="strip">` + stat("windows", rows.length) + `</div>`;
+  const head = `<th>ticker</th><th>close (PT)</th><th>leader</th>` +
+    `<th>outcome</th><th class="num">regime acc</th>` +
+    `<th class="num">champion EV ¢/$1</th>`;
+  const body = rows.slice().reverse().slice(0, 50).map(r => {
+    const ev = r.ev && r.ev.champion != null ? r.ev.champion : null;
+    const out = r.outcome == null ? "—" : r.outcome
+      ? `<span class="pill yes">ABOVE</span>`
+      : `<span class="pill no">BELOW</span>`;
+    return `<tr><td><code>${esc(r.ticker || "—")}</code></td>` +
+      `<td>${fmtWhen(r.close_ts)}</td><td>${esc(r.leader || "—")}</td>` +
+      `<td>${out}</td><td class="num">${num(r.regime_acc, 2)}</td>` +
+      `<td class="num ${ev != null && ev >= 0 ? "pos" : "neg"}">` +
+      `${ev == null ? "—" : (ev >= 0 ? "+" : "−") + Math.abs(ev).toFixed(2) + "¢"}` +
+      `</td></tr>`;
+  });
+  return `<h2>${book.emo} Windows — <code>${esc(book.file)}</code></h2>` +
+    `<p class="sub small">the desk's paired window ledger — the same rows
+    the SPRT judges. Newest 50 windows shown.</p>` +
+    strip + `<div class="scroll"><table><thead><tr>${head}</tr></thead>` +
+    `<tbody>${body.join("")}</tbody></table></div>`;
+}
+
+/* ------------------------------------------------------------ render -- */
+async function render(id) {
+  const book = BOOKS.find(b => b.id === id) || BOOKS[0];
+  const view = document.getElementById("view");
+  view.innerHTML = `<p class="mini">reading ${esc(book.file)}…</p>`;
+  const rows = await rowsFor(book);
+  if (currentBook() !== book.id) return;   // user moved on mid-fetch
+  if (!rows.length) {
+    view.innerHTML = `<h2>${book.emo} ${esc(book.label)}</h2>` +
+      `<p class="mini">no rows in ${esc(book.file)} — nothing happened yet.</p>`;
+    return;
+  }
+  view.innerHTML =
+    book.kind === "trader" ? renderTrader(book, rows) :
+    book.kind === "pb" ? renderPb(book, rows) :
+    book.kind === "lr" ? renderLr(book, rows) : renderTw(book, rows);
+  const btn = document.getElementById("showall");
+  if (btn) btn.addEventListener("click", () => { expanded = true; render(book.id); });
+}
+
+(async function init() {
+  const [manifest, lrs] = await Promise.all([
+    jf(R + "site_manifest.json"), jf(R + "loss_reviews.json")]);
+  const cfg = (manifest && manifest.config) || {};
+  if (cfg.PT4_RESET2_TS != null) PT4_V3_TS = cfg.PT4_RESET2_TS;
+  if (cfg.PT4_RESET_TS != null) PT4_V2_TS = cfg.PT4_RESET_TS;
+  lrSummary = lrs;
+  selectBook(currentBook(), false);
+})();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

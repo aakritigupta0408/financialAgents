@@ -30,6 +30,7 @@
     { label: "Training",        href: "live_training.html" },
     { label: "System Clock",    href: "clock.html" },
     { label: "SEV-0",           href: "sev0.html" },
+    { label: "Ledgers",         href: "ledgers.html" },
     { label: "Classic ledgers", href: "home_classic.html" }
   ];
 
@@ -65,6 +66,8 @@
       kw: "cron, retrain, costs, schedule, bill" },
     { title: "SEV-0", href: "sev0.html",
       kw: "incident, audit, outage, postmortem, tracker" },
+    { title: "The Ledgers", href: "ledgers.html",
+      kw: "ledger, trades, gambler, withdrawals, book, rows" },
     { title: "Classic ledgers", href: "home_classic.html",
       kw: "classic home, ledgers, tables, archive" }
   ];
