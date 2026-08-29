@@ -31,6 +31,36 @@
 .kbar { height: 5px; border-radius: 3px; background: rgba(22,32,44,.08);
   overflow: hidden; margin-top: 6px; }
 .kbar > i { display: block; height: 100%; }
+/* experimentation-platform experiment card: effect + CI around zero */
+.exp { border: 1px solid var(--grid); border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 8px; background: var(--surface-2); }
+.exp .ehead { display: flex; justify-content: space-between; gap: 8px;
+  align-items: baseline; font-size: 12.5px; }
+.exp .ehead b { line-height: 1.35; }
+.echip { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; border-radius: 5px; padding: 2px 7px;
+  white-space: nowrap; }
+.echip.sig-pos { color: #fff; background: var(--good-text); }
+.echip.sig-neg { color: #fff; background: var(--down); }
+.echip.nsig { color: var(--muted); background: rgba(124,134,149,.15); }
+.ci { position: relative; height: 26px; margin: 8px 0 2px; }
+.ci .ax { position: absolute; left: 0; right: 0; top: 13px; height: 1px;
+  background: var(--grid); }
+.ci .zero { position: absolute; top: 4px; bottom: 4px; width: 1.5px;
+  background: var(--axis); left: 50%; }
+.ci .band { position: absolute; top: 10px; height: 7px;
+  border-radius: 4px; opacity: .35; }
+.ci .pt { position: absolute; top: 8px; width: 11px; height: 11px;
+  border-radius: 50%; border: 2px solid var(--surface);
+  transform: translateX(-50%); }
+.ci .lab { position: absolute; top: -2px; font-size: 9px;
+  color: var(--muted); }
+.emeta { display: flex; justify-content: space-between; gap: 8px;
+  font-size: 10.5px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.eprog { height: 3px; border-radius: 2px; background: rgba(22,32,44,.08);
+  margin-top: 6px; overflow: hidden; }
+.eprog > i { display: block; height: 100%; background: var(--series-2); }
 .secgap { margin-top: 6px; }
 </style>
 </head>
@@ -156,20 +186,47 @@ async function poll() {
       t.role + (t.flag ? " · ⚑ " + t.flag : "")));
   for (const i of (board && board.infrastructure) || [])
     put("active", card("active", i.id, i.note));
-  // live treatments -> IN TEST with SPRT bars
+  // live treatments -> experimentation-platform experiment cards:
+  // effect estimate with 95% CI around zero, significance chip,
+  // sample progress, SPRT evidence — the Optimizely/Statsig idiom
   const T = (st && st.treatments) || [];
   for (const t of T) {
     if (t.verdict === "baseline") continue;
+    const m = 100 * t.mean_diff;                 // pts per $1
+    const se = t.se != null ? 100 * t.se : null;
+    const lo = se != null ? m - 1.96 * se : null;
+    const hi = se != null ? m + 1.96 * se : null;
+    const sig = lo != null && lo > 0 ? "sig-pos"
+      : hi != null && hi < 0 ? "sig-neg" : "nsig";
+    const chip = sig === "sig-pos" ? "winner-trend"
+      : sig === "sig-neg" ? "losing" : "no sig diff";
+    // symmetric scale so zero sits centered; clamp to the axis
+    const span = Math.max(5, ...[m, lo, hi].filter(v => v != null)
+      .map(v => Math.abs(v))) * 1.15;
+    const X = v => 50 + 50 * Math.max(-1, Math.min(1, v / span));
     const up = t.llr >= 0;
     const bound = up ? t.upper : t.lower;
-    const w = bound ? Math.min(100,
-      100 * Math.abs(t.llr / bound)).toFixed(0) : 0;
-    put("test", `<div class="kcard test"><b>${t.label}</b>` +
-      `<div class="kwhy">paired ${(100 * t.mean_diff).toFixed(2)}%/$1 · ` +
-      `${t.n} windows · LLR ${t.llr.toFixed(2)} of ` +
-      `${(bound || 0).toFixed(2)}</div>` +
-      `<div class="kbar"><i style="width:${w}%;background:${up
-        ? "var(--good-text)" : "var(--down)"}"></i></div></div>`);
+    const prog = Math.min(100, 100 * t.n / Math.max(1, 40));
+    put("test", `<div class="exp"><div class="ehead"><b>${t.label}</b>` +
+      `<span class="echip ${sig}">${chip}</span></div>` +
+      `<div class="ci"><div class="ax"></div><div class="zero"></div>` +
+      (se != null
+        ? `<div class="band" style="left:${X(lo)}%;width:${
+            Math.max(1, X(hi) - X(lo))}%;background:${
+            sig === "sig-neg" ? "var(--down)" : "var(--good-text)"}"></div>`
+        : "") +
+      `<div class="pt" style="left:${X(m)}%;background:${
+        m >= 0 ? "var(--good-text)" : "var(--down)"}"></div>` +
+      `<span class="lab" style="left:2px">−${span.toFixed(0)}</span>` +
+      `<span class="lab" style="left:calc(50% - 3px)">0</span>` +
+      `<span class="lab" style="right:2px">+${span.toFixed(0)}</span>` +
+      `</div>` +
+      `<div class="emeta"><span>Δ ${m >= 0 ? "+" : ""}${m.toFixed(2)}` +
+      `${se != null ? ` [${lo.toFixed(1)}, ${hi.toFixed(1)}]` : ""}` +
+      ` pts/$1</span><span>n=${t.n} · LLR ${t.llr.toFixed(2)}/` +
+      `${(bound || 0).toFixed(2)}</span></div>` +
+      `<div class="eprog" title="windows toward min sample (40)">` +
+      `<i style="width:${prog}%"></i></div></div>`);
   }
   for (const m of (board && board.mitigations) || []) {
     const s = m.status;

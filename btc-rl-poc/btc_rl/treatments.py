@@ -177,6 +177,10 @@ class Treatment:
             "rationale": self.rationale,
             "n": self.sprt.n, "bets": self.n_bet, "skips": self.n_skip,
             "mean_diff": round(self.sprt.mean, 5),
+            # standard error of the paired mean — lets the UI draw the
+            # experimentation-platform CI bar honestly (mean ± 1.96·se)
+            "se": round((self.sprt.var() / self.sprt.n) ** 0.5, 5)
+            if self.sprt.n > 1 else None,
             "own_ev": round(self.ev_sum / self.n_bet, 5)
             if self.n_bet else None,
             "llr": round(self.sprt.llr, 3),
