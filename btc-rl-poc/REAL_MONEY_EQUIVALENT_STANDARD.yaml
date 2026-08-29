@@ -9,7 +9,11 @@
 # (results/readiness.json, emitted by scripts/emit_readiness.py).
 # The UI never decides readiness. UNKNOWN is never GREEN.
 
-version: 1.0.0
+version: 1.0.1
+# 1.0.1 (2026-08-29): factual correction only, no level changes —
+# retraining blocker text was wrong: permanent history EXISTS
+# (metrics_history.jsonl, 167 retrain records since 08-20 with git
+# SHA + per-arm gate outcomes). Ratified in DECISIONS.md.
 
 r_levels:
   R0: experimental
@@ -68,8 +72,8 @@ planes:
     blocker_to_next: "R7 gap: no SRM monitor (§32), no soak criteria met"
   execution:
     assessed: R1
-    evidence: model-basis quotes + real-fill family; measured -5.3c gap
-    blocker_to_next: "R2 gap: no execution ledger with markouts (§26), no latency sensitivity (§30)"
+    evidence: model-basis quotes + real-fill family; measured -5.3c gap; execution ledger LIVE (531 orders, +1m/+5m markouts, adverse selection measured -0.9pp@1m, provenance-labeled)
+    blocker_to_next: "R2 gap: latency/quote-age sensitivity curves (§30); fill-model calibration (E2, §28) using the measured ~2c modeled-spread overstatement"
   risk_capital:
     assessed: R3
     evidence: per-trader caps, Kelly fractions, v3 sweep conservation invariant
@@ -80,8 +84,8 @@ planes:
     blocker_to_next: "R6 gap: SRM absent; dependence-aware effective-n absent (§33)"
   retraining:
     assessed: R3
-    evidence: hourly holdout gate keep/revert, Adam-state checkpoints
-    blocker_to_next: "R4 gap: session-only history (§15), no slice-regression gate (§17)"
+    evidence: hourly holdout gate keep/revert, Adam-state checkpoints, permanent history (metrics_history.jsonl, 167 records since 08-20 w/ git SHA)
+    blocker_to_next: "R4 gap: no slice-regression gate or equivalence region in the promotion rule (§17)"
   audit:
     assessed: R3
     evidence: dual-implementation parity (27 fixtures), 10-invariant wall, 10-min cadence

@@ -1,6 +1,6 @@
 {
- "generated_ts": 1788016053,
- "standard_version": "1.0.0",
+ "generated_ts": 1788017027,
+ "standard_version": "1.0.1",
  "system": {
   "level": "R1",
   "rule": "MIN over all critical planes \u2014 never averaged",
@@ -64,8 +64,8 @@
    "level": "R1",
    "assessed": "R1",
    "target": "R8",
-   "evidence": "model-basis quotes + real-fill family; measured -5.3c gap",
-   "blocker": "R2 gap: no execution ledger with markouts (\u00a726), no latency sensitivity (\u00a730)",
+   "evidence": "model-basis quotes + real-fill family; measured -5.3c gap; execution ledger LIVE (531 orders, +1m/+5m markouts, adverse selection measured -0.9pp@1m, provenance-labeled)",
+   "blocker": "R2 gap: latency/quote-age sensitivity curves (\u00a730); fill-model calibration (E2, \u00a728) using the measured ~2c modeled-spread overstatement",
    "live_downgrades": []
   },
   "risk_capital": {
@@ -88,8 +88,8 @@
    "level": "R3",
    "assessed": "R3",
    "target": "R8",
-   "evidence": "hourly holdout gate keep/revert, Adam-state checkpoints",
-   "blocker": "R4 gap: session-only history (\u00a715), no slice-regression gate (\u00a717)",
+   "evidence": "hourly holdout gate keep/revert, Adam-state checkpoints, permanent history (metrics_history.jsonl, 167 records since 08-20 w/ git SHA)",
+   "blocker": "R4 gap: no slice-regression gate or equivalence region in the promotion rule (\u00a717)",
    "live_downgrades": []
   },
   "audit": {

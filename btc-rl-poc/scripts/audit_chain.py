@@ -28,6 +28,7 @@ STEPS = [
     "scripts/emit_fill_curve.py",
     "scripts/emit_diagnosis.py",
     "scripts/emit_program.py",
+    "scripts/emit_execution_ledger.py",
     "scripts/emit_readiness.py",
 ]
 
