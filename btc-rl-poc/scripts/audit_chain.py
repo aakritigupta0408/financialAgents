@@ -28,6 +28,7 @@ STEPS = [
     "scripts/emit_fill_curve.py",
     "scripts/emit_diagnosis.py",
     "scripts/emit_program.py",
+    "scripts/emit_readiness.py",
 ]
 
 print(f"=== audit chain {time.strftime('%Y-%m-%d %H:%M:%S')} ===",

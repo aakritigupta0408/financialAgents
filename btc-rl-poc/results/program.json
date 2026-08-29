@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788013792,
+ "generated_ts": 1788014663,
  "counts": {
   "live": 13,
   "retire_candidates": 5,
@@ -28,16 +28,16 @@
    },
    "parents": [],
    "children": [],
-   "effect": -0.00965,
+   "effect": -0.01271,
    "ci95_boot": [
-    -0.12428,
-    0.10665
+    -0.12567,
+    0.10048
    ],
-   "p_gt0": 0.419,
-   "coverage": 0.17,
-   "llr": -0.17,
-   "n": 188,
-   "lifecycle": "LIVE",
+   "p_gt0": 0.397,
+   "coverage": 0.169,
+   "llr": -0.188,
+   "n": 189,
+   "lifecycle": "RETIRED (lean) \u2014 the M1 gate at 13% coverage; the calibrator itself lives on as the shadow drift instrument (M1-v3), never a decision input",
    "analysis_recommendation": "HOLD",
    "recommendation_why": [
     "coverage 17% \u2014 not comparable at deployment scale"
@@ -67,16 +67,16 @@
    "children": [
     "M2+M8"
    ],
-   "effect": -0.01023,
+   "effect": -0.01328,
    "ci95_boot": [
-    -0.08247,
-    0.06167
+    -0.08527,
+    0.05583
    ],
-   "p_gt0": 0.382,
-   "coverage": 0.691,
-   "llr": -0.294,
-   "n": 188,
-   "lifecycle": "LIVE",
+   "p_gt0": 0.351,
+   "coverage": 0.688,
+   "llr": -0.341,
+   "n": 189,
+   "lifecycle": "RETIRED (lean) \u2014 dominated by M8, stale at 190 windows (+0.4c, LLR \u22120.07)",
    "analysis_recommendation": "RETIRE",
    "recommendation_why": [
     "retire-pressure HIGH: negative paired mean at full sample; stale \u2014 little movement toward a verdict; dominated by M8"
@@ -104,15 +104,15 @@
    "children": [
     "M3+M8"
    ],
-   "effect": -0.04076,
+   "effect": -0.04365,
    "ci95_boot": [
-    -0.13853,
-    0.05203
+    -0.14432,
+    0.04852
    ],
-   "p_gt0": 0.192,
-   "coverage": 0.633,
-   "llr": -0.445,
-   "n": 188,
+   "p_gt0": 0.172,
+   "coverage": 0.63,
+   "llr": -0.473,
+   "n": 189,
    "lifecycle": "RETIRED (branch)",
    "analysis_recommendation": "RETIRE",
    "recommendation_why": [
@@ -135,7 +135,7 @@
    "mechanism": "stand down when the market itself is unpredictable",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +21.0c (n=51) vs +0.0c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +19.5c (n=52) vs +0.0c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [],
    "children": [
@@ -144,22 +144,22 @@
     "M10+M8",
     "M11+M8"
    ],
-   "effect": 0.05697,
+   "effect": 0.05357,
    "ci95_boot": [
-    0.00589,
-    0.11135
+    0.00213,
+    0.10676
    ],
-   "p_gt0": 0.987,
-   "coverage": 0.729,
-   "llr": 1.254,
-   "n": 188,
+   "p_gt0": 0.98,
+   "coverage": 0.725,
+   "llr": 1.171,
+   "n": 189,
    "lifecycle": "LIVE",
    "analysis_recommendation": "PRIORITY",
    "recommendation_why": [
-    "P(\u0394>0) 99% \u2014 spend windows here"
+    "P(\u0394>0) 98% \u2014 spend windows here"
    ],
    "attention": [
-    "strongest positive evidence (P(\u0394>0) 99%)"
+    "strongest positive evidence (P(\u0394>0) 98%)"
    ],
    "retire_pressure": "LOW",
    "incremental_vs_parent": null
@@ -181,16 +181,16 @@
    },
    "parents": [],
    "children": [],
-   "effect": 0.0322,
+   "effect": 0.02892,
    "ci95_boot": [
-    -0.05268,
-    0.12491
+    -0.05379,
+    0.11581
    ],
-   "p_gt0": 0.761,
-   "coverage": 0.149,
-   "llr": 0.059,
-   "n": 188,
-   "lifecycle": "LIVE",
+   "p_gt0": 0.748,
+   "coverage": 0.148,
+   "llr": 0.028,
+   "n": 189,
+   "lifecycle": "RETIRED (lean) \u2014 15% coverage: a different product; cheap-price idea survives inside M13's band floor",
    "analysis_recommendation": "HOLD",
    "recommendation_why": [
     "coverage 15% \u2014 not comparable at deployment scale"
@@ -218,15 +218,15 @@
    },
    "parents": [],
    "children": [],
-   "effect": -0.06412,
+   "effect": -0.06689,
    "ci95_boot": [
-    -0.15879,
-    0.02628
+    -0.16641,
+    0.02224
    ],
-   "p_gt0": 0.085,
-   "coverage": 0.66,
-   "llr": -0.908,
-   "n": 188,
+   "p_gt0": 0.075,
+   "coverage": 0.656,
+   "llr": -0.935,
+   "n": 189,
    "lifecycle": "REDESIGN \u2014 objective right, implementation losing",
    "analysis_recommendation": "REDESIGN",
    "recommendation_why": [
@@ -257,15 +257,15 @@
    "children": [
     "M10+M8"
    ],
-   "effect": 0.03435,
+   "effect": 0.03201,
    "ci95_boot": [
-    -0.01759,
-    0.08944
+    -0.02049,
+    0.08673
    ],
-   "p_gt0": 0.903,
-   "coverage": 0.691,
-   "llr": 0.046,
-   "n": 188,
+   "p_gt0": 0.885,
+   "coverage": 0.688,
+   "llr": -0.012,
+   "n": 189,
    "lifecycle": "LIVE",
    "analysis_recommendation": "CONTINUE",
    "recommendation_why": [
@@ -294,15 +294,15 @@
    "children": [
     "M11+M8"
    ],
-   "effect": -0.03842,
+   "effect": -0.03512,
    "ci95_boot": [
-    -0.09887,
-    0.0242
+    -0.09475,
+    0.02746
    ],
-   "p_gt0": 0.108,
-   "coverage": 0.702,
-   "llr": -1.22,
-   "n": 188,
+   "p_gt0": 0.121,
+   "coverage": 0.704,
+   "llr": -1.158,
+   "n": 189,
    "lifecycle": "RETIRED (standalone) \u2014 evidence keeps accruing for the record; no promotion path",
    "analysis_recommendation": "RETIRE",
    "recommendation_why": [
@@ -310,7 +310,7 @@
     "primary metric negative"
    ],
    "attention": [
-    "P(\u0394>0) 11% \u2014 approaching reject",
+    "P(\u0394>0) 12% \u2014 approaching reject",
     "mechanism contradicted"
    ],
    "retire_pressure": "HIGH",
@@ -329,23 +329,23 @@
    "mechanism": "both vetoes",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +21.0c (n=51) vs -7.0c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +19.5c (n=52) vs -7.0c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [
     "M2",
     "M8"
    ],
    "children": [],
-   "effect": 0.00775,
+   "effect": 0.0046,
    "ci95_boot": [
-    -0.07537,
-    0.08864
+    -0.07923,
+    0.08443
    ],
-   "p_gt0": 0.543,
-   "coverage": 0.495,
-   "llr": -0.072,
-   "n": 188,
-   "lifecycle": "LIVE",
+   "p_gt0": 0.525,
+   "coverage": 0.492,
+   "llr": -0.108,
+   "n": 189,
+   "lifecycle": "RETIRED (lean) \u2014 adds nothing over M8 (\u22123.7c paired increment, P13%); dominated by M10+M8",
    "analysis_recommendation": "RETIRE",
    "recommendation_why": [
     "combo adds nothing over its parent",
@@ -354,14 +354,14 @@
    "attention": [],
    "retire_pressure": "HIGH",
    "incremental_vs_parent": {
-    "n": 188,
-    "mean": -0.04923,
-    "se": 0.03186,
+    "n": 189,
+    "mean": -0.04897,
+    "se": 0.03169,
     "boot_ci95": [
-     -0.11207,
-     0.01317
+     -0.11257,
+     0.01439
     ],
-    "p_gt0_boot": 0.062
+    "p_gt0_boot": 0.068
    }
   },
   {
@@ -377,22 +377,22 @@
    "mechanism": "stable leader + regime gate",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +21.0c (n=51) vs -13.7c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +19.5c (n=52) vs -13.7c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [
     "M3",
     "M8"
    ],
    "children": [],
-   "effect": -0.02715,
+   "effect": -0.03012,
    "ci95_boot": [
-    -0.1315,
-    0.07354
+    -0.13512,
+    0.06665
    ],
-   "p_gt0": 0.285,
-   "coverage": 0.463,
-   "llr": -0.23,
-   "n": 188,
+   "p_gt0": 0.273,
+   "coverage": 0.46,
+   "llr": -0.254,
+   "n": 189,
    "lifecycle": "RETIRED (branch)",
    "analysis_recommendation": "RETIRE",
    "recommendation_why": [
@@ -402,14 +402,14 @@
    "attention": [],
    "retire_pressure": "HIGH",
    "incremental_vs_parent": {
-    "n": 188,
-    "mean": -0.08413,
-    "se": 0.04277,
+    "n": 189,
+    "mean": -0.08368,
+    "se": 0.04254,
     "boot_ci95": [
-     -0.16953,
-     -0.00266
+     -0.17276,
+     -0.00596
     ],
-    "p_gt0_boot": 0.022
+    "p_gt0_boot": 0.017
    }
   },
   {
@@ -425,22 +425,22 @@
    "mechanism": "fill discipline + regime gate",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +22.1c (n=51) vs -2.0c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +20.9c (n=52) vs -2.0c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [
     "M10",
     "M8"
    ],
    "children": [],
-   "effect": 0.06652,
+   "effect": 0.06401,
    "ci95_boot": [
-    -0.00016,
-    0.1377
+    -0.00026,
+    0.13342
    ],
    "p_gt0": 0.974,
-   "coverage": 0.5,
-   "llr": 0.545,
-   "n": 188,
+   "coverage": 0.497,
+   "llr": 0.509,
+   "n": 189,
    "lifecycle": "LIVE",
    "analysis_recommendation": "PRIORITY",
    "recommendation_why": [
@@ -451,14 +451,14 @@
    ],
    "retire_pressure": "LOW",
    "incremental_vs_parent": {
-    "n": 188,
-    "mean": 0.03217,
-    "se": 0.02188,
+    "n": 189,
+    "mean": 0.032,
+    "se": 0.02177,
     "boot_ci95": [
-     -0.00734,
-     0.07562
+     -0.00776,
+     0.07402
     ],
-    "p_gt0_boot": 0.933
+    "p_gt0_boot": 0.941
    }
   },
   {
@@ -481,15 +481,15 @@
     "M8"
    ],
    "children": [],
-   "effect": 0.03693,
+   "effect": 0.03363,
    "ci95_boot": [
-    -0.04046,
-    0.11538
+    -0.04475,
+    0.11515
    ],
-   "p_gt0": 0.811,
-   "coverage": 0.511,
-   "llr": 0.363,
-   "n": 188,
+   "p_gt0": 0.782,
+   "coverage": 0.508,
+   "llr": 0.324,
+   "n": 189,
    "lifecycle": "LIVE",
    "analysis_recommendation": "DIAGNOSE",
    "recommendation_why": [
@@ -500,14 +500,14 @@
    ],
    "retire_pressure": "HIGH",
    "incremental_vs_parent": {
-    "n": 188,
-    "mean": -0.02004,
-    "se": 0.0297,
+    "n": 189,
+    "mean": -0.01993,
+    "se": 0.02954,
     "boot_ci95": [
-     -0.07649,
-     0.04181
+     -0.07642,
+     0.04091
     ],
-    "p_gt0_boot": 0.241
+    "p_gt0_boot": 0.248
    }
   },
   {
@@ -545,70 +545,70 @@
    "combo": "M2+M8",
    "parent": "M2",
    "valid": true,
-   "n": 188,
-   "mean": 0.01798,
-   "se": 0.02076,
+   "n": 189,
+   "mean": 0.01788,
+   "se": 0.02065,
    "boot_ci95": [
-    -0.02033,
-    0.05843
+    -0.01967,
+    0.05826
    ],
-   "p_gt0_boot": 0.787,
-   "read": "unclear"
+   "p_gt0_boot": 0.806,
+   "read": "adds value"
   },
   {
    "combo": "M2+M8",
    "parent": "M8",
    "valid": true,
-   "n": 188,
-   "mean": -0.04923,
-   "se": 0.03186,
+   "n": 189,
+   "mean": -0.04897,
+   "se": 0.03169,
    "boot_ci95": [
-    -0.11207,
-    0.01317
+    -0.11257,
+    0.01439
    ],
-   "p_gt0_boot": 0.062,
+   "p_gt0_boot": 0.068,
    "read": "no evidence of useful addition"
   },
   {
    "combo": "M3+M8",
    "parent": "M3",
    "valid": true,
-   "n": 188,
-   "mean": 0.01361,
-   "se": 0.01904,
+   "n": 189,
+   "mean": 0.01353,
+   "se": 0.01894,
    "boot_ci95": [
-    -0.02065,
-    0.05096
+    -0.02012,
+    0.05005
    ],
-   "p_gt0_boot": 0.741,
+   "p_gt0_boot": 0.75,
    "read": "unclear"
   },
   {
    "combo": "M3+M8",
    "parent": "M8",
    "valid": true,
-   "n": 188,
-   "mean": -0.08413,
-   "se": 0.04277,
+   "n": 189,
+   "mean": -0.08368,
+   "se": 0.04254,
    "boot_ci95": [
-    -0.16953,
-    -0.00266
+    -0.17276,
+    -0.00596
    ],
-   "p_gt0_boot": 0.022,
+   "p_gt0_boot": 0.017,
    "read": "no evidence of useful addition"
   },
   {
    "combo": "M10+M8",
    "parent": "M10",
    "valid": true,
-   "n": 188,
-   "mean": 0.03217,
-   "se": 0.02188,
+   "n": 189,
+   "mean": 0.032,
+   "se": 0.02177,
    "boot_ci95": [
-    -0.00734,
-    0.07562
+    -0.00776,
+    0.07402
    ],
-   "p_gt0_boot": 0.933,
+   "p_gt0_boot": 0.941,
    "read": "adds value"
   },
   {
@@ -621,28 +621,28 @@
    "combo": "M11+M8",
    "parent": "M11",
    "valid": true,
-   "n": 188,
-   "mean": 0.07536,
-   "se": 0.02732,
+   "n": 189,
+   "mean": 0.06875,
+   "se": 0.02797,
    "boot_ci95": [
-    0.02311,
-    0.12899
+    0.01358,
+    0.12374
    ],
-   "p_gt0_boot": 0.999,
+   "p_gt0_boot": 0.994,
    "read": "adds value"
   },
   {
    "combo": "M11+M8",
    "parent": "M8",
    "valid": true,
-   "n": 188,
-   "mean": -0.02004,
-   "se": 0.0297,
+   "n": 189,
+   "mean": -0.01993,
+   "se": 0.02954,
    "boot_ci95": [
-    -0.07649,
-    0.04181
+    -0.07642,
+    0.04091
    ],
-   "p_gt0_boot": 0.241,
+   "p_gt0_boot": 0.248,
    "read": "no evidence of useful addition"
   }
  ],

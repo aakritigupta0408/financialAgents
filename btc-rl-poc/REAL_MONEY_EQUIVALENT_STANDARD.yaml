@@ -1,0 +1,124 @@
+# REAL_MONEY_EQUIVALENT_STANDARD v1.0.0 — 2026-08-29
+#
+# The canonical qualification specification (master directive §3).
+# GOVERNANCE: agents and models may NOT modify this file automatically.
+# Changing any rule here is a governance event: explicit code change,
+# version increment, DECISIONS.md entry ratified by the owner.
+#
+# The UI reads readiness from machine-generated evidence
+# (results/readiness.json, emitted by scripts/emit_readiness.py).
+# The UI never decides readiness. UNKNOWN is never GREEN.
+
+version: 1.0.0
+
+r_levels:
+  R0: experimental
+  R1: offline validated
+  R2: adversarial validated (placebo/leakage-canary/red-team pass)
+  R3: historical replay validated
+  R4: live shadow validated
+  R5: paper canary validated
+  R6: paired paper A/B validated (with SRM)
+  R7: long-running soak validated
+  R8: real-money-equivalent qualified
+
+aggregation: MIN            # never average; weakest plane wins
+
+# Hard invariants — any failure caps the named plane at R0 and is SEV-0
+hard_invariants:
+  production_execution_adapter_exists: false
+  production_credentials_detected: false
+  future_data_violations: 0
+  unresolved_sev0: 0
+
+# Live downgrade rules the emitter applies on every run
+downgrades:
+  - if: invariants_health != green
+    then: cap_system_at R0
+  - if: auditor_age_min > 20
+    then: freeze_qualification            # §48
+  - if: decision_board_integrity != green
+    then: cap plane experimentation at R1
+  - if: heartbeat_age_s > 300
+    then: cap plane data at R1
+
+# Assessed baseline per plane (owner-ratified 2026-08-29; each entry
+# names its evidence and the FIRST missing requirement = the blocker).
+# The emitter may only DOWNGRADE from here, never upgrade.
+planes:
+  data:
+    assessed: R3
+    evidence: live validation + full-tape replay (ticks.jsonl) + freshness monitors
+    blocker_to_next: "R4 gap: no point-in-time 4-timestamp model, no leakage canaries (§9)"
+  forecast_t1:
+    assessed: R4
+    evidence: offline eval + hourly gated retrains + logged-only live shadow since 08-20
+    blocker_to_next: "R5 gap: no canary routing; no purged/CPCV offline framework (§18)"
+  probability_t2:
+    assessed: R4
+    evidence: prequential BSS-vs-market live shadow; frozen controls
+    blocker_to_next: "R5 gap: same; also BSS<=0 (a strategy fact, not a system fact)"
+  uncertainty:
+    assessed: R3
+    evidence: z-normalized bands post-SEV-0, coverage monitored (0.73-0.78)
+    blocker_to_next: "R4 gap: no pre-registered warning/failure zones live (§21)"
+  decision:
+    assessed: R6
+    evidence: paired same-window A/B with SPRT, family-wise alpha, 190+ windows
+    blocker_to_next: "R7 gap: no SRM monitor (§32), no soak criteria met"
+  execution:
+    assessed: R1
+    evidence: model-basis quotes + real-fill family; measured -5.3c gap
+    blocker_to_next: "R2 gap: no execution ledger with markouts (§26), no latency sensitivity (§30)"
+  risk_capital:
+    assessed: R3
+    evidence: per-trader caps, Kelly fractions, v3 sweep conservation invariant
+    blocker_to_next: "R4 gap: no unified risk engine above policy (§41), no CVaR/halt states"
+  experimentation:
+    assessed: R5
+    evidence: pre-registration in code, decision board CI/MDE/power, mechanism checks
+    blocker_to_next: "R6 gap: SRM absent; dependence-aware effective-n absent (§33)"
+  retraining:
+    assessed: R3
+    evidence: hourly holdout gate keep/revert, Adam-state checkpoints
+    blocker_to_next: "R4 gap: session-only history (§15), no slice-regression gate (§17)"
+  audit:
+    assessed: R3
+    evidence: dual-implementation parity (27 fixtures), 10-invariant wall, 10-min cadence
+    blocker_to_next: "R4 gap: auditor imports shared fee helper (§46) — needs independent money-math"
+  observability:
+    assessed: R3
+    evidence: watchtower planes, monitor cadences, freshness invariant
+    blocker_to_next: "R4 gap: no monitor-of-monitors (§50), no SLO burn tracking (§65)"
+  recovery:
+    assessed: R2
+    evidence: watchdog restart + append-only ledgers + atomic writes survived real crashes
+    blocker_to_next: "R3 gap: no chaos suite (§56), no scripted crash-recovery drills (§57)"
+  security:
+    assessed: R1
+    evidence: demo-only order code; prod market-data is read-only
+    blocker_to_next: "R2 gap: production credential file exists on owner disk (SEV-0 until removed); no dependency lock/SBOM (§63)"
+
+# Strategy qualification (§83-84) — SEPARATE from system readiness
+strategy_gate:
+  tradable_equivalent_requires:
+    - bss_vs_market > 0 with adequate uncertainty evidence
+    - net_ev_after_conservative_costs > 0
+    - sprt_promote_boundary_crossed
+    - regime_robustness (no catastrophic powered slice)
+    - no_jackpot_dependence (top-3 share bounded)
+    - mechanism_supported
+    - soak_complete
+  current_status: NO QUALIFIED EDGE   # honest as of v1: best BSS -0.0016
+
+# Lean program law (§5): max 3 active treatments per tier
+lean_law:
+  max_active_treatments_per_tier: 3
+
+slos:                                   # §65 initial candidates
+  critical_ledger_integrity: 1.0
+  duplicate_decisions: 0
+  future_data_violations: 0
+  reconciliation: 1.0
+  auditor_success: 0.999
+  unresolved_sev0: 0

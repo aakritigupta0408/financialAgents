@@ -124,7 +124,20 @@ LIFECYCLE = {
     "t_fs_reg": "RETIRED (branch)",
     "t_evlead": "REDESIGN — objective right, implementation losing",
     "t_edgeband": "LIVE — new challenger, collecting from zero",
+    # Phase-5 lean cleanup (master directive §5, 2026-08-29): max 3
+    # active treatments per tier; dominated/stale/thin branches close.
+    "t_knife": "RETIRED (lean) — dominated by M8, stale at 190 "
+               "windows (+0.4c, LLR −0.07)",
+    "t_cheap": "RETIRED (lean) — 15% coverage: a different product; "
+               "cheap-price idea survives inside M13's band floor",
+    "t_both": "RETIRED (lean) — adds nothing over M8 (−3.7c paired "
+              "increment, P13%); dominated by M10+M8",
+    "t_cal": "RETIRED (lean) — the M1 gate at 13% coverage; the "
+             "calibrator itself lives on as the shadow drift "
+             "instrument (M1-v3), never a decision input",
 }
+# Active after cleanup — T3: M8, M13 · T4: M10, M10+M8, M11+M8
+# (conditional study) — within the 3-per-tier law.
 
 
 def jload(name, default=None):

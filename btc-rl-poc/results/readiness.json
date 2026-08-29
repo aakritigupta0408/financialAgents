@@ -1,0 +1,137 @@
+{
+ "generated_ts": 1788014663,
+ "standard_version": "1.0.0",
+ "system": {
+  "level": "R0",
+  "rule": "MIN over all critical planes \u2014 never averaged",
+  "weakest_planes": [
+   "security"
+  ],
+  "qualification_frozen": false,
+  "frozen_reason": null,
+  "headline": "REAL-MONEY-EQUIVALENT: R0 \u2014 NOT R8"
+ },
+ "strategy": {
+  "status": "NO QUALIFIED EDGE",
+  "headline": "STRATEGY: NO QUALIFIED EDGE \u2014 best BSS vs market \u2264 0 this sample; this is a valid scientific outcome, not a system failure",
+  "separation_note": "system readiness and strategy qualification are independent verdicts (\u00a783)"
+ },
+ "live_execution": "PHYSICALLY LIMITED \u2014 order code targets demo host only; production API is read-only market data",
+ "sev0_open": [
+  {
+   "invariant": "production_credentials_detected",
+   "detail": [
+    "/Users/aakritigupta/.kalshi_PRODUCTION_key_KEEP_OR_DELETE.pem"
+   ],
+   "remedy": "owner must delete/relocate the production key file; the system cannot clear this itself"
+  }
+ ],
+ "planes": {
+  "data": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "live validation + full-tape replay (ticks.jsonl) + freshness monitors",
+   "blocker": "R4 gap: no point-in-time 4-timestamp model, no leakage canaries (\u00a79)",
+   "live_downgrades": []
+  },
+  "forecast_t1": {
+   "level": "R4",
+   "assessed": "R4",
+   "target": "R8",
+   "evidence": "offline eval + hourly gated retrains + logged-only live shadow since 08-20",
+   "blocker": "R5 gap: no canary routing; no purged/CPCV offline framework (\u00a718)",
+   "live_downgrades": []
+  },
+  "probability_t2": {
+   "level": "R4",
+   "assessed": "R4",
+   "target": "R8",
+   "evidence": "prequential BSS-vs-market live shadow; frozen controls",
+   "blocker": "R5 gap: same; also BSS<=0 (a strategy fact, not a system fact)",
+   "live_downgrades": []
+  },
+  "uncertainty": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "z-normalized bands post-SEV-0, coverage monitored (0.73-0.78)",
+   "blocker": "R4 gap: no pre-registered warning/failure zones live (\u00a721)",
+   "live_downgrades": []
+  },
+  "decision": {
+   "level": "R6",
+   "assessed": "R6",
+   "target": "R8",
+   "evidence": "paired same-window A/B with SPRT, family-wise alpha, 190+ windows",
+   "blocker": "R7 gap: no SRM monitor (\u00a732), no soak criteria met",
+   "live_downgrades": []
+  },
+  "execution": {
+   "level": "R1",
+   "assessed": "R1",
+   "target": "R8",
+   "evidence": "model-basis quotes + real-fill family; measured -5.3c gap",
+   "blocker": "R2 gap: no execution ledger with markouts (\u00a726), no latency sensitivity (\u00a730)",
+   "live_downgrades": []
+  },
+  "risk_capital": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "per-trader caps, Kelly fractions, v3 sweep conservation invariant",
+   "blocker": "R4 gap: no unified risk engine above policy (\u00a741), no CVaR/halt states",
+   "live_downgrades": []
+  },
+  "experimentation": {
+   "level": "R5",
+   "assessed": "R5",
+   "target": "R8",
+   "evidence": "pre-registration in code, decision board CI/MDE/power, mechanism checks",
+   "blocker": "R6 gap: SRM absent; dependence-aware effective-n absent (\u00a733)",
+   "live_downgrades": []
+  },
+  "retraining": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "hourly holdout gate keep/revert, Adam-state checkpoints",
+   "blocker": "R4 gap: session-only history (\u00a715), no slice-regression gate (\u00a717)",
+   "live_downgrades": []
+  },
+  "audit": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "dual-implementation parity (27 fixtures), 10-invariant wall, 10-min cadence",
+   "blocker": "R4 gap: auditor imports shared fee helper (\u00a746) \u2014 needs independent money-math",
+   "live_downgrades": []
+  },
+  "observability": {
+   "level": "R3",
+   "assessed": "R3",
+   "target": "R8",
+   "evidence": "watchtower planes, monitor cadences, freshness invariant",
+   "blocker": "R4 gap: no monitor-of-monitors (\u00a750), no SLO burn tracking (\u00a765)",
+   "live_downgrades": []
+  },
+  "recovery": {
+   "level": "R2",
+   "assessed": "R2",
+   "target": "R8",
+   "evidence": "watchdog restart + append-only ledgers + atomic writes survived real crashes",
+   "blocker": "R3 gap: no chaos suite (\u00a756), no scripted crash-recovery drills (\u00a757)",
+   "live_downgrades": []
+  },
+  "security": {
+   "level": "R0",
+   "assessed": "R1",
+   "target": "R8",
+   "evidence": "demo-only order code; prod market-data is read-only",
+   "blocker": "R2 gap: production credential file exists on owner disk (SEV-0 until removed); no dependency lock/SBOM (\u00a763)",
+   "live_downgrades": [
+    "hard invariant failed (see sev0)"
+   ]
+  }
+ }
+}
