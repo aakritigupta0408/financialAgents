@@ -36,6 +36,39 @@
 #arch .flowlab.fix, #plan .flowlab.fix { fill: var(--good-text); }
 @media (prefers-reduced-motion: reduce) {
   #arch .errflow, #arch .fixflow { animation: none; } }
+/* ---- the answer, before anything else ---- */
+.hero { padding: 30px 34px 26px; }
+.hero .verdict { font: 400 30px/1.28 var(--display); color: var(--ink);
+  max-width: 20ch; letter-spacing: .005em; }
+.heronums { display: grid; gap: 24px; margin: 26px 0 0;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.heronums > div { border-top: 2px solid var(--ink); padding-top: 11px; }
+.heronums b { display: block; font: 700 27px/1.1 var(--display);
+  font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.heronums > div:first-child b { color: var(--down); }
+.heronums span { display: block; margin-top: 7px; font-size: 12.5px;
+  line-height: 1.5; color: var(--muted); }
+.heronext { margin-top: 26px; padding-top: 16px;
+  border-top: 1px solid var(--border); font-size: 13.5px;
+  color: var(--ink-2); max-width: 78ch; }
+/* ---- collapsed groups: doors, not debris ---- */
+details.grp { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 0; }
+details.grp > summary { list-style: none; cursor: pointer;
+  padding: 20px 26px; display: flex; align-items: baseline; gap: 14px;
+  flex-wrap: wrap; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::after { content: "open"; margin-left: auto;
+  font-size: 11px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--series-2); }
+details.grp[open] > summary::after { content: "close"; }
+details.grp > summary h2 { display: inline; margin: 0; }
+details.grp > summary:hover h2 { color: var(--series-2); }
+details.grp .gsub { font-size: 12.5px; color: var(--muted); }
+details.grp[open] > summary { border-bottom: 1px solid var(--border); }
+details.grp > section { border: 0; border-radius: 0;
+  border-bottom: 1px solid var(--grid); }
+details.grp > section:last-of-type { border-bottom: 0; }
 /* ---- interactive architecture explorer ---- */
 #arch-svg svg { width: 100%; height: auto; }
 #arch .nbox { fill: var(--surface-2); stroke: var(--border); }
@@ -117,17 +150,423 @@
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
+<main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
     incident audit · opened 2026-08-26 · <span id="asof">loading…</span></div>
   <h1>SEV-0 — where the error is born, live <span class="sevpill mitig">MITIGATING</span></h1>
-  <p class="sub small">A systematic <b>bias</b> (a built-in lean toward "price
-  goes up") was traced to its origin and measured at every layer of the
-  system. This page recomputes every number below from the raw ledgers on
-  each refresh — the same data the daemon trades on. Full remediation spec
-  with citations: <code>docs/SEV0_REMEDIATION.md</code> in the repo.</p>
+  <p class="sub small">Every number on this page is recomputed from the raw
+  ledgers on each refresh — the same files the daemon trades from. Nothing
+  here is a stored result. Full remediation spec with citations:
+  <code>docs/SEV0_REMEDIATION.md</code>.</p>
 </header>
+<section class="hero">
+  <p class="verdict">The desk is losing money — and the cause is not the
+    models. It is the moment we actually buy.</p>
+  <div class="heronums">
+    <div><b id="h-leak">−2.70 pts</b><span>lost at the fill, per $1 staked.
+      More than double the best edge any model change has produced.</span></div>
+    <div><b>20 bugs</b><span>found by audit, 2 critical. Every one sited
+      to a line of code, none guessed.</span></div>
+    <div><b id="h-ship">0 changes</b><span>shipped to live trading. Nothing
+      is adopted until real paired traffic earns it.</span></div>
+  </div>
+  <p class="heronext"><b>Next:</b> fix the two critical bugs — traders 3–6
+    are locked to trader 1's entry minute, and the test bench scores
+    policies at a quote 3.8 minutes stale. Until both are fixed, the gate
+    results measure something other than what we think.</p>
+</section>
+<section id="arch">
+  <h2>The architecture — click any box to open it
+    <span class="pill pending" id="arch-where">overview</span></h2>
+  <p class="sub small">Grey arrows carry <b>data</b>. Red arrows carry
+  <b>error</b>. Open any box to look inside it.</p>
+  <div id="arch-crumb" class="mini" style="margin:6px 0 2px"></div>
+  <div id="arch-svg"></div>
+  <div id="arch-panel"></div>
+</section>
+<details class="grp"><summary><h2>Where the error is born</h2><span class="gsub">five tiers, measured — open any one</span></summary>
+<section>
+  <h2>Tier 1 — RL price arms <span class="pill bad">origin</span></h2>
+  <p class="sub small"><b>bias</b> = average signed miss in dollars (a good
+  forecaster misses randomly, not consistently high) · <b>up-call
+  share</b> vs how often price actually rose · direction accuracy of every
+  price arm is ~coin-flip, so direction is decided at Tier 2, never here.
+  Worst offenders by |bias|·√n, live:</p>
+  <div class="scroll" style="margin-top:8px"><table id="t1-tbl">
+    <thead><tr><th>arm · horizon</th><th class="num">n</th>
+      <th class="num">MAE $</th><th class="num">bias $</th>
+      <th class="num">up-calls</th><th class="num">up-real</th>
+      <th class="num">band cov (goal 80%)</th></tr></thead>
+    <tbody><tr><td colspan="7" class="mini">computing…</td></tr></tbody>
+  </table></div>
+</section>
+<section>
+  <h2>Tier 2 — kb probability arms <span class="pill bad">inheritance</span></h2>
+  <p class="sub small"><b>AUC</b>: does the arm rank winners above losers
+  (0.5 = coin flip, 1 = oracle) · <b>Brier</b>: squared error of the stated
+  probability (lower better; the market's own is shown for scale) ·
+  <b>pBias</b>: mean stated P(up) minus realized up-rate — positive =
+  optimist · <b>Platt a, b</b>: the correction curve
+  σ(a + b·logit(p)) that would make the arm honest (Platt 1999) — a
+  calibrated arm has a≈0, b≈1; a&lt;0 means "shift all its probabilities
+  down".</p>
+  <div class="scroll" style="margin-top:8px"><table id="t2-tbl">
+    <thead><tr><th>arm</th><th class="num">windows</th>
+      <th class="num">AUC</th><th class="num">Brier</th>
+      <th class="num">market Brier</th><th class="num">pBias</th>
+      <th class="num">Platt a</th><th class="num">Platt b</th></tr></thead>
+    <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="t2-note"></p>
+</section>
+<section>
+  <h2>Tier 3 — decision layer <span class="pill bad">amplifier</span></h2>
+  <div class="statusbar" style="margin-top:8px">
+    <div class="stat"><div class="k">leader switches / day</div>
+      <div class="bignum" id="t3-churn">–</div></div>
+    <div class="stat"><div class="k">mixed-arm confidence AUC
+      <span style="text-transform:none;letter-spacing:0">(0.5 = coin flip — the amplifier bug)</span></div>
+      <div class="bignum" id="t3-auc">–</div></div>
+    <div class="stat"><div class="k">desk win% at ≥77% gate</div>
+      <div class="bignum" id="t3-gate">–</div></div>
+    <div class="stat"><div class="k">knife-edge share of loss $</div>
+      <div class="bignum" id="t3-knife">–</div></div>
+  </div>
+  <p class="sub small" style="margin-top:10px">Why the AUC is ~0.5: each
+  arm inflates differently (Tier 2's Platt intercepts), so "75% confident"
+  means different things from different arms — comparing them raw destroys
+  the signal even though each arm's own confidence works. The fix is M1:
+  calibrate first, compare after. The leader mechanism also switches on
+  10-bet streaks (mostly luck): the live counterfactual of just holding
+  each arm on the desk's own windows updates below.</p>
+  <div class="scroll" style="margin-top:8px"><table id="t3-tbl">
+    <thead><tr><th>policy on the desk's windows</th><th class="num">coverage</th>
+      <th class="num">win%</th><th class="num">EV per $1</th></tr></thead>
+    <tbody><tr><td colspan="4" class="mini">computing…</td></tr></tbody>
+  </table></div>
+</section>
+<section>
+  <h2>Tier 4 — traders <span class="pill">multiplier</span></h2>
+  <p class="sub small">Same signals, different stake sizes. <b>EV/$1</b> =
+  profit per dollar put at risk · <b>maxDD</b> = worst peak-to-trough fall
+  (the price of a sizing policy). Sizing shipped fixes: Saver 25%→10%,
+  Gambler ≥77% gate + $10k reset, MLE 10¢-edge gate.</p>
+  <div class="scroll" style="margin-top:8px"><table id="t4-tbl">
+    <thead><tr><th>trader</th><th class="num">bets</th>
+      <th class="num">win%</th><th class="num">staked $</th>
+      <th class="num">P&amp;L $</th><th class="num">EV/$1</th>
+      <th class="num">maxDD $</th></tr></thead>
+    <tbody><tr><td colspan="7" class="mini">computing…</td></tr></tbody>
+  </table></div>
+</section>
+<section>
+  <h2>Where the lost dollars actually went <span class="pill bad" id="attr-total">…</span></h2>
+  <p class="sub small">Every losing desk bid, tagged by root cause (tags
+  overlap — one bid can carry several). "Herd whipsaw" = ≥¾ of all arms
+  wrong on that window at once: a shared-worldview failure that adding
+  more arms cannot fix.</p>
+  <div id="attr" style="margin-top:10px"><p class="mini">computing…</p></div>
+</section>
+</details>
+<details class="grp"><summary><h2>What we are testing right now</h2><span class="gsub">champion vs challengers on real traffic · nothing promoted yet</span></summary>
+<section id="treatments">
+  <h2>Champion vs challengers — live on real traffic
+    <span class="pill pending" id="tr-chip">…</span></h2>
+  <p class="sub small">Every improvement now runs as a <b>treatment on
+  real live windows</b>, paired against the incumbent desk policy, and is
+  <b>promoted only when the live stream clears a sequential test</b> —
+  never on backtest evidence. Three of our own confident offline
+  conclusions have already been wrong (the tier-1 root cause, the "toxic
+  hour", the calibration premise), so nothing is adopted on a replay
+  again.</p>
+  <p class="sub small"><b>How it is judged.</b> All policies see the
+  <i>same</i> window and the <i>same</i> settled outcome, so the market
+  regime cancels out of the difference — 08/27 proved an unpaired
+  comparison can be swamped by one bad day. Effective n is
+  <b>windows</b>. The test is Wald's <b>SPRT</b> (1945): H₀ "no better"
+  vs H₁ "better by ≥2%/$1", accumulating evidence until it crosses a
+  boundary — valid under continuous monitoring, unlike a fixed-horizon
+  test re-checked every window. <b>Standing down is a real decision</b>
+  that scores 0 and risks nothing, which is how a veto treatment can win
+  without placing a single bet.</p>
+  <div class="scroll" style="margin-top:8px"><table id="tr-tbl">
+    <thead><tr><th>treatment</th><th class="num">windows</th>
+      <th class="num">bets</th><th class="num">stood down</th>
+      <th class="num">own EV/$1</th><th class="num">vs champion</th>
+      <th class="num">evidence (LLR)</th><th>status</th></tr></thead>
+    <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
+  </table></div>
+  <div id="tr-bars" style="margin-top:12px"></div>
+  <p class="sub small" style="margin-top:14px"><b>A 2.1¢ bug was
+  manufacturing almost every "win" here.</b> The champion was first
+  scored at the real ask it paid while challengers were priced from the
+  modelled quote — a systematic 2.1¢ discount to the challengers. Under
+  that bug M3 read <b>+23.5%</b> against the champion. Pricing every
+  policy from the same decision-time quote collapsed it to
+  <b>+1.2%</b>; M9 went +10.6% → −5.0%, M2 +8.0% → −8.6%, M1 −3.7% →
+  −26.1%. Only M8 and M3 remain positive at all, both far from
+  significance. Had the framework shipped one commit earlier it would
+  have auto-promoted a pricing artifact into live trading.</p>
+  <p class="mini"><b>Read the absolute EV column with care:</b> it is
+  now <i>model-priced</i> from the quote midpoint plus the standard
+  spread, so it runs optimistic against the fills the desk actually
+  gets. The <b>paired difference</b> is the number the SPRT tests and
+  the only one that is apples-to-apples.</p>
+  <p class="mini">the evidence bar shows progress toward the promote
+  boundary (green) or the reject boundary (red); a treatment that
+  reaches either is auto-promoted or retired, stamped with the time and
+  the paired margin that earned it · a promoted challenger does not
+  delete the incumbent — the loser keeps running so a regression stays
+  visible · state: <code>results/treatments.json</code>, per-window
+  log: <code>results/treatments.jsonl</code></p>
+</section>
+<section id="m1shadow">
+  <h2>M1 shadow — is calibration actually earning its place?
+    <span class="pill pending" id="m1-chip">shadow</span></h2>
+  <p class="sub small">The calibration layer is <b>live but trading
+  nothing</b>: every kb row now carries <code>p_cal</code> beside
+  <code>p_up</code>, and each arm's (a, b) refits on a 150-window sliding
+  window. The verdict below is <b>prequential</b> — each window is scored
+  by the fit that existed <i>before</i> it settled, then trained on
+  (Dawid 1984). <b>LL</b> is decayed mean log-loss; lower is better, so
+  <b>gain = raw − calibrated</b> must be positive for the layer to
+  justify itself.</p>
+  <p class="sub small"><b>Honest status:</b> on the warm-start replay
+  calibration helped <b>only kb7</b> — the most miscalibrated arm — and
+  was marginally worse on the other eight. The premise is
+  <b>not yet confirmed</b>. This is precisely why M1 runs in shadow
+  rather than shipping: had we wired it straight into the decision tier
+  on the strength of the 08/26 audit, we would have shipped a
+  regression. The gate stands: it earns the switch-over or it is
+  dropped.</p>
+  <div class="scroll" style="margin-top:8px"><table id="m1-tbl">
+    <thead><tr><th>arm</th><th class="num">n</th>
+      <th class="num">a (intercept)</th><th class="num">b (slope)</th>
+      <th class="num">LL calibrated</th><th class="num">LL raw</th>
+      <th class="num">gain</th><th>verdict</th></tr></thead>
+    <tbody><tr><td colspan="8" class="mini">waiting for the daemon's
+      first settle…</td></tr></tbody>
+  </table></div>
+  <p class="mini">b &lt; 1 = the arm is overconfident and the layer
+  shrinks it toward 0.5 — the tier-1 under-dispersion defect corrected at
+  the point of use · two implementation bugs were found and fixed while
+  building this (a per-sample Newton step whose 2×2 Hessian is exactly
+  rank-1, so the slope was unidentifiable and froze at 1.000; then a
+  decayed-accumulator variant that re-applied stale residuals and
+  overshot to a = −0.64 against the batch answer −0.13). The shipped
+  version is a sliding-window batch refit, which reproduces the offline
+  audit's numbers by construction.</p>
+</section>
+</details>
+<details class="grp"><summary><h2>The plan, and what must move to prove it</h2><span class="gsub">gated steps · mitigation tracker</span></summary>
+<section id="plan">
+  <h2>Execution plan — the fix pipeline, with metric gates</h2>
+  <p class="sub small">Dependency-ordered: calibration (M1) is the unlock —
+  the leader fix (M3) and asymmetric gate (M6) consume its output, so they
+  wait. Each arrow is a <b>metric gate</b>: the measured number that must
+  move, by how much, on how many windows, before the next step is trusted.
+  Red branch = the pre-declared falsification path. Every behavior change
+  runs in shadow mode first; every "X beats Y" claim needs a
+  Diebold–Mariano test clustered by window.</p>
+  <svg viewBox="0 0 960 700" style="width:100%;margin-top:10px" role="img"
+    aria-label="remediation pipeline flowchart with metric gates">
+    <title>fix pipeline: sizing → calibration → vetoes → leader →
+      asymmetric gate → tier-1 re-anchor → order-flow features</title>
+    <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4"
+      markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
+    <!-- step boxes (left column) -->
+    <g font-family="ui-sans-serif,system-ui">
+    <rect class="tier" x="10" y="8" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="30">STEP 0 · SIZING — SHIPPED, VERIFYING</text>
+    <text class="tsub" x="24" y="46">Saver 25→10% · Gambler ≥77% gate + $10k reset · MLE 10¢ margin</text>
+    <text class="tsub" x="24" y="60">gates: Gambler stays &gt;72.6% over 30 gated bets · MLE ≥60% idle over 50 windows</text>
 
+    <rect class="tier" x="10" y="106" width="440" height="62" rx="12"
+      style="stroke:var(--series-2);stroke-width:2"/>
+    <text class="tname" x="24" y="128">STEP 1 · M1 PER-ARM PLATT LAYER — THE UNLOCK</text>
+    <text class="tsub" x="24" y="144">1 week shadow: log p_cal beside p_up, change no behavior</text>
+    <text class="tsub" x="24" y="158">problem: arms speak different confidence languages (kb7 a −0.57 vs kb4 −0.12)</text>
+
+    <rect class="tier" x="10" y="204" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="226">STEP 2 · M2 KNIFE-EDGE VETO + M7 HOUR POLICY</text>
+    <text class="tsub" x="24" y="242">no entry at |mkt−0.5|&lt;0.10 · stand down 09:00–10:00 PT</text>
+    <text class="tsub" x="24" y="256">problem: 52.8% of loss $ knife-edge · 09h 64% wrong (market too)</text>
+
+    <rect class="tier" x="10" y="302" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="324">STEP 3 · M3 FIXED-SHARE LEADER (new treatment)</text>
+    <text class="tsub" x="24" y="340">multiplicative weights on log-loss of p_cal · Follower stays as control</text>
+    <text class="tsub" x="24" y="354">problem: 16 switches/day · churner +2.0%/$1 vs fixed-kb4 +4.7%</text>
+
+    <rect class="tier" x="10" y="400" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="422">STEP 4 · M6 ASYMMETRIC GATE (conditional)</text>
+    <text class="tsub" x="24" y="438">UP needs p_cal ≥ τ+0.03 · SKIPPED if Step 1 already kills the lean</text>
+    <text class="tsub" x="24" y="452">problem: FP 33% vs FN 24% — sunsets itself at trailing pBias &lt; 0.02</text>
+
+    <rect class="tier" x="10" y="498" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="520">STEP 5 · M4 TIER-1 RE-ANCHOR (parallel-safe)</text>
+    <text class="tsub" x="24" y="536">trailing-bias recentering t10/t2/t6/t11 + adaptive conformal bands</text>
+    <text class="tsub" x="24" y="550">problem: t10 +$45 bias @h30, 80% up-calls vs 53% real · bands 65–73%</text>
+
+    <rect class="tier" x="10" y="596" width="440" height="62" rx="12"/>
+    <text class="tname" x="24" y="618">STEP 6 · M-T0 ORDER-FLOW FEATURES (last)</text>
+    <text class="tsub" x="24" y="634">taker-buy imbalance → kb3 · only after the pipeline is honest</text>
+    <text class="tsub" x="24" y="648">gate: non-zero prequential weight AND kb3 Brier does not degrade</text>
+
+    <!-- connecting arrows with gate labels -->
+    <line x1="230" y1="70" x2="230" y2="104" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <line x1="230" y1="168" x2="230" y2="202" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="190" class="flowlab fix">GATE: cross-arm AUC 0.503 → &gt;0.65 · every |pBias| &lt; 0.02 · 100 windows</text>
+    <line x1="230" y1="266" x2="230" y2="300" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="288" class="flowlab fix">GATE: knife-edge loss share 52.8% → &lt;25% · EV/$1 +1pt vs shadow · 50 bids, DM test</text>
+    <line x1="230" y1="364" x2="230" y2="398" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="386" class="flowlab fix">GATE: regret vs best fixed arm 2.7% → &lt;1%/$1 · rolling 100 windows</text>
+    <line x1="230" y1="462" x2="230" y2="496" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="484" class="flowlab fix">GATE: FP−FN gap 9pts → &lt;3pts · 100 decisions (or auto-skip)</text>
+    <line x1="230" y1="560" x2="230" y2="594" stroke="var(--muted)"
+      stroke-width="1.6" marker-end="url(#arr)"/>
+    <text x="242" y="582" class="flowlab fix">GATE: |bias| &lt; $10 @h30 · coverage 77–83% · 200 cycles</text>
+
+    <!-- fail branch off step 1 -->
+    <path d="M 450 137 C 520 137, 520 137, 560 137" stroke="var(--down)"
+      stroke-width="1.6" fill="none" marker-end="url(#arr)"
+      stroke-dasharray="5 4"/>
+    <rect x="562" y="100" width="388" height="76" rx="12"
+      fill="rgba(209,60,60,.06)" stroke="var(--down)"/>
+    <text class="tname" x="576" y="122" fill="var(--down)">FAIL BRANCH · AUC still ≈ 0.5 after calibration</text>
+    <text class="tsub" x="576" y="138">confidence carries NO cross-arm signal at all →</text>
+    <text class="tsub" x="576" y="152">abandon confidence-weighted selection; vetoes-only</text>
+    <text class="tsub" x="576" y="166">+ equal-weight ensemble of top-Brier arms (kb8, kb4, kb2)</text>
+
+    <!-- global close-out box -->
+    <rect x="562" y="500" width="388" height="158" rx="12"
+      fill="rgba(12,138,77,.05)" stroke="var(--good-text)"/>
+    <text class="tname" x="576" y="522" fill="var(--good-text)">INCIDENT CLOSES WHEN (each on ≥100 windows)</text>
+    <text class="tsub" x="576" y="540">1 · herd-whipsaw loss share 75.2% → &lt; 40%</text>
+    <text class="tsub" x="576" y="556">2 · desk EV/$1 ≥ +3% with maxDD &lt; 2× half-Kelly prediction</text>
+    <text class="tsub" x="576" y="572">3 · cross-arm AUC ≥ 0.65 and every arm |pBias| &lt; 0.02</text>
+    <text class="tsub" x="576" y="588">4 · zero regression on control arms (kb, kb2 untouched)</text>
+    <text class="tsub" x="576" y="610">discipline: shadow first · DM tests clustered by window ·</text>
+    <text class="tsub" x="576" y="624">SPRT kill/keep · dated cutovers · history never rewritten</text>
+    <text class="tsub" x="576" y="644">(Diebold–Mariano 1995 · Wald 1945 · Dawid 1984)</text>
+    </g>
+  </svg>
+  <p class="mini">the live values these gates test against are the tier
+  tables above — same page, same refresh · full step/gate/falsification
+  table in <code>docs/SEV0_REMEDIATION.md</code></p>
+</section>
+<section>
+  <h2>Mitigation tracker</h2>
+  <p class="sub small">Ordered by leverage. Each carries its literature
+  basis and a pre-registered acceptance metric — no fix is "done" until
+  its metric clears on live windows.</p>
+  <div style="margin-top:6px">
+    <div class="mit"><div class="mid">M5</div>
+      <div><b>Sizing fixes</b> — Saver 0.25→0.10; Gambler ≥0.77 gate +
+        $10k stamped reset; MLE edge-margin 10¢ + shadow-row off-policy
+        training.
+        <div class="cite">fractional Kelly under estimation error:
+        Kelly 1956; MacLean, Thorp &amp; Ziemba 2011 · meta-labeling:
+        López de Prado 2018</div></div>
+      <div class="chipstat done">shipped · 2 of 3 gates clear</div></div>
+    <div class="mit"><div class="mid">M1</div>
+      <div><b>Per-arm online Platt layer</b> — maintain (a,b) per arm,
+        prequentially refit each settle; all cross-arm comparison moves to
+        calibrated p_cal. Acceptance: |pBias| &lt; 0.02 per arm and
+        cross-arm AUC &gt; 0.65 on trailing 100 windows.
+        <div class="cite">Platt 1999 · Guo et al. 2017 (ICML) ·
+        prequential: Dawid 1984 · Brier decomposition: Murphy 1973 ·
+        <b>08/28 re-triage: (a,b) measured moving between halves for 4 of
+        6 arms — online refit is now evidence-backed, not assumed</b></div></div>
+      <div class="chipstat next">next up · in build</div></div>
+    <div class="mit"><div class="mid">M2</div>
+      <div><b>Knife-edge veto</b> — no desk entry at |mkt−0.5| &lt; 0.10
+        (41.6% wrong there; 52.8% of loss dollars). Acceptance: EV/$1 up
+        with ≥60% coverage retained.
+        <div class="cite">adverse selection near the pin:
+        Glosten &amp; Milgrom 1985 · <b>08/28 re-triage: knife-edge share
+        fell 52.8% → ~23%, so the gate target re-bases to the live
+        number; payoff is smaller than first scoped</b></div></div>
+      <div class="chipstat planned">re-scoped</div></div>
+    <div class="mit"><div class="mid">M3</div>
+      <div><b>Fixed-Share leader</b> — replace 10-bet churn with
+        multiplicative expert weights + share rate (tracks the best
+        <i>sequence</i> of leaders). Runs as a NEW desk treatment beside
+        the Follower control. Acceptance: regret vs best fixed arm
+        &lt; 1%/$1 per 100 windows (churner today: 2.7%).
+        <div class="cite">Herbster &amp; Warmuth 1998 ·
+        Cesa-Bianchi &amp; Lugosi 2006 · <b>08/28 re-triage: the best
+        fixed arm flipped (kb4 +4.7% → −3.7%; kb9 now the only positive)
+        — "freeze the best arm" is rejected and M3's priority rises</b></div></div>
+      <div class="chipstat next">promoted</div></div>
+    <div class="mit"><div class="mid">M4′</div>
+      <div><b>Adaptive-conformal bands on the decision-feeding path</b>
+        <span class="pill">re-aimed 08/28</span> — restore 80% coverage
+        on consensus/h15 (currently 74–76%). The drift-recentering half
+        of the original M4 is <b>dropped</b>: it targeted t10/t2/t11/t6,
+        which never reach a bet. Acceptance: trailing-200 coverage
+        77–83% on the feeding path; tier-2 slope b → 1.0 ± 0.15.
+        <div class="cite">adaptive conformal: Gibbs &amp; Candès 2021 ·
+        CQR: Romano et al. 2019 · <b>08/28: this is now the true tier-1
+        defect — dispersion, not direction</b></div></div>
+      <div class="chipstat next">promoted</div></div>
+    <div class="mit"><div class="mid">M8</div>
+      <div><b>Regime gate</b> <span class="pill">new 08/28</span> —
+        stand down when trailing-20-window market accuracy &lt; 0.62.
+        Ex-ante discrimination measured: flagged 63.6% of 08/27's
+        windows (the −$1,403 day) vs 5.1% of 08/28's. Acceptance:
+        backtest must show it skips more loss than profit across all
+        four days — 08/26 flagged 59% while finishing green, so this is
+        <b>not</b> free.
+        <div class="cite">replaces the dropped M7 with a mechanism that
+        has a testable ex-ante signal rather than a clock</div></div>
+      <div class="chipstat next">to backtest</div></div>
+    <div class="mit"><div class="mid">M9</div>
+      <div><b>Cheap-longshot "Underdog" trader</b>
+        <span class="pill">new 08/28</span> — kb5 wins only 44.7% of its
+        calls yet returns <b>+16.7%/$1</b>, the desk's best EV, by
+        buying where break-even sits far below 50%. Ship as a new
+        treatment (additive; no existing trader altered). Acceptance:
+        EV/$1 &gt; 0 over 50 bets with maxDD under half-Kelly bound.
+        <div class="cite">longshot pricing / favourite-longshot bias:
+        Thaler &amp; Ziemba 1988, JEP · sizing: fractional Kelly</div></div>
+      <div class="chipstat next">to spec</div></div>
+    <div class="mit"><div class="mid">M6</div>
+      <div><b>Asymmetric gate</b> — <b>FOLDED INTO M1</b>. The lean is no
+        longer one-signed: kb3/kb4/kb8 now carry <i>positive</i>
+        intercepts (pessimistic) while kb7/kb9 stay optimistic. A fixed
+        "UP needs more" rule would be actively wrong for half the family;
+        a calibrated probability handles it per-arm automatically.
+        <div class="cite">retired as a separate step after the 08/28
+        calibration-drift measurement</div></div>
+      <div class="chipstat planned">folded into M1</div></div>
+    <div class="mit"><div class="mid">M7</div>
+      <div><b>Hour policy</b> — <b>DROPPED.</b> 09h/14h looked
+        persistently bad, but we searched 24 hours: chance alone yields
+        1.98 such hours and we found 2 (<b>p = 0.60</b>). Not deferred —
+        removed, because shipping it would be data dredging.
+        <div class="cite">multiple-comparisons discipline: Arnott,
+        Harvey &amp; Markowitz 2019, JFDS (backtest protocol)</div></div>
+      <div class="chipstat planned">dropped · not significant</div></div>
+    <div class="mit"><div class="mid">M-T0</div>
+      <div><b>Order-flow features at the kb boundary</b> — rolling
+        taker-buy imbalance + divergence vs drift (the tape ran 75%
+        taker-buys while price fell: absorption the models can't see).
+        Acceptance: non-zero prequential weight in kb3 without Brier
+        degradation.
+        <div class="cite">Kyle 1985 · Cont, Kukanov &amp; Stoikov 2014 ·
+        deep-LOB rejected as sample-starved: Zhang et al. 2019</div></div>
+      <div class="chipstat planned">designed</div></div>
+  </div>
+</section>
+</details>
+<details class="grp"><summary><h2>How we got here</h2><span class="gsub">the incident log and the re-triage that revised it</span></summary>
 <section>
   <h2>Executive summary — what happened, what was decided</h2>
   <p class="sub small">The desk lost money on 08/26 while winning 65.6% of
@@ -154,7 +593,6 @@
     </tbody>
   </table></div>
 </section>
-
 <section id="retriage">
   <h2>Re-triage — 08/28, after four days of data
     <span class="pill" id="rt-n">…</span></h2>
@@ -279,403 +717,8 @@
   <code>tests/regime_detect.py</code>, <code>tests/leader_audit.py</code>
   — the same computations this section performs in the browser</p>
 </section>
-
-<section id="arch">
-  <h2>The architecture — click any box to open it
-    <span class="pill pending" id="arch-where">overview</span></h2>
-  <p class="sub small">Grey arrows carry <b>data</b>; red arrows carry
-  <b>error</b>. Every box with a <b>⤢</b> opens its own diagram: the
-  subsystem's inputs, its internals, its update/retrain/stream rates,
-  the metrics it is judged on, and the confirmed bugs living in it.</p>
-  <div id="arch-crumb" class="mini" style="margin:6px 0 2px"></div>
-  <div id="arch-svg"></div>
-  <div id="arch-panel"></div>
-</section>
-
-<section>
-  <h2>Tier 1 — RL price arms <span class="pill bad">origin</span></h2>
-  <p class="sub small"><b>bias</b> = average signed miss in dollars (a good
-  forecaster misses randomly, not consistently high) · <b>up-call
-  share</b> vs how often price actually rose · direction accuracy of every
-  price arm is ~coin-flip, so direction is decided at Tier 2, never here.
-  Worst offenders by |bias|·√n, live:</p>
-  <div class="scroll" style="margin-top:8px"><table id="t1-tbl">
-    <thead><tr><th>arm · horizon</th><th class="num">n</th>
-      <th class="num">MAE $</th><th class="num">bias $</th>
-      <th class="num">up-calls</th><th class="num">up-real</th>
-      <th class="num">band cov (goal 80%)</th></tr></thead>
-    <tbody><tr><td colspan="7" class="mini">computing…</td></tr></tbody>
-  </table></div>
-</section>
-
-<section>
-  <h2>Tier 2 — kb probability arms <span class="pill bad">inheritance</span></h2>
-  <p class="sub small"><b>AUC</b>: does the arm rank winners above losers
-  (0.5 = coin flip, 1 = oracle) · <b>Brier</b>: squared error of the stated
-  probability (lower better; the market's own is shown for scale) ·
-  <b>pBias</b>: mean stated P(up) minus realized up-rate — positive =
-  optimist · <b>Platt a, b</b>: the correction curve
-  σ(a + b·logit(p)) that would make the arm honest (Platt 1999) — a
-  calibrated arm has a≈0, b≈1; a&lt;0 means "shift all its probabilities
-  down".</p>
-  <div class="scroll" style="margin-top:8px"><table id="t2-tbl">
-    <thead><tr><th>arm</th><th class="num">windows</th>
-      <th class="num">AUC</th><th class="num">Brier</th>
-      <th class="num">market Brier</th><th class="num">pBias</th>
-      <th class="num">Platt a</th><th class="num">Platt b</th></tr></thead>
-    <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
-  </table></div>
-  <p class="mini" id="t2-note"></p>
-</section>
-
-<section>
-  <h2>Tier 3 — decision layer <span class="pill bad">amplifier</span></h2>
-  <div class="statusbar" style="margin-top:8px">
-    <div class="stat"><div class="k">leader switches / day</div>
-      <div class="bignum" id="t3-churn">–</div></div>
-    <div class="stat"><div class="k">mixed-arm confidence AUC
-      <span style="text-transform:none;letter-spacing:0">(0.5 = coin flip — the amplifier bug)</span></div>
-      <div class="bignum" id="t3-auc">–</div></div>
-    <div class="stat"><div class="k">desk win% at ≥77% gate</div>
-      <div class="bignum" id="t3-gate">–</div></div>
-    <div class="stat"><div class="k">knife-edge share of loss $</div>
-      <div class="bignum" id="t3-knife">–</div></div>
-  </div>
-  <p class="sub small" style="margin-top:10px">Why the AUC is ~0.5: each
-  arm inflates differently (Tier 2's Platt intercepts), so "75% confident"
-  means different things from different arms — comparing them raw destroys
-  the signal even though each arm's own confidence works. The fix is M1:
-  calibrate first, compare after. The leader mechanism also switches on
-  10-bet streaks (mostly luck): the live counterfactual of just holding
-  each arm on the desk's own windows updates below.</p>
-  <div class="scroll" style="margin-top:8px"><table id="t3-tbl">
-    <thead><tr><th>policy on the desk's windows</th><th class="num">coverage</th>
-      <th class="num">win%</th><th class="num">EV per $1</th></tr></thead>
-    <tbody><tr><td colspan="4" class="mini">computing…</td></tr></tbody>
-  </table></div>
-</section>
-
-<section>
-  <h2>Tier 4 — traders <span class="pill">multiplier</span></h2>
-  <p class="sub small">Same signals, different stake sizes. <b>EV/$1</b> =
-  profit per dollar put at risk · <b>maxDD</b> = worst peak-to-trough fall
-  (the price of a sizing policy). Sizing shipped fixes: Saver 25%→10%,
-  Gambler ≥77% gate + $10k reset, MLE 10¢-edge gate.</p>
-  <div class="scroll" style="margin-top:8px"><table id="t4-tbl">
-    <thead><tr><th>trader</th><th class="num">bets</th>
-      <th class="num">win%</th><th class="num">staked $</th>
-      <th class="num">P&amp;L $</th><th class="num">EV/$1</th>
-      <th class="num">maxDD $</th></tr></thead>
-    <tbody><tr><td colspan="7" class="mini">computing…</td></tr></tbody>
-  </table></div>
-</section>
-
-<section>
-  <h2>Where the lost dollars actually went <span class="pill bad" id="attr-total">…</span></h2>
-  <p class="sub small">Every losing desk bid, tagged by root cause (tags
-  overlap — one bid can carry several). "Herd whipsaw" = ≥¾ of all arms
-  wrong on that window at once: a shared-worldview failure that adding
-  more arms cannot fix.</p>
-  <div id="attr" style="margin-top:10px"><p class="mini">computing…</p></div>
-</section>
-
-<section id="treatments">
-  <h2>Champion vs challengers — live on real traffic
-    <span class="pill pending" id="tr-chip">…</span></h2>
-  <p class="sub small">Every improvement now runs as a <b>treatment on
-  real live windows</b>, paired against the incumbent desk policy, and is
-  <b>promoted only when the live stream clears a sequential test</b> —
-  never on backtest evidence. Three of our own confident offline
-  conclusions have already been wrong (the tier-1 root cause, the "toxic
-  hour", the calibration premise), so nothing is adopted on a replay
-  again.</p>
-  <p class="sub small"><b>How it is judged.</b> All policies see the
-  <i>same</i> window and the <i>same</i> settled outcome, so the market
-  regime cancels out of the difference — 08/27 proved an unpaired
-  comparison can be swamped by one bad day. Effective n is
-  <b>windows</b>. The test is Wald's <b>SPRT</b> (1945): H₀ "no better"
-  vs H₁ "better by ≥2%/$1", accumulating evidence until it crosses a
-  boundary — valid under continuous monitoring, unlike a fixed-horizon
-  test re-checked every window. <b>Standing down is a real decision</b>
-  that scores 0 and risks nothing, which is how a veto treatment can win
-  without placing a single bet.</p>
-  <div class="scroll" style="margin-top:8px"><table id="tr-tbl">
-    <thead><tr><th>treatment</th><th class="num">windows</th>
-      <th class="num">bets</th><th class="num">stood down</th>
-      <th class="num">own EV/$1</th><th class="num">vs champion</th>
-      <th class="num">evidence (LLR)</th><th>status</th></tr></thead>
-    <tbody><tr><td colspan="8" class="mini">computing…</td></tr></tbody>
-  </table></div>
-  <div id="tr-bars" style="margin-top:12px"></div>
-  <p class="sub small" style="margin-top:14px"><b>A 2.1¢ bug was
-  manufacturing almost every "win" here.</b> The champion was first
-  scored at the real ask it paid while challengers were priced from the
-  modelled quote — a systematic 2.1¢ discount to the challengers. Under
-  that bug M3 read <b>+23.5%</b> against the champion. Pricing every
-  policy from the same decision-time quote collapsed it to
-  <b>+1.2%</b>; M9 went +10.6% → −5.0%, M2 +8.0% → −8.6%, M1 −3.7% →
-  −26.1%. Only M8 and M3 remain positive at all, both far from
-  significance. Had the framework shipped one commit earlier it would
-  have auto-promoted a pricing artifact into live trading.</p>
-  <p class="mini"><b>Read the absolute EV column with care:</b> it is
-  now <i>model-priced</i> from the quote midpoint plus the standard
-  spread, so it runs optimistic against the fills the desk actually
-  gets. The <b>paired difference</b> is the number the SPRT tests and
-  the only one that is apples-to-apples.</p>
-  <p class="mini">the evidence bar shows progress toward the promote
-  boundary (green) or the reject boundary (red); a treatment that
-  reaches either is auto-promoted or retired, stamped with the time and
-  the paired margin that earned it · a promoted challenger does not
-  delete the incumbent — the loser keeps running so a regression stays
-  visible · state: <code>results/treatments.json</code>, per-window
-  log: <code>results/treatments.jsonl</code></p>
-</section>
-
-<section id="m1shadow">
-  <h2>M1 shadow — is calibration actually earning its place?
-    <span class="pill pending" id="m1-chip">shadow</span></h2>
-  <p class="sub small">The calibration layer is <b>live but trading
-  nothing</b>: every kb row now carries <code>p_cal</code> beside
-  <code>p_up</code>, and each arm's (a, b) refits on a 150-window sliding
-  window. The verdict below is <b>prequential</b> — each window is scored
-  by the fit that existed <i>before</i> it settled, then trained on
-  (Dawid 1984). <b>LL</b> is decayed mean log-loss; lower is better, so
-  <b>gain = raw − calibrated</b> must be positive for the layer to
-  justify itself.</p>
-  <p class="sub small"><b>Honest status:</b> on the warm-start replay
-  calibration helped <b>only kb7</b> — the most miscalibrated arm — and
-  was marginally worse on the other eight. The premise is
-  <b>not yet confirmed</b>. This is precisely why M1 runs in shadow
-  rather than shipping: had we wired it straight into the decision tier
-  on the strength of the 08/26 audit, we would have shipped a
-  regression. The gate stands: it earns the switch-over or it is
-  dropped.</p>
-  <div class="scroll" style="margin-top:8px"><table id="m1-tbl">
-    <thead><tr><th>arm</th><th class="num">n</th>
-      <th class="num">a (intercept)</th><th class="num">b (slope)</th>
-      <th class="num">LL calibrated</th><th class="num">LL raw</th>
-      <th class="num">gain</th><th>verdict</th></tr></thead>
-    <tbody><tr><td colspan="8" class="mini">waiting for the daemon's
-      first settle…</td></tr></tbody>
-  </table></div>
-  <p class="mini">b &lt; 1 = the arm is overconfident and the layer
-  shrinks it toward 0.5 — the tier-1 under-dispersion defect corrected at
-  the point of use · two implementation bugs were found and fixed while
-  building this (a per-sample Newton step whose 2×2 Hessian is exactly
-  rank-1, so the slope was unidentifiable and froze at 1.000; then a
-  decayed-accumulator variant that re-applied stale residuals and
-  overshot to a = −0.64 against the batch answer −0.13). The shipped
-  version is a sliding-window batch refit, which reproduces the offline
-  audit's numbers by construction.</p>
-</section>
-
-<section id="plan">
-  <h2>Execution plan — the fix pipeline, with metric gates</h2>
-  <p class="sub small">Dependency-ordered: calibration (M1) is the unlock —
-  the leader fix (M3) and asymmetric gate (M6) consume its output, so they
-  wait. Each arrow is a <b>metric gate</b>: the measured number that must
-  move, by how much, on how many windows, before the next step is trusted.
-  Red branch = the pre-declared falsification path. Every behavior change
-  runs in shadow mode first; every "X beats Y" claim needs a
-  Diebold–Mariano test clustered by window.</p>
-  <svg viewBox="0 0 960 700" style="width:100%;margin-top:10px" role="img"
-    aria-label="remediation pipeline flowchart with metric gates">
-    <title>fix pipeline: sizing → calibration → vetoes → leader →
-      asymmetric gate → tier-1 re-anchor → order-flow features</title>
-    <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4"
-      markerWidth="7" markerHeight="7" orient="auto">
-      <path d="M0 0 L8 4 L0 8 z" fill="var(--muted)"/></marker></defs>
-    <!-- step boxes (left column) -->
-    <g font-family="ui-sans-serif,system-ui">
-    <rect class="tier" x="10" y="8" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="30">STEP 0 · SIZING — SHIPPED, VERIFYING</text>
-    <text class="tsub" x="24" y="46">Saver 25→10% · Gambler ≥77% gate + $10k reset · MLE 10¢ margin</text>
-    <text class="tsub" x="24" y="60">gates: Gambler stays &gt;72.6% over 30 gated bets · MLE ≥60% idle over 50 windows</text>
-
-    <rect class="tier" x="10" y="106" width="440" height="62" rx="12"
-      style="stroke:var(--series-2);stroke-width:2"/>
-    <text class="tname" x="24" y="128">STEP 1 · M1 PER-ARM PLATT LAYER — THE UNLOCK</text>
-    <text class="tsub" x="24" y="144">1 week shadow: log p_cal beside p_up, change no behavior</text>
-    <text class="tsub" x="24" y="158">problem: arms speak different confidence languages (kb7 a −0.57 vs kb4 −0.12)</text>
-
-    <rect class="tier" x="10" y="204" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="226">STEP 2 · M2 KNIFE-EDGE VETO + M7 HOUR POLICY</text>
-    <text class="tsub" x="24" y="242">no entry at |mkt−0.5|&lt;0.10 · stand down 09:00–10:00 PT</text>
-    <text class="tsub" x="24" y="256">problem: 52.8% of loss $ knife-edge · 09h 64% wrong (market too)</text>
-
-    <rect class="tier" x="10" y="302" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="324">STEP 3 · M3 FIXED-SHARE LEADER (new treatment)</text>
-    <text class="tsub" x="24" y="340">multiplicative weights on log-loss of p_cal · Follower stays as control</text>
-    <text class="tsub" x="24" y="354">problem: 16 switches/day · churner +2.0%/$1 vs fixed-kb4 +4.7%</text>
-
-    <rect class="tier" x="10" y="400" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="422">STEP 4 · M6 ASYMMETRIC GATE (conditional)</text>
-    <text class="tsub" x="24" y="438">UP needs p_cal ≥ τ+0.03 · SKIPPED if Step 1 already kills the lean</text>
-    <text class="tsub" x="24" y="452">problem: FP 33% vs FN 24% — sunsets itself at trailing pBias &lt; 0.02</text>
-
-    <rect class="tier" x="10" y="498" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="520">STEP 5 · M4 TIER-1 RE-ANCHOR (parallel-safe)</text>
-    <text class="tsub" x="24" y="536">trailing-bias recentering t10/t2/t6/t11 + adaptive conformal bands</text>
-    <text class="tsub" x="24" y="550">problem: t10 +$45 bias @h30, 80% up-calls vs 53% real · bands 65–73%</text>
-
-    <rect class="tier" x="10" y="596" width="440" height="62" rx="12"/>
-    <text class="tname" x="24" y="618">STEP 6 · M-T0 ORDER-FLOW FEATURES (last)</text>
-    <text class="tsub" x="24" y="634">taker-buy imbalance → kb3 · only after the pipeline is honest</text>
-    <text class="tsub" x="24" y="648">gate: non-zero prequential weight AND kb3 Brier does not degrade</text>
-
-    <!-- connecting arrows with gate labels -->
-    <line x1="230" y1="70" x2="230" y2="104" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <line x1="230" y1="168" x2="230" y2="202" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <text x="242" y="190" class="flowlab fix">GATE: cross-arm AUC 0.503 → &gt;0.65 · every |pBias| &lt; 0.02 · 100 windows</text>
-    <line x1="230" y1="266" x2="230" y2="300" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <text x="242" y="288" class="flowlab fix">GATE: knife-edge loss share 52.8% → &lt;25% · EV/$1 +1pt vs shadow · 50 bids, DM test</text>
-    <line x1="230" y1="364" x2="230" y2="398" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <text x="242" y="386" class="flowlab fix">GATE: regret vs best fixed arm 2.7% → &lt;1%/$1 · rolling 100 windows</text>
-    <line x1="230" y1="462" x2="230" y2="496" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <text x="242" y="484" class="flowlab fix">GATE: FP−FN gap 9pts → &lt;3pts · 100 decisions (or auto-skip)</text>
-    <line x1="230" y1="560" x2="230" y2="594" stroke="var(--muted)"
-      stroke-width="1.6" marker-end="url(#arr)"/>
-    <text x="242" y="582" class="flowlab fix">GATE: |bias| &lt; $10 @h30 · coverage 77–83% · 200 cycles</text>
-
-    <!-- fail branch off step 1 -->
-    <path d="M 450 137 C 520 137, 520 137, 560 137" stroke="var(--down)"
-      stroke-width="1.6" fill="none" marker-end="url(#arr)"
-      stroke-dasharray="5 4"/>
-    <rect x="562" y="100" width="388" height="76" rx="12"
-      fill="rgba(209,60,60,.06)" stroke="var(--down)"/>
-    <text class="tname" x="576" y="122" fill="var(--down)">FAIL BRANCH · AUC still ≈ 0.5 after calibration</text>
-    <text class="tsub" x="576" y="138">confidence carries NO cross-arm signal at all →</text>
-    <text class="tsub" x="576" y="152">abandon confidence-weighted selection; vetoes-only</text>
-    <text class="tsub" x="576" y="166">+ equal-weight ensemble of top-Brier arms (kb8, kb4, kb2)</text>
-
-    <!-- global close-out box -->
-    <rect x="562" y="500" width="388" height="158" rx="12"
-      fill="rgba(12,138,77,.05)" stroke="var(--good-text)"/>
-    <text class="tname" x="576" y="522" fill="var(--good-text)">INCIDENT CLOSES WHEN (each on ≥100 windows)</text>
-    <text class="tsub" x="576" y="540">1 · herd-whipsaw loss share 75.2% → &lt; 40%</text>
-    <text class="tsub" x="576" y="556">2 · desk EV/$1 ≥ +3% with maxDD &lt; 2× half-Kelly prediction</text>
-    <text class="tsub" x="576" y="572">3 · cross-arm AUC ≥ 0.65 and every arm |pBias| &lt; 0.02</text>
-    <text class="tsub" x="576" y="588">4 · zero regression on control arms (kb, kb2 untouched)</text>
-    <text class="tsub" x="576" y="610">discipline: shadow first · DM tests clustered by window ·</text>
-    <text class="tsub" x="576" y="624">SPRT kill/keep · dated cutovers · history never rewritten</text>
-    <text class="tsub" x="576" y="644">(Diebold–Mariano 1995 · Wald 1945 · Dawid 1984)</text>
-    </g>
-  </svg>
-  <p class="mini">the live values these gates test against are the tier
-  tables above — same page, same refresh · full step/gate/falsification
-  table in <code>docs/SEV0_REMEDIATION.md</code></p>
-</section>
-
-<section>
-  <h2>Mitigation tracker</h2>
-  <p class="sub small">Ordered by leverage. Each carries its literature
-  basis and a pre-registered acceptance metric — no fix is "done" until
-  its metric clears on live windows.</p>
-  <div style="margin-top:6px">
-    <div class="mit"><div class="mid">M5</div>
-      <div><b>Sizing fixes</b> — Saver 0.25→0.10; Gambler ≥0.77 gate +
-        $10k stamped reset; MLE edge-margin 10¢ + shadow-row off-policy
-        training.
-        <div class="cite">fractional Kelly under estimation error:
-        Kelly 1956; MacLean, Thorp &amp; Ziemba 2011 · meta-labeling:
-        López de Prado 2018</div></div>
-      <div class="chipstat done">shipped · 2 of 3 gates clear</div></div>
-    <div class="mit"><div class="mid">M1</div>
-      <div><b>Per-arm online Platt layer</b> — maintain (a,b) per arm,
-        prequentially refit each settle; all cross-arm comparison moves to
-        calibrated p_cal. Acceptance: |pBias| &lt; 0.02 per arm and
-        cross-arm AUC &gt; 0.65 on trailing 100 windows.
-        <div class="cite">Platt 1999 · Guo et al. 2017 (ICML) ·
-        prequential: Dawid 1984 · Brier decomposition: Murphy 1973 ·
-        <b>08/28 re-triage: (a,b) measured moving between halves for 4 of
-        6 arms — online refit is now evidence-backed, not assumed</b></div></div>
-      <div class="chipstat next">next up · in build</div></div>
-    <div class="mit"><div class="mid">M2</div>
-      <div><b>Knife-edge veto</b> — no desk entry at |mkt−0.5| &lt; 0.10
-        (41.6% wrong there; 52.8% of loss dollars). Acceptance: EV/$1 up
-        with ≥60% coverage retained.
-        <div class="cite">adverse selection near the pin:
-        Glosten &amp; Milgrom 1985 · <b>08/28 re-triage: knife-edge share
-        fell 52.8% → ~23%, so the gate target re-bases to the live
-        number; payoff is smaller than first scoped</b></div></div>
-      <div class="chipstat planned">re-scoped</div></div>
-    <div class="mit"><div class="mid">M3</div>
-      <div><b>Fixed-Share leader</b> — replace 10-bet churn with
-        multiplicative expert weights + share rate (tracks the best
-        <i>sequence</i> of leaders). Runs as a NEW desk treatment beside
-        the Follower control. Acceptance: regret vs best fixed arm
-        &lt; 1%/$1 per 100 windows (churner today: 2.7%).
-        <div class="cite">Herbster &amp; Warmuth 1998 ·
-        Cesa-Bianchi &amp; Lugosi 2006 · <b>08/28 re-triage: the best
-        fixed arm flipped (kb4 +4.7% → −3.7%; kb9 now the only positive)
-        — "freeze the best arm" is rejected and M3's priority rises</b></div></div>
-      <div class="chipstat next">promoted</div></div>
-    <div class="mit"><div class="mid">M4′</div>
-      <div><b>Adaptive-conformal bands on the decision-feeding path</b>
-        <span class="pill">re-aimed 08/28</span> — restore 80% coverage
-        on consensus/h15 (currently 74–76%). The drift-recentering half
-        of the original M4 is <b>dropped</b>: it targeted t10/t2/t11/t6,
-        which never reach a bet. Acceptance: trailing-200 coverage
-        77–83% on the feeding path; tier-2 slope b → 1.0 ± 0.15.
-        <div class="cite">adaptive conformal: Gibbs &amp; Candès 2021 ·
-        CQR: Romano et al. 2019 · <b>08/28: this is now the true tier-1
-        defect — dispersion, not direction</b></div></div>
-      <div class="chipstat next">promoted</div></div>
-    <div class="mit"><div class="mid">M8</div>
-      <div><b>Regime gate</b> <span class="pill">new 08/28</span> —
-        stand down when trailing-20-window market accuracy &lt; 0.62.
-        Ex-ante discrimination measured: flagged 63.6% of 08/27's
-        windows (the −$1,403 day) vs 5.1% of 08/28's. Acceptance:
-        backtest must show it skips more loss than profit across all
-        four days — 08/26 flagged 59% while finishing green, so this is
-        <b>not</b> free.
-        <div class="cite">replaces the dropped M7 with a mechanism that
-        has a testable ex-ante signal rather than a clock</div></div>
-      <div class="chipstat next">to backtest</div></div>
-    <div class="mit"><div class="mid">M9</div>
-      <div><b>Cheap-longshot "Underdog" trader</b>
-        <span class="pill">new 08/28</span> — kb5 wins only 44.7% of its
-        calls yet returns <b>+16.7%/$1</b>, the desk's best EV, by
-        buying where break-even sits far below 50%. Ship as a new
-        treatment (additive; no existing trader altered). Acceptance:
-        EV/$1 &gt; 0 over 50 bets with maxDD under half-Kelly bound.
-        <div class="cite">longshot pricing / favourite-longshot bias:
-        Thaler &amp; Ziemba 1988, JEP · sizing: fractional Kelly</div></div>
-      <div class="chipstat next">to spec</div></div>
-    <div class="mit"><div class="mid">M6</div>
-      <div><b>Asymmetric gate</b> — <b>FOLDED INTO M1</b>. The lean is no
-        longer one-signed: kb3/kb4/kb8 now carry <i>positive</i>
-        intercepts (pessimistic) while kb7/kb9 stay optimistic. A fixed
-        "UP needs more" rule would be actively wrong for half the family;
-        a calibrated probability handles it per-arm automatically.
-        <div class="cite">retired as a separate step after the 08/28
-        calibration-drift measurement</div></div>
-      <div class="chipstat planned">folded into M1</div></div>
-    <div class="mit"><div class="mid">M7</div>
-      <div><b>Hour policy</b> — <b>DROPPED.</b> 09h/14h looked
-        persistently bad, but we searched 24 hours: chance alone yields
-        1.98 such hours and we found 2 (<b>p = 0.60</b>). Not deferred —
-        removed, because shipping it would be data dredging.
-        <div class="cite">multiple-comparisons discipline: Arnott,
-        Harvey &amp; Markowitz 2019, JFDS (backtest protocol)</div></div>
-      <div class="chipstat planned">dropped · not significant</div></div>
-    <div class="mit"><div class="mid">M-T0</div>
-      <div><b>Order-flow features at the kb boundary</b> — rolling
-        taker-buy imbalance + divergence vs drift (the tape ran 75%
-        taker-buys while price fell: absorption the models can't see).
-        Acceptance: non-zero prequential weight in kb3 without Brier
-        degradation.
-        <div class="cite">Kyle 1985 · Cont, Kukanov &amp; Stoikov 2014 ·
-        deep-LOB rejected as sample-starved: Zhang et al. 2019</div></div>
-      <div class="chipstat planned">designed</div></div>
-  </div>
-</section>
-
+</details>
+<details class="grp"><summary><h2>Sources</h2><span class="gsub">the literature this rests on</span></summary>
 <section>
   <h2>Sources — the shelf this plan is built on</h2>
   <p class="sub small">State of the art vs industry standard, and what we
@@ -722,6 +765,7 @@
       our pre-registration discipline)</p>
   </div>
 </section>
+</details>
 
 <p class="mini">every table on this page recomputes from
 <code>results/*.jsonl</code> on load and every 15 s — the same files the
@@ -1205,8 +1249,8 @@ function archDraw(key) {
       ` marker-end="url(#ah${e.k})"/>`;
     // only label an edge when the gap can actually hold the text —
     // ~5.2px per char at 9px; otherwise it overprints the boxes
-    const gap = Math.abs(x2 - x1) - (a.w + b.w) / 2 + 40;
-    if (e.t && gap > e.t.length * 5.2) {
+    const gap = Math.abs(x2 - x1) - (a.w + b.w) / 2;
+    if (e.t && gap > e.t.length * 5.4) {
       edges += `<text class="elab${e.k === "e" ? " err" : ""}" ` +
         `x="${mx}" y="${Math.min(y1, y2) - 5}" text-anchor="middle">` +
         `${e.t}</text>`;
