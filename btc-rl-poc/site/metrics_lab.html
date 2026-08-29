@@ -205,8 +205,11 @@ table.db-slices tr.thin td { color: var(--faint); }
 
 <!-- ============ DECISION BOARD ============ -->
 <section id="sec-decision">
-  <div class="eyebrow">should we ship it?</div>
-  <h2>Decision board</h2>
+  <div class="eyebrow">EXPERIMENT ANALYSIS</div>
+  <h2>Decision board — the evidence layer</h2>
+  <p class="mini" style="margin-top:2px"><a href="board.html">←
+    Experiment Program</a> — lifecycle &amp; causality view of the same
+    experiment graph</p>
   <p class="sub muted">Given all the evidence — should treatment X replace
   the control it is paired against, and how certain are we? One row per live
   challenger, rendered from <code>results/decision_board.json</code> every
@@ -1186,6 +1189,29 @@ const DB_STATES = [["PROMOTE", "promote"], ["KEEP_TESTING", "keep"],
 const DB_ORDER = Object.fromEntries(DB_STATES.map(([s], i) => [s, i]));
 const dbOpen = new Set();          // expanded rows survive the 15 s re-render
 let dbWired = false;
+/* deep link from the Experiment Program page: #exp-<key> expands and
+ * scrolls to that treatment's row (on load and on hashchange) */
+let expPending = null;
+const expSel = k => window.CSS && CSS.escape ? CSS.escape(k) : k;
+function expFromHash() {
+  const m = /^#exp-(.+)$/.exec(location.hash || "");
+  if (!m) return;
+  expPending = decodeURIComponent(m[1]);
+  dbOpen.add(expPending);            // reuses the row-expansion mechanism
+}
+function expApply() {
+  if (!expPending) return;
+  const row = document.querySelector(
+    'tr.db-row[data-key="' + expSel(expPending) + '"]');
+  const det = document.querySelector(
+    'tr.db-detail[data-det="' + expSel(expPending) + '"]');
+  if (!row) return;                  // table not rendered yet — next poll
+  if (det) det.hidden = false;
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  expPending = null;
+}
+expFromHash();
+window.addEventListener("hashchange", () => { expFromHash(); expApply(); });
 const cts = v => v == null || !isFinite(v) ? "–" : (100 * v).toFixed(1) + "¢";
 const ctsS = v => v == null || !isFinite(v) ? "–"
   : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
@@ -1316,6 +1342,7 @@ function renderDecision(db) {
       else { dbOpen.add(k); det.hidden = false; }
     });
   }
+  expApply();                        // #exp-<key> deep link, once rendered
   /* baselines footnote — yardsticks computed from data */
   document.getElementById("db-yard").textContent = base.length
     ? "yardsticks: " + base.map(b => b.key + " " + ctsS(b.own_ev) +
