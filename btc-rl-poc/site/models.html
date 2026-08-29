@@ -1,0 +1,732 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quant Universe — Models &amp; Learning</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* page-local styling — models & learning */
+.tabbar { display: flex; gap: 8px; margin: 12px 0 4px; flex-wrap: wrap; }
+td.amber { color: var(--series-4); font-weight: 650; }
+tr.floor td { background: var(--surface-2); color: var(--ink);
+  border-top: 2px solid var(--axis); font-weight: 600; }
+tr.floor td .arm-tag { vertical-align: 0; }
+.bss-banner { margin: 12px 0 4px; border: 1px solid rgba(209,60,60,.4);
+  background: rgba(209,60,60,.06); border-radius: 10px;
+  padding: 10px 16px; font-size: 13px; color: var(--ink-2); }
+.bss-banner b { color: var(--down); letter-spacing: .04em; }
+.pill.kept { color: var(--good-text); background: rgba(43,217,126,.12); }
+.pill.rev  { color: var(--down); background: rgba(255,93,93,.10); }
+.retgrid { border-collapse: collapse; margin-top: 10px; min-width: 0; }
+.retgrid th, .retgrid td { padding: 5px 8px; text-align: center; }
+.retgrid td.cell { font-size: 11px; font-weight: 700; border-radius: 6px;
+  border-bottom: none; min-width: 44px; }
+.retgrid td.k { color: var(--good-text); background: rgba(43,217,126,.14); }
+.retgrid td.r { color: var(--down); background: rgba(255,93,93,.12); }
+.retgrid td.none { color: var(--faint); background: var(--surface-2); }
+.retgrid th.rowh, .retgrid td.rowh { text-align: left; border-bottom: none;
+  font-variant-numeric: tabular-nums; }
+.retscroll { max-height: 340px; overflow: auto; margin-top: 4px;
+  border: 1px solid var(--grid); border-radius: 10px; padding: 0 12px; }
+.retscroll table { margin-top: 0; }
+.retscroll thead th { position: sticky; top: 0; background: var(--surface);
+  z-index: 2; }
+.subhead { font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .14em; color: var(--muted); margin: 18px 0 2px; }
+.queued { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.queued .chip { cursor: default; color: var(--muted); border-style: dashed; }
+.mchips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.mcard { margin-top: 12px; border: 1px solid var(--border);
+  border-left: 3px solid var(--series-2); border-radius: 12px;
+  background: var(--surface-2); padding: 14px 18px; }
+.mcard h3 { font: 500 16px var(--display); color: var(--ink);
+  margin-bottom: 8px; }
+.mcard dl { display: grid; grid-template-columns: 110px 1fr;
+  gap: 4px 14px; font-size: 13px; }
+.mcard dt { color: var(--muted); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .1em; font-weight: 600; padding-top: 2px; }
+.mcard dd { color: var(--ink-2); }
+.mcard code { font-size: 12px; color: var(--ink); }
+@media (max-width: 560px) { .mcard dl { grid-template-columns: 1fr; } }
+.footlinks { display: flex; gap: 18px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a>
+  <a class="nav" href="home.html">Play</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live</a><a class="nav" href="board.html">Program</a><a class="nav here" href="models.html">Models</a><a class="nav" href="metrics_lab.html">Metrics</a><a class="nav" href="agents.html">Agents</a><a class="nav" href="analyst.html">Analyst</a><span class="spacer"></span><span class="tag">models &amp; learning</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">are they good · are they learning · are they stable</div>
+  <h1>Models &amp; Learning</h1>
+  <p class="sub small">Three questions, three cards. Every number on this
+  page is fetched live from the audit and retrain artifacts and refreshes
+  every 15&nbsp;seconds — nothing is typed in. A dash means the artifact
+  has not reported yet.</p>
+</header>
+
+<!-- CARD 1 · are the models good? -->
+<section id="card-scoreboard">
+  <h2>Model scoreboard</h2>
+  <p class="sub small">Two planes, judged separately. And one honest rule
+  before reading any of it — <b>good prediction ≠ market information ≠
+  economic value</b>: a model can top this table and still make no money,
+  because knowing the price is not the same as knowing something the
+  market doesn't, which is not the same as being paid for it after costs.
+  The <a href="paper.html">paper</a> traces that full chain.</p>
+  <div class="tabbar" role="tablist" aria-label="scoreboard plane">
+    <button class="chip on" id="tab-t1" role="tab"
+      aria-selected="true">Price forecasting (T1)</button>
+    <button class="chip" id="tab-t2" role="tab"
+      aria-selected="false">Probability (T2)</button>
+  </div>
+
+  <div id="pane-t1" role="tabpanel">
+    <p class="mini">persistence (<b>rp</b>) — "the price stays where it
+    is" — is pinned below as the floor. <b>Beat the floor or you don't
+    exist.</b> 80% band coverage below 0.78 renders amber (bands too
+    narrow → overconfident).</p>
+    <div class="scroll"><table id="t1-tbl">
+      <thead><tr><th>arm</th><th class="num">n</th><th class="num">MSE</th>
+        <th class="num">bias</th><th class="num">80% coverage</th>
+        <th class="num">pinball</th><th class="num">pinball ÷ floor</th></tr></thead>
+      <tbody><tr><td colspan="7" class="mini">loading tier-1 audit…</td></tr></tbody>
+    </table></div>
+    <p class="subhead">coverage vs pinball — honesty vs sharpness</p>
+    <p class="mini">up and left is good: bands that keep their 80% promise
+    at the lowest pinball loss. The floor line is persistence.</p>
+    <div id="t1-scatter"></div>
+  </div>
+
+  <div id="pane-t2" role="tabpanel" hidden>
+    <div id="t2-banner"></div>
+    <div class="scroll"><table id="t2-tbl">
+      <thead><tr><th>arm</th><th class="num">n</th><th class="num">Brier</th>
+        <th class="num">market Brier</th><th class="num">BSS vs market</th>
+        <th class="num">calib slope b</th><th class="num">calib intercept a</th></tr></thead>
+      <tbody><tr><td colspan="7" class="mini">loading tier-2 audit…</td></tr></tbody>
+    </table></div>
+    <p class="mini">BSS &gt; 0 means the arm's probabilities beat the
+    market's own price as a forecast; &lt; 0 means the book knew better.
+    The two calibration columns (Platt slope/intercept) come from the
+    <b>shadow drift instrument M1-v3</b> — an observability probe, not a
+    decision input; slope drifting from 1 and intercept from 0 flag
+    miscalibration before it costs anything.</p>
+  </div>
+</section>
+
+<!-- CARD 2 · are they learning? -->
+<section id="card-training">
+  <h2>Training &amp; retraining</h2>
+  <p class="sub small">The learners retrain on a fixed cadence behind a
+  gate: <b>a retrain ships only if the candidate beats the incumbent on
+  the same holdout — most SHOULD revert.</b> A high revert rate is the
+  gate working, not the models failing.</p>
+  <div class="statusbar" id="ret-stats" style="margin-top:12px">
+    <div class="stat"><div class="k">last retrain</div>
+      <div class="bignum" id="rs-at" style="font-size:15px">—</div></div>
+    <div class="stat"><div class="k">retrains this session</div>
+      <div class="bignum" id="rs-n">—</div></div>
+    <div class="stat"><div class="k">cadence</div>
+      <div class="bignum" id="rs-cad">—</div></div>
+    <div class="stat"><div class="k">train / val episodes</div>
+      <div class="bignum" id="rs-ep">—</div></div>
+    <div class="stat"><div class="k">kept / reverted</div>
+      <div class="bignum" id="rs-kr">—</div></div>
+  </div>
+  <p class="subhead">last retrain at a glance — arm × horizon</p>
+  <div class="scroll"><table class="retgrid" id="ret-matrix">
+    <tbody><tr><td class="mini">waiting for retrain report…</td></tr></tbody>
+  </table></div>
+  <p class="subhead">the dissection — before → after validation MSE</p>
+  <div class="retscroll"><table id="ret-tbl">
+    <thead><tr><th>arm</th><th>horizon</th><th class="num">val MSE before</th>
+      <th class="num">val MSE after</th><th class="num">Δ</th>
+      <th>verdict</th></tr></thead>
+    <tbody><tr><td colspan="6" class="mini">waiting for retrain report…</td></tr></tbody>
+  </table></div>
+  <div id="ret-timeline"></div>
+</section>
+
+<!-- CARD 3 · are they stable? -->
+<section id="card-robustness">
+  <h2>Robustness &amp; drift</h2>
+  <p class="sub small">A model that is only good on average is not good —
+  it has to survive slicing by regime and by hour, keep its uncertainty
+  bands honest across arms, and be documented well enough to be
+  distrusted precisely.</p>
+
+  <p class="subhead">effect by regime and hour — M8 regime gate vs champion</p>
+  <p class="mini" id="rob-champ">loading decision board…</p>
+  <div class="scroll"><table id="rob-tbl">
+    <thead><tr><th>slice</th><th class="num">n</th>
+      <th class="num">Δ EV / $1 vs champion</th><th class="num">se</th>
+      <th>power</th></tr></thead>
+    <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+  </table></div>
+
+  <p class="subhead">80% band coverage dispersion across tier-1 arms</p>
+  <p class="mini" id="cov-spread">loading…</p>
+  <div id="cov-strip"></div>
+
+  <p class="subhead">drift instruments</p>
+  <p class="mini">honest status — these three are <b>not yet
+  instrumented</b>; they are queued, and until they land the drift story
+  above is partial.</p>
+  <div class="queued">
+    <span class="chip">feature PSI — queued</span>
+    <span class="chip">prediction entropy — queued</span>
+    <span class="chip">markout curves — queued</span>
+  </div>
+
+  <p class="subhead">model cards — the registry</p>
+  <p class="mini" id="reg-note">click a model id for its full card:
+  family, objective, inputs, training, artifact hash, consumers,
+  limitations.</p>
+  <div class="mchips" id="reg-chips"><span class="mini">loading registry…</span></div>
+  <div id="reg-card"></div>
+</section>
+
+<footer>
+  <div class="footlinks">
+    <a href="metrics_lab.html">full metric depth → Metrics Lab</a>
+    <a href="board.html">experiment program → Board</a>
+    <a href="paper.html">why prediction ≠ value → the Paper</a>
+    <a href="archive.html">everything ever logged → Archive</a>
+  </div>
+</footer>
+</main>
+
+<script>
+"use strict";
+/* Models & Learning — every number fetched, nothing hardcoded.
+   Cache-busted no-store fetches, 15 s poll, "—" whenever data is absent. */
+var bust = function (u) { return u + "?t=" + Math.floor(Date.now() / 15000); };
+var jf = function (u) {
+  return fetch(bust(u), { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; });
+};
+var jl = function (u) {
+  return fetch(bust(u), { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.text() : ""; })
+    .then(function (t) {
+      return t.split("\n").filter(function (l) { return l.trim(); })
+        .map(function (l) { try { return JSON.parse(l); } catch (e) { return null; } })
+        .filter(Boolean);
+    }).catch(function () { return []; });
+};
+var esc = function (s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+};
+function num(v) { return (v == null || isNaN(+v)) ? null : +v; }
+function fx(v, d) { var n = num(v); return n == null ? "—" : n.toFixed(d); }
+function fc(v, d) { /* thousands-grouped */
+  var n = num(v); if (n == null) return "—";
+  return n.toLocaleString("en-US",
+    { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fsg(v, d) { /* signed */
+  var n = num(v); if (n == null) return "—";
+  return (n >= 0 ? "+" : "") + n.toFixed(d);
+}
+function tz2(iso) {
+  if (!iso) return "—";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  var o = { month: "short", day: "numeric", hour: "2-digit",
+    minute: "2-digit", hour12: false };
+  try {
+    var et = d.toLocaleString("en-US",
+      Object.assign({ timeZone: "America/New_York" }, o));
+    var ist = d.toLocaleString("en-US",
+      Object.assign({ timeZone: "Asia/Kolkata" }, o));
+    return et + " ET · " + ist + " IST";
+  } catch (e) { return d.toISOString(); }
+}
+/* arm → theme series color (same assignments as the live desk) */
+var ARM_VAR = { ctl: 1, control: 1, t2: 2, t6: 6, t7: 7, t8: 4, t9: 3,
+  t10: 8, t11: 9, cal: 10 };
+function armColor(a) {
+  if (a === "rp") return "var(--faint)";
+  if (a === "consensus") return "var(--ink)";
+  if (/^h\d+$/.test(a)) return "var(--series-5)";
+  var v = ARM_VAR[a]; return v ? "var(--series-" + v + ")" : "var(--muted)";
+}
+
+var state = { tab: "t1", openModel: null };
+var registry = null;
+
+/* ------------------------------------------------ card 1 · tier 1 -- */
+function renderT1(t1) {
+  var tb = document.querySelector("#t1-tbl tbody");
+  if (!t1 || !Object.keys(t1).length) {
+    tb.innerHTML = '<tr><td colspan="7" class="mini">tier-1 audit not' +
+      " available — showing nothing rather than something made up</td></tr>";
+    document.getElementById("t1-scatter").innerHTML = "";
+    return;
+  }
+  var floor = t1.rp || null;
+  var floorPin = floor ? num(floor.pinball) : null;
+  var rows = Object.keys(t1).filter(function (k) { return k !== "rp"; })
+    .map(function (k) { return [k, t1[k] || {}]; })
+    .sort(function (a, b) {
+      return (num(a[1].pinball) || 9e9) - (num(b[1].pinball) || 9e9);
+    });
+  function tr(name, v, cls) {
+    var cov = num(v.band80_cov);
+    var pin = num(v.pinball);
+    var ratio = (pin != null && floorPin) ? pin / floorPin : null;
+    return "<tr" + (cls ? ' class="' + cls + '"' : "") + "><td>" +
+      '<span class="arm-tag ' + esc(name) + '" style="color:' +
+      armColor(name) + '">' + esc(name) + "</span></td>" +
+      '<td class="num">' + fc(v.n, 0) + "</td>" +
+      '<td class="num">' + fc(v.mse, 0) + "</td>" +
+      '<td class="num">' + fsg(v.bias, 2) + "</td>" +
+      '<td class="num' + (cov != null && cov < 0.78 ? " amber" : "") +
+      '">' + fx(cov, 3) + (cov != null && cov < 0.78 ? " ▲" : "") + "</td>" +
+      '<td class="num">' + fx(pin, 2) + "</td>" +
+      '<td class="num">' + (ratio == null ? "—" : fx(ratio, 3)) +
+      "</td></tr>";
+  }
+  var html = rows.map(function (r) { return tr(r[0], r[1]); }).join("");
+  if (floor) html += tr("rp", floor, "floor");
+  tb.innerHTML = html || '<tr><td colspan="7" class="mini">—</td></tr>';
+  document.getElementById("t1-scatter").innerHTML = scatterSVG(t1);
+}
+
+function scatterSVG(t1) {
+  var pts = Object.keys(t1).map(function (k) {
+    var v = t1[k] || {};
+    return { a: k, x: num(v.pinball), y: num(v.band80_cov) };
+  }).filter(function (p) { return p.x != null && p.y != null; });
+  if (pts.length < 2) return '<p class="mini">not enough arms to plot</p>';
+  var W = 720, H = 300, L = 56, R = 20, T = 16, B = 40;
+  var xs = pts.map(function (p) { return p.x; });
+  var ys = pts.map(function (p) { return p.y; });
+  var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  var y0 = Math.min.apply(null, ys.concat([0.78]));
+  var y1 = Math.max.apply(null, ys.concat([0.78]));
+  var xp = (x1 - x0) * 0.09 || 1, yp = (y1 - y0) * 0.16 || 0.01;
+  x0 -= xp; x1 += xp; y0 -= yp; y1 += yp;
+  var X = function (v) { return L + (v - x0) / (x1 - x0) * (W - L - R); };
+  var Y = function (v) { return T + (y1 - v) / (y1 - y0) * (H - T - B); };
+  var g = "";
+  var i, tx, ty;
+  for (i = 0; i <= 4; i++) {
+    tx = x0 + (x1 - x0) * i / 4;
+    g += '<line class="gridline" x1="' + X(tx) + '" y1="' + T +
+      '" x2="' + X(tx) + '" y2="' + (H - B) + '"/>' +
+      '<text x="' + X(tx) + '" y="' + (H - B + 16) +
+      '" text-anchor="middle">' + tx.toFixed(1) + "</text>";
+    ty = y0 + (y1 - y0) * i / 4;
+    g += '<line class="gridline" x1="' + L + '" y1="' + Y(ty) +
+      '" x2="' + (W - R) + '" y2="' + Y(ty) + '"/>' +
+      '<text x="' + (L - 6) + '" y="' + (Y(ty) + 4) +
+      '" text-anchor="end">' + ty.toFixed(3) + "</text>";
+  }
+  g += '<line class="axis" x1="' + L + '" y1="' + (H - B) + '" x2="' +
+    (W - R) + '" y2="' + (H - B) + '"/>' +
+    '<line class="axis" x1="' + L + '" y1="' + T + '" x2="' + L +
+    '" y2="' + (H - B) + '"/>';
+  /* the 80% honesty target */
+  g += '<line x1="' + L + '" y1="' + Y(0.78) + '" x2="' + (W - R) +
+    '" y2="' + Y(0.78) + '" stroke="var(--series-4)" stroke-width="1.4"' +
+    ' stroke-dasharray="6 4"/>' +
+    '<text x="' + (W - R - 4) + '" y="' + (Y(0.78) - 5) +
+    '" text-anchor="end" fill="var(--series-4)">coverage target 0.78</text>';
+  /* the persistence floor */
+  var rp = pts.filter(function (p) { return p.a === "rp"; })[0];
+  if (rp) {
+    g += '<line x1="' + X(rp.x) + '" y1="' + T + '" x2="' + X(rp.x) +
+      '" y2="' + (H - B) + '" stroke="var(--faint)" stroke-width="1.4"' +
+      ' stroke-dasharray="2 4"/>' +
+      '<text x="' + (X(rp.x) - 5) + '" y="' + (T + 12) +
+      '" text-anchor="end" fill="var(--faint)">floor (rp)</text>';
+  }
+  /* points; labels staggered on a 4-slot cycle by x-rank so the
+     tight cluster of similar arms stays readable */
+  var byX = pts.slice().sort(function (a, b) { return a.x - b.x; });
+  var DY = [-9, 16, -22, 29];
+  byX.forEach(function (p, j) {
+    var lx = X(p.x) + (p.x > (x0 + x1) / 2 ? -8 : 8);
+    var anch = p.x > (x0 + x1) / 2 ? "end" : "start";
+    g += '<circle cx="' + X(p.x) + '" cy="' + Y(p.y) +
+      '" r="5" fill="' + armColor(p.a) + '" stroke="var(--surface)"' +
+      ' stroke-width="1.5"/>' +
+      '<text x="' + lx + '" y="' + (Y(p.y) + DY[j % 4]) +
+      '" text-anchor="' + anch + '" fill="' + armColor(p.a) +
+      '" font-weight="600">' + esc(p.a) + "</text>";
+  });
+  g += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) +
+    '" text-anchor="middle">pinball loss (lower = sharper) →</text>' +
+    '<text x="14" y="' + ((T + H - B) / 2) +
+    '" text-anchor="middle" transform="rotate(-90 14 ' +
+    ((T + H - B) / 2) + ')">80% band coverage</text>';
+  return '<svg viewBox="0 0 ' + W + " " + H + '" role="img" ' +
+    'aria-label="coverage versus pinball per arm">' + g + "</svg>";
+}
+
+/* ------------------------------------------------ card 1 · tier 2 -- */
+function renderT2(t2, calib) {
+  var tb = document.querySelector("#t2-tbl tbody");
+  var bn = document.getElementById("t2-banner");
+  if (!t2 || !Object.keys(t2).length) {
+    tb.innerHTML = '<tr><td colspan="7" class="mini">tier-2 audit not' +
+      " available</td></tr>";
+    bn.innerHTML = "";
+    return;
+  }
+  var rows = Object.keys(t2).map(function (k) { return [k, t2[k] || {}]; })
+    .sort(function (a, b) {
+      return (num(b[1].bss_vs_market) == null ? -9e9 : num(b[1].bss_vs_market)) -
+             (num(a[1].bss_vs_market) == null ? -9e9 : num(a[1].bss_vs_market));
+    });
+  tb.innerHTML = rows.map(function (r) {
+    var k = r[0], v = r[1], bss = num(v.bss_vs_market);
+    var c = calib && calib[k] ? calib[k] : null;
+    return "<tr><td><span class=\"arm-tag\">" + esc(k) + "</span></td>" +
+      '<td class="num">' + fc(v.n, 0) + "</td>" +
+      '<td class="num">' + fx(v.brier, 4) + "</td>" +
+      '<td class="num">' + fx(v.mkt_brier, 4) + "</td>" +
+      '<td class="num" style="font-weight:650;color:' +
+      (bss == null ? "var(--muted)" : bss >= 0 ? "var(--good-text)" :
+        "var(--down)") + '">' + fsg(bss, 4) + "</td>" +
+      '<td class="num">' + (c ? fx(c.b, 3) : "—") + "</td>" +
+      '<td class="num">' + (c ? fx(c.a, 3) : "—") + "</td></tr>";
+  }).join("");
+  /* the humbling banner — only when every arm loses to the book */
+  var scored = rows.filter(function (r) {
+    return num(r[1].bss_vs_market) != null;
+  });
+  var allNeg = scored.length > 0 && scored.every(function (r) {
+    return num(r[1].bss_vs_market) < 0;
+  });
+  if (allNeg) {
+    var best = scored[0];
+    bn.innerHTML = '<div class="bss-banner"><b>NOBODY BEATS THE BOOK</b>' +
+      " — every arm's BSS vs the market is negative. Best: <b>" +
+      esc(best[0]) + "</b> at " + fsg(best[1].bss_vs_market, 4) +
+      " over n=" + fc(best[1].n, 0) + " windows. The market price " +
+      "remains the better probability forecast; our edge, if any, " +
+      "must come from elsewhere in the chain.</div>";
+  } else if (scored.length) {
+    var pos = scored.filter(function (r) {
+      return num(r[1].bss_vs_market) >= 0;
+    }).length;
+    bn.innerHTML = '<p class="mini">' + pos + " of " + scored.length +
+      " arms currently beat the market's own price as a forecast.</p>";
+  } else { bn.innerHTML = ""; }
+}
+
+/* --------------------------------------------- card 2 · retraining -- */
+function splitArmH(key) {
+  var m = String(key).match(/^(.*?)-?(h\d+)$/);
+  if (m) return { base: m[1] || "σ", h: m[2] };
+  return { base: String(key), h: "?" };
+}
+function armCmp(a, b) { /* natural: t2 < t10, σ (and non-tN) last */
+  var ma = /^t(\d+)$/.exec(a), mb = /^t(\d+)$/.exec(b);
+  if (ma && mb) return +ma[1] - +mb[1];
+  if (ma) return -1;
+  if (mb) return 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function renderRetrain(os) {
+  var lr = os && os.last_retrain;
+  var set = function (id, v) { document.getElementById(id).textContent = v; };
+  set("rs-n", os && os.retrains_this_session != null ?
+    fc(os.retrains_this_session, 0) : "—");
+  set("rs-cad", os && os.retrain_every_min != null ?
+    "every " + fc(os.retrain_every_min, 0) + " min" : "—");
+  set("rs-at", lr ? tz2(lr.at) : "—");
+  set("rs-ep", lr && lr.train_episodes != null ?
+    fc(lr.train_episodes, 0) + " / " + fc(lr.val_episodes, 0) : "—");
+  var mtx = document.querySelector("#ret-matrix tbody");
+  var tb = document.querySelector("#ret-tbl tbody");
+  if (!lr || !lr.arms || !Object.keys(lr.arms).length) {
+    set("rs-kr", "—");
+    mtx.innerHTML = '<tr><td class="mini">no retrain report yet</td></tr>';
+    tb.innerHTML = '<tr><td colspan="6" class="mini">no retrain report' +
+      " yet</td></tr>";
+    return;
+  }
+  var recs = [];
+  Object.keys(lr.arms).forEach(function (k) {
+    var per = lr.arms[k] || {};
+    Object.keys(per).forEach(function (h) {
+      var e = per[h] || {};
+      recs.push({ key: k, base: splitArmH(k).base, h: h,
+        before: num(e.val_mse_before), after: num(e.val_mse_after),
+        rev: !!e.reverted });
+    });
+  });
+  var kept = recs.filter(function (r) { return !r.rev; }).length;
+  set("rs-kr", kept + " / " + (recs.length - kept));
+  /* matrix */
+  var hs = recs.map(function (r) { return r.h; })
+    .filter(function (v, i, a) { return a.indexOf(v) === i; })
+    .sort(function (a, b) { return +a.slice(1) - +b.slice(1); });
+  var bases = recs.map(function (r) { return r.base; })
+    .filter(function (v, i, a) { return a.indexOf(v) === i; })
+    .sort(armCmp);
+  var mh = "<tr><th class=\"rowh\">arm</th>" + hs.map(function (h) {
+    return "<th>" + esc(h) + "</th>";
+  }).join("") + "</tr>";
+  mh += bases.map(function (b) {
+    return '<tr><td class="rowh"><span class="arm-tag" style="color:' +
+      armColor(b) + '">' + esc(b) + "</span></td>" +
+      hs.map(function (h) {
+        var r = recs.filter(function (x) {
+          return x.base === b && x.h === h;
+        })[0];
+        if (!r) return '<td class="cell none">·</td>';
+        return '<td class="cell ' + (r.rev ? "r" : "k") +
+          '" title="' + esc(r.key) + " " + fx(r.before, 1) + " → " +
+          fx(r.after, 1) + '">' + (r.rev ? "REV" : "KEPT") + "</td>";
+      }).join("") + "</tr>";
+  }).join("");
+  mtx.innerHTML = mh;
+  /* dissection table */
+  recs.sort(function (a, b) {
+    return armCmp(a.base, b.base) || (+a.h.slice(1) - +b.h.slice(1));
+  });
+  tb.innerHTML = recs.map(function (r) {
+    var d = (r.before != null && r.after != null && r.before !== 0) ?
+      (r.after - r.before) / r.before * 100 : null;
+    return '<tr><td><span class="arm-tag" style="color:' +
+      armColor(r.base) + '">' + esc(r.base) + "</span></td>" +
+      "<td>" + esc(r.h) + "</td>" +
+      '<td class="num">' + fc(r.before, 1) + "</td>" +
+      '<td class="num">' + fc(r.after, 1) + "</td>" +
+      '<td class="num" style="color:' + (d == null ? "var(--muted)" :
+        d <= 0 ? "var(--good-text)" : "var(--down)") + '">' +
+      (d == null ? "—" : fsg(d, 1) + "%") + "</td>" +
+      '<td><span class="pill ' + (r.rev ? "rev" : "kept") + '">' +
+      (r.rev ? "REVERTED" : "KEPT") + "</span></td></tr>";
+  }).join("");
+}
+function renderTimeline(rows) {
+  var el = document.getElementById("ret-timeline");
+  /* only usable if the log actually records gate outcomes */
+  var ev = (rows || []).filter(function (r) {
+    return r && (r.reverted != null || r.kept != null ||
+      r.val_mse_before != null);
+  });
+  if (!ev.length) {
+    el.innerHTML = '<p class="mini">keep/revert history across retrains ' +
+      "is not persisted to disk yet — <code>training_progress.jsonl</code> " +
+      "carries offline epoch curves only, so the timeline above is " +
+      "<b>this session only</b> (" +
+      ((rows && rows.length) ? rows.length + " offline epoch rows on file" :
+        "no training log on file") + ").</p>";
+    return;
+  }
+  var cells = ev.slice(-60).map(function (r) {
+    var rev = r.reverted != null ? !!r.reverted : !r.kept;
+    var who = esc(r.arm || r.agent || "?") +
+      (r.horizon != null ? " h" + esc(r.horizon) : "");
+    return '<td class="cell ' + (rev ? "r" : "k") + '" title="' + who +
+      '">' + (rev ? "R" : "K") + "</td>";
+  }).join("");
+  el.innerHTML = '<p class="subhead">keep/revert timeline (last ' +
+    Math.min(ev.length, 60) + " gate decisions)</p>" +
+    '<div class="scroll"><table class="retgrid"><tbody><tr>' + cells +
+    "</tr></tbody></table></div>";
+}
+
+/* --------------------------------------------- card 3 · robustness -- */
+function renderRobust(db) {
+  var champEl = document.getElementById("rob-champ");
+  var tb = document.querySelector("#rob-tbl tbody");
+  if (!db || !db.treatments || !db.treatments.length) {
+    champEl.textContent = "decision board not available";
+    tb.innerHTML = '<tr><td colspan="5" class="mini">—</td></tr>';
+    return;
+  }
+  var minN = (db.config && num(db.config.slice_min_n)) || 15;
+  var champ = null, treg = null;
+  db.treatments.forEach(function (t) {
+    if (t.key === "champion") champ = t;
+    if (t.key === "t_regime") treg = t;
+  });
+  champEl.innerHTML = champ ?
+    "yardstick: <b>champion</b> (the live desk policy) — n " +
+    fc(champ.n, 0) + ", own EV/$1 " + fsg(champ.own_ev, 4) +
+    ". Each slice below is the regime gate's paired ΔEV against it; " +
+    "slices with n &lt; " + minN + " are muted as underpowered." :
+    "champion treatment not found on the board";
+  if (!treg || !treg.slices || !treg.slices.length) {
+    tb.innerHTML = '<tr><td colspan="5" class="mini">t_regime slices ' +
+      "not available</td></tr>";
+    return;
+  }
+  var head = "<tr><td>" + esc(treg.label || "t_regime") +
+    ' — overall</td><td class="num">' + fc(treg.n, 0) + "</td>" +
+    '<td class="num" style="font-weight:650;color:' +
+    (num(treg.mean) == null ? "var(--muted)" : treg.mean >= 0 ?
+      "var(--good-text)" : "var(--down)") + '">' + fsg(treg.mean, 4) +
+    '</td><td class="num">' + fx(treg.se, 4) + "</td><td>" +
+    '<span class="pill pending">' + esc(treg.state || "—") +
+    "</span></td></tr>";
+  tb.innerHTML = head + treg.slices.map(function (s) {
+    var under = num(s.n) != null && s.n < minN;
+    var m = num(s.mean);
+    return '<tr style="' + (under ? "opacity:.45" : "") + '"><td>' +
+      esc(s.name) + '</td><td class="num">' + fc(s.n, 0) + "</td>" +
+      '<td class="num" style="color:' + (m == null ? "var(--muted)" :
+        m > 0 ? "var(--good-text)" : m < 0 ? "var(--down)" :
+        "var(--muted)") + '">' + fsg(m, 4) + "</td>" +
+      '<td class="num">' + fx(s.se, 4) + "</td>" +
+      "<td>" + (under ? '<span class="pill miss">underpowered</span>' :
+        '<span class="pill ok">n ≥ ' + minN + "</span>") + "</td></tr>";
+  }).join("");
+}
+function renderCovStrip(t1) {
+  var el = document.getElementById("cov-strip");
+  var lab = document.getElementById("cov-spread");
+  var pts = t1 ? Object.keys(t1).map(function (k) {
+    return { a: k, v: num((t1[k] || {}).band80_cov) };
+  }).filter(function (p) { return p.v != null; }) : [];
+  if (pts.length < 2) {
+    lab.textContent = "tier-1 coverage not available";
+    el.innerHTML = "";
+    return;
+  }
+  var vs = pts.map(function (p) { return p.v; });
+  var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
+  lab.innerHTML = "spread <b>" + ((hi - lo)).toFixed(3) + "</b> (" +
+    lo.toFixed(3) + " → " + hi.toFixed(3) + ") across " + pts.length +
+    " arms. All arms share one σ machine, so wide dispersion here means " +
+    "the <i>band plumbing</i>, not the arms, is drifting — the exact " +
+    "symptom the <a href=\"sev0.html\">SEV-0 audit</a> tracks as its " +
+    "dispersion check.";
+  var W = 720, H = 128, L = 30, R = 30, AX = 92;
+  var x0 = Math.min(lo, 0.78) - 0.008, x1 = Math.max(hi, 0.78) + 0.008;
+  var X = function (v) { return L + (v - x0) / (x1 - x0) * (W - L - R); };
+  var g = '<line class="axis" x1="' + L + '" y1="' + AX + '" x2="' +
+    (W - R) + '" y2="' + AX + '"/>';
+  var t;
+  for (t = Math.ceil(x0 * 100) / 100; t <= x1 + 1e-9; t += 0.01) {
+    g += '<line class="gridline" x1="' + X(t) + '" y1="' + (AX - 6) +
+      '" x2="' + X(t) + '" y2="' + (AX + 6) + '"/>' +
+      '<text x="' + X(t) + '" y="' + (AX + 22) +
+      '" text-anchor="middle">' + t.toFixed(2) + "</text>";
+  }
+  g += '<line x1="' + X(0.78) + '" y1="' + (AX - 74) + '" x2="' +
+    X(0.78) + '" y2="' + (AX + 8) +
+    '" stroke="var(--series-4)" stroke-width="1.4" stroke-dasharray="5 4"/>' +
+    '<text x="' + X(0.78) + '" y="' + (AX - 80) +
+    '" text-anchor="middle" fill="var(--series-4)">target 0.78</text>';
+  pts.sort(function (a, b) { return a.v - b.v; }).forEach(function (p, i) {
+    var lvl = AX - 14 - (i % 4) * 15;
+    g += '<circle cx="' + X(p.v) + '" cy="' + AX + '" r="5" fill="' +
+      armColor(p.a) + '" stroke="var(--surface)" stroke-width="1.5"/>' +
+      '<text x="' + X(p.v) + '" y="' + lvl + '" text-anchor="middle" ' +
+      'fill="' + armColor(p.a) + '" font-weight="600">' + esc(p.a) +
+      "</text>";
+  });
+  el.innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" role="img" ' +
+    'aria-label="band coverage per arm">' + g + "</svg>";
+}
+function renderRegistry(reg) {
+  registry = reg;
+  var chips = document.getElementById("reg-chips");
+  var card = document.getElementById("reg-card");
+  var models = reg && reg.models;
+  if (!models || !models.length) {
+    chips.innerHTML = '<span class="mini">model registry not available</span>';
+    card.innerHTML = "";
+    return;
+  }
+  chips.innerHTML = models.map(function (m, i) {
+    return '<button class="chip' + (state.openModel === i ? " on" : "") +
+      '" data-mi="' + i + '" aria-expanded="' +
+      (state.openModel === i) + '">' + esc(m.id || "model " + i) +
+      "</button>";
+  }).join("");
+  if (state.openModel == null || !models[state.openModel]) {
+    card.innerHTML = "";
+    return;
+  }
+  var m = models[state.openModel];
+  var a = m.artifact;
+  var art = a ? "<code>" + esc(a.file || "?") + "</code> · sha256/16 " +
+    "<code>" + esc(a.sha256_16 || "—") + "</code> · " +
+    (a.bytes != null ? fc(a.bytes, 0) + " bytes · " : "") +
+    (a.mtime != null ? tz2(new Date(a.mtime * 1000).toISOString()) : "—")
+    : "<i>none — in-code / frozen model, no separate weight file</i>";
+  card.innerHTML = '<div class="mcard"><h3>' + esc(m.id || "—") +
+    (m.plane ? ' <span class="arm-tag">' + esc(m.plane) + "</span>" : "") +
+    "</h3><dl>" +
+    "<dt>family</dt><dd>" + esc(m.family || "—") + "</dd>" +
+    "<dt>objective</dt><dd>" + esc(m.objective || "—") + "</dd>" +
+    "<dt>inputs</dt><dd>" + esc(m.inputs || "—") + "</dd>" +
+    "<dt>training</dt><dd>" + esc(m.training || "—") + "</dd>" +
+    "<dt>artifact</dt><dd>" + art + "</dd>" +
+    "<dt>consumers</dt><dd>" + (m.consumers && m.consumers.length ?
+      m.consumers.map(esc).join(" · ") : "—") + "</dd>" +
+    "<dt>limitations</dt><dd>" + esc(m.limitations || "—") + "</dd>" +
+    "</dl></div>";
+}
+document.getElementById("reg-chips").addEventListener("click", function (e) {
+  var b = e.target.closest("button[data-mi]");
+  if (!b) return;
+  var i = +b.getAttribute("data-mi");
+  state.openModel = (state.openModel === i) ? null : i;
+  renderRegistry(registry);
+});
+
+/* -------------------------------------------------------- tabs -- */
+function setTab(t) {
+  state.tab = t;
+  var t1 = document.getElementById("tab-t1");
+  var t2 = document.getElementById("tab-t2");
+  t1.classList.toggle("on", t === "t1");
+  t2.classList.toggle("on", t === "t2");
+  t1.setAttribute("aria-selected", String(t === "t1"));
+  t2.setAttribute("aria-selected", String(t === "t2"));
+  document.getElementById("pane-t1").hidden = t !== "t1";
+  document.getElementById("pane-t2").hidden = t !== "t2";
+}
+document.getElementById("tab-t1").addEventListener("click", function () {
+  setTab("t1");
+});
+document.getElementById("tab-t2").addEventListener("click", function () {
+  setTab("t2");
+});
+
+/* -------------------------------------------------------- poll -- */
+function poll() {
+  return Promise.all([
+    jf("../results/audit_report.json"),
+    jf("../results/online_status.json"),
+    jf("../results/model_registry.json"),
+    jf("../results/decision_board.json"),
+    jf("../results/kb_calib.json"),
+    jl("../results/training_progress.jsonl")
+  ]).then(function (r) {
+    var audit = r[0], os = r[1], reg = r[2], db = r[3], calib = r[4],
+      tp = r[5];
+    var t1 = audit && audit.sections && audit.sections.tier1;
+    var t2 = audit && audit.sections && audit.sections.tier2;
+    renderT1(t1);
+    renderT2(t2, calib);
+    renderRetrain(os);
+    renderTimeline(tp);
+    renderRobust(db);
+    renderCovStrip(t1);
+    renderRegistry(reg);
+  });
+}
+poll();
+setInterval(poll, 15000);
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

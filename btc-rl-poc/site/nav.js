@@ -11,27 +11,22 @@
 
   /* ---------------------------------------------------------- pages -- */
 
+  /* THE FIVE-PAGE LAW (owner, 2026-08-29): exactly five primary
+     pages — Home / Map / Models / Experiments / Watchtower. Every
+     other page stays published (append-only history) but lives in
+     the Archive, the slim More menu, drawers, and search. */
   var PRIMARY = [
-    { label: "Play",        href: "home.html" },
+    { label: "Home",        href: "home.html" },
     { label: "Map",         href: "universe.html" },
-    { label: "Live",        href: "live_online.html" },
-    { label: "Program",     href: "board.html" },
-    { label: "Metrics",     href: "metrics_lab.html" },
-    { label: "Agents",      href: "agents.html" },
-    { label: "Analyst",     href: "analyst.html" },
-    { label: "Museum",      href: "museum.html" }
+    { label: "Models",      href: "models.html" },
+    { label: "Experiments", href: "board.html" },
+    { label: "Watchtower",  href: "watchtower.html" }
   ];
 
   var MORE = [
-    { label: "The Instrument",  href: "instrument.html" },
-    { label: "Results",         href: "ab_dashboard.html" },
-    { label: "Experiment lab",  href: "experiment_review.html" },
-    { label: "Backtest",        href: "index.html" },
-    { label: "Training",        href: "live_training.html" },
-    { label: "System Clock",    href: "clock.html" },
-    { label: "SEV-0",           href: "sev0.html" },
-    { label: "Ledgers",         href: "ledgers.html" },
-    { label: "Classic ledgers", href: "home_classic.html" }
+    { label: "Ledgers",     href: "ledgers.html" },
+    { label: "The Paper",   href: "paper.html" },
+    { label: "Archive",     href: "archive.html" }
   ];
 
   /* Static search index: every page, 3-6 honest keywords each. */
@@ -46,6 +41,14 @@
       kw: "program, hypothesis, retire, inbox, kill board, open decisions, workstreams, arms, mitigations" },
     { title: "Diagnosis", href: "diagnosis.html",
       kw: "diagnosis, tiers, failing, funnel, blind spots" },
+    { title: "Models & Learning", href: "models.html",
+      kw: "models, scoreboard, training, retraining, drift, BSS, coverage, robustness" },
+    { title: "The Paper", href: "paper.html",
+      kw: "paper, research, abstract, methods, results, citations, writeup" },
+    { title: "The Archive", href: "archive.html",
+      kw: "archive, retired pages, deep views, legacy, documents" },
+    { title: "The Watchtower", href: "watchtower.html",
+      kw: "watchtower, health, monitors, sev, incidents, invariants, agents, costs, backend" },
     { title: "Metrics Lab", href: "metrics_lab.html",
       kw: "decision board, CI, power, MDE, promote, brier" },
     { title: "Agent HQ", href: "agents.html",

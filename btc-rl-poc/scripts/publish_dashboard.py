@@ -32,7 +32,7 @@ PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "board.html", "analyst.html", "home_classic.html", "glossary.js", "glossary.json", "nav.js",
          "universe.html", "clock.html", "agents.html", "museum.html",
          "instrument.html", "watchtower.html", "ledgers.html",
-         "diagnosis.html", "paper.html", "archive.html"]
+         "diagnosis.html", "paper.html", "archive.html", "models.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
