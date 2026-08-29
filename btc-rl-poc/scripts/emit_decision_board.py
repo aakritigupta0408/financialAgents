@@ -102,6 +102,33 @@ def _pairs(rows, key, base_key):
     return out
 
 
+def _srm(key, all_rows):
+    """Sample-ratio-mismatch check (§32) adapted to the paired design:
+    assignment is deterministic — EVERY logged window from the
+    treatment's first appearance (birth) onward must carry the key in
+    its ev map. Expected = windows since birth; observed = windows
+    actually carrying the key. A deficit means rows were scored
+    without the treatment (policy-version contamination); duplicates
+    are double exposure; either → INVALID, not HOLD."""
+    birth = next((i for i, r in enumerate(all_rows)
+                  if key in (r.get("ev") or {})), None)
+    if birth is None:
+        return None
+    since = all_rows[birth:]
+    observed = sum(1 for r in since if key in (r.get("ev") or {}))
+    tickers = [r.get("ticker") for r in since
+               if key in (r.get("ev") or {})]
+    dupes = len(tickers) - len(set(tickers))
+    missing_outcome = sum(1 for r in since
+                          if key in (r.get("ev") or {})
+                          and r.get("outcome") is None)
+    return {"expected": len(since), "observed": observed,
+            "deficit": len(since) - observed,
+            "duplicates": dupes, "missing_outcomes": missing_outcome,
+            "ok": (len(since) == observed and dupes == 0
+                   and missing_outcome == 0)}
+
+
 def _mean_se(xs):
     n = len(xs)
     if n < 2:
@@ -251,6 +278,7 @@ def _analyze(key, tr, pairs):
                          "control_only_bet": c_only,
                          "note": "skips are scored decisions (EV 0), "
                                  "not missing data"}},
+        "srm": None,   # stamped in main() where the full row list lives
         "veto": veto,
         "slices": slices,
         "worst_slice": worst,
@@ -328,7 +356,11 @@ def main():
         a = _analyze(key, tr, _pairs(rows, key, base))
         if a is None:
             continue
+        a["srm"] = _srm(key, rows)
         state, reasons = _decide(a, integrity_ok)
+        if a["srm"] and not a["srm"]["ok"]:
+            state = "INVALID"       # §32: SRM fail = do not decide
+            reasons = [f"SRM failure: {a['srm']}"]
         a.update({"key": key, "label": tr.label, "basis": basis,
                   "rationale": tr.rationale,
                   "state": state, "state_reasons": reasons})

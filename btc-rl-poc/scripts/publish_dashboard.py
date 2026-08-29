@@ -81,6 +81,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("readiness.json", None),
     ("execution_ledger.json", None),
     ("reconciliation.json", None),
+    ("meta_monitors.json", None),
     ("execution_ledger.jsonl", 2000),
 ]
 
