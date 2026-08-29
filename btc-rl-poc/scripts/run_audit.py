@@ -142,6 +142,17 @@ def tier1_section() -> dict:
             "band80_cov": round(sum(1 for r in banded
                                     if r["lo"] <= r["actual"] <= r["hi"])
                                 / len(banded), 3) if banded else None,
+            # pinball (interval) score, research-baseline gap #2: the
+            # M5-Uncertainty / GEFCom standard — coverage alone cannot
+            # tell a sharp honest band from a wide lazy one. Mean of
+            # the q10/q90 pinball losses; lower is better.
+            "pinball": round(sum(
+                (0.1 * (r["actual"] - r["lo"]) if r["actual"] >= r["lo"]
+                 else 0.9 * (r["lo"] - r["actual"])) / 2
+                + (0.9 * (r["actual"] - r["hi"])
+                   if r["actual"] >= r["hi"]
+                   else 0.1 * (r["hi"] - r["actual"])) / 2
+                for r in banded) / len(banded), 2) if banded else None,
         }
     return out
 
@@ -169,6 +180,15 @@ def tier2_section() -> dict:
             "mkt_brier": round(sum((d["mkt_p_up"] - d["actual"]) ** 2
                                    for d in mk) / len(mk), 4) if mk else None,
         }
+        # Brier Skill Score vs the market (research-baseline gap #3):
+        # BSS = 1 - Brier_arm/Brier_market on the SAME windows.
+        # Positive = the arm beats the crowd; this is the single number
+        # "is there any skill here at all".
+        if mk:
+            ba = sum((d["p_up"] - d["actual"]) ** 2 for d in mk) / len(mk)
+            bm = sum((d["mkt_p_up"] - d["actual"]) ** 2
+                     for d in mk) / len(mk)
+            out[v]["bss_vs_market"] = round(1 - ba / bm, 4) if bm else None
     return out
 
 

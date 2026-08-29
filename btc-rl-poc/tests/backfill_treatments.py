@@ -35,6 +35,7 @@ treats = {}
 for k, lab, fn, why in O._treat_policies():
     treats[k] = treatments.Treatment(
         k, lab, fn, why, edge=O.TREAT_EDGE, min_n=O.TREAT_MIN_N,
+        alpha=getattr(O, "TREAT_ALPHA", 0.05),
         baseline=k in ("champion", "champion_real"))
 seen = {}                      # dict-as-ordered-set, matches the daemon
 fshare = treatments.FixedShare(O.PT_ARMS)

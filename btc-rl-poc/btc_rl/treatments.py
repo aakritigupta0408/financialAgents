@@ -138,7 +138,7 @@ class Treatment:
 
     def __init__(self, key: str, label: str, decide, rationale: str,
                  edge: float = 0.02, min_n: int = 40,
-                 baseline: bool = False):
+                 baseline: bool = False, alpha: float = 0.05):
         self.key = key
         self.label = label
         self.decide = decide
@@ -149,7 +149,7 @@ class Treatment:
         # the baseline drifts to REJECT (measured: LLR -2.80). Baselines
         # report n and own EV, and are never given a verdict.
         self.baseline = baseline
-        self.sprt = SPRT(edge=edge, min_n=min_n)
+        self.sprt = SPRT(edge=edge, min_n=min_n, alpha=alpha)
         self.n_bet = 0
         self.n_skip = 0
         self.ev_sum = 0.0          # own EV per $1, for reporting

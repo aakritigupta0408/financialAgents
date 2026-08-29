@@ -7,13 +7,20 @@ is, what the state of the art is, their shortcomings/advantages at our
 scale (~200 windows, 15-min horizon), and an explicit **use / don't use**
 verdict with an acceptance metric.
 
-The audit that motivates all of this: bias is born in Tier 1 (drift
-priors: t10 +$45 bias @h30, up-call share 71–83% vs 53% base rate),
-inherited by Tier 2 (all Platt intercepts negative, kb7 a=−0.565),
-amplified by Tier 3 (cross-arm confidence AUC 0.503; leader churn
-16/day; fixed-kb4 counterfactual +4.7%/$1 vs desk +2.0%), multiplied by
-Tier 4 sizing, with 95% of loss dollars carrying a shared taggable
-cause (herd whipsaw 75.2%, knife-edge 52.8%).
+RCA — as CORRECTED on 08-28 (the 08-26 chain below in Tier-1/Tier-3
+sections is preserved as written but was partially overturned; the
+docs team's consistency audit flagged this header for the fix):
+the drift-biased arms (t10/t11) never reach a bet — the true tier-1
+defect is band UNDER-DISPERSION on the decision-feeding path (σ too
+small: coverage 74–76% vs 80%, and regime-split coverage 0.518 in
+violent vol), which pushes probabilities to the extremes (tier-2 slope
+b<1), amplified by an uncalibrated cross-arm comparison + leader churn
+(tier 3), multiplied by sizing (tier 4) — with EXECUTION the binding
+leak (2.70 pts/EV at the fill, larger than any model edge). M7 (hour
+policy) was DROPPED (p=0.60, multiple-comparisons); M6 folded into M1;
+M4 re-aimed at bands only. Where a tier section below conflicts with
+this paragraph, this paragraph wins; the sections stand as the honest
+record of what we believed on 08-26 and why.
 
 ---
 

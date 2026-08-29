@@ -51,6 +51,16 @@ TREAT_STATE_NAME = "treatments.json"
 TREAT_LOG_NAME = "treatments.jsonl"
 TREAT_MIN_N = 40               # no verdict before this many windows
 TREAT_EDGE = 0.02              # the win size worth switching for (EV/$1)
+# FAMILY-WISE ERROR CONTROL (2026-08-28, research-baseline gap #1):
+# running ~14 concurrent SPRTs each at alpha=0.05 while watching the
+# best of them is the same multiple-testing trap that killed the M7
+# hour policy, one layer up (Bailey & Lopez de Prado's selection-bias
+# point). Per-treatment alpha is Bonferroni-split across a REGISTERED
+# concurrency cap, so promote boundaries are pre-set and conservative:
+# alpha 0.05/16 -> upper boundary log(0.9/0.003125) ~ 5.66 (was 2.89).
+# Existing LLRs are unchanged; they are simply judged honestly now.
+TREAT_MAX_CONCURRENT = 16
+TREAT_ALPHA = 0.05 / TREAT_MAX_CONCURRENT
 REGIME_LOOKBACK = 20           # windows for the market-accuracy signal
 REGIME_FLOOR = 0.62            # stand down below this (M8)
 KNIFE_BAND = 0.10              # |mkt_p_up - 0.5| veto width (M2)
@@ -2307,6 +2317,7 @@ def run(once: bool = False) -> None:
     for _k, _lab, _fn, _why in _treat_policies():
         treats[_k] = treatments.Treatment(
             _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+            alpha=TREAT_ALPHA,
             baseline=_k in ("champion", "champion_real"))
     # dict-as-ordered-set: BUG FIX 2026-08-28 — the trim used to be
     # sorted(...)[-4000:], which is LEXICOGRAPHIC over tickers like
@@ -2340,6 +2351,7 @@ def run(once: bool = False) -> None:
         for _k, _lab, _fn, _why in _treat_policies():
             treats[_k] = treatments.Treatment(
                 _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+                alpha=TREAT_ALPHA,
                 baseline=_k in ("champion", "champion_real"))
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
