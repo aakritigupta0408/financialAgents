@@ -32,6 +32,7 @@ STEPS = [
     "scripts/emit_exec_sensitivity.py",
     "scripts/reconcile.py",
     "tests/leakage_canaries.py",
+    "scripts/emit_build_manifest.py",
     "scripts/emit_readiness.py",
 ]
 

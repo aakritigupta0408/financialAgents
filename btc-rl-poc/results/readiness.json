@@ -1,15 +1,17 @@
 {
- "generated_ts": 1788046603,
- "standard_version": "1.0.3",
+ "generated_ts": 1788046747,
+ "standard_version": "1.0.4",
  "system": {
-  "level": "R1",
+  "level": "R2",
   "rule": "MIN over all critical planes \u2014 never averaged",
   "weakest_planes": [
+   "execution",
+   "recovery",
    "security"
   ],
   "qualification_frozen": false,
   "frozen_reason": null,
-  "headline": "REAL-MONEY-EQUIVALENT: R1 \u2014 NOT R8"
+  "headline": "REAL-MONEY-EQUIVALENT: R2 \u2014 NOT R8"
  },
  "strategy": {
   "status": "NO QUALIFIED EDGE",
@@ -116,11 +118,11 @@
    "live_downgrades": []
   },
   "security": {
-   "level": "R1",
-   "assessed": "R1",
+   "level": "R2",
+   "assessed": "R2",
    "target": "R8",
-   "evidence": "demo-only order code; prod market-data is read-only",
-   "blocker": "R2 gap: dependency lock/SBOM + reproducible-build manifest (\u00a763) \u2014 credential SEV-0 RESOLVED (key deleted by owner 08-29)",
+   "evidence": "demo-only order code; prod market-data read-only; requirements.lock (479 pkgs) + env digest + 47 artifact sha256s + secret scan clean (build_manifest.json)",
+   "blocker": "R3 gap: SBOM + vulnerability scan + containerized reproducible env (\u00a763)",
    "live_downgrades": []
   }
  }

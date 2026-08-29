@@ -9,7 +9,10 @@
 # (results/readiness.json, emitted by scripts/emit_readiness.py).
 # The UI never decides readiness. UNKNOWN is never GREEN.
 
-version: 1.0.3
+version: 1.0.4
+# 1.0.4 (2026-08-29): security R1->R2 — dependency lock (479 pkgs),
+# env digest, 47 artifact checksums, secret scan CLEAN
+# (build_manifest.json). Remaining gaps listed inside it.
 # 1.0.3 (2026-08-29): execution R1->R2 — quote-age sensitivity curves
 # + E1/E2/E3 models live (survives E2 +2.7c, fails E3 -3.8c; the
 # momentum-inflated-ask finding). Ratified in DECISIONS.md.
@@ -107,9 +110,9 @@ planes:
     evidence: watchdog restart + append-only ledgers + atomic writes survived real crashes
     blocker_to_next: "R3 gap: no chaos suite (§56), no scripted crash-recovery drills (§57)"
   security:
-    assessed: R1
-    evidence: demo-only order code; prod market-data is read-only
-    blocker_to_next: "R2 gap: dependency lock/SBOM + reproducible-build manifest (§63) — credential SEV-0 RESOLVED (key deleted by owner 08-29)"
+    assessed: R2
+    evidence: demo-only order code; prod market-data read-only; requirements.lock (479 pkgs) + env digest + 47 artifact sha256s + secret scan clean (build_manifest.json)
+    blocker_to_next: "R3 gap: SBOM + vulnerability scan + containerized reproducible env (§63)"
 
 # Strategy qualification (§83-84) — SEPARATE from system readiness
 strategy_gate:
