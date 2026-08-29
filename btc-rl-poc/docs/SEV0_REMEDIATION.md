@@ -307,3 +307,45 @@ Incident closes when, each on >=100 windows: herd-whipsaw loss share
 <40% (from 75.2%); desk EV/$1 >= +3% with maxDD < 2x half-Kelly
 prediction; cross-arm AUC >= 0.65 with every arm |pBias| < 0.02; zero
 regression on the untouched control arms (kb, kb2).
+
+---
+
+## The Ideal trader (pt8) — sizing, pricing, entry timing, grounded
+
+What crypto/market-making practice actually does, what our own ledger
+measured, and what pt8 therefore adopted or refused:
+
+**Pricing (maker vs taker).** Practitioners submit passive/limit flow
+for non-urgent orders and cross the spread only under urgency
+(Almgren & Chriss 2000 optimal execution; maker-taker economics).
+OUR measurement agrees: crossing at the gate minute cost 2.70 pts of
+EV, and 6-9-minute-late entries paid +9.1c. BUT the naive version is
+adversely selected: a resting bid is a free option to informed flow
+(Glosten & Milgrom 1985) — and our backfilled M11 (naive limit, rest
+2c below, fill or skip) scored -5.21%/\$1 PAIRED, worse than crossing.
+Adopted: maker limit + a FILL-TIME re-check of the leader's current
+confidence at the limit price (refuse fills caused by a falling
+signal). pt7 keeps the naive rule on purpose, as the adverse-selection
+measuring stick.
+
+**Entry timing.** Enter only when stated edge at the (limit) price
+clears a margin — meta-labeling (Lopez de Prado 2018), and the direct
+lesson of pt4-v2's -1.7-pt entry: confidence and price co-move, so a
+confidence gate without a price term degenerates into a price
+threshold. Plus the regime gate (trailing decision-time market
+accuracy >= 0.62) — our best-performing treatment (+8.23%/\$1 paired).
+Refused: hour-of-day filters (p=0.60, data dredging), knife-edge veto
+(+1.39% paired, too weak to earn a slot).
+
+**Sizing.** Half-Kelly on the stated edge at the actual fill, capped
+10% (Kelly 1956; MacLean, Thorp & Ziemba 2011 — under estimation
+error full Kelly over-bets and betting above Kelly is dominated), and
+a 25% near-touch participation cap (the Kyle-1985 stealth optimum from
+the detection sim; standard participation-rate discipline). Refused:
+fixed 33% (measured ~1.6x Kelly: the Gambler's drawdowns are the
+exhibit), martingale/anti-martingale schedules (no theoretical or
+measured support here).
+
+Verification path: pt8 trades live beside its SPRT twin (M11+M8) and
+the champion; promotion/retirement is the sequential test's call, not
+the design essay's.

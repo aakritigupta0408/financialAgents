@@ -353,6 +353,41 @@ PT5_SKIM = 0.25
 # standard: supervised edge + analytic sizing, not end-to-end RL (which
 # our window count can't support). Backtest: it learns that abstaining
 # is the skill — ~break-even EV but near-zero drawdown vs the Gambler.
+# Trader 7, the PATIENT (2026-08-28, additive — controls untouched):
+# the execution experiment. Same signal and 10% sizing as the Follower,
+# but a LIMIT order: at the desk's entry minute it rests a bid at
+# (quoted ask - PT7_IMPROVE_C) and fills only if a later minute's ask
+# comes down to it — otherwise the window is skipped (logged, stake 0).
+# Selection held constant, execution varied: any P&L gap vs the
+# Follower is execution alpha, nothing else. Motivated by the measured
+# 2.70 pts/EV execution leak and +9c late-entry slippage. Fill model is
+# conservative: we only see ~per-minute quote samples, so a real
+# resting order would fill at least as often. Pending orders are
+# in-memory (a restart mid-window cancels them — rare, logged nowhere,
+# acknowledged).
+PT7_LOG_NAME = "pt7_trades.jsonl"
+PT7_IMPROVE_C = 2.0
+# Trader 8, the IDEAL (2026-08-28, additive): the composite of what
+# crypto execution practice and THIS project's verified measurements
+# both support — nothing speculative, every component cited:
+#  * maker-style limit entry, never crossing the spread (passive
+#    execution for non-urgent flow: Almgren-Chriss urgency tradeoff;
+#    our measured 2.70-pt execution leak and +9c late-entry slippage)
+#  * edge at the ACTUAL fill >= margin (meta-labeling, Lopez de Prado
+#    2018; the pt4-v2 negative-EV lesson)
+#  * half-Kelly sizing on that stated edge, capped at 10% (Kelly 1956;
+#    MacLean-Thorp-Ziemba 2011 on estimation error)
+#  * participation cap: never take more than 25% of near-touch depth
+#    (the Kyle-1985 stealth optimum measured in the detection sim)
+#  * regime gate: stand down when trailing market accuracy < 0.62
+#    (M8 — the best-performing live treatment, +8.23%/$1 paired)
+# Knife-edge veto deliberately EXCLUDED: +1.32% paired post-fix, too
+# weak to earn a slot.
+PT8_LOG_NAME = "pt8_trades.jsonl"
+PT8_MARGIN_C = 2.0            # stated edge at fill must clear this
+PT8_IMPROVE_C = 2.0           # rest this far below the quoted ask
+PT8_KELLY_CAP = 0.10
+PT8_DEPTH_FRAC = 0.25
 PT6_LOG_NAME = "pt6_trades.jsonl"
 PT6_LOGIT_PATH_NAME = "pt6_logit.json"
 PT6_DIM = 7
@@ -389,6 +424,29 @@ PT_MIN_REC = 5                         # min decisions to hold leadership
 # 63%, coverage 37%, persistently cold); it keeps predicting for the
 # record but no trader follows its calls.
 PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
+
+
+def _regime_acc(kb_rows: list[dict]) -> float | None:
+    """Trailing market accuracy over the last REGIME_LOOKBACK settled
+    windows, measured at DECISION time (earliest row inside the <=12
+    envelope — the near-close row is trivially right and would disable
+    the gate; that exact bug already happened once in the treatment
+    evaluator). Ex-ante: settled windows only."""
+    dt: dict = {}
+    for r in kb_rows:
+        if ((r.get("variant") or "kb") != "kb" or r.get("actual") is None
+                or r.get("mkt_p_up") is None
+                or (r.get("mins_left") or 99) > 12):
+            continue
+        tk = r["ticker"]
+        if tk not in dt or r["mins_left"] > dt[tk]["mins_left"]:
+            dt[tk] = r
+    seq = sorted(dt.values(), key=lambda r: r["close_ts"])
+    seq = seq[-REGIME_LOOKBACK:]
+    if len(seq) < REGIME_LOOKBACK:
+        return None
+    return sum(1 for r in seq
+               if (r["mkt_p_up"] >= 0.5) == bool(r["actual"])) / len(seq)
 
 
 def _order_fee_c(contracts: int, ask_c: float) -> int:
@@ -492,6 +550,24 @@ def _treat_policies():
             return None
         return t_exec(ctx)
 
+    def t_limit(ctx):                        # M11 — maker-style limit
+        # rest 2c below the decision-time quote; fill at the first
+        # later minute whose modeled ask reaches the limit, else skip.
+        # Conservative: minute samples only — a real resting order
+        # fills at least as often.
+        side = ctx["side"]
+        lim = _ask(ctx, side) - 2.0
+        for a_yes, a_no in ctx.get("later", []):
+            a = a_yes if side == "yes" else a_no
+            if 5 <= a <= lim:
+                return {"side": side, "ask_c": a}
+        return None
+
+    def t_limit_regime(ctx):                 # M11 + M8 (the Ideal core)
+        if t_regime(ctx) is None:
+            return None
+        return t_limit(ctx)
+
     return [
         ("champion", "Champion — the live desk policy", champion,
          "leader's call at >=0.62 confidence, every biddable window"),
@@ -517,6 +593,12 @@ def _treat_policies():
         ("t_exec_reg", "M10+M8 · execution guard + regime gate",
          t_exec_regime,
          "decline bad fills AND stand down in bad regimes"),
+        ("t_limit", "M11 · maker limit (rest 2c below, fill or skip)",
+         t_limit,
+         "never cross the spread; fill only on price improvement"),
+        ("t_limit_reg", "M11+M8 · maker limit + regime gate",
+         t_limit_regime,
+         "the Ideal trader's execution core, SPRT-verified"),
     ]
 
 
@@ -602,6 +684,17 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
             "side": t["side"], "ask_c": t["ask_c"],
             "ask_c_yes": ask_yes, "ask_c_no": ask_no,
             "fs_row": fs_row,
+            # modeled asks at each LATER minute of this window, in time
+            # order — the limit policies scan these for a fill
+            "later": [(100 * r["mkt_p_up"] + 2.5,
+                       100 * (1 - r["mkt_p_up"]) + 2.5)
+                      for r in sorted(
+                          (x for x in wrows
+                           if (x.get("mins_left") or 99)
+                           < row["mins_left"]
+                           and x.get("mkt_p_up") is not None
+                           and (x.get("variant") or "kb") == "kb"),
+                          key=lambda x: -x["mins_left"])],
         }
         outcome = t["actual"]
         evs, basis = {}, {}
@@ -2121,6 +2214,22 @@ def run(once: bool = False) -> None:
         + sum(t["pnl_c"] - t.get("skim_c", 0)
               for t in pt5_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt5_trades if t.get("actual") is None)
+    pt7_trades = _load_kb_bets(PT7_LOG_NAME)
+    pt7_tickers = {t["ticker"] for t in pt7_trades}
+    pt7_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt7_trades
+              if t.get("actual") is not None and not t.get("skipped")) \
+        - sum(t["stake_c"] for t in pt7_trades
+              if t.get("actual") is None and not t.get("skipped"))
+    pt7_pending: dict = {}     # ticker -> resting limit order (in-mem)
+    pt8_trades = _load_kb_bets(PT8_LOG_NAME)
+    pt8_tickers = {t["ticker"] for t in pt8_trades}
+    pt8_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt8_trades
+              if t.get("actual") is not None and not t.get("skipped")) \
+        - sum(t["stake_c"] for t in pt8_trades
+              if t.get("actual") is None and not t.get("skipped"))
+    pt8_pending: dict = {}
     pt6_trades = _load_kb_bets(PT6_LOG_NAME)
     pt6_tickers = {t["ticker"] for t in pt6_trades}
     pt6_bankroll_c = PT_START_BANKROLL_C \
@@ -2787,12 +2896,88 @@ def run(once: bool = False) -> None:
                     # second chance. Now: enter whenever ANY trader
                     # still lacks this window; each trader's own
                     # ticker-check and gate below are unchanged.
+                    # Patient/Ideal limit-order fills: a resting bid
+                    # fills the first minute the ask comes down to it,
+                    # independent of any gate below (2026-08-28).
+                    for _pend, _tks, _blist, _bank in (
+                            (pt7_pending, pt7_tickers, pt7_trades,
+                             "pt7"),
+                            (pt8_pending, pt8_tickers, pt8_trades,
+                             "pt8")):
+                        po = _pend.get(pm_mkt["ticker"])
+                        if (po and pm_mkt["ticker"] not in _tks
+                                and pm_mkt.get("yes_bid")
+                                and pm_mkt.get("yes_ask")):
+                            askL = (pm_mkt["yes_ask"] if po["side"] == "yes"
+                                    else 100 - pm_mkt["yes_bid"])
+                            if 5 <= askL <= po["limit_c"]:
+                                feeL = 7 * (askL / 100) * (1 - askL / 100)
+                                # ADVERSE-SELECTION GUARD (pt8 only,
+                                # 2026-08-28): a resting bid fills
+                                # preferentially when the market is
+                                # repricing the call DOWN — the
+                                # backfilled naive limit (M11) scored
+                                # -5.21% paired for exactly this
+                                # reason. The Ideal re-checks the
+                                # leader's CURRENT confidence at fill:
+                                # if the price fell because the signal
+                                # fell, refuse the fill and let the
+                                # order expire. pt7 stays naive on
+                                # purpose — it MEASURES the effect.
+                                if _bank == "pt8":
+                                    _ldr = po["row"].get("leader")
+                                    _cn = next(
+                                        (r for r in reversed(kb)
+                                         if r.get("variant") == _ldr
+                                         and r["ticker"]
+                                         == pm_mkt["ticker"]), None)
+                                    if _cn is None:
+                                        continue
+                                    _cf = (_cn["p_up"]
+                                           if po["side"] == "yes"
+                                           else 1 - _cn["p_up"])
+                                    if (_cf * 100
+                                            < askL + feeL
+                                            + PT8_MARGIN_C):
+                                        continue
+                                bank = (pt7_bankroll_c if _bank == "pt7"
+                                        else pt8_bankroll_c)
+                                capL = min(int(po["frac"] * bank),
+                                           po["dcap"])
+                                ncL = int(capL // (askL + feeL))
+                                if ncL >= 1:
+                                    stL = (int(ncL * askL)
+                                           + _order_fee_c(ncL, askL))
+                                    if _bank == "pt7":
+                                        pt7_bankroll_c -= stL
+                                    else:
+                                        pt8_bankroll_c -= stL
+                                    _blist.append({
+                                        **po["row"],
+                                        "made_ts": now_ts,
+                                        "mins_left": round(
+                                            (po["row"]["close_ts"]
+                                             - now_ts) / 60, 1),
+                                        "ask_c": askL,
+                                        "limit_c": po["limit_c"],
+                                        "quoted_c": po["quoted_c"],
+                                        "contracts": ncL,
+                                        "stake_c": stL,
+                                        "bankroll_c":
+                                            (pt7_bankroll_c
+                                             if _bank == "pt7"
+                                             else pt8_bankroll_c),
+                                    })
+                                    _tks.add(pm_mkt["ticker"])
+                                    del _pend[pm_mkt["ticker"]]
                     if ((pm_mkt["ticker"] not in pt_tickers
                             or pm_mkt["ticker"] not in pt2_tickers
                             or pm_mkt["ticker"] not in pt3_tickers
                             or pm_mkt["ticker"] not in pt4_tickers
                             or pm_mkt["ticker"] not in pt5_tickers
-                            or pm_mkt["ticker"] not in pt6_tickers)
+                            or pm_mkt["ticker"] not in pt6_tickers
+                            or pm_mkt["ticker"] not in pt7_tickers
+                            or pm_mkt["ticker"] not in pt8_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -3016,6 +3201,64 @@ def run(once: bool = False) -> None:
                                             })
                                             pt6_tickers.add(
                                                 pm_mkt["ticker"])
+                                    # Trader 7, the PATIENT: rest a
+                                    # limit PT7_IMPROVE_C below the
+                                    # quoted ask; the fill block above
+                                    # completes it if price comes down
+                                    if (pm_mkt["ticker"] not in pt7_tickers
+                                            and pm_mkt["ticker"]
+                                            not in pt7_pending):
+                                        pt7_pending[pm_mkt["ticker"]] = {
+                                            "side": base_row["side"],
+                                            "limit_c": askp
+                                            - PT7_IMPROVE_C,
+                                            "quoted_c": askp,
+                                            "frac": PT_FRAC,
+                                            "dcap": dcap,
+                                            "row": dict(base_row),
+                                        }
+                                    # Trader 8, the IDEAL: regime gate,
+                                    # edge-at-fill margin, maker-style
+                                    # limit, half-Kelly x depth cap
+                                    if (pm_mkt["ticker"] not in pt8_tickers
+                                            and pm_mkt["ticker"]
+                                            not in pt8_pending):
+                                        lim8 = askp - PT8_IMPROVE_C
+                                        conf8 = base_row["p_arm"]
+                                        fee8 = 7 * (lim8 / 100) \
+                                            * (1 - lim8 / 100)
+                                        edge8 = conf8 * 100 \
+                                            - (lim8 + fee8)
+                                        acc8 = _regime_acc(kb)
+                                        if (edge8 >= PT8_MARGIN_C
+                                                and (acc8 is None
+                                                     or acc8
+                                                     >= REGIME_FLOOR)):
+                                            # half-Kelly for a binary
+                                            # payout: f* = (p(1+b)-1)/b
+                                            odds8 = (100 - lim8 - fee8) \
+                                                / (lim8 + fee8)
+                                            kelly8 = max(0.0, (conf8
+                                                    * (1 + odds8) - 1)
+                                                    / odds8)
+                                            frac8 = min(PT8_KELLY_CAP,
+                                                        0.5 * kelly8)
+                                            if frac8 > 0:
+                                                pt8_pending[
+                                                    pm_mkt["ticker"]] = {
+                                                    "side":
+                                                        base_row["side"],
+                                                    "limit_c": lim8,
+                                                    "quoted_c": askp,
+                                                    "frac": frac8,
+                                                    # participation cap:
+                                                    # 25% of near-touch
+                                                    "dcap": int(
+                                                        PT8_DEPTH_FRAC
+                                                        * dcap),
+                                                    "row":
+                                                        dict(base_row),
+                                                }
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
@@ -3495,6 +3738,57 @@ def run(once: bool = False) -> None:
                          / PT6_LOGIT_PATH_NAME).with_suffix(".tmp6l")
                 tmp6l.write_text(json.dumps(pt6_logit.to_dict()))
                 tmp6l.replace(RESULTS_DIR / PT6_LOGIT_PATH_NAME)
+            # Patient (pt7) / Ideal (pt8): settle fills, and log
+            # expired unfilled limits as skipped rows so the idle rate
+            # is measurable — an unfilled limit is a decision, not a
+            # gap in the record
+            for (p_trades, p_pend, p_name, p_tks) in (
+                    (pt7_trades, pt7_pending, PT7_LOG_NAME,
+                     pt7_tickers),
+                    (pt8_trades, pt8_pending, PT8_LOG_NAME,
+                     pt8_tickers)):
+                p_changed = False
+                for tk in [k for k, v in p_pend.items()
+                           if now_ts >= v["row"]["close_ts"]]:
+                    po = p_pend.pop(tk)
+                    p_trades.append({
+                        **po["row"], "contracts": 0, "stake_c": 0,
+                        "skipped": True, "limit_c": po["limit_c"],
+                        "quoted_c": po["quoted_c"], "pnl_c": 0,
+                        "actual": None,
+                    })
+                    p_tks.add(tk)
+                    p_changed = True
+                for t in p_trades:
+                    if t["actual"] is not None or now_ts < t["close_ts"]:
+                        continue
+                    if t.get("skipped"):
+                        t["actual"] = -1   # closed, never filled
+                        p_changed = True
+                        continue
+                    settle_bar = by_ts.get(t["close_ts"] - 60)
+                    if settle_bar is None or settle_bar.get("synth"):
+                        continue
+                    outcome = int(settle_bar["close"] >= t["strike"])
+                    t["actual"] = outcome
+                    t["win"] = int((t["side"] == "yes") == bool(outcome))
+                    payout = t["contracts"] * 100 if t["win"] else 0
+                    t["pnl_c"] = payout - t["stake_c"]
+                    if p_name == PT7_LOG_NAME:
+                        pt7_bankroll_c += payout
+                        t["bankroll_c"] = pt7_bankroll_c
+                    else:
+                        pt8_bankroll_c += payout
+                        t["bankroll_c"] = pt8_bankroll_c
+                    p_changed = True
+                if p_changed or (p_trades
+                                 and p_trades[-1].get("actual") is None
+                                 and p_trades[-1]["made_ts"]
+                                 >= now_ts - 90):
+                    tmpp = (RESULTS_DIR / p_name).with_suffix(".tmpp")
+                    tmpp.write_text("".join(json.dumps(t) + "\n"
+                                            for t in p_trades))
+                    tmpp.replace(RESULTS_DIR / p_name)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"

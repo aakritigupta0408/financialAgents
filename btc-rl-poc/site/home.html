@@ -169,7 +169,7 @@
 </section>
 
 <section>
-  <h2>The Desk — six traders: five rules and one that learns
+  <h2>The Desk — eight traders: seven rules and one that learns
     <span class="paper-tag">TA spec · simulated · not advice</span></h2>
   <p class="sub small muted">Each starts with $1,000 and pays real asks and
   fees. 🦊 <b>Dartmon, the Follower</b> places the <b>current best bidder's</b> call
@@ -182,9 +182,14 @@
   depth of the book — still the aggressive end of the sizing
   curriculum, now on gated entries. 🐿️ <b>Stashmon, the Saver</b> starts with $10k, stakes 10%
   (cut from 25% on 08-26), and banks 25% of every win as savings that
-  never return to play.
+  never return to play. 🦩 <b>Waitmon, the Patient</b> takes the
+  Follower's exact calls but rests a limit order 2¢ below the ask —
+  he only trades when the price comes down to meet him. 👑
+  <b>Primemon, the Ideal</b> stacks every lesson the desk has learned —
+  regime gate, edge margin, maker limit, half-Kelly sizing, depth cap —
+  into one composite policy.
   🤖 <b>Metamon, the MLE</b> is the one that learns — a supervised model
-  that watches the five rule-traders' signals, predicts the odds of each
+  that watches the rule-traders' signals, predicts the odds of each
   bet winning, and only bets (half-Kelly sized) when the expected value
   is positive; it retrains on every outcome. Reviewed at end of day.
   Nothing is ever purchased.</p>
@@ -1079,7 +1084,7 @@ function drawTwoMillion(kb) {
     `simulated research, not advice.`;
 }
 
-function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
+function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d, pt7d, pt8d) {
   // The $1K Desk — portfolio view for the follow-the-leader paper trader
   const START = 100000;                       // $1,000 in cents
   const COLD = { kb2: "#0b7d8a", kb3: "#b43a6e", kb4: "#5f50c7",
@@ -1135,6 +1140,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
     ["Gambler", "#b84343", mkSeries(pt4d || [], false, 1000000), ""],
     ["Saver", "#5f50c7", mkSeries(pt5d || [], false, 1000000), "2 4"],
     ["MLE", "#16202c", mkSeries(pt6d || [], false), ""],
+    ["Patient", "#0b7d8a", mkSeries(pt7d || [], false), "2 3"],
+    ["Ideal", "#226b22", mkSeries(pt8d || [], false), ""],
   ];
   const withData = SER.filter(s => s[2].length >= 2);
   if (!withData.length) {
@@ -1267,7 +1274,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
       `(${(100 * pHat).toFixed(0)}%) — a live line escaping its cone ` +
       `falsifies the model in public</p>` +
       `<svg viewBox="0 0 ${W} ${H}" style="width:100%" role="img" ` +
-      `aria-label="equity race — five paper traders, bankroll over time">` +
+      `aria-label="equity race — eight paper traders, bankroll over time">` +
       `<title>equity race — bankroll (incl. banked) after each settled ` +
       `trade, PT times</title>` + grid + cones +
       `<line x1="${PL}" x2="${W - PR}" y1="${Y(100)}" y2="${Y(100)}" ` +
@@ -1288,6 +1295,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
     ["pt4", pt4d, "Gambler", "#b84343"],
     ["pt5", pt5d, "Saver", "#5f50c7"],
     ["pt6", pt6d, "MLE", "#16202c"],
+    ["pt7", pt7d, "Patient", "#0b7d8a"],
+    ["pt8", pt8d, "Ideal", "#226b22"],
   ];
   const byWin = {};
   for (const [k, arr] of TRD)
@@ -1313,7 +1322,8 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
   };
   const rowsH = winRows.map(w => {
     const lead = w.pt;             // leader/rec10 ride the Follower's row
-    const any = lead || w.pt2 || w.pt3 || w.pt4 || w.pt5 || w.pt6;
+    const any = lead || w.pt2 || w.pt3 || w.pt4 || w.pt5 || w.pt6
+      || w.pt7 || w.pt8;
     return `<tr><td>${fT(any.made_ts)}</td>` +
       `<td>${lead
         ? `<span style="color:${COLD[lead.leader] || "inherit"}">●</span> ` +
@@ -1332,7 +1342,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
     TRD.map(([, , nm, col]) => `<th class="num">` +
       `<span style="color:${col}">●</span> ${nm}</th>`).join("") +
     `</tr></thead><tbody>${rowsH ||
-      `<tr><td colspan="9" class="mini">no bids yet — the desk enters ` +
+      `<tr><td colspan="11" class="mini">no bids yet — the desk enters ` +
       `only when the leader clears its gate on a biddable window ` +
       `(ask 5–80¢, ≤12 min left)</td></tr>`}</tbody></table>` +
     `<p class="mini" style="margin-top:4px">each trader's cell: its own ` +
@@ -1360,7 +1370,7 @@ function drawDesk(pt, kb, pt2, pt3d, pt4d, pt5d, pt6d) {
     : "";
 }
 
-function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
+function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6, pt7, pt8) {
   const el = document.getElementById("desk-roster");
   if (!el) return;
   const START = 100000;
@@ -1395,7 +1405,8 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
   };
   const a = stats(pt), b = stats(pt2), c = stats(pt3),
         g4 = stats(pt4 || []), s5 = stats(pt5 || []),
-        m6 = stats(pt6 || []);
+        m6 = stats(pt6 || []), w7 = stats(pt7 || []),
+        i8 = stats(pt8 || []);
   const bank1 = START + a.s.reduce((x, t) => x + t.pnl_c, 0);
   let cash2 = START, banked2 = 0, level2 = START;
   for (const t of b.s.slice().sort((x, y) => x.close_ts - y.close_ts)) {
@@ -1416,6 +1427,8 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
   const bank5 = SAV_START
     + s5.s.reduce((x, t) => x + t.pnl_c - (t.skim_c || 0), 0);
   const bank6 = START + m6.s.reduce((x, t) => x + t.pnl_c, 0);
+  const bank7 = START + w7.s.reduce((x, t) => x + t.pnl_c, 0);
+  const bank8 = START + i8.s.reduce((x, t) => x + t.pnl_c, 0);
   s5.series = [SAV_START].concat((() => {
     let w = SAV_START; const out = [];
     for (const t of s5.s) { w += t.pnl_c; out.push(w); }
@@ -1499,6 +1512,28 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
       'fill="#16202c" stroke="none"/>' +
       '<path d="M15 25 L25 25" stroke-width="1.5"/>' +
       '<path d="M9 20 L6 20 M31 20 L34 20"/>'),
+    // heron — long beak, S-curved neck, one leg raised: he waits
+    t7: sv("#0b7d8a",
+      '<path d="M19 9 L10 7"/>' +
+      '<path d="M25 7 Q28 5 30 6"/>' +
+      '<circle cx="22" cy="10" r="3.2" fill="#0b7d8a" ' +
+      'fill-opacity=".18"/>' +
+      '<circle cx="21" cy="9.5" r="1" fill="#0b7d8a" stroke="none"/>' +
+      '<path d="M24 13 Q28 16 25 20 Q22 22 22 24"/>' +
+      '<path d="M16 27 Q22 20 29 26 Q28 32 22 32 Q17 32 16 27 Z" ' +
+      'fill="#0b7d8a" fill-opacity=".14"/>' +
+      '<path d="M21 32 L21 38 M25 32 L27 34"/>'),
+    // crowned creature — the composite of every lesson, star on high
+    t8: sv("#226b22",
+      '<path d="M12 12 L13 6 L17 10 L20 4 L23 10 L27 6 L28 12 Z" ' +
+      'fill="#226b22" fill-opacity=".18"/>' +
+      '<circle cx="20" cy="23" r="10" fill="#226b22" ' +
+      'fill-opacity=".13"/>' +
+      '<circle cx="16" cy="21" r="1.5" fill="#226b22" stroke="none"/>' +
+      '<circle cx="24" cy="21" r="1.5" fill="#226b22" stroke="none"/>' +
+      '<path d="M16.5 27 Q20 29.5 23.5 27"/>' +
+      '<path d="M34 15 L34 20 M31.5 17.5 L36.5 17.5" ' +
+      'stroke-width="1.5"/>'),
   };
   const card = (cls, emoji, name, bal, dp, meta, series, col) =>
     `<div class="tcard"><div class="tavatar ${cls}">` +
@@ -1556,14 +1591,28 @@ function drawRoster(pt, pt2, pt3, kb, pt4, pt5, pt6) {
       `claimed edge ≥ 10¢/$1 (calibration gate, 08-26), half-Kelly ` +
       `sizing · record ${m6.wins}/${m6.s.length} · skipped windows ` +
       `still train it — <b>not betting</b> is the skill`,
-      m6.series, "#16202c");
+      m6.series, "#16202c") +
+    card("t7", "🦩", "Waitmon · the Patient", bank7, w7.dp,
+      `same signal and 10% sizing as the Follower, but rests a limit ` +
+      `2¢ below the ask and fills only if price comes to him — the ` +
+      `execution experiment, and he deliberately takes the ` +
+      `adverse-selection risk the Ideal refuses · record ` +
+      `${w7.wins}/${w7.s.length}`,
+      w7.series, "#0b7d8a") +
+    card("t8", "👑", "Primemon · the Ideal", bank8, i8.dp,
+      `the composite: regime gate + edge-at-fill margin + maker limit ` +
+      `+ half-Kelly (cap 10%) + 25% depth participation — plus a ` +
+      `fill-time confidence re-check so falling prices can't pick him ` +
+      `off · record ${i8.wins}/${i8.s.length}`,
+      i8.series, "#226b22");
   // count-up animation on the three balances
   try {
     const prev = window.__rosterPrev || {};
     const now = { t1: bank1, t2: cash2 + banked2, t3: bank3,
-                  t4: bank4, t5: bank5 + sav5, t6: bank6 };
+                  t4: bank4, t5: bank5 + sav5, t6: bank6,
+                  t7: bank7, t8: bank8 };
     const els = el.querySelectorAll(".tbank");
-    const keys = ["t1", "t2", "t3", "t4", "t5", "t6"];
+    const keys = ["t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8"];
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     keys.forEach((k, i) => {
       const from = prev[k], to = now[k];
@@ -1824,7 +1873,8 @@ async function drawDemoIntegration() {
 }
 
 async function boot() {
-  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r, pt6r] = await Promise.all([
+  const [kb, bets, sel, prices, st, ptr, pt2r, pt3r, pt4r, pt5r, pt6r,
+         pt7r, pt8r] = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/kb_bets.jsonl"),
     jsonl("../results/kb_bets_sel.jsonl"),
@@ -1844,9 +1894,15 @@ async function boot() {
     // training data, not trades — money views exclude them
     jsonl("../results/pt6_trades.jsonl")
       .then(rows => rows.filter(t => !t.skipped)),
+    // Patient & Ideal: skipped rows are unfilled limit orders (stake 0),
+    // not trades — money views exclude them
+    jsonl("../results/pt7_trades.jsonl")
+      .then(rows => rows.filter(t => !t.skipped)),
+    jsonl("../results/pt8_trades.jsonl")
+      .then(rows => rows.filter(t => !t.skipped)),
   ]);
-  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r, pt6r); } catch (e) {}
-  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r, pt6r); } catch (e) {}
+  try { drawRoster(ptr, pt2r, pt3r, kb, pt4r, pt5r, pt6r, pt7r, pt8r); } catch (e) {}
+  try { drawDesk(ptr, kb, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r); } catch (e) {}
   try { drawDesk3(pt3r, kb); } catch (e) {}
   try { drawDemoAccount(); } catch (e) {}
   try { drawDemoIntegration(); } catch (e) {}

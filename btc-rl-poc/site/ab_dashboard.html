@@ -101,7 +101,7 @@
 <section>
   <h2>Trader A/B — revenue &amp; risk scoreboard
     <span class="badge pending" id="tab-verdict">live</span></h2>
-  <p class="sub small muted">The five paper traders bid the same signals
+  <p class="sub small muted">The eight paper traders bid the same signals
   with different <b>capital policies</b>. This is the A/B that matters —
   not prediction accuracy but <b>money</b>: net P&amp;L, return on the
   bankroll it started with, average return per trade, win rate, average
@@ -368,6 +368,8 @@ function drawTraderAB(kb, T) {
     pt4: ["Gambler", "33% at ≥77% gate (v2, reset 08-26)", 10000, "#b84343"],
     pt5: ["Saver", "$10k, 10% (was 25%), banks 25% of wins", 10000, "#5f50c7"],
     pt6: ["MLE (learns)", "supervised +EV, half-Kelly", 1000, "#16202c"],
+    pt7: ["Patient", "limit 2¢ below ask, fill or skip", 1000, "#0b7d8a"],
+    pt8: ["Ideal", "regime+edge+maker limit+½-Kelly", 1000, "#226b22"],
   };
   // opportunity set for idle%: distinct biddable kb7 windows
   const opp = new Set(kb.filter(r => r.variant === "kb7"
@@ -380,7 +382,8 @@ function drawTraderAB(kb, T) {
     .toLocaleString("en-US", { minimumFractionDigits: 0,
       maximumFractionDigits: 0 });
   const rows = [];
-  for (const key of ["pt", "pt2", "pt3", "pt4", "pt5", "pt6"]) {
+  for (const key of ["pt", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7",
+                     "pt8"]) {
     const [name, policy, start, col] = META[key];
     const raw = (T[key] || []).filter(x => x.actual != null)
       .sort((a, b) => a.close_ts - b.close_ts);
@@ -444,7 +447,8 @@ function drawTraderAB(kb, T) {
 
 async function poll() {
   try {
-    const [kb, bets, sel, pre, pb, stRes, ptA, pt2A, pt3A, pt4A, pt5A, pt6A]
+    const [kb, bets, sel, pre, pb, stRes, ptA, pt2A, pt3A, pt4A, pt5A, pt6A,
+           pt7A, pt8A]
       = await Promise.all([
       jsonl("../results/kalshi_binary_log.jsonl"),
       jsonl("../results/kb_bets.jsonl"),
@@ -463,10 +467,15 @@ async function poll() {
       // MLE shadow rows (skipped-window training data) aren't trades
       jsonl("../results/pt6_trades.jsonl")
         .then(rows => rows.filter(t => !t.skipped)),
+      // Patient & Ideal: skipped rows are unfilled limit orders, not trades
+      jsonl("../results/pt7_trades.jsonl")
+        .then(rows => rows.filter(t => !t.skipped)),
+      jsonl("../results/pt8_trades.jsonl")
+        .then(rows => rows.filter(t => !t.skipped)),
     ]);
     const st = stRes.ok ? await stRes.json() : {};
     try { drawTraderAB(kb, {pt: ptA, pt2: pt2A, pt3: pt3A, pt4: pt4A,
-      pt5: pt5A, pt6: pt6A}); } catch (e) {}
+      pt5: pt5A, pt6: pt6A, pt7: pt7A, pt8: pt8A}); } catch (e) {}
     document.getElementById("dot").className =
       "live-dot" + ((Date.now()/1000 - (st.alive_at||0)) > 300 ? " stale" : "");
 

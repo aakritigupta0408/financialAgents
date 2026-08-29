@@ -566,3 +566,29 @@ untouched (it cleared +8.3 pts here); pt/pt2/pt5 stay as the
 uncorrected controls the curriculum needs. Ledger display now says
 "1st entry Xc — each trader fills at its own minute" instead of
 implying one desk-wide price.
+
+## 2026-08-28 — pt7 Patient + pt8 Ideal (limit-order execution cohort)
+
+User: "should they not fill at min price for their bid and skip if the
+bid is too high — at least a few traders" then "create one ideal
+trader from crypto sizing/pricing/entry-time practice."
+
+Shipped, additive (controls untouched):
+- pt7 PATIENT: Follower's signal and 10% sizing, but rests a limit at
+  quoted ask - 2c; fills only if a later minute's ask reaches it, else
+  the window is logged as an unfilled skip. Pure execution isolate —
+  and deliberately naive, because...
+- ...the backfilled naive limit treatment (M11) scored -5.21%/$1
+  PAIRED vs the champion: resting bids are adversely selected (they
+  fill when the market reprices the call down — Glosten-Milgrom's
+  picked-off problem). pt7 exists to measure that live.
+- pt8 IDEAL: regime gate (>=0.62 trailing decision-time market acc) +
+  edge >= 2c at the LIMIT price + maker limit + half-Kelly capped 10%
+  + 25% depth participation + FILL-TIME re-check of the leader's
+  current confidence (refuses fills caused by a falling signal — the
+  adverse-selection defense M11 lacks). Components adopted only with
+  both literature and our own measurements behind them; hour filters
+  and knife-edge veto refused (p=0.60 dredging; +1.39% too weak).
+- Treatments M11 / M11+M8 added so the SPRT adjudicates the mechanism
+  on live windows; design essays don't promote anything here.
+Full grounding with citations in docs/SEV0_REMEDIATION.md.
