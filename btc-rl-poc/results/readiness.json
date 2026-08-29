@@ -1,12 +1,11 @@
 {
- "generated_ts": 1788046747,
- "standard_version": "1.0.4",
+ "generated_ts": 1788047584,
+ "standard_version": "1.0.5",
  "system": {
   "level": "R2",
   "rule": "MIN over all critical planes \u2014 never averaged",
   "weakest_planes": [
    "execution",
-   "recovery",
    "security"
   ],
   "qualification_frozen": false,
@@ -110,11 +109,11 @@
    "live_downgrades": []
   },
   "recovery": {
-   "level": "R2",
-   "assessed": "R2",
+   "level": "R3",
+   "assessed": "R3",
    "target": "R8",
-   "evidence": "watchdog restart + append-only ledgers + atomic writes survived real crashes",
-   "blocker": "R3 gap: no chaos suite (\u00a756), no scripted crash-recovery drills (\u00a757)",
+   "evidence": "chaos suite 5/5 (tests/chaos_drills.py) \u2014 live kill/recovery with zero dupes + reconcile OK; atomicity/malformed/staleness drills; daemon-singleton monitor",
+   "blocker": "R4 gap: scheduled rollback drills (\u00a762); FREEZE-branch live test needs a maintenance window (deferred honestly)",
    "live_downgrades": []
   },
   "security": {

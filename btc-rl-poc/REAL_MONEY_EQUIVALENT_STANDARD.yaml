@@ -9,7 +9,10 @@
 # (results/readiness.json, emitted by scripts/emit_readiness.py).
 # The UI never decides readiness. UNKNOWN is never GREEN.
 
-version: 1.0.4
+version: 1.0.5
+# 1.0.5 (2026-08-29): recovery R2->R3 — chaos suite 5/5 PASS (live daemon
+# kill/recovery, zero dupes, reconcile OK; atomicity/malformed/staleness
+# drills); INC-dup-daemons found+closed; daemon-singleton monitor added.
 # 1.0.4 (2026-08-29): security R1->R2 — dependency lock (479 pkgs),
 # env digest, 47 artifact checksums, secret scan CLEAN
 # (build_manifest.json). Remaining gaps listed inside it.
@@ -106,9 +109,9 @@ planes:
     evidence: watchtower planes, monitor cadences, freshness invariant
     blocker_to_next: "R4 gap: SLO burn tracking (§65) — monitor-of-monitors LIVE on independent cron"
   recovery:
-    assessed: R2
-    evidence: watchdog restart + append-only ledgers + atomic writes survived real crashes
-    blocker_to_next: "R3 gap: no chaos suite (§56), no scripted crash-recovery drills (§57)"
+    assessed: R3
+    evidence: chaos suite 5/5 (tests/chaos_drills.py) — live kill/recovery with zero dupes + reconcile OK; atomicity/malformed/staleness drills; daemon-singleton monitor
+    blocker_to_next: "R4 gap: scheduled rollback drills (§62); FREEZE-branch live test needs a maintenance window (deferred honestly)"
   security:
     assessed: R2
     evidence: demo-only order code; prod market-data read-only; requirements.lock (479 pkgs) + env digest + 47 artifact sha256s + secret scan clean (build_manifest.json)

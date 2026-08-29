@@ -72,6 +72,29 @@ def main():
                      "status": "UNKNOWN"})
         worst = "UNKNOWN"
 
+    # ---- daemon singleton check (INC-2026-08-29-dup-daemons: a
+    # failed pkill during a manual restart left 3 concurrent daemons;
+    # atomic full-file rewrites prevented data damage, but concurrent
+    # writers are a standing hazard — exactly 1 is the only green) ---
+    import subprocess as _sp
+    try:
+        pids = [l for l in _sp.run(
+            ["pgrep", "-f", "btc_rl.online"], capture_output=True,
+            text=True).stdout.splitlines() if l.strip()]
+        n_daemons = len(pids)
+    except Exception:
+        n_daemons = None
+    st = ("HEALTHY" if n_daemons == 1 else
+          "UNKNOWN" if n_daemons is None else "STALE")
+    rows.append({"artifact": "daemon process count",
+                 "source": "pgrep btc_rl.online",
+                 "cadence_s": None, "age_s": None,
+                 "status": st,
+                 "detail": f"{n_daemons} process(es) — exactly 1 is "
+                 "healthy"})
+    if rank[st] > rank[worst]:
+        worst = st
+
     # ---- SLO snapshot (§65): current compliance, appended to a
     # history file so burn rates become computable over time. Values
     # read from the machine evidence, never asserted. -----------------

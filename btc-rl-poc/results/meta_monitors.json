@@ -1,94 +1,103 @@
 {
- "generated_ts": 1788046440,
+ "generated_ts": 1788047584,
  "overall": "HEALTHY",
  "monitors": [
   {
    "artifact": "online_status.json",
    "source": "daemon heartbeat",
    "cadence_s": 30,
-   "age_s": 6,
+   "age_s": 32,
    "status": "HEALTHY"
   },
   {
    "artifact": "audit_report.json",
    "source": "audit chain step 1",
    "cadence_s": 600,
-   "age_s": 238,
+   "age_s": 182,
    "status": "HEALTHY"
   },
   {
    "artifact": "decision_board.json",
    "source": "audit chain (SRM gate)",
    "cadence_s": 600,
-   "age_s": 235,
+   "age_s": 179,
    "status": "HEALTHY"
   },
   {
    "artifact": "invariants.json",
    "source": "invariant wall",
    "cadence_s": 600,
-   "age_s": 234,
+   "age_s": 131,
    "status": "HEALTHY"
   },
   {
    "artifact": "reconciliation.json",
    "source": "independent reconciler",
    "cadence_s": 600,
-   "age_s": 229,
+   "age_s": 131,
    "status": "HEALTHY"
   },
   {
    "artifact": "readiness.json",
    "source": "readiness machine",
    "cadence_s": 600,
-   "age_s": 147,
+   "age_s": 169,
    "status": "HEALTHY"
   },
   {
    "artifact": "execution_ledger.json",
    "source": "markout ledger",
    "cadence_s": 600,
-   "age_s": 229,
+   "age_s": 172,
    "status": "HEALTHY"
   },
   {
    "artifact": "world.json",
    "source": "world/clock emitter",
    "cadence_s": 600,
-   "age_s": 233,
+   "age_s": 177,
    "status": "HEALTHY"
   },
   {
    "artifact": "model_internals.json",
    "source": "hourly introspection",
    "cadence_s": 3600,
-   "age_s": 836,
+   "age_s": 1980,
    "status": "HEALTHY"
   },
   {
    "artifact": "metrics_history.jsonl",
    "source": "retrain history append",
    "cadence_s": 3600,
-   "age_s": 1961,
+   "age_s": 3105,
    "status": "HEALTHY"
   },
   {
    "artifact": "online_status.alive_at",
    "source": "daemon inner heartbeat",
    "cadence_s": 30,
-   "age_s": 6,
+   "age_s": 32,
    "status": "HEALTHY"
+  },
+  {
+   "artifact": "daemon process count",
+   "source": "pgrep btc_rl.online",
+   "cadence_s": null,
+   "age_s": null,
+   "status": "HEALTHY",
+   "detail": "1 process(es) \u2014 exactly 1 is healthy"
   }
  ],
  "slo": {
   "compliant": [
    "critical_ledger_integrity",
    "duplicate_decisions_zero",
-   "future_data_violations_zero",
    "reconciliation_ok",
    "unresolved_sev0_zero"
   ],
-  "breached": [],
+  "breached": [
+   "future_data_violations_zero"
+  ],
   "unknown": [],
   "note": "snapshot per run; burn rate from slo_history.jsonl as it accrues"
  },
