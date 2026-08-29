@@ -69,6 +69,8 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("treatments_board.json", None),
     ("metric_fixtures.json", None),
     ("decision_board.json", None),
+    ("world.json", None),
+    ("invariants.json", None),
 ]
 
 

@@ -1,0 +1,62 @@
+{
+ "generated_ts": 1788001444,
+ "passed": 9,
+ "failed": 0,
+ "health": "green",
+ "checks": [
+  {
+   "name": "one-decision-per-window",
+   "origin": "trader-lockout bug 08-28 + owner guarantee 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "ledger-monotonic-close-ts",
+   "origin": "settle-ordered replay discipline",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "no-duplicate-treatment-windows",
+   "origin": "windows-not-rows law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "fee-formula-parity",
+   "origin": "per-contract fee rounding bug ($2,355)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "gambler-v3-sweep",
+   "origin": "owner decision D-gambler-sizing 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "decision-quote-age",
+   "origin": "stale-quote treatment bug (fake +11.75%)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "skip-is-not-missing",
+   "origin": "decision-board INVALID bug 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "frozen-controls-untouched",
+   "origin": "additive-only law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "withdrawals-never-restaked",
+   "origin": "D-gambler-sizing ledger law",
+   "ok": true,
+   "detail": []
+  }
+ ]
+}
