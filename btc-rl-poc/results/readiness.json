@@ -1,6 +1,6 @@
 {
- "generated_ts": 1788017027,
- "standard_version": "1.0.1",
+ "generated_ts": 1788046293,
+ "standard_version": "1.0.2",
  "system": {
   "level": "R1",
   "rule": "MIN over all critical planes \u2014 never averaged",
@@ -25,7 +25,7 @@
    "assessed": "R3",
    "target": "R8",
    "evidence": "live validation + full-tape replay (ticks.jsonl) + freshness monitors",
-   "blocker": "R4 gap: no point-in-time 4-timestamp model, no leakage canaries (\u00a79)",
+   "blocker": "R4 gap: no point-in-time 4-timestamp model (\u00a79) \u2014 leakage canaries + placebos LIVE, 6/6 PASS",
    "live_downgrades": []
   },
   "forecast_t1": {
@@ -57,7 +57,7 @@
    "assessed": "R6",
    "target": "R8",
    "evidence": "paired same-window A/B with SPRT, family-wise alpha, 190+ windows",
-   "blocker": "R7 gap: no SRM monitor (\u00a732), no soak criteria met",
+   "blocker": "R7 gap: soak criteria (\u00a761) \u2014 SRM now live",
    "live_downgrades": []
   },
   "execution": {
@@ -77,11 +77,11 @@
    "live_downgrades": []
   },
   "experimentation": {
-   "level": "R5",
-   "assessed": "R5",
+   "level": "R6",
+   "assessed": "R6",
    "target": "R8",
    "evidence": "pre-registration in code, decision board CI/MDE/power, mechanism checks",
-   "blocker": "R6 gap: SRM absent; dependence-aware effective-n absent (\u00a733)",
+   "blocker": "R7 gap: dependence-aware effective-n (\u00a733); soak criteria (\u00a761)",
    "live_downgrades": []
   },
   "retraining": {
@@ -96,8 +96,8 @@
    "level": "R3",
    "assessed": "R3",
    "target": "R8",
-   "evidence": "dual-implementation parity (27 fixtures), 10-invariant wall, 10-min cadence",
-   "blocker": "R4 gap: auditor imports shared fee helper (\u00a746) \u2014 needs independent money-math",
+   "evidence": "dual-implementation parity (27 fixtures), 10-invariant wall, independent reconciler (7 checks, 1211 rows to the cent), 10-min cadence",
+   "blocker": "R4 gap: auditor freshness SLO burn (\u00a748) \u2014 independent money-math LIVE (reconcile.py, caught INC-fee-floor on first run)",
    "live_downgrades": []
   },
   "observability": {
@@ -105,7 +105,7 @@
    "assessed": "R3",
    "target": "R8",
    "evidence": "watchtower planes, monitor cadences, freshness invariant",
-   "blocker": "R4 gap: no monitor-of-monitors (\u00a750), no SLO burn tracking (\u00a765)",
+   "blocker": "R4 gap: SLO burn tracking (\u00a765) \u2014 monitor-of-monitors LIVE on independent cron",
    "live_downgrades": []
   },
   "recovery": {
@@ -121,7 +121,7 @@
    "assessed": "R1",
    "target": "R8",
    "evidence": "demo-only order code; prod market-data is read-only",
-   "blocker": "R2 gap: production credential file exists on owner disk (SEV-0 until removed); no dependency lock/SBOM (\u00a763)",
+   "blocker": "R2 gap: dependency lock/SBOM + reproducible-build manifest (\u00a763) \u2014 credential SEV-0 RESOLVED (key deleted by owner 08-29)",
    "live_downgrades": []
   }
  }

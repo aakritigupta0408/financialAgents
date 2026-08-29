@@ -37,6 +37,8 @@ live-money policy terminates with them (PROGRAM.md §3).
 
 | 08-29 | D-prod-key RESOLVED (owner: "delete it"): the production Kalshi credential file removed from disk. Machine verification on the next readiness run: production_credentials_detected=false, SEV-0 count 0, security plane R0→R1, **system R0→R1** (weakest now execution+security, both with explicit blockers). Only the demo key remains; live execution stays physically limited. The key is regenerable from the owner's Kalshi account if ever deliberately wanted | owner order; readiness.json machine-verified | human | closed |
 
+| 08-29 | Standard v1.0.2 ratified (evidence updates, running under the owner's standing "go / don't stop" directive): SRM gate live on the decision board (deficits/dupes/missing → INVALID; 13/13 clean); leakage-canary + placebo suite 6/6 PASS on the audit cron (future-label, quote-age, timestamp canaries; shuffled-label/random-policy/noise placebos — incl. the corrected non-zero shuffle null from veto cost-drag); monitor-of-monitors on an INDEPENDENT 5-min cron (chain-death detectable from outside; 11/11 HEALTHY); fail-closed runtime states in the daemon (FREEZE_NEW_ENTRIES when the wall is red or auditors silent >45m; settlement always continues; exported as runtime_state). experimentation R6; stale blocker texts corrected (credential SEV-0 resolved, independent money-math live) | Phase 1-2 of the master directive; artifacts: decision_board srm blocks, leakage_canaries.json, meta_monitors.json, online_status.runtime_state | human (standing directive) + evidence | live |
+
 Proposal queue (PORTFOLIO team writes here; human ratifies):
 - **PROPOSE: retire or redesign M1 (Platt calibration layer).**
   Evidence (introspection wave, 08-29 snapshot): prequential log-loss

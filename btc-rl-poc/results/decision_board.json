@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788045407,
+ "generated_ts": 1788046202,
  "config": {
   "edge": 0.02,
   "alpha": 0.003125,
@@ -13,7 +13,7 @@
  "integrity": {
   "rows": 222,
   "last_close_ts": 1788045300,
-  "age_min": 1.8,
+  "age_min": 15.0,
   "health": "green"
  },
  "summary": {

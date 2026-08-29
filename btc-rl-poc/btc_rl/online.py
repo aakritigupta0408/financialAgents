@@ -451,6 +451,56 @@ PT_MIN_REC = 5                         # min decisions to hold leadership
 PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
 
 
+_FC_CACHE = {"ts": 0.0, "state": "NORMAL", "why": ""}
+
+
+def _fail_closed_state() -> tuple[str, str]:
+    """Runtime state machine (master directive §44-45): NORMAL /
+    DEGRADED / FREEZE_NEW_ENTRIES. Fail CLOSED: when the integrity
+    machinery itself is red or silent, the desk stops committing new
+    stakes (settlement of existing positions always continues — money
+    already at risk must still be accounted). Checked from the
+    published artifacts so the daemon and the auditors stay
+    independent; cached 60s so the 30s poll stays cheap.
+
+    FREEZE_NEW_ENTRIES when:
+      * the invariant wall is red, or
+      * the independent reconciler reports SEV-1, or
+      * either file is >45 min stale (silent auditors = no evidence
+        = no new bets; the 08-29 dead-chain incident is the scar).
+    DEGRADED (trade on, flagged) when: meta-monitor reports STALE.
+    """
+    now = time.time()
+    if now - _FC_CACHE["ts"] < 60:
+        return _FC_CACHE["state"], _FC_CACHE["why"]
+    state, why = "NORMAL", ""
+    try:
+        for name, bad_key, bad_val in (
+                ("invariants.json", "health", "red"),
+                ("reconciliation.json", "overall", "SEV-1")):
+            p = RESULTS_DIR / name
+            if not p.exists() or now - p.stat().st_mtime > 2700:
+                state = "FREEZE_NEW_ENTRIES"
+                why = f"{name} missing/stale — no evidence, no bets"
+                break
+            d = json.loads(p.read_text())
+            if d.get(bad_key) == bad_val:
+                state = "FREEZE_NEW_ENTRIES"
+                why = f"{name}: {bad_key}={bad_val}"
+                break
+        if state == "NORMAL":
+            mp = RESULTS_DIR / "meta_monitors.json"
+            if mp.exists():
+                m = json.loads(mp.read_text())
+                if m.get("overall") in ("STALE", "UNKNOWN"):
+                    state, why = "DEGRADED", "meta-monitor: " + \
+                        str(m.get("overall"))
+    except Exception as e:          # unreadable evidence = fail closed
+        state, why = "FREEZE_NEW_ENTRIES", f"state check failed: {e!r}"
+    _FC_CACHE.update(ts=now, state=state, why=why)
+    return state, why
+
+
 def _regime_acc(kb_rows: list[dict]) -> float | None:
     """Trailing market accuracy over the last REGIME_LOOKBACK settled
     windows, measured at DECISION time (earliest row inside the <=12
@@ -2994,11 +3044,15 @@ def run(once: bool = False) -> None:
                     # Patient/Ideal limit-order fills: a resting bid
                     # fills the first minute the ask comes down to it,
                     # independent of any gate below (2026-08-28).
+                    _fc_state, _fc_why = _fail_closed_state()
+                    _entries_frozen = _fc_state == "FREEZE_NEW_ENTRIES"
                     for _pend, _tks, _blist, _bank in (
                             (pt7_pending, pt7_tickers, pt7_trades,
                              "pt7"),
                             (pt8_pending, pt8_tickers, pt8_trades,
                              "pt8")):
+                        if _entries_frozen:
+                            break       # a limit FILL commits new stake
                         po = _pend.get(pm_mkt["ticker"])
                         if (po and pm_mkt["ticker"] not in _tks
                                 and pm_mkt.get("yes_bid")
@@ -3065,7 +3119,8 @@ def run(once: bool = False) -> None:
                                     })
                                     _tks.add(pm_mkt["ticker"])
                                     del _pend[pm_mkt["ticker"]]
-                    if ((pm_mkt["ticker"] not in pt_tickers
+                    if (not _entries_frozen
+                            and (pm_mkt["ticker"] not in pt_tickers
                             or pm_mkt["ticker"] not in pt2_tickers
                             or pm_mkt["ticker"] not in pt3_tickers
                             or pm_mkt["ticker"] not in pt4_tickers
@@ -4069,6 +4124,8 @@ def run(once: bool = False) -> None:
                     None),
                 "online_updates_session": online_updates,
                 "retrain_every_min": RETRAIN_EVERY // 60,
+                "runtime_state": _FC_CACHE["state"],
+                "runtime_state_why": _FC_CACHE["why"] or None,
                 "retrains_this_session": retrains,
                 "last_retrain": retrain_info or None,
                 "predictions_total": len(ledger),
