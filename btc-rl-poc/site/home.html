@@ -217,8 +217,10 @@ svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
   <div class="crew" id="crew"><p class="mini">reading the eight ledgers…</p></div>
   <p class="mini">equity = start capital + every settled paper bet in that robot's
   append-only ledger (<code>results/pt*_trades.jsonl</code>) · Gambler shows
-  policy v2 only · abstentions and unfilled limit orders excluded from money ·
+  policy v3 only · abstentions and unfilled limit orders excluded from money ·
   full race on <a href="instrument.html">the Instrument</a></p>
+  <p class="mini">withdrawal ledger: <code>wd_c</code> / <code>skim_c</code> on
+  every settled row in the trade logs — withdrawals are earnings, not stake.</p>
 </section>
 
 <!-- ============ 04 · YOUR $1,000 LAB ============ -->
@@ -343,7 +345,9 @@ const DESKS = [
     oops: "I only bet at ≥77% confidence — but my confident entries cost more than my win rate paid back." },
   { id: "pt4", name: "Gambler", emo: "🐉", grp: "Sizing / variance",
     say: "“Good predictions can still go badly if I bet too big.”",
-    start: 1000000, c: "var(--series-3)", cut: 1787788353,
+    /* v3: cut + start come from site_manifest.json .config
+       (PT4_RESET2_TS / PT4_RESET_C) — never hardcoded here */
+    start: 1000000, c: "var(--series-3)",
     oops: "I put $1,911 on one window at negative edge. The prediction was fine. The bet size wasn't." },
   { id: "pt5", name: "Saver", emo: "🐿️", grp: "Capital protection",
     say: "“I bank my wins.”", start: 1000000, c: "var(--series-4)",
@@ -622,16 +626,64 @@ function deskSeries(rows, d) {
   for (const r of settled) eq += (r.pnl_c || 0);
   return { eq, n: settled.length };
 }
+const moneyC2 = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100).toLocaleString(
+  undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 function drawCrew() {
   const raw = S.ledgers;
   if (!raw) return;
+  const cfg = (S.man && S.man.config) || {};
   $id("crew").innerHTML = DESKS.map(d => {
     let rows = raw[d.id] || [];
     if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
     if (d.skips) rows = rows.filter(r => !r.skipped);
-    const hasData = rows.length > 0;
-    const s = deskSeries(rows, d);
-    const ret = 100 * (s.eq - d.start) / d.start;
+    let hasData = rows.length > 0;
+    let s, start = d.start, betNote = "", extra = "",
+      noDataMsg = "ledger unavailable";
+    if (d.id === "pt4") {
+      /* v3 era only — baseline + cutover fetched from the manifest.
+         bankroll = reset capital + Σ(pnl − withdrawal) over settled v3 rows
+                    − stakes still on the table (open v3 rows);
+         withdrawn cash is real earnings, permanently out of play.
+         equity = bankroll + withdrawn. */
+      const rst = cfg.PT4_RESET2_TS, rc = cfg.PT4_RESET_C;
+      if (rst == null || rc == null) {
+        s = { eq: d.start, n: 0 }; hasData = false;
+        noDataMsg = "manifest unavailable — v3 baseline unknown";
+      } else {
+        const v3 = rows.filter(r => (r.made_ts || 0) >= rst);
+        const settled = v3.filter(r => r.actual != null);
+        const open = v3.filter(r => r.actual == null);
+        const withdrawn = settled.reduce((a, r) => a + (r.wd_c || 0), 0);
+        const bankroll = rc
+          + settled.reduce((a, r) => a + ((r.pnl_c || 0) - (r.wd_c || 0)), 0)
+          - open.reduce((a, r) => a + (r.stake_c || 0), 0);
+        start = rc;
+        s = { eq: bankroll + withdrawn, n: v3.length };
+        hasData = true;
+        const since = new Date(rst * 1000).toLocaleDateString("en-US",
+          { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" })
+          .replace("/", "-");
+        betNote = ` <span class="muted">(v3 · since ${since})</span>`;
+        extra = `<div class="mini" style="margin:3px 0 0">💰 withdrawn ${
+          moneyC2(withdrawn)} — banked forever, never re-staked</div>`;
+      }
+    } else {
+      s = deskSeries(rows, d);
+      if (d.id === "pt5") {
+        /* banked savings — last settled row's running savings_c
+           (fallback: Σ skim_c); equity already = bankroll + savings
+           because each settled pnl_c is pre-skim */
+        const settled = rows.filter(r => r.actual != null)
+          .sort((a, b) => a.close_ts - b.close_ts);
+        const lastSav = [...settled].reverse().find(r => r.savings_c != null);
+        const banked = lastSav ? lastSav.savings_c
+          : settled.reduce((a, r) => a + (r.skim_c || 0), 0);
+        if (settled.length)
+          extra = `<div class="mini" style="margin:3px 0 0">💰 banked ${
+            moneyC2(banked)}</div>`;
+      }
+    }
+    const ret = 100 * (s.eq - start) / start;
     const up = ret >= 0;
     return `<div class="trader" style="border-top-color:${d.c}">
       <div class="face">${d.emo}</div>
@@ -641,8 +693,8 @@ function drawCrew() {
       <div>${hasData
         ? `<span class="teq">${moneyC(s.eq)}</span>
            <span class="tret ${up ? "up" : "dn"}">${up ? "+" : ""}${ret.toFixed(1)}%</span>
-           <span class="mini" style="margin:0">· ${s.n} bets</span>`
-        : `<span class="mini" style="margin:0">ledger unavailable</span>`}</div>
+           <span class="mini" style="margin:0">· ${s.n} bets${betNote}</span>${extra}`
+        : `<span class="mini" style="margin:0">${noDataMsg}</span>`}</div>
       <div class="oops"><b>My biggest mistake</b>${d.oops}</div>
     </div>`;
   }).join("");

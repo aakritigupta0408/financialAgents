@@ -380,6 +380,27 @@ details[open] > summary { margin-bottom: 6px; }
 </section>
 
 <section>
+  <h2>Sized-stake traders — cash off the table
+    <span class="sub muted small" style="margin-left:8px">Gambler &amp; Saver paper ledgers</span></h2>
+  <p class="sub muted small">Both traders sweep winnings out of their bankroll:
+  the Gambler withdraws every settle that lifts it above its start, the Saver
+  skims each win into savings. Withdrawn/banked cash is realized earnings — it
+  can never be re-staked. Equity = bankroll + withdrawn/banked.</p>
+  <div class="statusbar" style="margin-top:12px">
+    <div class="stat"><div class="k" id="wd-pt4-k">🐉 Gambler equity</div>
+      <div class="bignum" id="wd-pt4-eq">–</div>
+      <div class="sub muted small" id="wd-pt4-line">reading pt4_trades.jsonl…</div></div>
+    <div class="stat"><div class="k">🐿️ Saver equity</div>
+      <div class="bignum" id="wd-pt5-eq">–</div>
+      <div class="sub muted small" id="wd-pt5-line">reading pt5_trades.jsonl…</div></div>
+  </div>
+  <p class="mini">withdrawal ledger: <code>wd_c</code> / <code>skim_c</code> on
+  every settled row of <code>results/pt4_trades.jsonl</code> /
+  <code>pt5_trades.jsonl</code> — withdrawals are earnings, not stake · Gambler
+  baseline from <code>site_manifest.json .config.PT4_RESET2_TS/PT4_RESET_C</code></p>
+</section>
+
+<section>
   <details>
   <summary><h2 style="display:inline">The model ladder &amp; scorecards</h2>
     <span class="sub muted small" style="margin-left:8px">architectures · offline tests · live ledger</span></summary>
@@ -964,6 +985,59 @@ function drawBets(bets) {
     }).join("");
 }
 
+/* Sized-stake traders — Gambler (pt4, v3) and Saver (pt5) withdrawal strip.
+   Withdrawn/banked cash is realized earnings, permanently out of play;
+   equity = bankroll + withdrawn/banked. Gambler's v3 cutover + reset capital
+   come from site_manifest.json .config — never hardcoded. */
+const moneyC2 = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100).toLocaleString(
+  undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function drawTraderWd(man, pt4, pt5) {
+  const cfg = (man && man.config) || {};
+  const el = id => document.getElementById(id);
+  // 🐉 Gambler — v3 era only (made_ts ≥ PT4_RESET2_TS)
+  const rst = cfg.PT4_RESET2_TS, rc = cfg.PT4_RESET_C;
+  if (pt4 && rst != null && rc != null) {
+    const v3 = pt4.filter(r => (r.made_ts || 0) >= rst);
+    const settled = v3.filter(r => r.actual != null);
+    const open = v3.filter(r => r.actual == null);
+    const withdrawn = settled.reduce((a, r) => a + (r.wd_c || 0), 0);
+    const bankroll = rc
+      + settled.reduce((a, r) => a + ((r.pnl_c || 0) - (r.wd_c || 0)), 0)
+      - open.reduce((a, r) => a + (r.stake_c || 0), 0);
+    const since = new Date(rst * 1000).toLocaleDateString("en-US",
+      { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" })
+      .replace("/", "-");
+    el("wd-pt4-k").innerHTML =
+      `🐉 Gambler equity <span class="muted">(v3 · since ${since})</span>`;
+    el("wd-pt4-eq").textContent = moneyC2(bankroll + withdrawn);
+    el("wd-pt4-line").innerHTML = `💰 +${moneyC2(withdrawn)} withdrawn — ` +
+      `never re-staked · bankroll ${moneyC2(bankroll)} · ${v3.length} ` +
+      `bet${v3.length === 1 ? "" : "s"}`;
+  } else {
+    el("wd-pt4-eq").textContent = "–";
+    el("wd-pt4-line").textContent = !pt4
+      ? "pt4_trades.jsonl unavailable"
+      : "site_manifest.json unavailable — v3 baseline unknown";
+  }
+  // 🐿️ Saver — banked = last settled row's running savings_c (fallback Σ skim_c)
+  if (pt5) {
+    const settled = pt5.filter(r => r.actual != null)
+      .sort((a, b) => (a.close_ts || 0) - (b.close_ts || 0));
+    const lastSav = [...settled].reverse().find(r => r.savings_c != null);
+    const banked = lastSav ? lastSav.savings_c
+      : settled.reduce((a, r) => a + (r.skim_c || 0), 0);
+    // each settled pnl_c is pre-skim, so start + Σ pnl = bankroll + savings
+    const eq = 1000000 + settled.reduce((a, r) => a + (r.pnl_c || 0), 0);
+    el("wd-pt5-eq").textContent = moneyC2(eq);
+    el("wd-pt5-line").innerHTML = `💰 +${moneyC2(banked)} banked — ` +
+      `never re-staked · bankroll ${moneyC2(eq - banked)} · ` +
+      `${settled.length} settled`;
+  } else {
+    el("wd-pt5-eq").textContent = "–";
+    el("wd-pt5-line").textContent = "pt5_trades.jsonl unavailable";
+  }
+}
+
 // the live board: every kb arm's call on the current open window. Fixed
 // color order (never cycled); kb6/kbf excluded — retired from trading.
 const ARM_LIVE = [
@@ -1152,14 +1226,32 @@ function drawLearning(preds, learnLog) {
 
 async function poll() {
   try {
-    const [pxRes, plRes, sRes, llRes, kbRes, betRes] = await Promise.all([
+    const [pxRes, plRes, sRes, llRes, kbRes, betRes, manRes, pt4Res, pt5Res] =
+      await Promise.all([
       fetch(bust("../results/recent_prices.json"), { cache: "no-store" }),
       fetch(bust("../results/prediction_log.jsonl"), { cache: "no-store" }),
       fetch(bust("../results/online_status.json"), { cache: "no-store" }),
       fetch(bust("../results/learning_log.jsonl"), { cache: "no-store" }),
       fetch(bust("../results/kalshi_binary_log.jsonl"), { cache: "no-store" }),
       fetch(bust("../results/kb_bets.jsonl"), { cache: "no-store" }),
+      // trader withdrawal strip — null-safe: a miss must not break the poll
+      fetch(bust("../results/site_manifest.json"), { cache: "no-store" }).catch(() => null),
+      fetch(bust("../results/pt4_trades.jsonl"), { cache: "no-store" }).catch(() => null),
+      fetch(bust("../results/pt5_trades.jsonl"), { cache: "no-store" }).catch(() => null),
     ]);
+    try {
+      const man = manRes && manRes.ok ? await manRes.json() : null;
+      const rowsOf = async res => {
+        if (!res || !res.ok) return null;
+        const out = [];
+        for (const line of (await res.text()).split("\n")) {
+          if (!line.trim()) continue;
+          try { out.push(JSON.parse(line)); } catch {}
+        }
+        return out;
+      };
+      drawTraderWd(man, await rowsOf(pt4Res), await rowsOf(pt5Res));
+    } catch {}
     const kbRows = [];
     const armRows = [];
     if (kbRes.ok) for (const line of (await kbRes.text()).split("\n")) {

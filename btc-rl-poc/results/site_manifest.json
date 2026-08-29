@@ -1,6 +1,6 @@
 {
- "generated_ts": 1787992202.388,
- "git_rev": "0d7b798",
+ "generated_ts": 1788001202.287,
+ "git_rev": "493c682",
  "champion": {
   "key": "champion",
   "promoted_at": null,
@@ -16,41 +16,43 @@
   "REGIME_FLOOR": 0.62,
   "KNIFE_BAND": 0.1,
   "PT_TAU": 0.62,
+  "PT4_RESET2_TS": 1787994332,
+  "PT4_RESET_C": 1000000,
   "TREAT_ALPHA_FAMILY": 0.05
  },
  "config_source": "btc_rl/online.py (AST-parsed, not imported)",
  "files": {
   "audit_report.json": {
-   "size_bytes": 10682,
-   "mtime_ts": 1787992202.323
+   "size_bytes": 10688,
+   "mtime_ts": 1788001202.198
   },
   "best_bids.jsonl": {
    "size_bytes": 233923,
    "mtime_ts": 1787367817.553
   },
   "board.json": {
-   "size_bytes": 6305,
-   "mtime_ts": 1787991679.066
+   "size_bytes": 6877,
+   "mtime_ts": 1787994641.556
   },
   "commentary.jsonl": {
    "size_bytes": 5409,
    "mtime_ts": 1787991741.488
   },
   "decision_board.json": {
-   "size_bytes": 31506,
-   "mtime_ts": 1787991504.209
+   "size_bytes": 31516,
+   "mtime_ts": 1788000604.359
   },
   "demo_account.json": {
    "size_bytes": 115,
-   "mtime_ts": 1787992194.377
+   "mtime_ts": 1788001197.528
   },
   "demo_fills.jsonl": {
    "size_bytes": 563,
    "mtime_ts": 1787719187.606
   },
   "demo_orders.jsonl": {
-   "size_bytes": 43712,
-   "mtime_ts": 1787990002.895
+   "size_bytes": 45622,
+   "mtime_ts": 1788000589.644
   },
   "headline_scores.json": {
    "size_bytes": 7739,
@@ -69,36 +71,36 @@
    "mtime_ts": 1787978353.832
   },
   "kalshi_binary_log.jsonl": {
-   "size_bytes": 8057670,
-   "mtime_ts": 1787992096.845
+   "size_bytes": 8077240,
+   "mtime_ts": 1788001108.76
   },
   "kalshi_history.jsonl": {
    "size_bytes": 4141808,
    "mtime_ts": 1787367817.55
   },
   "kb4_logit.json": {
-   "size_bytes": 292,
-   "mtime_ts": 1787991328.954
+   "size_bytes": 291,
+   "mtime_ts": 1788000308.053
   },
   "kb5_logit.json": {
-   "size_bytes": 333,
-   "mtime_ts": 1787991328.954
+   "size_bytes": 332,
+   "mtime_ts": 1788000308.055
   },
   "kb6_logit.json": {
-   "size_bytes": 290,
-   "mtime_ts": 1787991328.954
+   "size_bytes": 287,
+   "mtime_ts": 1788000308.054
   },
   "kb8_logit.json": {
-   "size_bytes": 95,
-   "mtime_ts": 1787991328.954
+   "size_bytes": 97,
+   "mtime_ts": 1788000308.055
   },
   "kb8_replay.jsonl": {
    "size_bytes": 155069,
    "mtime_ts": 1787675965.613
   },
   "kb_bets.jsonl": {
-   "size_bytes": 194531,
-   "mtime_ts": 1787991329.053
+   "size_bytes": 197757,
+   "mtime_ts": 1788000341.813
   },
   "kb_bets_sel.jsonl": {
    "size_bytes": 4387,
@@ -109,20 +111,20 @@
    "mtime_ts": 1787357764.291
   },
   "kb_calib.json": {
-   "size_bytes": 19276,
-   "mtime_ts": 1787991328.955
+   "size_bytes": 7863,
+   "mtime_ts": 1788000308.056
   },
   "kb_logit.json": {
    "size_bytes": 546,
-   "mtime_ts": 1787991328.953
+   "mtime_ts": 1788000308.053
   },
   "kb_sel_policy.json": {
    "size_bytes": 652,
    "mtime_ts": 1787968808.508
   },
   "learning_log.jsonl": {
-   "size_bytes": 260238,
-   "mtime_ts": 1787992196.327
+   "size_bytes": 262674,
+   "mtime_ts": 1788001174.474
   },
   "linear_q.json": {
    "size_bytes": 22100,
@@ -133,76 +135,76 @@
    "mtime_ts": 1787266714.92
   },
   "linucb_t10-h1.json": {
-   "size_bytes": 189965,
-   "mtime_ts": 1787991964.118
+   "size_bytes": 190000,
+   "mtime_ts": 1788000975.419
   },
   "linucb_t10-h15.json": {
-   "size_bytes": 190004,
-   "mtime_ts": 1787991964.124
+   "size_bytes": 190008,
+   "mtime_ts": 1788000975.425
   },
   "linucb_t10-h30.json": {
-   "size_bytes": 172377,
-   "mtime_ts": 1787991964.127
+   "size_bytes": 172411,
+   "mtime_ts": 1788000975.427
   },
   "linucb_t10-h5.json": {
-   "size_bytes": 189729,
-   "mtime_ts": 1787991964.121
+   "size_bytes": 189766,
+   "mtime_ts": 1788000975.422
   },
   "linucb_t11-h1.json": {
-   "size_bytes": 128523,
-   "mtime_ts": 1787991964.129
+   "size_bytes": 128499,
+   "mtime_ts": 1788000975.429
   },
   "linucb_t11-h15.json": {
-   "size_bytes": 124168,
-   "mtime_ts": 1787991964.133
+   "size_bytes": 124070,
+   "mtime_ts": 1788000975.433
   },
   "linucb_t11-h30.json": {
-   "size_bytes": 117722,
-   "mtime_ts": 1787991964.135
+   "size_bytes": 117685,
+   "mtime_ts": 1788000975.435
   },
   "linucb_t11-h5.json": {
-   "size_bytes": 128612,
-   "mtime_ts": 1787991964.131
+   "size_bytes": 128525,
+   "mtime_ts": 1788000975.431
   },
   "linucb_t2-h1.json": {
-   "size_bytes": 128388,
-   "mtime_ts": 1787991964.097
+   "size_bytes": 128352,
+   "mtime_ts": 1788000975.399
   },
   "linucb_t2-h15.json": {
-   "size_bytes": 122102,
-   "mtime_ts": 1787991964.111
+   "size_bytes": 122080,
+   "mtime_ts": 1788000975.412
   },
   "linucb_t2-h30.json": {
-   "size_bytes": 128724,
-   "mtime_ts": 1787991964.113
+   "size_bytes": 128760,
+   "mtime_ts": 1788000975.414
   },
   "linucb_t2-h5.json": {
-   "size_bytes": 128703,
-   "mtime_ts": 1787991964.109
+   "size_bytes": 128669,
+   "mtime_ts": 1788000975.411
   },
   "linucb_t6-h1.json": {
-   "size_bytes": 472944,
-   "mtime_ts": 1787991964.104
+   "size_bytes": 473109,
+   "mtime_ts": 1788000975.406
   },
   "linucb_t6-h15.json": {
-   "size_bytes": 470457,
-   "mtime_ts": 1787991964.142
+   "size_bytes": 470478,
+   "mtime_ts": 1788000975.442
   },
   "linucb_t6-h30.json": {
-   "size_bytes": 472518,
-   "mtime_ts": 1787991964.15
+   "size_bytes": 472574,
+   "mtime_ts": 1788000975.449
   },
   "linucb_t6-h5.json": {
    "size_bytes": 281832,
    "mtime_ts": 1787295426.884
   },
   "linucb_t7-h1.json": {
-   "size_bytes": 8891,
-   "mtime_ts": 1787991964.104
+   "size_bytes": 8887,
+   "mtime_ts": 1788000975.406
   },
   "linucb_t7-h15.json": {
-   "size_bytes": 8787,
-   "mtime_ts": 1787991964.113
+   "size_bytes": 8784,
+   "mtime_ts": 1788000975.415
   },
   "linucb_t7-h30.json": {
    "size_bytes": 5456,
@@ -213,8 +215,8 @@
    "mtime_ts": 1787295426.869
   },
   "live_snapshots.jsonl": {
-   "size_bytes": 4277065,
-   "mtime_ts": 1787992196.123
+   "size_bytes": 4338381,
+   "mtime_ts": 1788001174.264
   },
   "live_status.json": {
    "size_bytes": 383,
@@ -229,64 +231,64 @@
    "mtime_ts": 1787266705.396
   },
   "metrics_history.jsonl": {
-   "size_bytes": 1184795,
-   "mtime_ts": 1787990495.678
+   "size_bytes": 1201709,
+   "mtime_ts": 1787997676.835
   },
   "model_internals.json": {
-   "size_bytes": 15855,
-   "mtime_ts": 1787991603.455
+   "size_bytes": 15851,
+   "mtime_ts": 1787998804.409
   },
   "offline_gate.json": {
    "size_bytes": 3002,
    "mtime_ts": 1787221217.105
   },
   "online_status.json": {
-   "size_bytes": 16321,
-   "mtime_ts": 1787992196.327
+   "size_bytes": 16314,
+   "mtime_ts": 1788001174.474
   },
   "pb_bets.jsonl": {
-   "size_bytes": 63072,
-   "mtime_ts": 1787991696.398
+   "size_bytes": 64719,
+   "mtime_ts": 1788000807.838
   },
   "prediction_log.jsonl": {
-   "size_bytes": 29956782,
-   "mtime_ts": 1787991964.475
+   "size_bytes": 29957761,
+   "mtime_ts": 1788000975.76
   },
   "pt2_trades.jsonl": {
-   "size_bytes": 112298,
-   "mtime_ts": 1787991629.174
+   "size_bytes": 115310,
+   "mtime_ts": 1788000641.667
   },
   "pt3_trades.jsonl": {
-   "size_bytes": 54611,
-   "mtime_ts": 1787990426.94
+   "size_bytes": 57076,
+   "mtime_ts": 1788000641.668
   },
   "pt4_trades.jsonl": {
-   "size_bytes": 45907,
-   "mtime_ts": 1787987715.721
+   "size_bytes": 46661,
+   "mtime_ts": 1787997631.095
   },
   "pt5_trades.jsonl": {
-   "size_bytes": 103903,
-   "mtime_ts": 1787991629.175
+   "size_bytes": 106893,
+   "mtime_ts": 1788000641.669
   },
   "pt6_logit.json": {
    "size_bytes": 179,
-   "mtime_ts": 1787990426.942
+   "mtime_ts": 1788000308.169
   },
   "pt6_trades.jsonl": {
-   "size_bytes": 88530,
-   "mtime_ts": 1787991629.176
+   "size_bytes": 92105,
+   "mtime_ts": 1788000641.67
   },
   "pt7_trades.jsonl": {
-   "size_bytes": 9045,
-   "mtime_ts": 1787991763.499
+   "size_bytes": 12072,
+   "mtime_ts": 1788000807.838
   },
   "pt8_trades.jsonl": {
-   "size_bytes": 6002,
-   "mtime_ts": 1787990426.942
+   "size_bytes": 7512,
+   "mtime_ts": 1787997631.097
   },
   "pt_trades.jsonl": {
-   "size_bytes": 101928,
-   "mtime_ts": 1787991629.173
+   "size_bytes": 104668,
+   "mtime_ts": 1788000641.666
   },
   "q_table.json": {
    "size_bytes": 218865,
@@ -294,43 +296,43 @@
   },
   "q_table_online_h1.json": {
    "size_bytes": 29277,
-   "mtime_ts": 1787991964.095
+   "mtime_ts": 1788000975.397
   },
   "q_table_online_h15.json": {
-   "size_bytes": 29237,
-   "mtime_ts": 1787991964.106
+   "size_bytes": 29245,
+   "mtime_ts": 1788000975.408
   },
   "q_table_online_h30.json": {
-   "size_bytes": 29027,
-   "mtime_ts": 1787991964.107
+   "size_bytes": 29015,
+   "mtime_ts": 1788000975.409
   },
   "q_table_online_h5.json": {
-   "size_bytes": 29149,
-   "mtime_ts": 1787991964.106
+   "size_bytes": 29162,
+   "mtime_ts": 1788000975.408
   },
   "recent_prices.json": {
-   "size_bytes": 12548,
-   "mtime_ts": 1787992196.303
+   "size_bytes": 12545,
+   "mtime_ts": 1788001174.455
   },
   "ticks.jsonl": {
-   "size_bytes": 40907107,
-   "mtime_ts": 1787992199.946
+   "size_bytes": 41059565,
+   "mtime_ts": 1788001200.816
   },
   "training_progress.jsonl": {
    "size_bytes": 56366,
    "mtime_ts": 1787266705.384
   },
   "treatments.json": {
-   "size_bytes": 9532,
-   "mtime_ts": 1787990529.593
+   "size_bytes": 9728,
+   "mtime_ts": 1788000341.725
   },
   "treatments.jsonl": {
-   "size_bytes": 64326,
-   "mtime_ts": 1787990529.592
+   "size_bytes": 67399,
+   "mtime_ts": 1788000341.725
   },
   "treatments_board.json": {
-   "size_bytes": 5903,
-   "mtime_ts": 1787991602.672
+   "size_bytes": 5906,
+   "mtime_ts": 1788000602.493
   },
   "watchdog_log.jsonl": {
    "size_bytes": 634,
@@ -345,13 +347,13 @@
  "freshness": {
   "ticks": {
    "path": "results/ticks.jsonl",
-   "last_ts": 1787992198.889356,
-   "age_s": 3.5
+   "last_ts": 1788001197.26233,
+   "age_s": 5.0
   },
   "prediction_log": {
    "path": "results/prediction_log.jsonl",
-   "last_ts": 1787991900,
-   "age_s": 302.4
+   "last_ts": 1788000900,
+   "age_s": 302.3
   }
  },
  "floors": {
@@ -389,36 +391,36 @@
     }
    ],
    "representative": {
-    "ask_c": 54.0,
+    "ask_c": 51.0,
     "fee_c": 2.0,
-    "break_even_p": 0.56,
+    "break_even_p": 0.53,
     "basis": "median price_c of last 50 kb_bets rows"
    }
   },
   "market": {
    "n_windows": 20,
    "lookback": 20,
-   "brier": 0.2005,
+   "brier": 0.18255,
    "accuracy": 0.7,
    "m8_gate_active": false,
    "source": "results/kalshi_binary_log.jsonl (tail)"
   },
   "persistence_mae": {
    "h1": {
-    "mae": 12.589,
-    "n": 155
+    "mae": 11.461,
+    "n": 156
    },
    "h5": {
-    "mae": 34.707,
-    "n": 154
+    "mae": 31.728,
+    "n": 155
    },
    "h15": {
-    "mae": 61.58,
-    "n": 152
+    "mae": 55.276,
+    "n": 153
    },
    "h30": {
-    "mae": 87.029,
-    "n": 149
+    "mae": 83.904,
+    "n": 150
    },
    "source": "results/prediction_log.jsonl (tail)"
   }
