@@ -38,7 +38,8 @@ for k, lab, fn, why in O._treat_policies():
         baseline=k in ("champion", "champion_real"))
 seen = {}                      # dict-as-ordered-set, matches the daemon
 fshare = treatments.FixedShare(O.PT_ARMS)
-recs = O._treat_evaluate(pt, kb, kb_calib, treats, seen, fshare)
+evlead = {}
+recs = O._treat_evaluate(pt, kb, kb_calib, treats, seen, fshare, evlead)
 print(f"scored {len(recs)} settled desk windows\n")
 print(f"{'treatment':32s} {'n':>4s} {'bets':>5s} {'skips':>6s} "
       f"{'own EV':>8s} {'vs champ':>9s} {'LLR':>7s}  verdict")
@@ -67,6 +68,7 @@ for a, w in sorted(fshare.w.items(), key=lambda x: -x[1]):
 state.write_text(json.dumps({
     "treats": {k: t.to_dict() for k, t in treats.items()},
     "fshare": fshare.to_dict(),
+    "evlead": {k: [round(x, 5) for x in v] for k, v in evlead.items()},
     "seen": list(seen)[-4000:]}))
 log = ROOT / "results" / O.TREAT_LOG_NAME
 log.write_text("".join(json.dumps(r) + "\n" for r in recs))

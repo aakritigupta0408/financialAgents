@@ -568,6 +568,20 @@ def _treat_policies():
             return None
         return t_limit(ctx)
 
+    def t_evlead(ctx):                       # M12 — EV-ranked leader
+        # The live leaderboard ranks by WIN RATE, which selects
+        # market-echo arms: they win constantly and earn nothing after
+        # costs (measured 08/28: kb4+kb2 held the seat 62% of the day,
+        # each winning just under its own break-even). This candidate
+        # ranks arms by trailing EV per $1 AT REAL COSTS instead.
+        r = ctx.get("ev_row")
+        if r is None:
+            return None
+        if max(r["p_up"], 1 - r["p_up"]) < PT_TAU:
+            return None
+        side = "yes" if r["p_up"] >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
+
     return [
         ("champion", "Champion — the live desk policy", champion,
          "leader's call at >=0.62 confidence, every biddable window"),
@@ -599,11 +613,14 @@ def _treat_policies():
         ("t_limit_reg", "M11+M8 · maker limit + regime gate",
          t_limit_regime,
          "the Ideal trader's execution core, SPRT-verified"),
+        ("t_evlead", "M12 · EV-ranked leader (costs, not win rate)",
+         t_evlead,
+         "follow the arm with the best trailing EV/$1 at real costs"),
     ]
 
 
 def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
-                    fshare=None):
+                    fshare=None, evlead=None):
     """Score every treatment on each newly-settled DESK window.
 
     Paired by construction: all policies see the same window and the
@@ -668,6 +685,14 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
         if fshare is not None:
             ld = fshare.leader()          # weights from PAST windows only
             fs_row = per_arm.get(ld)
+        ev_row = None
+        if evlead is not None:
+            # trailing EV/$1 from PAST windows only (min 5); the update
+            # for THIS window happens after scoring, below
+            cand = {v: sum(e[-20:]) / len(e[-20:])
+                    for v, e in evlead.items() if len(e) >= 5}
+            if cand:
+                ev_row = per_arm.get(max(cand, key=cand.get))
         mkt = row["mkt_p_up"]
         ask_yes = 100 * mkt + 2.5
         ask_no = 100 * (1 - mkt) + 2.5
@@ -684,6 +709,7 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
             "side": t["side"], "ask_c": t["ask_c"],
             "ask_c_yes": ask_yes, "ask_c_no": ask_no,
             "fs_row": fs_row,
+            "ev_row": ev_row,
             # modeled asks at each LATER minute of this window, in time
             # order — the limit policies scan these for a fill
             "later": [(100 * r["mkt_p_up"] + 2.5,
@@ -731,6 +757,15 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
                 losses[v] = -(math.log(p) if outcome
                               else math.log(1 - p))
             fshare.update(losses)
+        if evlead is not None and per_arm:
+            for v, r in per_arm.items():
+                sidev = "yes" if r["p_up"] >= 0.5 else "no"
+                av = (100 * mkt + 2.5 if sidev == "yes"
+                      else 100 * (1 - mkt) + 2.5)
+                if 5 <= av < 80:
+                    evlead.setdefault(v, []).append(
+                        treatments.bet_ev(sidev, av, outcome))
+                    del evlead[v][:-20]
         seen[t["ticker"]] = None       # insertion-ordered (dict-as-set)
         out.append({"ticker": t["ticker"], "close_ts": t["close_ts"],
                     "leader": t.get("leader"), "outcome": outcome,
@@ -2280,6 +2315,7 @@ def run(once: bool = False) -> None:
     # tickers re-scored on restart. Insertion order = settle order.
     treat_seen: dict = {}
     fshare = treatments.FixedShare(PT_ARMS)
+    evlead: dict = {}
     # BUG FIX 2026-08-28: seen/fshare are restored BEFORE the treats,
     # and a failure resets the treats too. The old ordering could leave
     # restored SPRT counters beside an EMPTIED seen-set, so the whole
@@ -2289,6 +2325,8 @@ def run(once: bool = False) -> None:
         _tp = RESULTS_DIR / TREAT_STATE_NAME
         _td = json.loads(_tp.read_text()) if _tp.exists() else {}
         treat_seen = dict.fromkeys(_td.get("seen") or [])
+        evlead = {k: list(v) for k, v in
+                  (_td.get("evlead") or {}).items()}
         if _td.get("fshare"):
             fshare = treatments.FixedShare.from_dict(_td["fshare"],
                                                      PT_ARMS)
@@ -2298,6 +2336,7 @@ def run(once: bool = False) -> None:
     except Exception:
         treat_seen = {}
         fshare = treatments.FixedShare(PT_ARMS)
+        evlead = {}
         for _k, _lab, _fn, _why in _treat_policies():
             treats[_k] = treatments.Treatment(
                 _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
@@ -3395,7 +3434,8 @@ def run(once: bool = False) -> None:
             # newly-settled windows, then check for a promotion
             try:
                 scored = _treat_evaluate(pt_trades, kb, kb_calib,
-                                         treats, treat_seen, fshare)
+                                         treats, treat_seen, fshare,
+                                         evlead)
                 if scored:
                     with (RESULTS_DIR / TREAT_LOG_NAME).open("a") as fh:
                         for rec in scored:
@@ -3416,6 +3456,8 @@ def run(once: bool = False) -> None:
                         "treats": {k: t.to_dict()
                                    for k, t in treats.items()},
                         "fshare": fshare.to_dict(),
+                        "evlead": {k: [round(x, 5) for x in v]
+                                   for k, v in evlead.items()},
                         "seen": list(treat_seen)[-4000:]}))
                     tmpt.replace(RESULTS_DIR / TREAT_STATE_NAME)
             except Exception as e:
