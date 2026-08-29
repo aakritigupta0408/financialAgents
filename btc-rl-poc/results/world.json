@@ -1,0 +1,234 @@
+{
+ "generated_ts": 1787992147,
+ "clock": [
+  {
+   "every": "30 s",
+   "what": "market poll + pipeline loop (candles, book, trades, Kalshi quotes \u2192 features \u2192 arm inference)",
+   "owner": "daemon",
+   "source": "btc_rl/online.py POLL_SECONDS=30",
+   "detail": "heartbeat = online_status.alive_at",
+   "last_run_ts": 1787992130,
+   "age_min": 0.3,
+   "in_crontab": null,
+   "health": "green"
+  },
+  {
+   "every": "1 min",
+   "what": "publish site + data to gh-pages",
+   "owner": "cron \u00b7 publisher",
+   "source": "scripts/publish_dashboard.py",
+   "detail": null,
+   "last_run_ts": 1787992144,
+   "age_min": 0.1,
+   "in_crontab": true,
+   "health": "green"
+  },
+  {
+   "every": "5 min",
+   "what": "watchdog \u2014 restart daemon if heartbeat stale >5 min",
+   "owner": "cron \u00b7 watchdog",
+   "source": "scripts/watchdog.py",
+   "detail": "authority: RESTART the daemon process only. Logs only when it acts \u2014 a days-old log means days of health, not neglect",
+   "last_run_ts": 1787561400,
+   "age_min": 7179.1,
+   "in_crontab": true,
+   "health": "green"
+  },
+  {
+   "every": "10 min",
+   "what": "audit \u2192 site manifest \u2192 treatments board \u2192 decision board (chained)",
+   "owner": "cron \u00b7 auditor",
+   "source": "scripts/run_audit.py + emit_manifest + emit_board + emit_decision_board",
+   "detail": null,
+   "last_run_ts": 1787991602,
+   "age_min": 9.1,
+   "in_crontab": true,
+   "health": "green"
+  },
+  {
+   "every": "1 h",
+   "what": "gated retraining of neural arms (candidate vs holdout MSE; keep or revert)",
+   "owner": "daemon",
+   "source": "btc_rl/online.py RETRAIN_EVERY=3600s",
+   "detail": "evidence = online_status.last_retrain (per-arm val_mse before/after + kept/reverted)",
+   "last_run_ts": 1787990427,
+   "age_min": 28.7,
+   "in_crontab": null,
+   "health": "green"
+  },
+  {
+   "every": "1 h at :20",
+   "what": "model introspection \u2192 analyst data (weights, trace, representativeness, oracle)",
+   "owner": "cron \u00b7 analyst",
+   "source": "tests/introspect_model_internals.py",
+   "detail": null,
+   "last_run_ts": 1787991603,
+   "age_min": 9.1,
+   "in_crontab": true,
+   "health": "green"
+  },
+  {
+   "every": "on settlement",
+   "what": "score window, update online learners + calibrators, append treatment ledger",
+   "owner": "daemon",
+   "source": "btc_rl/online.py settle path",
+   "detail": "evidence = treatments.jsonl append",
+   "last_run_ts": 1787990529,
+   "age_min": 27.0,
+   "in_crontab": null,
+   "health": "green"
+  },
+  {
+   "every": "15 s",
+   "what": "site pages re-fetch published JSON",
+   "owner": "browser",
+   "source": "client-side poll",
+   "detail": "stateless; no backend work",
+   "last_run_ts": null,
+   "age_min": null,
+   "in_crontab": null,
+   "health": "amber"
+  }
+ ],
+ "agents": [
+  {
+   "name": "The Daemon",
+   "role": "pipeline executor",
+   "trigger": "continuous, 30s loop",
+   "authority": "READ market + WRITE ledgers + paper-trade the pre-registered policies",
+   "cannot": "change any policy constant, promote a treatment, touch real money (production key quarantined)",
+   "last_ts": 1787992130,
+   "evidence": "online_status.json heartbeat"
+  },
+  {
+   "name": "Watchdog",
+   "role": "reliability",
+   "trigger": "cron, every 5 min",
+   "authority": "restart the daemon when the heartbeat is stale",
+   "cannot": "modify code, data, or policy",
+   "last_ts": 1787561400,
+   "evidence": "watchdog_log.jsonl + cron log"
+  },
+  {
+   "name": "Auditor",
+   "role": "evaluation integrity",
+   "trigger": "cron, every 10 min",
+   "authority": "recompute all published metrics from raw ledgers (dual implementation vs the daemon)",
+   "cannot": "alter ledgers; it only reads and re-derives",
+   "last_ts": 1787991602,
+   "evidence": "audit_report.json"
+  },
+  {
+   "name": "Fable \u2014 The Analyst",
+   "role": "research analyst",
+   "trigger": "hourly, after introspection refresh; plus session work with the owner",
+   "authority": "READ everything + PROPOSE (analyst notes, treatment proposals, retirement proposals)",
+   "cannot": "promote a treatment, modify production policy, spend money \u2014 every live-money decision terminates with the human (PROGRAM.md \u00a73)",
+   "last_ts": 1787991603,
+   "evidence": "commentary.jsonl (dated, kept even when wrong)"
+  },
+  {
+   "name": "Publisher",
+   "role": "communication",
+   "trigger": "cron, every 1 min",
+   "authority": "copy site + results snapshots to gh-pages",
+   "cannot": "modify source data",
+   "last_ts": 1787992144,
+   "evidence": "publish log"
+  },
+  {
+   "name": "Builder agents",
+   "role": "engineering",
+   "trigger": "session-based, launched by the owner's directives",
+   "authority": "PROPOSE + BUILD site/scripts changes, verified by screenshot + parity fixtures before commit",
+   "cannot": "run unattended or alter trading policy",
+   "last_ts": null,
+   "evidence": "git history + DECISIONS.md"
+  },
+  {
+   "name": "The Owner (human)",
+   "role": "governance",
+   "trigger": "\u2014",
+   "authority": "the only authority that can promote, retire, or change live policy",
+   "cannot": "\u2014",
+   "last_ts": null,
+   "evidence": "DECISIONS.md 'decided by' column"
+  }
+ ],
+ "regions": {
+  "market_ocean": {
+   "label": "Market Ocean \u2014 external feeds",
+   "status": "green",
+   "why": "daemon heartbeat 0.3 min old"
+  },
+  "forecast_country": {
+   "label": "Forecast Country \u2014 tier-1 price arms",
+   "status": "green",
+   "why": "audit refreshed 9.1 min ago; last retrain 28.7 min ago"
+  },
+  "probability_city": {
+   "label": "Probability City \u2014 kb arms",
+   "status": "green",
+   "why": "audit refreshed 9.1 min ago"
+  },
+  "decision_hq": {
+   "label": "Decision HQ \u2014 gates + experiments",
+   "status": "green",
+   "why": "treatment ledger 18.4 min old, 168 paired windows"
+  },
+  "execution_port": {
+   "label": "Execution Port \u2014 quotes, fills, fees",
+   "status": "amber",
+   "why": "structurally healthy; the measured 4.9\u00a2/$1 execution gap is the desk's biggest open leak"
+  },
+  "ledger_valley": {
+   "label": "Ledger Valley \u2014 append-only records",
+   "status": "green",
+   "why": "all ledgers append-only; publisher shipping"
+  }
+ },
+ "costs": [
+  {
+   "item": "Coinbase market data",
+   "amount": 0.0,
+   "basis": "public API, no key, no fee"
+  },
+  {
+   "item": "Kalshi market data + paper orders",
+   "amount": 0.0,
+   "basis": "demo environment; production key quarantined"
+  },
+  {
+   "item": "alternative.me Fear & Greed",
+   "amount": 0.0,
+   "basis": "public API"
+  },
+  {
+   "item": "Compute (daemon + retrains + crons)",
+   "amount": 0.0,
+   "basis": "self-hosted on the owner's Mac (caffeinate keeps it awake); $0 marginal, electricity not metered"
+  },
+  {
+   "item": "Storage (279.0 MB results/)",
+   "amount": 0.0,
+   "basis": "local disk + GitHub Pages hosting, free tier"
+  },
+  {
+   "item": "Publishing (GitHub Pages)",
+   "amount": 0.0,
+   "basis": "free tier"
+  },
+  {
+   "item": "LLM \u2014 analyst notes + builder agents",
+   "amount": null,
+   "basis": "not metered \u2014 runs inside the owner's Claude subscription; per-run token metering is a queued workstream, and until it exists this row stays null rather than invented"
+  }
+ ],
+ "facts": {
+  "poll_seconds": 30,
+  "retrain_every_s": 3600,
+  "daemon_alive_at": 1787992130.117642,
+  "windows_scored": 168,
+  "config_source": "btc_rl/online.py (AST-parsed, not imported)"
+ }
+}

@@ -592,3 +592,41 @@ Shipped, additive (controls untouched):
 - Treatments M11 / M11+M8 added so the SPRT adjudicates the mechanism
   on live windows; design essays don't promote anything here.
 Full grounding with citations in docs/SEV0_REMEDIATION.md.
+
+## 2026-08-29 — TA metrics review → the decision layer
+The TA's critique of the Metrics Lab ("research observability, not an
+experiment decision system") was adopted as a program. First shipment,
+computed entirely from the daemon's own per-window paired log
+(results/treatments.jsonl, 168 windows — nothing re-estimated from
+aggregates):
+- scripts/emit_decision_board.py → results/decision_board.json, on the
+  10-min cron: per treatment, normal AND seeded-bootstrap 95% CI,
+  median vs mean, top-3 |Δ| concentration (jackpot detector), P(Δ>0),
+  P(Δ>2¢), MDE and power at the FAMILY-WISE α (0.003125 one-sided),
+  evaluability vs activity overlap, veto decomposition (losses
+  avoided / wins forgone / control EV on skipped windows), effect
+  slices by regime, ET 6-hour block and leader (n≥15 to count as
+  powered), worst powered slice + sign consistency, projected windows
+  to an SPRT verdict, and an automatic state:
+  PROMOTE / KEEP_TESTING / HOLD / KILL / INVALID — rules
+  pre-registered in the emitter, SPRT remains the promotion authority.
+- First run: 10 KEEP_TESTING, 2 HOLD (t_cal, t_cheap — coverage <25%,
+  "a different product"), 0 KILL/INVALID. M8: Δ +6.0¢/$1,
+  boot CI [−0.0¢, +12.0¢], P(Δ>0)=0.97, ~590 windows to a verdict at
+  current drift; worst powered slice ET 18-24 at −4.8¢ (n=43).
+- The honest headline the TA asked us to surface: power to detect the
+  pre-registered 2¢ edge at n=168 under family-wise α is ~2%
+  (MDE ≈ 12¢/window). Fixed-horizon testing is hopeless at this
+  traffic — the sequential SPRT is not a stylistic choice, it is the
+  only viable design. This number now lives on the board.
+- Definitional bug caught during the build and recorded in
+  DECISIONS.md: a stand-down is a COMPLETE scored observation (EV 0 by
+  pre-registration), not a missing pair; the first draft invalidated
+  all 12 challengers by conflating the two.
+- PT_TAU added to the manifest config export (homepage was falling
+  back to REGIME_FLOOR — same 0.62 by coincidence, different constant).
+Queued next (needs new capture or more data, not just arithmetic):
+post-fill markout (1m/5m from ticks), capacity/depth metrics,
+offline→online retention tracker, Brier decomposition + ECE,
+risk–coverage curves, redundancy/kill board, factorial interaction
+for combo treatments.

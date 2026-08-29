@@ -1,59 +1,243 @@
 {
-  "updated": "2026-08-29",
-  "note": "Curated lifecycle registry. Live items (treatments, incidents) merge from online_status.json / incidents.jsonl on the board page — this file records what machines cannot know: why, and what was decided.",
-  "open_decisions": [
-    {"id": "D-gambler-sizing", "q": "Does the Gambler keep 33% stakes (aggressive-curriculum exhibit, with its drawdowns as the lesson) or step down to a Kelly-consistent fraction?", "owner": "human", "context": "SEV-1: two legitimate +edge bets lost -$3,454 at 33%; the gate works, the sizing is the exposure"},
-    {"id": "D-m1-future", "q": "M1 calibration layer: retire, redesign with shorter memory, or keep shadow-only as a drift instrument (recommended)?", "owner": "human", "context": "introspection: calibrated log-loss WORSE than raw for all 9 arms; fitted direction flipped in one day"},
-    {"id": "D-edge-band", "q": "Investigate edge-anti-signal: should edge gates become bands (too much claimed edge = red flag)?", "owner": "human", "context": "kb5 claimed_edge weight -0.096, pt6 conf_minus_ask -0.059 - their own regressions score stated edge as predicting losses"}
-  ],
-  "arms": [
-    {"id": "kb", "status": "active", "role": "control - frozen"},
-    {"id": "kb2", "status": "active", "role": "THE deliverable (market-anchored blend)"},
-    {"id": "kb3", "status": "active", "role": "online logit, 24-dim"},
-    {"id": "kb4", "status": "active", "role": "stack"},
-    {"id": "kb5", "status": "active", "role": "EV price-player (research; most-wrong caller, best EV)"},
-    {"id": "kb6", "status": "retired", "why": "UP-recall 63%, coverage 37%; calib slope 0.33 = confidence is noise", "date": "08-25"},
-    {"id": "kb7", "status": "active", "role": "Chronos-Bolt zero-shot (best AUC, worst optimist)"},
-    {"id": "kb8", "status": "active", "role": "kb7 x market log-pool (best Brier)"},
-    {"id": "kb9", "status": "active", "role": "TimesFM 2.5 zero-shot"},
-    {"id": "kbf", "status": "retired", "why": "best Brier (0.097) but -0.41/$1: forecasts at T-3min where nothing is monetizable", "date": "08-25"},
-    {"id": "t2/t6/t7/t8/t9/t10/t11", "status": "active-logged-only", "role": "RL price arms; never reach a bet - value is MAE/band research", "note": "t10/t11 carry bullish drift bias but trade nothing"}
-  ],
-  "traders": [
-    {"id": "pt Follower", "status": "active", "role": "frozen control"},
-    {"id": "pt2 Ladder", "status": "active", "role": "control twin + banking"},
-    {"id": "pt3 Disciplined", "status": "active", "role": "frozen pre-registered v2 (>=0.77)"},
-    {"id": "pt4 Gambler", "status": "active", "role": "v2.1: 33% at >=0.77 AND edge>=2c at fill", "flag": "sizing decision open (D-gambler-sizing)"},
-    {"id": "pt5 Saver", "status": "active", "role": "10% stakes (cut from 25%), skims 25% of wins"},
-    {"id": "pt6 MLE", "status": "active", "role": "meta-labeling: supervised P(win), edge>=10c, shadow-row learning"},
-    {"id": "pt7 Patient", "status": "active", "role": "naive maker limit - the adverse-selection measuring stick"},
-    {"id": "pt8 Ideal", "status": "active", "role": "composite: regime+edge@fill+maker limit+half-Kelly+25% depth+fill-time recheck"}
-  ],
-  "mitigations": [
-    {"id": "M1", "status": "shadow-on-probation", "note": "hurts all 9 arms prequentially; retirement proposal open"},
-    {"id": "M2", "status": "in-test", "note": "knife-edge veto; re-scoped after fair pricing (+1.3% paired)"},
-    {"id": "M3", "status": "in-test", "note": "Fixed-Share leader"},
-    {"id": "M4'", "status": "shipped", "note": "sigma-conditioned conformal bands live in daemon"},
-    {"id": "M5", "status": "done-gates-passing", "note": "sizing fixes: MLE PASS, Gambler on track, Saver recovering"},
-    {"id": "M6", "status": "dead-folded", "note": "folded into M1 (lean flipped sign per-arm)"},
-    {"id": "M7", "status": "dead", "note": "hour policy - p=0.60, data dredging; dropped not deferred"},
-    {"id": "M8", "status": "in-test", "note": "regime gate - best performer"},
-    {"id": "M9", "status": "in-test", "note": "Underdog cheap bids"},
-    {"id": "M10", "status": "in-test", "note": "execution guard"},
-    {"id": "M11", "status": "in-test", "note": "maker limit; naive form adversely selected (-5.21%)"},
-    {"id": "M12", "status": "in-test", "note": "EV-ranked leader; flat backfill"},
-    {"id": "M-T0", "status": "proposed", "note": "order-flow features -> new arm kb10"}
-  ],
-  "workstreams": [
-    {"id": "W-uiux-story", "status": "next", "note": "UI/UX storytelling wave: layered narrative, animated/comic explainers (task #26)"},
-    {"id": "W-scale", "status": "designed", "note": "PROGRAM.md par.6: namespace -> instrument specs -> shared-nothing loops -> RAG -> plugins"},
-    {"id": "W-watchdog", "status": "proposed", "note": "alert on daemon staleness + SPRT boundary crossings (launch trigger)"},
-    {"id": "W-launch-page", "status": "armed", "note": "auto-generate launch analysis when any |LLR| crosses 5.66/-2.30"}
-  ],
-  "infrastructure": [
-    {"id": "daemon btc_rl.online", "status": "active", "note": "30s loop, hourly gated retrains"},
-    {"id": "cron publisher", "status": "active", "note": "every minute -> gh-pages"},
-    {"id": "cron audit runner", "status": "active", "note": "every 10 min -> audit_report.json"},
-    {"id": "pages", "status": "active", "note": "9 pages, all client-computed from ledgers"}
-  ]
+ "updated": "2026-08-29",
+ "note": "Curated lifecycle registry. Live items (treatments, incidents) merge from online_status.json / incidents.jsonl on the board page \u2014 this file records what machines cannot know: why, and what was decided.",
+ "open_decisions": [
+  {
+   "id": "D-gambler-sizing",
+   "q": "Does the Gambler keep 33% stakes (aggressive-curriculum exhibit, with its drawdowns as the lesson) or step down to a Kelly-consistent fraction?",
+   "owner": "human",
+   "context": "SEV-1: two legitimate +edge bets lost -$3,454 at 33%; the gate works, the sizing is the exposure"
+  },
+  {
+   "id": "D-m1-future",
+   "q": "M1 calibration layer: retire, redesign with shorter memory, or keep shadow-only as a drift instrument (recommended)?",
+   "owner": "human",
+   "context": "introspection: calibrated log-loss WORSE than raw for all 9 arms; fitted direction flipped in one day"
+  },
+  {
+   "id": "D-edge-band",
+   "q": "Investigate edge-anti-signal: should edge gates become bands (too much claimed edge = red flag)?",
+   "owner": "human",
+   "context": "kb5 claimed_edge weight -0.096, pt6 conf_minus_ask -0.059 - their own regressions score stated edge as predicting losses"
+  }
+ ],
+ "arms": [
+  {
+   "id": "kb",
+   "status": "active",
+   "role": "control - frozen"
+  },
+  {
+   "id": "kb2",
+   "status": "active",
+   "role": "THE deliverable (market-anchored blend)"
+  },
+  {
+   "id": "kb3",
+   "status": "active",
+   "role": "online logit, 24-dim"
+  },
+  {
+   "id": "kb4",
+   "status": "active",
+   "role": "stack"
+  },
+  {
+   "id": "kb5",
+   "status": "active",
+   "role": "EV price-player (research; most-wrong caller, best EV)"
+  },
+  {
+   "id": "kb6",
+   "status": "retired",
+   "why": "UP-recall 63%, coverage 37%; calib slope 0.33 = confidence is noise",
+   "date": "08-25"
+  },
+  {
+   "id": "kb7",
+   "status": "active",
+   "role": "Chronos-Bolt zero-shot (best AUC, worst optimist)"
+  },
+  {
+   "id": "kb8",
+   "status": "active",
+   "role": "kb7 x market log-pool (best Brier)"
+  },
+  {
+   "id": "kb9",
+   "status": "active",
+   "role": "TimesFM 2.5 zero-shot"
+  },
+  {
+   "id": "kbf",
+   "status": "retired",
+   "why": "best Brier (0.097) but -0.41/$1: forecasts at T-3min where nothing is monetizable",
+   "date": "08-25"
+  },
+  {
+   "id": "t2/t6/t7/t8/t9/t10/t11",
+   "status": "active-logged-only",
+   "role": "RL price arms; never reach a bet - value is MAE/band research",
+   "note": "t10/t11 carry bullish drift bias but trade nothing"
+  }
+ ],
+ "traders": [
+  {
+   "id": "pt Follower",
+   "status": "active",
+   "role": "frozen control"
+  },
+  {
+   "id": "pt2 Ladder",
+   "status": "active",
+   "role": "control twin + banking"
+  },
+  {
+   "id": "pt3 Disciplined",
+   "status": "active",
+   "role": "frozen pre-registered v2 (>=0.77)"
+  },
+  {
+   "id": "pt4 Gambler",
+   "status": "active",
+   "role": "v2.1: 33% at >=0.77 AND edge>=2c at fill",
+   "flag": "sizing decision open (D-gambler-sizing)"
+  },
+  {
+   "id": "pt5 Saver",
+   "status": "active",
+   "role": "10% stakes (cut from 25%), skims 25% of wins"
+  },
+  {
+   "id": "pt6 MLE",
+   "status": "active",
+   "role": "meta-labeling: supervised P(win), edge>=10c, shadow-row learning"
+  },
+  {
+   "id": "pt7 Patient",
+   "status": "active",
+   "role": "naive maker limit - the adverse-selection measuring stick"
+  },
+  {
+   "id": "pt8 Ideal",
+   "status": "active",
+   "role": "composite: regime+edge@fill+maker limit+half-Kelly+25% depth+fill-time recheck"
+  }
+ ],
+ "mitigations": [
+  {
+   "id": "M1",
+   "status": "shadow-on-probation",
+   "note": "hurts all 9 arms prequentially; retirement proposal open"
+  },
+  {
+   "id": "M2",
+   "status": "in-test",
+   "note": "knife-edge veto; re-scoped after fair pricing (+1.3% paired)"
+  },
+  {
+   "id": "M3",
+   "status": "in-test",
+   "note": "Fixed-Share leader"
+  },
+  {
+   "id": "M4'",
+   "status": "shipped",
+   "note": "sigma-conditioned conformal bands live in daemon"
+  },
+  {
+   "id": "M5",
+   "status": "done-gates-passing",
+   "note": "sizing fixes: MLE PASS, Gambler on track, Saver recovering"
+  },
+  {
+   "id": "M6",
+   "status": "dead-folded",
+   "note": "folded into M1 (lean flipped sign per-arm)"
+  },
+  {
+   "id": "M7",
+   "status": "dead",
+   "note": "hour policy - p=0.60, data dredging; dropped not deferred"
+  },
+  {
+   "id": "M8",
+   "status": "in-test",
+   "note": "regime gate - best performer"
+  },
+  {
+   "id": "M9",
+   "status": "in-test",
+   "note": "Underdog cheap bids"
+  },
+  {
+   "id": "M10",
+   "status": "in-test",
+   "note": "execution guard"
+  },
+  {
+   "id": "M11",
+   "status": "in-test",
+   "note": "maker limit; naive form adversely selected (-5.21%)"
+  },
+  {
+   "id": "M12",
+   "status": "in-test",
+   "note": "EV-ranked leader; flat backfill"
+  },
+  {
+   "id": "M-T0",
+   "status": "proposed",
+   "note": "order-flow features -> new arm kb10"
+  }
+ ],
+ "workstreams": [
+  {
+   "id": "W-uiux-story",
+   "status": "next",
+   "note": "UI/UX storytelling wave: layered narrative, animated/comic explainers (task #26)"
+  },
+  {
+   "id": "W-scale",
+   "status": "designed",
+   "note": "PROGRAM.md par.6: namespace -> instrument specs -> shared-nothing loops -> RAG -> plugins"
+  },
+  {
+   "id": "W-watchdog",
+   "status": "proposed",
+   "note": "alert on daemon staleness + SPRT boundary crossings (launch trigger)"
+  },
+  {
+   "id": "W-launch-page",
+   "status": "armed",
+   "note": "auto-generate launch analysis when any |LLR| crosses 5.66/-2.30"
+  },
+  {
+   "id": "W-decision-layer",
+   "status": "active",
+   "note": "TA metrics program: decision layer live (decision_board.json \u2014 CI/P(\u0394>0)/MDE/power/veto/slices/states, 10-min cron). Queued next: post-fill markout + capacity metrics (need new capture), offline\u2192online retention tracker, Brier decomposition + ECE, risk\u2013coverage curves, redundancy/kill board, factorial interaction for combo treatments"
+  }
+ ],
+ "infrastructure": [
+  {
+   "id": "daemon btc_rl.online",
+   "status": "active",
+   "note": "30s loop, hourly gated retrains"
+  },
+  {
+   "id": "cron publisher",
+   "status": "active",
+   "note": "every minute -> gh-pages"
+  },
+  {
+   "id": "cron audit runner",
+   "status": "active",
+   "note": "every 10 min -> audit_report.json"
+  },
+  {
+   "id": "pages",
+   "status": "active",
+   "note": "9 pages, all client-computed from ledgers"
+  }
+ ]
 }

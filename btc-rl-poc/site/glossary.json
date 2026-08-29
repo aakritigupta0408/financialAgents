@@ -680,5 +680,38 @@
     "here": "btc_rl/metrics.py pt_test() (needs ≥ 20 settled predictions); scored per tier-1 arm — the honest version of the 47-53% direction finding. On experiment_review.html.",
     "code": "p_star = py*pa + (1-py)*(1-pa)             # metrics.py pt_test\nreturn (p_hat - p_star) / math.sqrt(v_hat - v_star)",
     "src": null
+  },
+  "mde": {
+    "term": "MDE (minimum detectable effect)",
+    "aliases": ["minimum detectable effect", "MDE"],
+    "what": "The smallest true effect your experiment, at its current sample size, would reliably detect at your chosen significance and power. Anything smaller is invisible to the test — not absent, just invisible.",
+    "coined": "From the sample-size / experiment-design literature that grew out of the Neyman-Pearson framework and Cohen's power-analysis work; the \"MDE\" name itself was popularized by the online A/B-testing industry (the Kohavi lineage of experimentation platforms) — exact first use not verified here.",
+    "intuition": "A telescope has a resolution: stars closer together than that limit look like one star, no matter how real the gap is. MDE is the resolution of your experiment. If your MDE is 12¢ and the effect you care about is 2¢, the test cannot see what you're looking for — running it to the end and reading \"not significant\" would tell you nothing.",
+    "math": "For a one-sided test on a mean with standard error SE: MDE ≈ (z_{1−α} + z_{1−β})·SE. Tighter α (multiple-testing corrections) and higher required power both push the MDE up; only more data (shrinking SE like 1/√n) pulls it down.",
+    "here": "Computed per challenger in scripts/emit_decision_board.py and shown on the Metrics Lab Decision board (tooltip on the Power@2¢ column, and in each card's evidence line on board.html). At n=168 the M8 regime gate's MDE is ~12¢/$1 against a pre-registered 2¢ edge — a fixed-horizon test at family-wise α simply cannot resolve the effect yet, which is why the desk decides with a sequential SPRT instead.",
+    "code": "mde = (z_alpha + z_beta) * se     # scripts/emit_decision_board.py\n# family-wise one-sided alpha, beta from config",
+    "src": "docs/RESEARCH_BASELINE.md 3.x (fixed-horizon vs sequential testing)"
+  },
+  "power": {
+    "term": "Statistical power",
+    "aliases": ["statistical power", "power"],
+    "what": "The probability your test detects an effect of a given size when that effect is really there: power = 1 − β, where β is the miss rate. Low power means a \"not significant\" result is mostly a statement about your sample size, not about the world.",
+    "coined": "Jerzy Neyman & Egon Pearson, 1933 (\"On the problem of the most efficient tests of statistical hypotheses\", Philosophical Transactions of the Royal Society) — the paper that split testing errors into type I (false alarm, α) and type II (miss, β) and made power a first-class design quantity.",
+    "intuition": "A smoke detector's sensitivity. α is how often it screams at burnt toast; power is how often it actually goes off in a real fire. A detector that almost never false-alarms but sleeps through 98% of fires is not cautious, it's useless — and that is precisely a low-powered experiment reading \"no significant difference\".",
+    "math": "For a one-sided test of mean effect δ with standard error SE: power = Φ(δ/SE − z_{1−α}). Power rises with the true effect size, with n (through SE), and with a looser α; multiple-testing corrections that shrink α also drain power.",
+    "here": "The Power@2¢ column of the Decision board (metrics_lab.html, from results/decision_board.json): the chance of detecting the pre-registered 2¢/$1 edge at the current n under the family-wise α. At n=168 it is ~2% — a fixed-horizon test would be theater at this sample size, which is exactly why promotion decisions run through the sequential SPRT (evidence accumulates, no fixed n) instead.",
+    "code": "power = 1 - norm.cdf(z_alpha - edge / se)   # emit_decision_board.py\n# power_at_edge in decision_board.json, per challenger",
+    "src": "Neyman & Pearson 1933: https://royalsocietypublishing.org/doi/10.1098/rsta.1933.0009"
+  },
+  "bootstrap-ci": {
+    "term": "Bootstrap confidence interval",
+    "aliases": ["bootstrap confidence interval", "bootstrap CI", "bootstrap"],
+    "what": "A confidence interval built by resampling your own data with replacement thousands of times and reading the spread of the recomputed statistic — no normality assumption, no formula for the standard error required.",
+    "coined": "Bradley Efron, 1979 (\"Bootstrap methods: another look at the jackknife\", Annals of Statistics). The name is the old \"pull yourself up by your bootstraps\" joke made rigorous: the sample stands in for the population it came from.",
+    "intuition": "You can't rerun history, but you can shuffle it: draw 168 windows from your own 168 with replacement, recompute the mean Δ, repeat 2000 times. The scatter of those 2000 means is an honest picture of how much your estimate wobbles — including the fat tails and jackpot windows a normal approximation smooths over, which is why it sits next to the normal CI here rather than being replaced by it.",
+    "math": "Resample n rows with replacement B times; compute the statistic on each resample; the percentile interval is the 2.5th and 97.5th percentiles of the B values. P(Δ>0) is just the fraction of resamples with a positive mean. Here B = boot_n = 2000, seeded (boot_seed) so every page load reproduces the same interval.",
+    "here": "The 95% CI and P(Δ>0) columns of the Decision board are the bootstrap versions (boot_ci95, p_gt0_boot, p_gt_edge_boot in results/decision_board.json, computed by scripts/emit_decision_board.py); board.html cards show the same interval. The M8 regime gate's [−0.0¢, +12.0¢] straddling zero — while P(Δ>0) reads ~97% — is the bootstrap being honest about a lumpy, right-skewed effect.",
+    "code": "idx = rng.integers(0, n, size=(boot_n, n))  # seeded, emit_decision_board.py\nboots = diffs[idx].mean(axis=1)\nlo, hi = np.percentile(boots, [2.5, 97.5]); p_gt0 = (boots > 0).mean()",
+    "src": "Efron 1979: https://projecteuclid.org/journals/annals-of-statistics/volume-7/issue-1/Bootstrap-Methods-Another-Look-at-the-Jackknife/10.1214/aos/1176344552.full"
   }
 }

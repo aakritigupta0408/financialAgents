@@ -1,0 +1,503 @@
+{
+ "generated_ts": 1787992201,
+ "sections": {
+  "desk": {
+   "n_settled": 304,
+   "per_day": {
+    "08/25": {
+     "n": 46,
+     "win_pct": 76.1,
+     "break_even_pct": 70.7,
+     "edge_pts": 5.4,
+     "pnl_c": 38262.0
+    },
+    "08/26": {
+     "n": 89,
+     "win_pct": 68.5,
+     "break_even_pct": 66.2,
+     "edge_pts": 2.4,
+     "pnl_c": 33100.0
+    },
+    "08/27": {
+     "n": 78,
+     "win_pct": 56.4,
+     "break_even_pct": 69.3,
+     "edge_pts": -12.9,
+     "pnl_c": -140262.0
+    },
+    "08/28": {
+     "n": 86,
+     "win_pct": 70.9,
+     "break_even_pct": 70.4,
+     "edge_pts": 0.6,
+     "pnl_c": -3666.0
+    },
+    "08/29": {
+     "n": 5,
+     "win_pct": 100.0,
+     "break_even_pct": 68.4,
+     "edge_pts": 31.6,
+     "pnl_c": 6945.0
+    }
+   },
+   "ev_per_dollar": -0.0254,
+   "max_drawdown_c": 186219
+  },
+  "traders": {
+   "pt2": {
+    "n_settled": 304,
+    "win_pct": 67.8,
+    "break_even_pct": 68.9,
+    "staked_c": 2582021,
+    "pnl_c": -65621,
+    "ev_per_dollar": -0.0254,
+    "bankroll_c": 30995
+   },
+   "pt3": {
+    "n_settled": 169,
+    "win_pct": 72.2,
+    "break_even_pct": 74.0,
+    "staked_c": 1512450,
+    "pnl_c": -47250,
+    "ev_per_dollar": -0.0312,
+    "bankroll_c": 52750
+   },
+   "pt4": {
+    "n_settled": 40,
+    "win_pct": 75.0,
+    "break_even_pct": 74.7,
+    "staked_c": 13358116,
+    "pnl_c": -489216,
+    "ev_per_dollar": -0.0366,
+    "bankroll_c": 510784
+   },
+   "pt5": {
+    "n_settled": 280,
+    "win_pct": 66.4,
+    "break_even_pct": 68.6,
+    "staked_c": 8655686,
+    "pnl_c": -289986,
+    "ev_per_dollar": -0.0335,
+    "bankroll_c": 5863
+   },
+   "pt6": {
+    "n_settled": 26,
+    "win_pct": 65.4,
+    "break_even_pct": 55.2,
+    "staked_c": 289096,
+    "pnl_c": 42704,
+    "ev_per_dollar": 0.1477,
+    "bankroll_c": 142704
+   },
+   "pt7": {
+    "n_settled": 14,
+    "win_pct": 57.1,
+    "break_even_pct": 49.5,
+    "staked_c": 125087,
+    "pnl_c": 32513,
+    "ev_per_dollar": 0.2599,
+    "bankroll_c": 119294
+   },
+   "pt8": {
+    "n_settled": 8,
+    "win_pct": 25.0,
+    "break_even_pct": 44.4,
+    "staked_c": 52657,
+    "pnl_c": -19557,
+    "ev_per_dollar": -0.3714,
+    "bankroll_c": 80443
+   }
+  },
+  "tier1": {
+   "cal": {
+    "n": 1531,
+    "mse": 47051.9,
+    "bias": -1.55,
+    "band80_cov": 0.752,
+    "pinball": 39.2
+   },
+   "consensus": {
+    "n": 1531,
+    "mse": 36977.5,
+    "bias": 0.07,
+    "band80_cov": 0.768,
+    "pinball": 35.19
+   },
+   "h15": {
+    "n": 1533,
+    "mse": 38979.4,
+    "bias": -2.04,
+    "band80_cov": 0.766,
+    "pinball": 35.97
+   },
+   "rp": {
+    "n": 1533,
+    "mse": 70529.3,
+    "bias": -2.01,
+    "band80_cov": 0.733,
+    "pinball": 46.17
+   },
+   "t10": {
+    "n": 1533,
+    "mse": 41060.2,
+    "bias": 23.97,
+    "band80_cov": 0.766,
+    "pinball": 36.22
+   },
+   "t11": {
+    "n": 1533,
+    "mse": 40798.2,
+    "bias": 36.92,
+    "band80_cov": 0.767,
+    "pinball": 36.08
+   },
+   "t2": {
+    "n": 1533,
+    "mse": 40096.4,
+    "bias": -2.33,
+    "band80_cov": 0.773,
+    "pinball": 36.42
+   },
+   "t6": {
+    "n": 1533,
+    "mse": 48075.1,
+    "bias": -2.29,
+    "band80_cov": 0.737,
+    "pinball": 40.3
+   },
+   "t7": {
+    "n": 1533,
+    "mse": 42114.8,
+    "bias": 10.11,
+    "band80_cov": 0.754,
+    "pinball": 37.34
+   },
+   "t8": {
+    "n": 1533,
+    "mse": 47926.5,
+    "bias": -11.42,
+    "band80_cov": 0.765,
+    "pinball": 38.63
+   },
+   "t9": {
+    "n": 1533,
+    "mse": 45379.1,
+    "bias": -5.43,
+    "band80_cov": 0.783,
+    "pinball": 36.72
+   }
+  },
+  "tier2": {
+   "kb": {
+    "n": 168,
+    "brier": 0.2135,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0396
+   },
+   "kb2": {
+    "n": 168,
+    "brier": 0.2065,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0055
+   },
+   "kb3": {
+    "n": 168,
+    "brier": 0.2166,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0546
+   },
+   "kb4": {
+    "n": 168,
+    "brier": 0.2101,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.023
+   },
+   "kb5": {
+    "n": 167,
+    "brier": 0.1898,
+    "mkt_brier": 0.1882,
+    "bss_vs_market": -0.0087
+   },
+   "kb6": {
+    "n": 168,
+    "brier": 0.2191,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0669
+   },
+   "kb7": {
+    "n": 168,
+    "brier": 0.22,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0714
+   },
+   "kb8": {
+    "n": 168,
+    "brier": 0.2124,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0341
+   },
+   "kb9": {
+    "n": 168,
+    "brier": 0.2143,
+    "mkt_brier": 0.2054,
+    "bss_vs_market": -0.0433
+   },
+   "kbf": {
+    "n": 168,
+    "brier": 0.1013,
+    "mkt_brier": 0.0961,
+    "bss_vs_market": -0.0724
+   }
+  },
+  "treatments": {
+   "treatments": [
+    {
+     "key": "champion",
+     "label": "Champion \u2014 the live desk policy",
+     "rationale": "leader's call at >=0.62 confidence, every biddable window",
+     "n": 168,
+     "bets": 168,
+     "skips": 0,
+     "mean_diff": 0.0,
+     "se": 0.0,
+     "own_ev": -0.02465,
+     "llr": 0.0,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.0,
+     "verdict": "baseline",
+     "promoted_at": null
+    },
+    {
+     "key": "t_regime",
+     "label": "M8 \u00b7 regime gate",
+     "rationale": "stand down when trailing-20 market accuracy < 0.62",
+     "n": 168,
+     "bets": 119,
+     "skips": 49,
+     "mean_diff": 0.05959,
+     "se": 0.03007,
+     "own_ev": 0.04932,
+     "llr": 1.184,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.209,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_knife",
+     "label": "M2 \u00b7 knife-edge veto",
+     "rationale": "stand down when |market - 0.5| < 0.10",
+     "n": 168,
+     "bets": 120,
+     "skips": 48,
+     "mean_diff": 0.00384,
+     "se": 0.03793,
+     "own_ev": -0.02914,
+     "llr": -0.074,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.032,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_cal",
+     "label": "M1 \u00b7 calibrated gate",
+     "rationale": "gate and side taken from p_cal, not raw p_up",
+     "n": 168,
+     "bets": 22,
+     "skips": 146,
+     "mean_diff": 0.01215,
+     "se": 0.06262,
+     "own_ev": -0.09547,
+     "llr": -0.047,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.02,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_cheap",
+     "label": "M9 \u00b7 Underdog (cheap bids only)",
+     "rationale": "only enter at ask <= 51c, where break-even is far below 50%",
+     "n": 168,
+     "bets": 25,
+     "skips": 143,
+     "mean_diff": 0.04872,
+     "se": 0.04815,
+     "own_ev": 0.16171,
+     "llr": 0.178,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.031,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_both",
+     "label": "M2+M8 \u00b7 both vetoes",
+     "rationale": "stand down on knife-edge OR low-predictability regime",
+     "n": 168,
+     "bets": 84,
+     "skips": 84,
+     "mean_diff": 0.02574,
+     "se": 0.04443,
+     "own_ev": 0.00217,
+     "llr": 0.11,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.019,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_fshare",
+     "label": "M3 \u00b7 Fixed-Share leader",
+     "rationale": "leader by multiplicative expert weights, not a 10-bet streak",
+     "n": 168,
+     "bets": 112,
+     "skips": 56,
+     "mean_diff": -0.02241,
+     "se": 0.05129,
+     "own_ev": -0.07059,
+     "llr": -0.258,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.112,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_fs_reg",
+     "label": "M3+M8 \u00b7 Fixed-Share + regime gate",
+     "rationale": "the expert-weighted leader, standing down in bad regimes",
+     "n": 168,
+     "bets": 80,
+     "skips": 88,
+     "mean_diff": -0.00718,
+     "se": 0.05486,
+     "own_ev": -0.06685,
+     "llr": -0.066,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.029,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "champion_real",
+     "label": "Champion at REAL fills (execution baseline)",
+     "rationale": "the desk's actual entries at the ask it actually paid",
+     "n": 168,
+     "bets": 168,
+     "skips": 0,
+     "mean_diff": 0.0,
+     "se": 0.0,
+     "own_ev": -0.07372,
+     "llr": 0.0,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.0,
+     "verdict": "baseline",
+     "promoted_at": null
+    },
+    {
+     "key": "t_exec",
+     "label": "M10 \u00b7 execution guard",
+     "rationale": "decline any fill worse than the quote by >3.0c",
+     "n": 168,
+     "bets": 121,
+     "skips": 47,
+     "mean_diff": 0.0382,
+     "se": 0.02843,
+     "own_ev": -0.04931,
+     "llr": 0.074,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.013,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_exec_reg",
+     "label": "M10+M8 \u00b7 execution guard + regime gate",
+     "rationale": "decline bad fills AND stand down in bad regimes",
+     "n": 168,
+     "bets": 86,
+     "skips": 82,
+     "mean_diff": 0.07619,
+     "se": 0.03722,
+     "own_ev": 0.00483,
+     "llr": 0.591,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.104,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_limit",
+     "label": "M11 \u00b7 maker limit (rest 2c below, fill or skip)",
+     "rationale": "never cross the spread; fill only on price improvement",
+     "n": 168,
+     "bets": 117,
+     "skips": 51,
+     "mean_diff": -0.0368,
+     "se": 0.03341,
+     "own_ev": -0.08824,
+     "llr": -1.092,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.475,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_limit_reg",
+     "label": "M11+M8 \u00b7 maker limit + regime gate",
+     "rationale": "the Ideal trader's execution core, SPRT-verified",
+     "n": 168,
+     "bets": 82,
+     "skips": 86,
+     "mean_diff": 0.04158,
+     "se": 0.04374,
+     "own_ev": 0.03468,
+     "llr": 0.373,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.066,
+     "verdict": "collecting",
+     "promoted_at": null
+    },
+    {
+     "key": "t_evlead",
+     "label": "M12 \u00b7 EV-ranked leader (costs, not win rate)",
+     "rationale": "follow the arm with the best trailing EV/$1 at real costs",
+     "n": 168,
+     "bets": 115,
+     "skips": 53,
+     "mean_diff": -0.0466,
+     "se": 0.05192,
+     "own_ev": -0.10409,
+     "llr": -0.707,
+     "upper": 5.663,
+     "lower": -2.299,
+     "progress": 0.307,
+     "verdict": "collecting",
+     "promoted_at": null
+    }
+   ],
+   "fshare_w": {
+    "kb9": 0.2304,
+    "kb2": 0.1909,
+    "kb4": 0.1886,
+    "kb3": 0.1699,
+    "kb8": 0.1299,
+    "kb7": 0.0903
+   }
+  }
+ }
+}

@@ -43,6 +43,15 @@
 .echip.sig-pos { color: #fff; background: var(--good-text); }
 .echip.sig-neg { color: #fff; background: var(--down); }
 .echip.nsig { color: var(--muted); background: rgba(124,134,149,.15); }
+/* decision-board state chips — same five states as the Metrics Lab */
+.echip.st-promote { color: var(--good-text); background: rgba(43,217,126,.12); }
+.echip.st-keep { color: var(--series-2); background: rgba(57,135,229,.12); }
+.echip.st-hold { color: var(--series-4); background: rgba(143,96,0,.12); }
+.echip.st-kill { color: var(--down); background: rgba(255,93,93,.10); }
+.echip.st-invalid { color: var(--muted); background: transparent;
+  border: 1px solid var(--border); }
+.dstat { font-size: 10.5px; color: var(--muted); margin-top: 4px;
+  font-variant-numeric: tabular-nums; }
 .ci { position: relative; height: 26px; margin: 8px 0 2px; }
 .ci .ax { position: absolute; left: 0; right: 0; top: 13px; height: 1px;
   background: var(--grid); }
@@ -141,12 +150,36 @@ const card = (cls, title, why) =>
   `<div class="kcard ${cls}"><b>${title}</b>` +
   (why ? `<div class="kwhy">${why}</div>` : "") + `</div>`;
 
+/* decision-board join: state chip + evidence stat line per treatment key */
+const DB_CHIP = { PROMOTE: "st-promote", KEEP_TESTING: "st-keep",
+  HOLD: "st-hold", KILL: "st-kill", INVALID: "st-invalid" };
+const cS = v => v == null || !isFinite(v) ? null
+  : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1);
+const pc = v => v == null || !isFinite(v) ? null : (100 * v).toFixed(0) + "%";
+function dbExtras(d) {                  // -> {chip, stat} — "" when unknown
+  if (!d || !d.state || !DB_CHIP[d.state]) return { chip: "", stat: "" };
+  const chip = ` <span class="echip ${DB_CHIP[d.state]}">${
+    d.state.replace(/_/g, " ")}</span>`;
+  const parts = [];
+  if (d.boot_ci95) parts.push(`CI [${cS(d.boot_ci95[0])}, ${
+    cS(d.boot_ci95[1])}]¢`);
+  if (pc(d.p_gt0_boot)) parts.push(`P(Δ>0) ${pc(d.p_gt0_boot)}`);
+  if (pc(d.power_at_edge)) parts.push(`power@2¢ ${pc(d.power_at_edge)}`);
+  if (d.mde != null && isFinite(d.mde))
+    parts.push(`MDE ${(100 * d.mde).toFixed(1)}¢`);
+  return { chip, stat: parts.length
+    ? `<div class="dstat">${parts.join(" · ")}</div>` : "" };
+}
+
 async function poll() {
-  const [board, st, inc] = await Promise.all([
+  const [board, st, inc, db] = await Promise.all([
     J("../results/board.json"),
     J("../results/online_status.json"),
     JL("../results/incidents.jsonl"),
+    J("../results/decision_board.json"),
   ]);
+  const dbMap = new Map(((db && db.treatments) || [])
+    .filter(t => t && t.key && t.state !== "BASELINE").map(t => [t.key, t]));
   const ageS = st ? Date.now() / 1000 - st.alive_at : 1e9;
   document.getElementById("dot").className =
     "live-dot" + (ageS > 300 ? " stale" : "");
@@ -207,8 +240,11 @@ async function poll() {
     const up = t.llr >= 0;
     const bound = up ? t.upper : t.lower;
     const prog = Math.min(100, 100 * t.n / Math.max(1, 40));
+    const ex = dbExtras(dbMap.get(t.key));
     put("test", `<div class="exp"><div class="ehead"><b>${t.label}</b>` +
-      `<span class="echip ${sig}">${chip}</span></div>` +
+      `<span style="display:flex;gap:4px;flex-wrap:wrap;` +
+      `justify-content:flex-end"><span class="echip ${sig}">${
+        chip}</span>${ex.chip}</span></div>` +
       `<div class="ci"><div class="ax"></div><div class="zero"></div>` +
       (se != null
         ? `<div class="band" style="left:${X(lo)}%;width:${
@@ -224,7 +260,7 @@ async function poll() {
       `<div class="emeta"><span>Δ ${m >= 0 ? "+" : ""}${m.toFixed(2)}` +
       `${se != null ? ` [${lo.toFixed(1)}, ${hi.toFixed(1)}]` : ""}` +
       ` pts/$1</span><span>n=${t.n} · LLR ${t.llr.toFixed(2)}/` +
-      `${(bound || 0).toFixed(2)}</span></div>` +
+      `${(bound || 0).toFixed(2)}</span></div>` + ex.stat +
       `<div class="eprog" title="windows toward min sample (40)">` +
       `<i style="width:${prog}%"></i></div></div>`);
   }

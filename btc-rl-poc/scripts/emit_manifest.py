@@ -60,7 +60,7 @@ from btc_rl import metrics as M           # noqa: E402
 OUT_PATH = RESULTS_DIR / "site_manifest.json"
 CONFIG_KEYS = ("TREAT_ALPHA", "TREAT_MAX_CONCURRENT", "TREAT_EDGE",
                "TREAT_MIN_N", "REGIME_LOOKBACK", "REGIME_FLOOR",
-               "KNIFE_BAND")
+               "KNIFE_BAND", "PT_TAU")
 # tails sized so ~20 settled 15-min windows (kb log) / a few hundred
 # scored rows per horizon (prediction log) are always in view
 KB_TAIL_BYTES = 2_000_000

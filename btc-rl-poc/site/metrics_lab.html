@@ -112,6 +112,56 @@ details.grp .gsub { font-size: 12.5px; color: var(--muted); }
 details.grp .gsub b { color: var(--ink); }
 details.grp[open] > summary { border-bottom: 1px solid var(--border); }
 details.grp > section { border: 0; border-radius: 0; box-shadow: none; }
+
+/* ---- decision board ---- */
+.db-strip { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-top: 12px; font-size: 12.5px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; }
+.db-strip .sep { color: var(--faint); }
+.dchip { font-size: 10.5px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; border-radius: 999px; padding: 3px 10px;
+  white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dchip.promote { color: var(--good-text); background: rgba(43,217,126,.12); }
+.dchip.keep { color: var(--series-2); background: rgba(57,135,229,.12); }
+.dchip.hold { color: var(--series-4); background: rgba(143,96,0,.12); }
+.dchip.kill { color: var(--down); background: rgba(255,93,93,.10); }
+.dchip.invalid { color: var(--muted); background: transparent;
+  border: 1px solid var(--border); }
+.dchip.zero { opacity: .45; }
+.db-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block;
+  vertical-align: -1px; margin-right: 6px; }
+.db-dot.green { background: var(--up); }
+.db-dot.red { background: var(--down); }
+#db-table tbody tr.db-row { cursor: pointer; }
+#db-table tbody tr.db-row:hover td { background: var(--surface-2); }
+#db-table td.pos { color: var(--good-text); }
+#db-table td.neg { color: var(--down); }
+#db-table th, #db-table td { padding-right: 9px; }
+#db-table td.db-trunc { max-width: 150px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+#db-table td.db-ws { white-space: nowrap; }
+tr.db-detail td { background: var(--surface-2); font-size: 12.5px; }
+.db-grid { display: grid; gap: 14px 28px; padding: 8px 0 6px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.db-grid .k { font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted); font-weight: 700;
+  margin-bottom: 3px; }
+.db-grid .v { color: var(--ink-2); line-height: 1.5;
+  font-variant-numeric: tabular-nums; }
+table.db-slices { min-width: 0; margin-top: 6px; font-size: 12px; }
+table.db-slices th, table.db-slices td { padding: 3px 12px 3px 0; }
+table.db-slices tr.thin td { color: var(--faint); }
+/* execution waterfall — pure CSS bars */
+.wf-row { display: grid; grid-template-columns: 190px 1fr 80px; gap: 10px;
+  align-items: center; font-size: 12.5px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; margin: 5px 0; }
+.wf-row .track { position: relative; height: 13px; border-radius: 7px;
+  background: var(--grid); overflow: hidden; }
+.wf-row .track .zero { position: absolute; top: -1px; bottom: -1px;
+  width: 1.5px; background: var(--axis); }
+.wf-row .track .fill { position: absolute; top: 0; bottom: 0;
+  border-radius: 2px; }
+.wf-row .num { text-align: right; }
 </style>
 </head>
 <body>
@@ -153,6 +203,30 @@ details.grp > section { border: 0; border-radius: 0; box-shadow: none; }
   </div>
 </section>
 
+<!-- ============ DECISION BOARD ============ -->
+<section id="sec-decision">
+  <div class="eyebrow">should we ship it?</div>
+  <h2>Decision board</h2>
+  <p class="sub muted">Given all the evidence — should treatment X replace
+  the control it is paired against, and how certain are we? One row per live
+  challenger, rendered from <code>results/decision_board.json</code> every
+  poll. Click a row for the full evidence file: jackpot check, completeness,
+  veto decomposition, slices, and the projected road to a verdict.</p>
+  <div class="db-strip" id="db-strip"><span class="muted">loading decision_board.json…</span></div>
+  <div class="scroll"><table id="db-table" style="min-width:1000px">
+    <thead><tr><th>Candidate</th><th>Basis</th><th>State</th>
+    <th class="num">Δ EV/$1</th><th class="num">95% CI</th>
+    <th class="num">P(Δ&gt;0)</th><th class="num">Power@2¢</th>
+    <th class="num">Coverage</th><th class="num">Evidence</th>
+    <th>Worst slice</th><th>Recommendation</th></tr></thead>
+    <tbody><tr><td colspan="11" class="muted">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="db-yard"></p>
+  <h3>Execution waterfall — decision EV → execution gap → realized EV</h3>
+  <div id="db-wf" style="margin-top:8px"><p class="muted small">loading…</p></div>
+  <p class="mini" id="db-wf-cap"></p>
+  <p class="mini" id="db-methods"></p>
+</section>
 
 <!-- ============ WHY THIS ORDER ============ -->
 <details class="grp"><summary><h2>Why this order</h2><span class="gsub">the decision-impact ranking legend</span></summary>
@@ -1106,10 +1180,187 @@ function renderInternals(mi) {
   el.innerHTML = html;
 }
 
+/* ============ decision board — should we ship it? ============ */
+const DB_STATES = [["PROMOTE", "promote"], ["KEEP_TESTING", "keep"],
+  ["HOLD", "hold"], ["KILL", "kill"], ["INVALID", "invalid"]];
+const DB_ORDER = Object.fromEntries(DB_STATES.map(([s], i) => [s, i]));
+const dbOpen = new Set();          // expanded rows survive the 15 s re-render
+let dbWired = false;
+const cts = v => v == null || !isFinite(v) ? "–" : (100 * v).toFixed(1) + "¢";
+const ctsS = v => v == null || !isFinite(v) ? "–"
+  : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
+const pct0 = v => v == null || !isFinite(v) ? "–" : (100 * v).toFixed(0) + "%";
+const fmtD = v => v == null || !isFinite(v) ? "–"
+  : (v < 0 ? "−$" : "$") + Math.abs(v).toFixed(2);
+const dbChip = s => { const m = DB_STATES.find(([k]) => k === s);
+  return '<span class="dchip ' + (m ? m[1] : "invalid") + '">' +
+    esc(String(s || "?").replace(/_/g, " ")) + "</span>"; };
+
+function dbDetail(t, cfg) {
+  const minN = (cfg && cfg.slice_min_n) || 15;
+  const comp = t.completeness || {};
+  const act = comp.activity || {};
+  const veto = t.veto;
+  const slices = (t.slices || []).map(s => {
+    const thin = s.n < minN;
+    return '<tr class="' + (thin ? "thin" : "") + '"><td>' + esc(s.name) +
+      (thin ? ' <span class="small">· underpowered</span>' : "") +
+      '</td><td class="num">' + s.n + '</td><td class="num">' + ctsS(s.mean) +
+      '</td><td class="num">' + cts(s.se) + "</td></tr>";
+  }).join("");
+  return '<div class="db-grid">' +
+    '<div><div class="k">Shape of the effect</div><div class="v">' +
+      "median " + ctsS(t.median) + " vs mean " + ctsS(t.mean) + " /$1<br>" +
+      (t.top3_share != null ? "top-3 windows carry " + pct0(t.top3_share) +
+        " of |Δ| movement — the jackpot check" : "jackpot check: no data") +
+      "<br>sign consistency: " + (t.sign_consistency
+        ? esc(t.sign_consistency) + " slices positive" : "—") + "</div></div>" +
+    '<div><div class="k">Completeness</div><div class="v">' +
+      (comp.evaluable != null ? comp.evaluable + " evaluable windows (" +
+        pct0(comp.pct) + ")" : "–") +
+      "<br>both bet " + (act.both_bet ?? "–") + " · treatment only " +
+      (act.treatment_only_bet ?? "–") + " · control only " +
+      (act.control_only_bet ?? "–") +
+      (act.note ? '<br><span class="muted">' + esc(act.note) + "</span>" : "") +
+      "</div></div>" +
+    (veto ? '<div><div class="k">Veto decomposition</div><div class="v">' +
+      veto.skips_scored + " skipped · control lost on " + veto.losses_avoided +
+      ", won on " + veto.wins_forgone + " · control EV on skipped " +
+      fmtD(veto.control_ev_on_skipped) + " → net veto value " +
+      ctsS(veto.net_veto_per_window) + "/window</div></div>" : "") +
+    '<div><div class="k">Road to a verdict</div><div class="v">' +
+      (t.proj_windows_to_decision != null
+        ? "~" + t.proj_windows_to_decision + " more windows to an SPRT " +
+          "verdict at current drift"
+        : "no drift — no projection") +
+      "<br>SPRT: " + esc(t.sprt_verdict || "–") + " · LLR " + f(t.llr, 2) +
+      " in [" + f(t.lower, 2) + ", " + f(t.upper, 2) + "]" +
+      "<br>own EV/$1 " + ctsS(t.own_ev) + " · powered slices: " +
+      (t.powered_slices ?? "–") + "</div></div>" +
+    '<div style="grid-column:1/-1"><div class="k">Slices (n &lt; ' + minN +
+      ' muted as underpowered)</div>' +
+      '<div class="scroll"><table class="db-slices"><thead><tr><th>Slice</th>' +
+      '<th class="num">n</th><th class="num">Mean Δ</th><th class="num">SE</th>' +
+      "</tr></thead><tbody>" + (slices ||
+        '<tr><td colspan="4" class="muted">no slices</td></tr>') +
+      "</tbody></table></div></div></div>";
+}
+
+function renderDecision(db) {
+  const strip = document.getElementById("db-strip");
+  if (!db || !Array.isArray(db.treatments)) {
+    strip.innerHTML = '<span class="muted">decision_board.json not ' +
+      "available yet — the emitter has not run.</span>";
+    return;
+  }
+  const cfg = db.config || {};
+  const treats = db.treatments;
+  const base = treats.filter(t => t.state === "BASELINE");
+  const cands = treats.filter(t => t.state !== "BASELINE");
+  /* 1 · summary strip: state counts, integrity, best candidate */
+  const counts = (db.summary && db.summary.states) || {};
+  const integ = db.integrity || {};
+  const bestKey = db.summary && db.summary.best_candidate;
+  const bestT = bestKey && treats.find(t => t.key === bestKey);
+  strip.innerHTML =
+    DB_STATES.map(([s, cls]) => { const n = counts[s] || 0;
+      return '<span class="dchip ' + cls + (n ? "" : " zero") + '">' +
+        s.replace(/_/g, " ") + " · " + n + "</span>"; }).join("") +
+    '<span class="sep">·</span><span><span class="db-dot ' +
+      (integ.health === "green" ? "green" : "red") + '"></span>data ' +
+      esc(integ.health || "?") + " · " + (integ.rows ?? "–") + " rows · " +
+      (integ.age_min != null ? integ.age_min.toFixed(1) + " min old" : "age –") +
+      "</span>" +
+    (bestT ? '<span class="sep">·</span><span>best live candidate: <b>' +
+      esc(bestT.label) + "</b></span>" : "");
+  /* 2 · main table — challengers only, decision-ordered */
+  const rows = cands.slice().sort((a, b) =>
+    (DB_ORDER[a.state] ?? 9) - (DB_ORDER[b.state] ?? 9) ||
+    (b.p_gt0_boot ?? -1) - (a.p_gt0_boot ?? -1));
+  document.querySelector("#db-table tbody").innerHTML = rows.map(t => {
+    const ci = t.boot_ci95;
+    const reason = (t.state_reasons && t.state_reasons[0]) || "–";
+    const ws = t.worst_slice;
+    return '<tr class="db-row" data-key="' + esc(t.key) + '"><td><b>' +
+      esc(t.label) + "</b></td><td>" + esc(t.basis || "–") + "</td><td>" +
+      dbChip(t.state) + '</td><td class="num ' +
+      (t.mean >= 0 ? "pos" : "neg") + '">' + ctsS(t.mean) +
+      '</td><td class="num">' + (ci ? "[" + ctsS(ci[0]) + ", " + ctsS(ci[1]) +
+        "]" : "–") +
+      '</td><td class="num">' + pct0(t.p_gt0_boot) +
+      '</td><td class="num" title="MDE at current n: ' + cts(t.mde) + '">' +
+        pct0(t.power_at_edge) +
+      '</td><td class="num">' + pct0(t.coverage) +
+      '</td><td class="num" style="white-space:nowrap">LLR ' + f(t.llr, 2) +
+        " / " + f(t.upper, 2) +
+      '</td><td class="db-ws">' + (ws ? esc(ws.name) + " " + ctsS(ws.mean)
+        : "—") +
+      '</td><td class="db-trunc" title="' +
+        esc(reason).replace(/"/g, "&quot;") + '">' + esc(reason) +
+      "</td></tr>" +
+      '<tr class="db-detail" data-det="' + esc(t.key) + '"' +
+      (dbOpen.has(t.key) ? "" : " hidden") + '><td colspan="11">' +
+      dbDetail(t, cfg) + "</td></tr>";
+  }).join("") ||
+    '<tr><td colspan="11" class="muted">no challengers on the board</td></tr>';
+  if (!dbWired) {
+    dbWired = true;
+    document.querySelector("#db-table tbody").addEventListener("click", ev => {
+      const row = ev.target.closest("tr.db-row");
+      if (!row) return;
+      const k = row.dataset.key;
+      const det = document.querySelector('tr.db-detail[data-det="' +
+        (window.CSS && CSS.escape ? CSS.escape(k) : k) + '"]');
+      if (!det) return;
+      if (dbOpen.has(k)) { dbOpen.delete(k); det.hidden = true; }
+      else { dbOpen.add(k); det.hidden = false; }
+    });
+  }
+  /* baselines footnote — yardsticks computed from data */
+  document.getElementById("db-yard").textContent = base.length
+    ? "yardsticks: " + base.map(b => b.key + " " + ctsS(b.own_ev) +
+        "/$1 (" + (b.basis || "?") + " basis)").join(" · ") +
+      " — each challenger's Δ is measured against its own basis."
+    : "";
+  /* 4 · execution waterfall */
+  const wf = db.execution_waterfall;
+  const wfEl = document.getElementById("db-wf");
+  if (wf && wf.decision_ev_per_1 != null && wf.realized_ev_per_1 != null) {
+    const bars = [
+      ["decision EV", wf.decision_ev_per_1, "var(--series-2)"],
+      ["execution gap", wf.execution_gap_per_1, "var(--down)"],
+      ["realized EV", wf.realized_ev_per_1, "var(--series-2)"],
+    ];
+    const mx = Math.max(...bars.map(b => Math.abs(b[1] ?? 0))) || 1;
+    wfEl.innerHTML = bars.map(([lab, v, col]) => {
+      if (v == null) return "";
+      const w = Math.max(Math.abs(v) / mx * 50, 0.8);
+      const lo = v >= 0 ? 50 : 50 - w;
+      return '<div class="wf-row"><span>' + lab + "</span>" +
+        '<span class="track"><span class="zero" style="left:50%"></span>' +
+        '<span class="fill" style="left:' + lo.toFixed(1) + "%;width:" +
+        w.toFixed(1) + "%;background:" + col + '"></span></span>' +
+        '<span class="num">' + ctsS(v) + "/$1</span></div>";
+    }).join("");
+    document.getElementById("db-wf-cap").textContent =
+      "same " + (wf.windows ?? "–") + " windows, model quote vs real fill — " +
+      "the price of touching the book.";
+  } else {
+    wfEl.innerHTML = '<p class="muted small">no execution waterfall yet</p>';
+    document.getElementById("db-wf-cap").textContent = "";
+  }
+  /* 5 · methods line, quoted from config */
+  document.getElementById("db-methods").textContent =
+    "bootstrap n=" + (cfg.boot_n ?? "–") + " seeded · CI 95% · power/MDE at " +
+    "family-wise α=" + (cfg.alpha ?? "–") + " one-sided · pre-registered " +
+    "edge " + (cfg.edge != null ? (100 * cfg.edge).toFixed(0) + "¢" : "–") +
+    " · decision rules in scripts/emit_decision_board.py";
+}
+
 /* ============ main poll loop — 15 s, cache-busted ============ */
 async function poll() {
   try {
-    const [status, preds, kb, tp, mh, mi, calib, audit, ...trades] =
+    const [status, preds, kb, tp, mh, mi, calib, audit, db, ...trades] =
       await Promise.all([
         jget("../results/online_status.json"),
         jsonl("../results/prediction_log.jsonl"),
@@ -1119,9 +1370,11 @@ async function poll() {
         jget("../results/model_internals.json"),
         jget("../results/kb_calib.json"),
         jget("../results/audit_report.json"),
+        jget("../results/decision_board.json"),
         ...TRADERS.map(([k]) => jsonl("../results/" + k + "_trades.jsonl")),
       ]);
     const tradeMap = Object.fromEntries(TRADERS.map(([k], i) => [k, trades[i]]));
+    renderDecision(db);
     renderPipeline(status);
     renderTier3(tradeMap);
     renderTier2(kb, calib, audit);
