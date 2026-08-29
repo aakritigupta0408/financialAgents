@@ -1,15 +1,16 @@
 {
- "generated_ts": 1788014663,
+ "generated_ts": 1788016053,
  "standard_version": "1.0.0",
  "system": {
-  "level": "R0",
+  "level": "R1",
   "rule": "MIN over all critical planes \u2014 never averaged",
   "weakest_planes": [
+   "execution",
    "security"
   ],
   "qualification_frozen": false,
   "frozen_reason": null,
-  "headline": "REAL-MONEY-EQUIVALENT: R0 \u2014 NOT R8"
+  "headline": "REAL-MONEY-EQUIVALENT: R1 \u2014 NOT R8"
  },
  "strategy": {
   "status": "NO QUALIFIED EDGE",
@@ -17,15 +18,7 @@
   "separation_note": "system readiness and strategy qualification are independent verdicts (\u00a783)"
  },
  "live_execution": "PHYSICALLY LIMITED \u2014 order code targets demo host only; production API is read-only market data",
- "sev0_open": [
-  {
-   "invariant": "production_credentials_detected",
-   "detail": [
-    "/Users/aakritigupta/.kalshi_PRODUCTION_key_KEEP_OR_DELETE.pem"
-   ],
-   "remedy": "owner must delete/relocate the production key file; the system cannot clear this itself"
-  }
- ],
+ "sev0_open": [],
  "planes": {
   "data": {
    "level": "R3",
@@ -124,14 +117,12 @@
    "live_downgrades": []
   },
   "security": {
-   "level": "R0",
+   "level": "R1",
    "assessed": "R1",
    "target": "R8",
    "evidence": "demo-only order code; prod market-data is read-only",
    "blocker": "R2 gap: production credential file exists on owner disk (SEV-0 until removed); no dependency lock/SBOM (\u00a763)",
-   "live_downgrades": [
-    "hard invariant failed (see sev0)"
-   ]
+   "live_downgrades": []
   }
  }
 }
