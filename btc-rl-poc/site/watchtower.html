@@ -12,6 +12,11 @@
 :root { --w-green: var(--good); --w-amber: #8f6000;
   --w-red: var(--down); --w-none: var(--muted); }
 
+/* card tabs (persisted per card in localStorage) */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 2px; }
+.tabpane { margin-top: 12px; }
+[hidden] { display: none !important; }
+
 /* system-health strip */
 .overall { display: flex; align-items: baseline; gap: 14px;
   flex-wrap: wrap; margin: 6px 0 14px; }
@@ -88,31 +93,148 @@ tr.queued td { color: var(--muted); }
   margin-bottom: 2px; }
 .fstep.final { border-color: var(--w-green); color: var(--ink); }
 .farrow { color: var(--faint); font-size: 15px; }
+
+/* decisions + tickets (program.json inbox · board.json books) */
+.kchip { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; border-radius: 6px; padding: 2px 8px;
+  white-space: nowrap; }
+.kchip.retire { color: var(--w-red); background: rgba(209,60,60,.1); }
+.kchip.redesign { color: var(--w-amber); background: rgba(143,96,0,.1); }
+.kchip.arch { color: var(--series-2); background: rgba(57,135,229,.12); }
+.kchip.other { color: var(--w-none); background: rgba(124,134,149,.12); }
+.kchip.ws { color: var(--series-5, var(--series-2));
+  background: rgba(11,125,138,.10); }
+.kchip.mit { color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); }
+.drow { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;
+  padding: 10px 2px; border-bottom: 1px solid var(--grid);
+  align-items: baseline; }
+.drow:last-child { border-bottom: none; }
+.drow .did { font-weight: 650; color: var(--ink); font-size: 13.5px; }
+.drow .dq { grid-column: 2; font-size: 13px; color: var(--ink-2);
+  line-height: 1.55; max-width: 76ch; }
+.drow .dctx { grid-column: 2; font-size: 12px; color: var(--muted);
+  line-height: 1.5; max-width: 76ch; }
+.trow { display: grid; grid-template-columns: auto auto 1fr; gap: 10px;
+  padding: 9px 2px; border-bottom: 1px solid var(--grid);
+  align-items: baseline; }
+.trow:last-child { border-bottom: none; }
+.trow .tid { font-weight: 650; color: var(--ink); font-size: 13px;
+  white-space: nowrap; }
+.trow .tnote { font-size: 12.5px; color: var(--ink-2);
+  line-height: 1.55; }
+.trow .tnote .pill { margin-right: 8px; }
+details.folded { margin-top: 10px; }
+details.folded summary { cursor: pointer; font-size: 12.5px;
+  color: var(--muted); font-weight: 600; }
+details.folded .trow .tnote, details.folded .trow .tid {
+  color: var(--muted); }
+
+/* agents roster (ported from agents.html) */
+.cards { display: grid; gap: 14px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.acard { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 16px 18px; }
+.acard.human { border: 1.5px solid rgba(143,96,0,.55);
+  background: rgba(143,96,0,.05); }
+.acard h3 { font: 500 18px var(--display); color: var(--ink);
+  margin-bottom: 2px; }
+.acard .rolechip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 10px; }
+.acard.human .rolechip { color: var(--series-4);
+  border-color: rgba(143,96,0,.45); }
+.arow { display: grid; grid-template-columns: 84px 1fr; gap: 10px;
+  font-size: 12.5px; line-height: 1.55; margin-top: 9px; }
+.arow .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--faint); padding-top: 2px; }
+.arow .v { color: var(--ink-2); }
+.arow .v.cannot { color: var(--down); }
+.arow .v code { font-size: 11px; }
+.arow .v .age { font-weight: 650; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.stream { max-width: 66rem; margin-top: 14px; }
+.sitem { display: grid; grid-template-columns: 1fr auto; gap: 4px 18px;
+  padding: 11px 2px; border-bottom: 1px solid var(--grid);
+  align-items: baseline; }
+.sitem:last-child { border-bottom: none; }
+.sitem .who { font-size: 13.5px; font-weight: 650; color: var(--ink); }
+.sitem .stime { font-size: 11.5px; color: var(--muted); text-align:
+  right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sitem .sbody { grid-column: 1 / -1; font-size: 13px;
+  color: var(--ink-2); line-height: 1.55; max-width: 74ch; }
+.sitem .sev { grid-column: 1 / -1; font-size: 11px;
+  color: var(--muted); }
+.sitem .sev code { font-size: 10.5px; }
+
+/* backend cadences + bill (ported from clock.html) */
+.cadence { display: flex; flex-direction: column; }
+.crow { display: grid; grid-template-columns: 112px 1fr auto;
+  gap: 6px 18px; align-items: baseline; padding: 14px 2px;
+  border-bottom: 1px solid var(--grid); }
+.crow:last-child { border-bottom: none; }
+.crow.red { background: rgba(209,60,60,.06);
+  border-left: 3px solid var(--down); padding-left: 12px;
+  border-radius: 8px; }
+.cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
+  monospace; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 3px 8px; text-align: center; align-self: start; }
+.cwhat { font-size: 14px; color: var(--ink); font-weight: 600; }
+.cmeta { grid-column: 2; font-size: 12.5px; color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.cmeta code { font-size: 11.5px; color: var(--ink-2); }
+.cdetail { grid-column: 2; font-size: 12px; color: var(--muted);
+  max-width: 62ch; line-height: 1.55; }
+.cright { text-align: right; font-variant-numeric: tabular-nums;
+  font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.owner-chip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px 9px; }
+.age { font-weight: 650; color: var(--ink); }
+.warnline { grid-column: 2; font-size: 12px; color: var(--down);
+  font-weight: 600; }
+.bill td.amt { font-variant-numeric: tabular-nums; }
+.bill .pill { white-space: nowrap; }
+
 @media (max-width: 640px) {
   .plane { grid-template-columns: 14px 60px 1fr; }
   .plane .pwhy { grid-column: 2 / -1; padding-left: 26px; }
+  .crow { grid-template-columns: 1fr; }
+  .cmeta, .cdetail, .warnline { grid-column: 1; }
+  .cright { text-align: left; }
+  .cbadge { justify-self: start; }
+  .sitem { grid-template-columns: 1fr; }
+  .sitem .stime { text-align: left; }
 }
 </style>
 </head>
 <body>
 
 <nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="board.html">Experiments</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="agents.html">Agents</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="watchtower.html">Watchtower</a><span class="spacer"></span><span class="tag">maintenance plane</span></nav>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="board.html">Experiments</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="watchtower.html">Watchtower</a><span class="spacer"></span><span class="tag">the ops room</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
-  <div class="eyebrow">the maintenance plane</div>
+  <div class="eyebrow">the ops room</div>
   <h1>The Watchtower</h1>
-  <p class="sub small">Monitors, invariants, incidents — the machinery
-  that decides whether the science can be trusted. Every light and row
-  below is fetched live from the published JSON (15-second poll);
-  where a monitor does not exist yet, it says so honestly rather than
-  pretending. Nothing on this page is invented.</p>
+  <p class="sub small">The single operations page: health, invariants
+  and incidents; monitors, tickets and decisions; the agent roster,
+  the backend clock and the bill. Every light and row is fetched live
+  from the published JSON (15-second poll); where a monitor does not
+  exist yet, it says so honestly rather than pretending. Nothing on
+  this page is invented.</p>
 </header>
 
+<!-- ============ CARD 1 · SYSTEM HEALTH & SEVS ============ -->
 <section>
-  <h2>System health <span class="pill" id="hl-stamp">…</span></h2>
+  <h2>System health &amp; SEVs
+    <span class="pill" id="hl-stamp">…</span></h2>
   <p class="sub small">Seven planes, one light each, worst light wins.
   Each reason is the actual measurement behind the light.</p>
   <div class="overall"><span class="hdot none" id="ov-dot"></span>
@@ -122,95 +244,206 @@ tr.queued td { color: var(--muted); }
   <p class="mini">Ages quoted from inside a board file (decision
   ledger, world clock) are as-of that file's last emit — the auditor
   re-stamps them every 10 minutes.</p>
-</section>
 
-<section>
-  <h2>The invariant wall <span class="pill" id="inv-count">…</span></h2>
-  <p class="sub small" id="inv-sub">9 machine-checked promises,
-  re-verified every 10 minutes — each one exists because something once
-  broke. The "origin" column is the scar that created the check.</p>
-  <div class="scroll"><table class="wall" id="inv-tbl">
-    <thead><tr><th>status</th><th>invariant</th>
-      <th>origin — the scar that created it</th></tr></thead>
-    <tbody><tr><td colspan="3" class="mini">loading…</td></tr></tbody>
-  </table></div>
-</section>
-
-<section>
-  <h2>Monitors <span class="pill" id="mon-count">…</span></h2>
-  <p class="sub small">Every cadence the system actually runs (from
-  the world clock), plus the monitors the desk knows it still owes —
-  listed as queued, not faked.</p>
-  <div class="scroll"><table id="mon-tbl">
-    <thead><tr><th>status</th><th>monitor</th><th>cadence</th>
-      <th>owner</th><th class="num">last run</th></tr></thead>
-    <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
-  </table></div>
-  <p class="mini" id="thresholds">governing thresholds: loading…</p>
-</section>
-
-<section>
-  <h2>Severity ladder &amp; open incidents</h2>
-  <p class="sub small">The four-level taxonomy adopted in the OS
-  blueprint (§7) — INCIDENTS.md grades on it. Below the ladder, every
-  incident currently on the books, in whatever state it is in; closed
-  or mitigating, it stays visible.</p>
-  <div class="sevgrid">
-    <div class="sevcard s0"><div class="lvl">SEV-0</div>
-      <div class="meaning">results cannot be trusted</div>
-      <div class="trig">leakage; eval sees future data; pairing
-      corrupted; wrong settlement; metric changed mid-experiment;
-      logged policy ≠ running policy; unreproducible result</div></div>
-    <div class="sevcard s1"><div class="lvl">SEV-1</div>
-      <div class="meaning">material performance/risk degradation</div>
-      <div class="trig">maxDD breach; EV collapse beyond threshold;
-      stake-cap breach; execution leak beyond bound</div></div>
-    <div class="sevcard s2"><div class="lvl">SEV-2</div>
-      <div class="meaning">degraded subsystem, safe fallback</div>
-      <div class="trig">stale feed within fallback; repeated retrain
-      failures; drift threshold; coverage collapse; missed monitor
-      run</div></div>
-    <div class="sevcard s3"><div class="lvl">SEV-3</div>
-      <div class="meaning">maintenance, no scientific impact</div>
-      <div class="trig">stale dashboard; publisher failure; delayed
-      non-critical report</div></div>
+  <div class="tabs" id="c1-tabs" role="tablist">
+    <button type="button" class="chip" role="tab" data-tab="wall">🧱
+      Invariant wall <span class="pill" id="inv-count">…</span></button>
+    <button type="button" class="chip" role="tab" data-tab="sevs">🚨
+      SEV ladder &amp; incidents</button>
+    <button type="button" class="chip" role="tab" data-tab="route">🧭
+      Routing</button>
   </div>
-  <div class="scroll"><table id="inc-tbl">
-    <thead><tr><th>severity</th><th>incident</th><th>opened</th>
-      <th>status</th><th>record</th></tr></thead>
-    <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
-  </table></div>
-  <p class="mini" id="inc-note"></p>
+
+  <div class="tabpane" id="pane-wall" hidden>
+    <p class="sub small" id="inv-sub">9 machine-checked promises,
+    re-verified every 10 minutes — each one exists because something
+    once broke. The "origin" column is the scar that created the
+    check.</p>
+    <div class="scroll"><table class="wall" id="inv-tbl">
+      <thead><tr><th>status</th><th>invariant</th>
+        <th>origin — the scar that created it</th></tr></thead>
+      <tbody><tr><td colspan="3" class="mini">loading…</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <div class="tabpane" id="pane-sevs" hidden>
+    <p class="sub small">The four-level taxonomy adopted in the OS
+    blueprint (§7) — INCIDENTS.md grades on it. Below the ladder,
+    every incident currently on the books, in whatever state it is
+    in; closed or mitigating, it stays visible.</p>
+    <div class="sevgrid">
+      <div class="sevcard s0"><div class="lvl">SEV-0</div>
+        <div class="meaning">results cannot be trusted</div>
+        <div class="trig">leakage; eval sees future data; pairing
+        corrupted; wrong settlement; metric changed mid-experiment;
+        logged policy ≠ running policy; unreproducible result</div></div>
+      <div class="sevcard s1"><div class="lvl">SEV-1</div>
+        <div class="meaning">material performance/risk degradation</div>
+        <div class="trig">maxDD breach; EV collapse beyond threshold;
+        stake-cap breach; execution leak beyond bound</div></div>
+      <div class="sevcard s2"><div class="lvl">SEV-2</div>
+        <div class="meaning">degraded subsystem, safe fallback</div>
+        <div class="trig">stale feed within fallback; repeated retrain
+        failures; drift threshold; coverage collapse; missed monitor
+        run</div></div>
+      <div class="sevcard s3"><div class="lvl">SEV-3</div>
+        <div class="meaning">maintenance, no scientific impact</div>
+        <div class="trig">stale dashboard; publisher failure; delayed
+        non-critical report</div></div>
+    </div>
+    <div class="scroll"><table id="inc-tbl">
+      <thead><tr><th>severity</th><th>incident</th><th>opened</th>
+        <th>status</th><th>record</th></tr></thead>
+      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+    </table></div>
+    <p class="mini" id="inc-note"></p>
+  </div>
+
+  <div class="tabpane" id="pane-route" hidden>
+    <p class="sub small">Observability routing: the fixed path a
+    firing monitor takes through the system. No step is skippable,
+    and the last step feeds the invariant wall.</p>
+    <div class="flow">
+      <div class="fstep"><b>1 · detect</b>monitor fires</div>
+      <span class="farrow">→</span>
+      <div class="fstep"><b>2 · route</b>watchdog / auditor</div>
+      <span class="farrow">→</span>
+      <div class="fstep"><b>3 · record</b>incident logged<br>(SEV graded)</div>
+      <span class="farrow">→</span>
+      <div class="fstep"><b>4 · mitigate</b>fix runs as a<br>TREATMENT arm</div>
+      <span class="farrow">→</span>
+      <div class="fstep"><b>5 · verify</b>SPRT verdict</div>
+      <span class="farrow">→</span>
+      <div class="fstep"><b>6 · decide</b>human decision<br>(owner sign-off)</div>
+      <span class="farrow">→</span>
+      <div class="fstep final"><b>7 · close the loop</b>regression test added<br>to the invariant wall</div>
+    </div>
+    <p class="mini">every incident ends as an invariant — the wall
+    tab is this diagram's output.</p>
+  </div>
 </section>
 
+<!-- ======== CARD 2 · MONITORS, TICKETS & DECISIONS ======== -->
 <section>
-  <h2>What happens when a monitor fires</h2>
-  <p class="sub small">Observability routing: the fixed path a firing
-  monitor takes through the system. No step is skippable, and the last
-  step feeds the wall above.</p>
-  <div class="flow">
-    <div class="fstep"><b>1 · detect</b>monitor fires</div>
-    <span class="farrow">→</span>
-    <div class="fstep"><b>2 · route</b>watchdog / auditor</div>
-    <span class="farrow">→</span>
-    <div class="fstep"><b>3 · record</b>incident logged<br>(SEV graded)</div>
-    <span class="farrow">→</span>
-    <div class="fstep"><b>4 · mitigate</b>fix runs as a<br>TREATMENT arm</div>
-    <span class="farrow">→</span>
-    <div class="fstep"><b>5 · verify</b>SPRT verdict</div>
-    <span class="farrow">→</span>
-    <div class="fstep"><b>6 · decide</b>human decision<br>(owner sign-off)</div>
-    <span class="farrow">→</span>
-    <div class="fstep final"><b>7 · close the loop</b>regression test added<br>to the invariant wall</div>
+  <h2>Monitors, tickets &amp; decisions</h2>
+  <p class="sub small">The desk's working memory: every cadence it
+  actually runs, every open ticket, and every question waiting on the
+  human. Sourced from the world clock, <code>board.json</code> and
+  <code>program.json</code> — queued work is listed as queued, not
+  faked.</p>
+
+  <div class="tabs" id="c2-tabs" role="tablist">
+    <button type="button" class="chip" role="tab" data-tab="mon">📡
+      Monitors <span class="pill" id="mon-count">…</span></button>
+    <button type="button" class="chip" role="tab" data-tab="dec">🗳️
+      Decisions <span class="pill" id="dec-count">…</span></button>
+    <button type="button" class="chip" role="tab" data-tab="tix">🎫
+      Tickets <span class="pill" id="tix-count">…</span></button>
   </div>
-  <p class="mini">every incident ends as an invariant — the wall above
-  is this diagram's output.</p>
+
+  <div class="tabpane" id="pane-mon" hidden>
+    <p class="sub small">Every cadence the system actually runs (from
+    the world clock), plus the monitors the desk knows it still owes —
+    listed as queued, not faked.</p>
+    <div class="scroll"><table id="mon-tbl">
+      <thead><tr><th>status</th><th>monitor</th><th>cadence</th>
+        <th>owner</th><th class="num">last run</th></tr></thead>
+      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+    </table></div>
+    <p class="mini" id="thresholds">governing thresholds: loading…</p>
+  </div>
+
+  <div class="tabpane" id="pane-dec" hidden>
+    <p class="sub small">The decision inbox — every question the
+    autonomous layer has queued for the owner (no agent can resolve
+    these), then the board's open decisions that are still
+    unresolved. Resolved decisions leave this tab but stay in
+    <code>board.json</code>.</p>
+    <div id="dec-inbox"><p class="mini">loading program.json…</p></div>
+    <p class="mini" id="dec-note"></p>
+  </div>
+
+  <div class="tabpane" id="pane-tix" hidden>
+    <p class="sub small">The ticket board: workstreams and mitigation
+    arms from <code>board.json</code>, active first. Dead, folded and
+    shipped tickets are collapsed below — kept visible, never
+    deleted.</p>
+    <div id="tix-open"><p class="mini">loading board.json…</p></div>
+    <details class="folded" id="tix-folded" hidden>
+      <summary id="tix-folded-sum">resolved / dead / shipped
+        tickets</summary>
+      <div id="tix-done"></div>
+    </details>
+  </div>
+</section>
+
+<!-- ========= CARD 3 · AGENTS, BACKEND & COST ========= -->
+<section>
+  <h2>Agents, backend &amp; cost</h2>
+  <p class="sub small">Who acts, on what trigger, with what authority
+  — and the one thing none of them can do: <b>change live policy</b>.
+  Every promotion, retirement, or policy change terminates with the
+  human. Behind them, the clock face of everything that runs on a
+  timer, and the bill for all of it.</p>
+
+  <div class="tabs" id="c3-tabs" role="tablist">
+    <button type="button" class="chip" role="tab" data-tab="agents">🤝
+      Agents <span class="pill" id="a-count">…</span></button>
+    <button type="button" class="chip" role="tab" data-tab="backend">🕰️
+      Backend jobs <span class="pill" id="clk-count">…</span></button>
+    <button type="button" class="chip" role="tab" data-tab="costs">🧾
+      Costs <span class="pill" id="bill-total">…</span></button>
+  </div>
+
+  <div class="tabpane" id="pane-agents" hidden>
+    <p class="sub small">The roster is read from
+    <code>world.json</code>, which mirrors PROGRAM.md §3 and
+    DECISIONS.md; if a card and the repo ever disagree, the repo
+    wins. The activity stream below it is stitched client-side from
+    the same ledgers every other page uses — timestamps in both PT
+    and IST, because the owner is in India trading US markets.</p>
+    <div class="cards" id="cards"><p class="mini">loading
+    world.json…</p></div>
+    <h3 style="margin-top:18px">Activity stream
+      <span class="pill" id="s-count">…</span></h3>
+    <div class="stream" id="stream"><p class="mini">merging
+    ledgers…</p></div>
+  </div>
+
+  <div class="tabpane" id="pane-backend" hidden>
+    <p class="sub small">The whole backend as a clock face of
+    cadences — every process that fires on a timer, who owns it, and
+    the artifact that proves it ran. Ages are computed live against
+    your clock, not copied from a log; a row that can't prove itself
+    says so in plain text.</p>
+    <p class="mini" id="clk-gen">loading world.json…</p>
+    <div class="cadence" id="cadence"><p class="mini">reading the
+    clock…</p></div>
+    <p class="mini" id="rt-line">last retrain: loading
+    online_status.json…</p>
+  </div>
+
+  <div class="tabpane" id="pane-costs" hidden>
+    <p class="sub small">Running cost today is <b>$0 in marginal
+    spend</b> — the market data is public or demo-environment, the
+    compute is self-hosted, and the publishing is a free tier. The
+    one line that isn't metered is LLM tokens, and that row says
+    <i>not metered</i> instead of guessing a number.</p>
+    <div class="scroll"><table class="bill" id="bill-tbl">
+      <thead><tr><th>item</th><th class="num">amount</th>
+        <th>basis</th></tr></thead>
+      <tbody><tr><td colspan="3" class="mini">loading
+        world.json…</td></tr></tbody>
+    </table></div>
+  </div>
 </section>
 
 <footer>Watchtower reads only published artifacts:
 <code>invariants.json</code> · <code>world.json</code> ·
+<code>program.json</code> · <code>board.json</code> ·
 <code>decision_board.json</code> · <code>incidents.jsonl</code> ·
-<code>online_status.json</code> · <code>audit_report.json</code> ·
+<code>online_status.json</code> · <code>commentary.jsonl</code> ·
+<code>treatments.jsonl</code> · <code>audit_report.json</code> ·
 <code>site_manifest.json</code>. Re-polled every 15&nbsp;s.</footer>
 </main>
 
@@ -237,6 +470,39 @@ const WORD = { green: "GREEN", amber: "AMBER", red: "RED",
 const light = (st, w) => `<span class="hdot ${st}"></span>` +
   `<span class="stw ${st}">${w || WORD[st]}</span>`;
 
+/* ---- tab machinery: one persisted selection per card ---- */
+function wireTabs(card, fallback) {
+  const bar = el(card + "-tabs");
+  if (!bar) return;
+  const ids = [...bar.querySelectorAll("button[data-tab]")]
+    .map(b => b.dataset.tab);
+  const key = "watchtower." + card;
+  const show = id => {
+    if (!ids.includes(id)) id = fallback;
+    for (const b of bar.querySelectorAll("button[data-tab]")) {
+      const on = b.dataset.tab === id;
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-selected", String(on));
+    }
+    for (const t of ids) {
+      const p = el("pane-" + t);
+      if (p) p.hidden = t !== id;
+    }
+    try { localStorage.setItem(key, id); } catch {}
+  };
+  bar.addEventListener("click", e => {
+    const b = e.target.closest("button[data-tab]");
+    if (b) show(b.dataset.tab);
+  });
+  let saved = null;
+  try { saved = localStorage.getItem(key); } catch {}
+  show(saved || fallback);
+}
+wireTabs("c1", "wall");
+wireTabs("c2", "mon");
+wireTabs("c3", "agents");
+
+/* ================= CARD 1 · HEALTH & SEVS ================= */
 /* PLANE MAPPING (documented per the maintenance brief):
    Data                 <- online_status.alive_at heartbeat age
                            (<5 min green, <15 amber, else red)
@@ -334,6 +600,41 @@ function renderInvariants(inv) {
   }).join("");
 }
 
+function renderIncidents(inc) {
+  const tb = el("inc-tbl").tBodies[0];
+  if (!inc.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="mini">no incident
+      records published</td></tr>`;
+    el("inc-note").textContent = "";
+    return;
+  }
+  tb.innerHTML = inc.map(i => {
+    const s = (i.sev == null) ? "?" : i.sev;
+    const cls = "s" + (s === "?" ? "3" : Math.min(3, Math.max(0, s)));
+    const doc = i.page ? `<a href="${esc(String(i.page)
+        .replace(/^site\//, ""))}">live page</a>`
+      : i.doc ? `<code>${esc(i.doc)}</code>` : "–";
+    return `<tr><td><span class="sevchip ${cls}">SEV-${esc(s)
+      }</span></td>` +
+      `<td><b>${esc(i.title || "untitled")}</b>` +
+      (i.rca ? `<span class="small muted"> — ${esc(i.rca)}</span>`
+        : "") + `</td>` +
+      `<td class="num">${esc(i.opened || "–")}</td>` +
+      `<td><span class="pill ${/closed/i.test(i.status || "")
+        ? "ok" : "pending"}">${esc(i.status || "open")}</span></td>` +
+      `<td>${doc}</td></tr>`;
+  }).join("");
+  const open = inc.filter(i => !/closed/i.test(i.status || ""));
+  el("inc-note").textContent = open.length
+    ? open.length + " of " + inc.length + " incidents not yet " +
+      "closed (" + open.map(i => "SEV-" + i.sev + " " +
+      (i.status || "open")).join(", ") + ") — they stay on this " +
+      "board until the regression test lands on the wall."
+    : "all " + inc.length + " recorded incidents are closed — " +
+      "kept visible here, never hidden.";
+}
+
+/* ============ CARD 2 · MONITORS, TICKETS, DECISIONS ============ */
 const QUEUED = [
   ["Brier drift", "rolling Brier vs the frozen baseline window"],
   ["feature PSI", "population-stability index on the live feature vector"],
@@ -375,56 +676,308 @@ function renderMonitors(wld, man) {
     : "governing thresholds: site manifest not fetched";
 }
 
-function renderIncidents(inc) {
-  const tb = el("inc-tbl").tBodies[0];
-  if (!inc.length) {
-    tb.innerHTML = `<tr><td colspan="5" class="mini">no incident
-      records published</td></tr>`;
-    el("inc-note").textContent = "";
-    return;
+const kindCls = k => /retire/i.test(k) ? "retire"
+  : /redesign/i.test(k) ? "redesign"
+  : /arch/i.test(k) ? "arch" : "other";
+
+function renderDecisions(prog, brd) {
+  const box = el("dec-inbox");
+  const inbox = (prog && Array.isArray(prog.decision_inbox))
+    ? prog.decision_inbox : [];
+  const allOpen = (brd && Array.isArray(brd.open_decisions))
+    ? brd.open_decisions : [];
+  const unresolved = allOpen.filter(d =>
+    !/resolved|closed/i.test(d.status || ""));
+  const resolved = allOpen.length - unresolved.length;
+  const rows = [];
+  for (const d of inbox) {
+    rows.push(`<div class="drow">` +
+      `<span class="kchip ${kindCls(d.kind || "")}">${
+        esc(d.kind || "ASK")}</span>` +
+      `<span class="did">${esc(d.id || "–")}</span>` +
+      `<span class="dq">${esc(d.ask || "–")}</span></div>`);
   }
-  tb.innerHTML = inc.map(i => {
-    const s = (i.sev == null) ? "?" : i.sev;
-    const cls = "s" + (s === "?" ? "3" : Math.min(3, Math.max(0, s)));
-    const doc = i.page ? `<a href="${esc(String(i.page)
-        .replace(/^site\//, ""))}">live page</a>`
-      : i.doc ? `<code>${esc(i.doc)}</code>` : "–";
-    return `<tr><td><span class="sevchip ${cls}">SEV-${esc(s)
-      }</span></td>` +
-      `<td><b>${esc(i.title || "untitled")}</b>` +
-      (i.rca ? `<span class="small muted"> — ${esc(i.rca)}</span>`
-        : "") + `</td>` +
-      `<td class="num">${esc(i.opened || "–")}</td>` +
-      `<td><span class="pill ${/closed/i.test(i.status || "")
-        ? "ok" : "pending"}">${esc(i.status || "open")}</span></td>` +
-      `<td>${doc}</td></tr>`;
-  }).join("");
-  const open = inc.filter(i => !/closed/i.test(i.status || ""));
-  el("inc-note").textContent = open.length
-    ? open.length + " of " + inc.length + " incidents not yet " +
-      "closed (" + open.map(i => "SEV-" + i.sev + " " +
-      (i.status || "open")).join(", ") + ") — they stay on this " +
-      "board until the regression test lands on the wall."
-    : "all " + inc.length + " recorded incidents are closed — " +
-      "kept visible here, never hidden.";
+  for (const d of unresolved) {
+    rows.push(`<div class="drow">` +
+      `<span class="kchip other">OPEN · ${esc(d.owner || "human")
+        }</span>` +
+      `<span class="did">${esc(d.id || "–")}</span>` +
+      `<span class="dq">${esc(d.q || "–")}</span>` +
+      (d.context ? `<span class="dctx">context: ${esc(d.context)
+        }</span>` : "") + `</div>`);
+  }
+  box.innerHTML = rows.join("") ||
+    `<p class="mini">${(prog || brd)
+      ? "decision inbox empty — nothing is waiting on the owner"
+      : "program.json / board.json not fetched"}</p>`;
+  el("dec-count").textContent = (inbox.length + unresolved.length) +
+    " waiting";
+  el("dec-count").className = "pill " +
+    ((inbox.length + unresolved.length) ? "pending" : "ok");
+  el("dec-note").textContent = resolved
+    ? resolved + " earlier open decision" + (resolved === 1 ? "" : "s") +
+      " already resolved by the owner — resolutions stay in " +
+      "board.json, quoted verbatim on the experiment pages."
+    : "";
 }
 
+const DONE_RE = /dead|done|shipped|folded|resolved|retired/i;
+
+function ticketRow(t, chip, chipCls) {
+  return `<div class="trow">` +
+    `<span class="kchip ${chipCls}">${chip}</span>` +
+    `<span class="tid">${esc(t.id || "–")}</span>` +
+    `<span class="tnote"><span class="pill ${
+      DONE_RE.test(t.status || "") ? "miss" : "pending"}">${
+      esc(t.status || "–")}</span>${esc(t.note || "")}</span></div>`;
+}
+
+function renderTickets(brd) {
+  const boxA = el("tix-open"), boxD = el("tix-done");
+  if (!brd) {
+    boxA.innerHTML = `<p class="mini">board.json not fetched</p>`;
+    el("tix-count").textContent = "–";
+    return;
+  }
+  const ws = Array.isArray(brd.workstreams) ? brd.workstreams : [];
+  const mit = Array.isArray(brd.mitigations) ? brd.mitigations : [];
+  const all = ws.map(t => ({ t, chip: "WORKSTREAM", cls: "ws" }))
+    .concat(mit.map(t => ({ t, chip: "MITIGATION", cls: "mit" })));
+  const active = all.filter(x => !DONE_RE.test(x.t.status || ""));
+  const done = all.filter(x => DONE_RE.test(x.t.status || ""));
+  boxA.innerHTML = active.map(x => ticketRow(x.t, x.chip, x.cls))
+    .join("") || `<p class="mini">no active tickets</p>`;
+  const folded = el("tix-folded");
+  if (done.length) {
+    folded.hidden = false;
+    el("tix-folded-sum").textContent = done.length +
+      " resolved / dead / shipped tickets — click to unfold";
+    boxD.innerHTML = done.map(x => ticketRow(x.t, x.chip, x.cls))
+      .join("");
+  } else { folded.hidden = true; }
+  el("tix-count").textContent = active.length + " active · " +
+    done.length + " closed";
+  el("tix-count").className = "pill " +
+    (active.length ? "pending" : "ok");
+}
+
+/* ============= CARD 3 · AGENTS, BACKEND, COST ============= */
+const fmtZone = (ts, tz) => new Intl.DateTimeFormat("en-US",
+  { timeZone: tz, month: "short", day: "numeric",
+    hour: "2-digit", minute: "2-digit" }).format(new Date(ts * 1000));
+const both = ts => ts == null ? "—"
+  : fmtZone(ts, "America/Los_Angeles") + " PT · " +
+    fmtZone(ts, "Asia/Kolkata") + " IST";
+
+function ageText(ts) {
+  if (ts == null) return null;
+  const s = Date.now() / 1000 - ts;
+  if (s < 0) return "just now";
+  if (s < 60) return "<1 min ago";
+  const m = s / 60;
+  if (m < 90) return m.toFixed(m < 10 ? 1 : 0) + " min ago";
+  const h = m / 60;
+  if (h < 48) return h.toFixed(1) + " h ago";
+  return (h / 24).toFixed(1) + " d ago";
+}
+
+function renderCards(w) {
+  if (!w || !Array.isArray(w.agents)) return;
+  el("a-count").textContent = w.agents.length + " agents";
+  el("a-count").className = "pill ok";
+  el("cards").innerHTML = w.agents.map(a => {
+    const human = /human|owner/i.test(a.name || "") ||
+      a.role === "governance";
+    const age = ageText(a.last_ts);
+    return `<div class="acard${human ? " human" : ""}">` +
+      `<h3>${esc(a.name ?? "—")}</h3>` +
+      `<span class="rolechip">${esc(a.role ?? "—")}</span>` +
+      `<div class="arow"><span class="k">trigger</span>` +
+      `<span class="v">${esc(a.trigger ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">authority</span>` +
+      `<span class="v">${esc(a.authority ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">cannot</span>` +
+      `<span class="v cannot">${esc(a.cannot ?? "—")}</span></div>` +
+      `<div class="arow"><span class="k">last seen</span>` +
+      `<span class="v">${age ? `<span class="age">${age}</span>`
+        : "session-based"}</span></div>` +
+      `<div class="arow"><span class="k">evidence</span>` +
+      `<span class="v"><code>${esc(a.evidence ?? "—")}</code>` +
+      `</span></div></div>`;
+  }).join("");
+}
+
+function renderStream(notes, treats, os, db) {
+  const items = [];
+  for (const n of notes) {
+    if (n.ts == null) continue;
+    items.push({ ts: n.ts,
+      who: "🔭 Fable — " + (n.topic || "analyst note"),
+      body: n.text || "", ev: n.evidence || null });
+  }
+  for (const t of treats.slice(-8)) {
+    if (t.close_ts == null) continue;
+    items.push({ ts: t.close_ts,
+      who: "⚖️ Evaluator — settled " + (t.ticker || "window"),
+      body: "leader " + (t.leader ?? "—") + ", outcome " +
+        (t.outcome === 1 ? "ABOVE" : t.outcome === 0 ? "BELOW" : "—") +
+        " the strike; window scored and appended to the treatment" +
+        " ledger.", ev: "treatments.jsonl" });
+  }
+  const rt = os && os.last_retrain;
+  if (rt && rt.arms) {
+    let kept = 0, rev = 0, tot = 0;
+    for (const hs of Object.values(rt.arms))
+      for (const v of Object.values(hs)) {
+        tot++; v && v.reverted ? rev++ : kept++;
+      }
+    const ts = rt.at ? Date.parse(rt.at) / 1000 : null;
+    if (ts) items.push({ ts,
+      who: "🏭 Trainer — kept " + kept + ", reverted " + rev +
+        " of " + tot + " arms",
+      body: "Hourly gated retrain: each candidate scored on the" +
+        " incumbent's holdout; only improvements shipped." +
+        (os.retrains_this_session != null ? " " +
+          os.retrains_this_session + " retrains this session." : ""),
+      ev: "online_status.last_retrain" });
+  }
+  const states = db && db.summary && db.summary.states;
+  if (states && db.generated_ts != null) {
+    items.push({ ts: db.generated_ts,
+      who: "🧪 Experimenter — states: " + Object.entries(states)
+        .map(([k, v]) => v + " " + k).join(", "),
+      body: "Decision board refreshed" +
+        (db.summary.best_candidate ? "; best candidate " +
+          db.summary.best_candidate : "") + ".",
+      ev: "decision_board.json" });
+  }
+  items.sort((a, b) => b.ts - a.ts);
+  el("s-count").textContent = items.length + " events";
+  el("stream").innerHTML = items.map(i =>
+    `<div class="sitem"><span class="who">${esc(i.who)}</span>` +
+    `<span class="stime">${both(i.ts)}</span>` +
+    `<span class="sbody">${esc(i.body)}</span>` +
+    (i.ev ? `<span class="sev">evidence: <code>${esc(i.ev)}` +
+      `</code></span>` : "") + `</div>`).join("") ||
+    `<p class="mini">no events yet</p>`;
+}
+
+let lastWorld = null;
+
+function renderClock() {
+  const w = lastWorld;
+  if (!w || !Array.isArray(w.clock)) return;
+  el("clk-count").textContent = w.clock.length + " cadences";
+  el("clk-count").className = "pill ok";
+  const f = w.facts || {};
+  el("clk-gen").textContent =
+    "snapshot written " + (ageText(w.generated_ts) || "—") +
+    (f.poll_seconds != null ? " · daemon poll " + f.poll_seconds + "s"
+      : "") +
+    (f.retrain_every_s != null ? " · retrain every " +
+      Math.round(f.retrain_every_s / 60) + " min" : "") +
+    (f.windows_scored != null ? " · " + f.windows_scored +
+      " windows scored" : "");
+  el("cadence").innerHTML = w.clock.map(r => {
+    const red = r.health === "red";
+    const age = ageText(r.last_run_ts);
+    const dot = `<span class="hdot ${esc(r.health || "amber")}"></span>`;
+    const cron = r.in_crontab === true ? " · in crontab"
+      : r.in_crontab === false ? " · NOT in crontab" : "";
+    return `<div class="crow${red ? " red" : ""}">` +
+      `<span class="cbadge">${esc(r.every ?? "—")}</span>` +
+      `<span class="cwhat">${esc(r.what ?? "—")}</span>` +
+      `<span class="cright">${dot}${esc(r.health ?? "unknown")}` +
+      ` · <span class="age">${age ?? "—"}</span></span>` +
+      `<span class="cmeta"><span class="owner-chip">` +
+      `${esc(r.owner ?? "—")}</span>` +
+      `<code>${esc(r.source ?? "—")}</code>` +
+      `<span>${cron.slice(3)}</span></span>` +
+      (red ? `<span class="warnline">⚠ this cadence reports` +
+        ` unhealthy — check its source above</span>` : "") +
+      (r.detail ? `<span class="cdetail">${esc(r.detail)}</span>`
+        : "") +
+      `</div>`;
+  }).join("");
+}
+
+function renderRetrainLine(os) {
+  const rt = os && os.last_retrain;
+  const line = el("rt-line");
+  if (!rt || !rt.arms) {
+    line.textContent = "last retrain: not yet reported in " +
+      "online_status.json";
+    return;
+  }
+  let kept = 0, rev = 0;
+  for (const hs of Object.values(rt.arms))
+    for (const v of Object.values(hs)) {
+      if (!v) continue;
+      v.reverted ? rev++ : kept++;
+    }
+  const when = rt.at ? new Date(rt.at) : null;
+  line.innerHTML = "last hourly gated retrain: <b>" + kept +
+    " kept · " + rev + " reverted</b>" +
+    (when ? " · " + esc(when.toLocaleString("en-US",
+      { timeZone: "America/Los_Angeles", month: "short",
+        day: "numeric", hour: "2-digit", minute: "2-digit" })) + " PT"
+      : "") +
+    (os.retrains_this_session != null ? " · " +
+      os.retrains_this_session + " retrains this session" : "") +
+    ` — full dissection on <a href="models.html">the models page</a>.`;
+}
+
+function renderBill() {
+  const w = lastWorld;
+  if (!w || !Array.isArray(w.costs)) return;
+  const metered = w.costs.filter(c => c.amount != null);
+  const total = metered.reduce((a, c) => a + c.amount, 0);
+  el("bill-total").textContent =
+    "$" + total.toFixed(2) + " metered · " +
+    (w.costs.length - metered.length) + " not metered";
+  el("bill-total").className = "pill ok";
+  document.querySelector("#bill-tbl tbody").innerHTML =
+    w.costs.map(c => {
+      const amt = c.amount == null
+        ? `<span class="pill miss">not metered</span>`
+        : `<b>$${c.amount.toFixed(c.amount === 0 ? 0 : 2)}</b>`;
+      return `<tr><td>${esc(c.item ?? "—")}</td>` +
+        `<td class="num amt">${amt}</td>` +
+        `<td class="small muted">${esc(c.basis ?? "—")}</td></tr>`;
+    }).join("");
+}
+
+/* ======================= poll loop ======================= */
 async function poll() {
-  const [inv, wld, dec, onl, aud, man, inc] = await Promise.all([
-    jf("../results/invariants.json"),
-    jf("../results/world.json"),
-    jf("../results/decision_board.json"),
-    jf("../results/online_status.json"),
-    jf("../results/audit_report.json"),
-    jf("../results/site_manifest.json"),
-    jl("../results/incidents.jsonl")]);
+  const [inv, wld, dec, onl, aud, man, inc, prog, brd, notes, treats]
+    = await Promise.all([
+      jf("../results/invariants.json"),
+      jf("../results/world.json"),
+      jf("../results/decision_board.json"),
+      jf("../results/online_status.json"),
+      jf("../results/audit_report.json"),
+      jf("../results/site_manifest.json"),
+      jl("../results/incidents.jsonl"),
+      jf("../results/program.json"),
+      jf("../results/board.json"),
+      jl("../results/commentary.jsonl"),
+      jl("../results/treatments.jsonl")]);
+  if (wld) lastWorld = wld;
   renderHealth(planeRows(onl, aud, dec, wld, inv));
   renderInvariants(inv);
-  renderMonitors(wld, man);
   renderIncidents(inc);
+  renderMonitors(wld, man);
+  renderDecisions(prog, brd);
+  renderTickets(brd);
+  renderCards(wld);
+  renderStream(notes || [], treats || [], onl, dec);
+  renderClock();
+  renderRetrainLine(onl);
+  renderBill();
 }
 poll();
 setInterval(poll, 15000);
+setInterval(renderClock, 10000); // ages tick between polls
 </script>
 <script src="glossary.js" defer></script>
 <script src="nav.js" defer></script>
