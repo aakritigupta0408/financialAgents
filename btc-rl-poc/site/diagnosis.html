@@ -1,0 +1,564 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — Diagnosis</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ---- diagnosis page — theme tokens only ---------------------------- */
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums; }
+
+/* status + misc chips (color never alone — text always carried) */
+.st { display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--border); white-space: nowrap; }
+.st.ok       { color: var(--good-text); background: rgba(12,138,77,.10);
+  border-color: rgba(12,138,77,.35); }
+.st.warn     { color: var(--series-4); background: rgba(143,96,0,.10);
+  border-color: rgba(143,96,0,.35); }
+.st.bad      { color: var(--down); background: rgba(209,60,60,.10);
+  border-color: rgba(209,60,60,.35); }
+.st.critical { color: var(--down); background: rgba(209,60,60,.14);
+  border: 2px solid var(--down); }
+.st.mut      { color: var(--muted); background: rgba(124,134,149,.10); }
+.tchip { font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  padding: 2px 8px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--ink-2); white-space: nowrap; }
+
+.pos { color: var(--good-text); } .neg { color: var(--down); }
+
+/* 1 · pipeline hero */
+.pipe { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap;
+  margin-top: 14px; }
+.pipe .arrow { align-self: center; color: var(--faint); font-size: 20px;
+  flex: 0 0 auto; }
+.tier { flex: 1 1 170px; min-width: 168px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--surface-2); padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 7px; }
+.tier.critical { border: 2px solid var(--down);
+  box-shadow: 0 0 0 3px rgba(209,60,60,.12); }
+.tier .tid { font-size: 10.5px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); }
+.tier .tname { font: 500 16px var(--display); color: var(--ink); }
+.tier .thead { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; font-variant-numeric: tabular-nums;
+  color: var(--ink); line-height: 1.5; overflow-wrap: anywhere; }
+.tier .tjob { font-size: 12px; color: var(--muted); line-height: 1.45; }
+.tier .twhy { font-size: 11.5px; color: var(--ink-2); line-height: 1.5;
+  border-top: 1px solid var(--grid); padding-top: 6px; margin-top: auto; }
+
+/* 2 · blind spots */
+.bs { margin: 10px 0 0 0; padding: 0; list-style: none;
+  counter-reset: bs; display: flex; flex-direction: column; }
+.bs li { counter-increment: bs; display: flex; align-items: baseline;
+  gap: 10px; flex-wrap: wrap; padding: 9px 0;
+  border-bottom: 1px solid var(--grid); font-size: 13.5px; }
+.bs li:last-child { border-bottom: none; }
+.bs li::before { content: counter(bs); font-weight: 700; font-size: 12px;
+  color: var(--faint); font-variant-numeric: tabular-nums;
+  min-width: 16px; text-align: right; }
+.bs .spot { font-weight: 600; color: var(--ink); }
+.bs .ev { font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+  color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+/* 3 · stop / continue / investigate */
+.cols3 { display: grid; grid-template-columns:
+  repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin-top: 12px; }
+.col { border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 14px; background: var(--surface-2); }
+.col h3 { font-size: 11px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; margin-bottom: 8px; }
+.col.stop h3 { color: var(--down); }
+.col.go   h3 { color: var(--good-text); }
+.col.inv  h3 { color: var(--series-4); }
+.col.stop { border-left: 3px solid var(--down); }
+.col.go   { border-left: 3px solid var(--good); }
+.col.inv  { border-left: 3px solid var(--series-4); }
+.col ul { margin: 0; padding: 0; list-style: none; }
+.col li { font-size: 13px; color: var(--ink-2); padding: 5px 0;
+  border-bottom: 1px solid var(--grid); line-height: 1.45; }
+.col li:last-child { border-bottom: none; }
+.col li b { color: var(--ink); }
+
+/* 4 · treatment program */
+.fam { font-size: 11px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); margin: 18px 0 0; }
+.fam:first-of-type { margin-top: 10px; }
+tr.trow { cursor: pointer; }
+tr.trow:hover td { background: var(--surface-2); }
+tr.trow td:first-child { color: var(--ink); font-weight: 700; }
+tr.trow .caret { display: inline-block; color: var(--faint);
+  margin-right: 6px; transition: transform .12s; }
+@media (prefers-reduced-motion: reduce) { tr.trow .caret { transition: none; } }
+tr.trow[aria-expanded="true"] .caret { transform: rotate(90deg); }
+tr.tx td { background: var(--surface-2); padding: 12px 16px;
+  font-size: 13px; color: var(--ink-2); }
+tr.tx .mech { color: var(--ink); }
+tr.tx ul { margin: 6px 0 0 18px; padding: 0; }
+tr.tx li { padding: 2px 0; }
+.lineage { font-family: ui-monospace, Menlo, monospace; font-size: 12px;
+  color: var(--ink-2); margin-top: 8px; }
+.lineage b { color: var(--ink); }
+
+/* 5 · lineage tree */
+.tree { margin-top: 10px; font-size: 13.5px; }
+.tree ul { list-style: none; margin: 0; padding: 0 0 0 18px;
+  border-left: 1px solid var(--border); }
+.tree > ul { border-left: none; padding-left: 0; }
+.tree li { padding: 4px 0 4px 10px; position: relative; }
+.tree ul li::before { content: ""; position: absolute; left: -18px;
+  top: 15px; width: 22px; height: 1px; background: var(--border); }
+.tree .node { display: inline-flex; align-items: baseline; gap: 8px;
+  flex-wrap: wrap; }
+.tree .node b { color: var(--ink); }
+.tree .node .nlab { color: var(--muted); font-size: 12.5px; }
+.tree .champ { font-weight: 700; letter-spacing: .1em; font-size: 12px;
+  text-transform: uppercase; color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 3px 10px;
+  background: var(--surface-2); }
+
+/* 6 · error funnel */
+.funnel { display: flex; flex-direction: column; align-items: center;
+  gap: 0; margin-top: 14px; }
+.fstage { border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); padding: 12px 18px; text-align: center;
+  width: var(--w, 100%); min-width: min(260px, 100%); }
+.fstage .fs-l { font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); }
+.fstage .fs-v { font-size: 24px; font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, Menlo, monospace; margin-top: 3px; }
+.fstage .fs-n { font-size: 11.5px; color: var(--muted); margin-top: 4px;
+  line-height: 1.5; max-width: 46ch; margin-left: auto;
+  margin-right: auto; }
+.fstage.unknown { border: 1.5px dashed var(--faint);
+  background: repeating-linear-gradient(45deg, var(--surface-2) 0 8px,
+    var(--page) 8px 16px); }
+.fdown { color: var(--faint); font-size: 18px; line-height: 1.6;
+  padding: 2px 0; }
+.mtag { font-size: 9.5px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint);
+  font-family: ui-monospace, Menlo, monospace; }
+
+/* 7 · contradictions */
+.contra { display: grid; grid-template-columns:
+  repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; margin-top: 12px; }
+.ccard { border: 1px solid rgba(143,96,0,.35); border-radius: 12px;
+  background: rgba(143,96,0,.05); padding: 13px 15px; }
+.ccard h3 { font-size: 14px; font-weight: 650; color: var(--ink);
+  margin-bottom: 5px; }
+.ccard p { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+.ccard .warnmark { color: var(--series-4); margin-right: 6px; }
+
+/* 8 · experiment debt */
+.debt { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 12px; }
+.debt .stat { min-width: 110px; }
+
+/* 9 · the loop */
+.loop { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 12px; }
+.lstep { display: inline-flex; align-items: baseline; gap: 7px;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface-2); padding: 5px 13px; font-size: 12.5px;
+  color: var(--ink-2); }
+.lstep .n { font-weight: 700; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.loop .arrow { color: var(--faint); font-size: 15px; }
+.loopcap { margin-top: 10px; font-size: 12.5px; color: var(--muted);
+  font-style: italic; }
+
+@media (max-width: 640px) {
+  .pipe .arrow { display: none; }
+  .tier { flex-basis: 100%; min-width: 0; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Play</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live</a><a class="nav" href="board.html">Experiments</a><a class="nav here" href="diagnosis.html">Diagnosis</a><a class="nav" href="metrics_lab.html">Metrics</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="museum.html">Museum</a><span class="spacer"></span><span class="tag">system experimentation</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">system experimentation</div>
+  <h1 id="q">…</h1>
+  <p class="sub">Find the failure. Test the mechanism. Retire quickly.</p>
+  <div class="statusbar" style="margin-top:10px">
+    <span class="live-dot" id="dot"></span>
+    <span class="small muted" id="gen">loading diagnosis…</span>
+  </div>
+</header>
+
+<section>
+  <h2>The pipeline</h2>
+  <p class="sub small">One value forecast becomes one fill. Five tiers,
+  five places to fail — the 15-second read of where the chain leaks.</p>
+  <div class="pipe" id="pipe"><p class="mini">loading tiers…</p></div>
+</section>
+
+<section>
+  <h2>Top blind spots</h2>
+  <p class="sub small">What we know we can't yet see or fix — each with
+  its tier, the evidence, and the queued action.</p>
+  <ol class="bs" id="bs"><li class="mini">loading…</li></ol>
+</section>
+
+<section>
+  <h2>Stop / continue / investigate</h2>
+  <div class="cols3" id="scv"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>Treatment program</h2>
+  <p class="sub small">Every running treatment, grouped by what it tries
+  to repair. Click a row for the mechanism check, retire flags and
+  lineage. Δ is paired mean EV per $1 vs the champion, in cents.</p>
+  <div id="tp"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>Lineage tree</h2>
+  <p class="sub small">How treatments descend from the champion —
+  compounds attach under every parent they inherit from.</p>
+  <div class="tree" id="tree"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>Error funnel</h2>
+  <p class="sub small">Expected value per $1 at each stage from
+  clairvoyant opportunity down to realized fills. Stages we can't yet
+  decompose are labeled UNKNOWN — never estimated.</p>
+  <div class="funnel" id="funnel"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>Contradictions</h2>
+  <p class="sub small">Places where two honest measurements disagree —
+  each one is a metric that is not the behaviour.</p>
+  <div class="contra" id="contra"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>Experiment debt</h2>
+  <div class="debt" id="debt"><p class="mini">loading…</p></div>
+</section>
+
+<section>
+  <h2>The loop</h2>
+  <div class="loop" id="loop"><p class="mini">loading…</p></div>
+  <p class="loopcap">the metric that matters: how fast we eliminate
+  wrong explanations.</p>
+</section>
+
+<footer>
+  Decision board: <a href="metrics_lab.html">Metrics Lab</a> ·
+  <a href="board.html">Project board</a> ·
+  <a href="museum.html">Museum</a> (retired ideas live here) ·
+  <a href="watchtower.html">Watchtower</a>
+</footer>
+</main>
+
+<script>
+"use strict";
+(function () {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  const jf = u => fetch(u + "?t=" + Date.now(), { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+
+  // ---- formatters (null-safe, "—" everywhere) ----------------------
+  const DASH = "—";
+  const cts = (v, dp) => v == null ? DASH
+    : (v >= 0 ? "+" : "-") + Math.abs(v * 100).toFixed(dp == null ? 1 : dp) + "¢";
+  const pct = v => v == null ? DASH : (v * 100).toFixed(1) + "%";
+  const pct0 = v => v == null ? DASH : (v * 100).toFixed(0) + "%";
+  const num = (v, dp) => v == null ? DASH
+    : (v >= 0 ? "+" : "") + v.toFixed(dp == null ? 2 : dp);
+  const sgn = v => v == null ? "" : (v >= 0 ? "pos" : "neg");
+  const ci = a => (a && a.length === 2 && a[0] != null && a[1] != null)
+    ? "[" + (a[0] * 100).toFixed(1) + ", " + (a[1] * 100).toFixed(1) + "]¢"
+    : DASH;
+
+  const stCls = s => {
+    const k = String(s || "").toUpperCase();
+    if (k === "OK" || k === "SUPPORTED" || k === "LOW") return "ok";
+    if (k === "WARN" || k === "MEDIUM" || k === "NOT CONFIRMED")
+      return "warn";
+    if (k === "FAIL" || k === "CONTRADICTED" || k === "HIGH") return "bad";
+    if (k === "CRITICAL") return "critical";
+    return "mut";
+  };
+  const chip = s => s == null ? DASH
+    : '<span class="st ' + stCls(s) + '">' + esc(s) + "</span>";
+  const tierChip = (t, tiers) => {
+    const info = tiers && tiers[t];
+    return '<span class="tchip" title="' +
+      esc(info ? info.name : "") + '">' + esc(t || DASH) + "</span>";
+  };
+
+  const openKeys = new Set();   // expanded treatment rows survive polls
+
+  function fmtBoth(ts) {
+    if (ts == null) return DASH;
+    const d = new Date(ts * 1000);
+    const o = { month: "short", day: "numeric", hour: "2-digit",
+      minute: "2-digit" };
+    const et = d.toLocaleString("en-US",
+      Object.assign({ timeZone: "America/New_York" }, o));
+    const ist = d.toLocaleString("en-US",
+      Object.assign({ timeZone: "Asia/Kolkata" }, o));
+    return et + " ET · " + ist + " IST";
+  }
+
+  // ---- 1 · pipeline ------------------------------------------------
+  function renderPipe(tiers) {
+    const order = ["T1", "T2", "T3", "T4", "T5"];
+    const cards = order.filter(k => tiers && tiers[k]).map(k => {
+      const t = tiers[k];
+      const crit = String(t.status || "").toUpperCase() === "CRITICAL";
+      return '<div class="tier' + (crit ? " critical" : "") +
+        '" title="' + esc(t.why) + '">' +
+        '<div class="tid">' + esc(k) + "</div>" +
+        '<div class="tname">' + esc(t.name || DASH) + "</div>" +
+        "<div>" + chip(t.status) + "</div>" +
+        '<div class="thead">' + esc(t.headline || DASH) + "</div>" +
+        '<div class="tjob">' + esc(t.job || "") + "</div>" +
+        '<div class="twhy">' + esc(t.why || "") + "</div></div>";
+    });
+    $("pipe").innerHTML = cards.length
+      ? cards.join('<span class="arrow" aria-hidden="true">→</span>')
+      : '<p class="mini">' + DASH + "</p>";
+  }
+
+  // ---- 2 · blind spots ---------------------------------------------
+  function renderBlind(spots, tiers) {
+    $("bs").innerHTML = (spots || []).map(b =>
+      "<li><span class=\"spot\">" + esc(b.spot || DASH) + "</span>" +
+      tierChip(b.tier, tiers) +
+      '<span class="ev">' + esc(b.evidence || DASH) + "</span>" +
+      '<span class="st mut">' + esc(b.action || DASH) + "</span></li>"
+    ).join("") || '<li class="mini">' + DASH + "</li>";
+  }
+
+  // ---- 3 · stop / continue / investigate ---------------------------
+  function renderSC(sc, byM) {
+    sc = sc || {};
+    const withLabel = m => {
+      const t = byM[m];
+      const rest = t ? String(t.label || "").replace(/^\s*\S+\s*·\s*/, "")
+        : "";
+      return "<b>" + esc(m) + "</b>" + (rest ? " — " + esc(rest) : "");
+    };
+    const list = (items, f) => "<ul>" + ((items || []).map(x =>
+      "<li>" + f(x) + "</li>").join("") ||
+      '<li class="mini">' + DASH + "</li>") + "</ul>";
+    $("scv").innerHTML =
+      '<div class="col stop"><h3>Stop</h3>' +
+        list(sc.stop, withLabel) + "</div>" +
+      '<div class="col go"><h3>Continue</h3>' +
+        list(sc.continue, withLabel) + "</div>" +
+      '<div class="col inv"><h3>Investigate</h3>' +
+        list(sc.investigate, x => esc(x)) + "</div>";
+  }
+
+  // ---- 4 · treatment program ---------------------------------------
+  const FAMS = ["calibration", "decision-selection", "execution",
+    "compound"];
+  function lineage(t, byKey) {
+    const parents = (t.parents || [])
+      .map(k => byKey[k] ? byKey[k].m : k);
+    const mid = parents.length ? esc(parents.join(" + ")) + " → " : "";
+    return "lineage: <b>CHAMPION</b> → " + mid +
+      "<b>" + esc(t.m || DASH) + "</b>";
+  }
+  function renderTreat(treatments, tiers, byKey) {
+    const groups = FAMS.map(f => {
+      const rows = (treatments || []).filter(t => t.family === f);
+      if (!rows.length) return "";
+      const body = rows.map(t => {
+        const open = openKeys.has(t.key);
+        const short = String(t.label || "")
+          .replace(/^\s*\S+\s*·\s*/, "") || DASH;
+        const mc = t.mechanism_check || {};
+        const flags = (t.retire_flags || []).map(x =>
+          "<li>" + esc(x) + "</li>").join("") ||
+          "<li class=\"mini\">none</li>";
+        return '<tr class="trow" data-key="' + esc(t.key) +
+          '" id="row-' + esc(t.key) + '" tabindex="0" role="button"' +
+          ' aria-expanded="' + open + '">' +
+          '<td><span class="caret">▸</span>' + esc(t.m || DASH) + "</td>" +
+          "<td>" + esc(short) + "</td>" +
+          "<td>" + tierChip(t.tier, tiers) + "</td>" +
+          '<td class="num mono ' + sgn(t.mean) + '">' + cts(t.mean) +
+          "</td>" +
+          '<td class="num mono">' + ci(t.ci95_boot) + "</td>" +
+          '<td class="num mono">' + pct(t.p_gt0) + "</td>" +
+          '<td class="num mono">' + pct0(t.coverage) + "</td>" +
+          '<td class="num mono">' + num(t.llr) + "</td>" +
+          "<td>" + chip(t.retire_pressure) + "</td>" +
+          "<td>" + chip(mc.status) + "</td></tr>" +
+          '<tr class="tx"' + (open ? "" : " hidden") + '><td colspan="10">' +
+          '<div class="mech"><b>Mechanism:</b> ' +
+          esc(t.mechanism || DASH) + "</div>" +
+          (mc.note ? '<div style="margin-top:6px"><b>Check:</b> ' +
+            esc(mc.note) + "</div>" : "") +
+          '<div style="margin-top:6px"><b>Retire flags</b> (n=' +
+          (t.n == null ? DASH : esc(t.n)) + "):</div><ul>" + flags +
+          "</ul>" +
+          '<div class="lineage">' + lineage(t, byKey) + "</div>" +
+          "</td></tr>";
+      }).join("");
+      return '<h3 class="fam">' + esc(f) + '</h3><div class="scroll">' +
+        '<table style="min-width:880px"><thead><tr>' +
+        "<th>M</th><th>treatment</th><th>tier</th>" +
+        '<th class="num">Δ mean</th><th class="num">CI95</th>' +
+        '<th class="num">P(Δ&gt;0)</th><th class="num">cov</th>' +
+        '<th class="num">LLR</th><th>retire pressure</th>' +
+        "<th>mechanism</th></tr></thead><tbody>" + body +
+        "</tbody></table></div>";
+    }).join("");
+    $("tp").innerHTML = groups || '<p class="mini">' + DASH + "</p>";
+  }
+  function toggleRow(tr) {
+    const key = tr.getAttribute("data-key");
+    if (!key) return;
+    const open = !openKeys.has(key);
+    if (open) openKeys.add(key); else openKeys.delete(key);
+    tr.setAttribute("aria-expanded", String(open));
+    const tx = tr.nextElementSibling;
+    if (tx && tx.classList.contains("tx")) tx.hidden = !open;
+  }
+  $("tp").addEventListener("click", e => {
+    const tr = e.target.closest("tr.trow");
+    if (tr) toggleRow(tr);
+  });
+  $("tp").addEventListener("keydown", e => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const tr = e.target.closest("tr.trow");
+    if (tr) { e.preventDefault(); toggleRow(tr); }
+  });
+
+  // ---- 5 · lineage tree --------------------------------------------
+  function renderTree(treatments, byKey) {
+    const roots = (treatments || []).filter(t =>
+      !(t.parents && t.parents.length));
+    const kidsOf = key => (treatments || []).filter(t =>
+      (t.parents || []).indexOf(key) >= 0);
+    const node = t => {
+      const short = String(t.label || "")
+        .replace(/^\s*\S+\s*·\s*/, "");
+      const kids = kidsOf(t.key);
+      return '<li><span class="node"><b>' + esc(t.m || DASH) + "</b>" +
+        '<span class="nlab">' + esc(short) + "</span>" +
+        '<span class="mono ' + sgn(t.mean) + '" style="font-size:12px">' +
+        cts(t.mean) + "</span>" + chip(t.retire_pressure) + "</span>" +
+        (kids.length ? "<ul>" + kids.map(node).join("") + "</ul>" : "") +
+        "</li>";
+    };
+    $("tree").innerHTML = roots.length
+      ? '<ul><li><span class="champ">CHAMPION</span><ul>' +
+        roots.map(node).join("") + "</ul></li></ul>"
+      : '<p class="mini">' + DASH + "</p>";
+  }
+
+  // ---- 6 · error funnel --------------------------------------------
+  function renderFunnel(stages) {
+    stages = stages || [];
+    const n = Math.max(stages.length, 2);
+    const html = stages.map((s, i) => {
+      const w = 100 - i * (48 / (n - 1));
+      const unknown = s.kind === "unknown";
+      const val = unknown
+        ? '<span class="st mut">UNKNOWN</span>'
+        : '<span class="' + sgn(s.ev_per_1) + '">' +
+          cts(s.ev_per_1) + "</span>";
+      return '<div class="fstage' + (unknown ? " unknown" : "") +
+        '" style="--w:' + w.toFixed(0) + '%">' +
+        '<div class="fs-l">' + esc(s.stage || DASH) +
+        (s.kind === "measured"
+          ? ' <span class="mtag">measured</span>' : "") +
+        (s.n != null ? ' <span class="mtag">n=' + esc(s.n) + "</span>"
+          : "") + "</div>" +
+        '<div class="fs-v">' + val + "</div>" +
+        (s.note ? '<div class="fs-n">' + esc(s.note) + "</div>" : "") +
+        "</div>";
+    }).join('<div class="fdown" aria-hidden="true">↓</div>');
+    $("funnel").innerHTML = html || '<p class="mini">' + DASH + "</p>";
+  }
+
+  // ---- 7 · contradictions ------------------------------------------
+  function renderContra(items) {
+    $("contra").innerHTML = (items || []).map(c =>
+      '<div class="ccard"><h3><span class="warnmark">⚠</span>' +
+      esc(c.name || DASH) + "</h3><p>" + esc(c.detail || DASH) +
+      "</p></div>").join("") || '<p class="mini">' + DASH + "</p>";
+  }
+
+  // ---- 8 · experiment debt -----------------------------------------
+  function renderDebt(d) {
+    d = d || {};
+    const cell = (k, v) => '<div class="stat"><div class="k">' + k +
+      '</div><div class="bignum">' + (v == null ? DASH : esc(v)) +
+      "</div></div>";
+    $("debt").innerHTML =
+      cell("running", d.running) +
+      cell("high-information", d.high_information) +
+      cell("retire candidates", d.retire_candidates) +
+      cell("too selective", d.too_selective) +
+      cell("stale", d.stale);
+  }
+
+  // ---- 9 · the loop ------------------------------------------------
+  function renderLoop(steps) {
+    steps = steps || [];
+    $("loop").innerHTML = steps.map((s, i) =>
+      '<span class="lstep"><span class="n">' + (i + 1) + "</span>" +
+      esc(s) + "</span>").join(
+        '<span class="arrow" aria-hidden="true">→</span>') +
+      (steps.length
+        ? '<span class="arrow" title="back to step 1">↺</span>' : DASH);
+  }
+
+  // ---- poll --------------------------------------------------------
+  async function poll() {
+    const d = await jf("../results/diagnosis.json");
+    const dot = $("dot");
+    if (!d) {
+      dot.classList.add("stale");
+      $("gen").textContent = "diagnosis feed unavailable — retrying…";
+      return;
+    }
+    dot.classList.remove("stale");
+    $("q").textContent = d.question || "Where is the system failing?";
+    document.title = "BTC 7PM Oracle — Diagnosis";
+    $("gen").textContent = "diagnosis generated " +
+      fmtBoth(d.generated_ts) + " · refreshes every 15s";
+
+    const byKey = {}, byM = {};
+    (d.treatments || []).forEach(t => {
+      byKey[t.key] = t; byM[t.m] = t;
+    });
+    renderPipe(d.tiers);
+    renderBlind(d.blind_spots, d.tiers);
+    renderSC(d.stop_continue, byM);
+    renderTreat(d.treatments, d.tiers, byKey);
+    renderTree(d.treatments, byKey);
+    renderFunnel(d.error_funnel);
+    renderContra(d.contradictions);
+    renderDebt(d.experiment_debt);
+    renderLoop(d.loop);
+  }
+  poll();
+  setInterval(poll, 15000);
+})();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>
