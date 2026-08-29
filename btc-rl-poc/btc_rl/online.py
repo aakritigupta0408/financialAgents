@@ -387,6 +387,21 @@ PT_MIN_REC = 5                         # min decisions to hold leadership
 PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
 
 
+def _order_fee_c(contracts: int, ask_c: float) -> int:
+    """Kalshi trading fee in cents for an ORDER of `contracts` at ask_c
+    cents: ceil(0.07 * C * P * (1-P)), rounded up ONCE per order.
+
+    BUG FIX 2026-08-28: the desk previously rounded up per CONTRACT
+    (ceil(7*p*(1-p)) then * C) — 2c/contract where the schedule charges
+    ~1.1-1.5c at typical desk asks. Measured: $8,822.62 charged vs
+    $6,467.48 true across the six ledgers — $2,355 of phantom fees that
+    depressed every P&L and tightened pt6's edge gate. Single-contract
+    bets (the kb selector ledgers) were already correct: for C=1 the
+    two roundings coincide, and their frozen thetas stay untouched."""
+    p = ask_c / 100.0
+    return math.ceil(7.0 * contracts * p * (1.0 - p))
+
+
 def _treat_policies():
     """The challenger policies under live test, each a pure function of
     decision-time context. Returning None means "stand down" — a real
@@ -540,7 +555,17 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
                      and t["ticker"] not in seen),
                     key=lambda t: t["close_ts"]):
         wrows = by_tk.get(t["ticker"], [])
-        rows = [r for r in wrows if r.get("variant") == t.get("leader")]
+        # BUG FIX 2026-08-28 (critical): this selection had no
+        # mins_left <= 12 filter, so `row` landed at ~14.5-15.0 min out
+        # — every model-basis policy was priced and GATED off a quote
+        # ~3.81 min before the desk actually traded (149/150 windows).
+        # Under that stale quote the champion published +11.75%/$1
+        # (decision-time truth: -6.5%), the knife-edge veto fired on
+        # 74% of windows instead of 30% with its paired sign flipped,
+        # and the two leading challengers' "edge" was stale-quote
+        # drift. Same envelope rule as dtime/per_arm below.
+        rows = [r for r in wrows if r.get("variant") == t.get("leader")
+                and (r.get("mins_left") or 99) <= 12]
         if not rows:
             continue
         rows.sort(key=lambda r: -r["mins_left"])
@@ -560,10 +585,15 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
         mkt = row["mkt_p_up"]
         ask_yes = 100 * mkt + 2.5
         ask_no = 100 * (1 - mkt) + 2.5
-        cal = kb_calib.get(t.get("leader"))
+        # BUG FIX 2026-08-28 (high): scoring used cal.predict() with the
+        # CURRENT calibrator — which had already trained on this very
+        # window's outcome (each window is ~9% of the sliding fit).
+        # The honest pre-settle value was already stamped on the row as
+        # p_m1; use it, and stand down when it doesn't exist rather
+        # than peek.
         ctx = {
             "row": row, "mkt": mkt,
-            "p_cal": cal.predict(row["p_up"]) if cal else None,
+            "p_cal": row.get("p_m1"),
             "regime_acc": regime_at.get(t["ticker"]),
             "side": t["side"], "ask_c": t["ask_c"],
             "ask_c_yes": ask_yes, "ask_c_no": ask_no,
@@ -604,7 +634,7 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
                 losses[v] = -(math.log(p) if outcome
                               else math.log(1 - p))
             fshare.update(losses)
-        seen.add(t["ticker"])
+        seen[t["ticker"]] = None       # insertion-ordered (dict-as-set)
         out.append({"ticker": t["ticker"], "close_ts": t["close_ts"],
                     "leader": t.get("leader"), "outcome": outcome,
                     "regime_acc": ctx["regime_acc"],
@@ -623,7 +653,14 @@ def _pt_leader(kb_rows: list[dict]) -> tuple[str, int, int] | None:
     for arm in PT_ARMS:
         byw: dict[str, list[dict]] = {}
         for r in kb_rows:
-            if r.get("variant") == arm and r.get("actual") is not None:
+            # BUG FIX 2026-08-28 (high): rank arms ONLY on decisions
+            # inside the desk's tradeable envelope (mins_left <= 12).
+            # Without this filter 68.8% of ranked "decisions" (693 of
+            # 1,007) sat at 12-15 min out, where the desk can never
+            # enter — the leaderboard was scoring a game the desk
+            # doesn't play.
+            if (r.get("variant") == arm and r.get("actual") is not None
+                    and (r.get("mins_left") or 99) <= 12):
                 byw.setdefault(r["ticker"], []).append(r)
         decs = []
         for rows in byw.values():
@@ -721,22 +758,47 @@ def _bandit_reward(pred: float, actual: float, price_now: float,
 
 
 def _band_map(ledger: list[dict]) -> dict:
-    """Rolling 80% conformal band per arm x horizon: 10th/90th percentiles
-    of the last 100 scored residuals (actual - pred). Reporting layer only —
-    it never alters any model's point prediction."""
+    """Rolling 80% conformal band per arm x horizon — VOLATILITY-
+    CONDITIONED (normalized conformal: quantiles are taken over
+    z = residual / sigma_at_commit, then re-scaled by today's sigma at
+    apply time; Papadopoulos et al.'s locally-weighted conformal scores,
+    Lei et al. 2018). Reporting layer only — never alters a prediction.
+
+    BUG FIX 2026-08-28: the old map took raw DOLLAR quantiles of the
+    last 100 residuals, so one band width served every regime. Measured
+    coverage by vol regime: calm 0.827 / normal 0.802 / elevated 0.655
+    / violent 0.518 — the 0.765 aggregate was just the mixture. The
+    sigma-normalized replay repaired the bad buckets (0.518 -> 0.868)
+    but over-narrowed calm (0.890 -> 0.733), hence the floor the apply
+    site puts under sigma_now (0.6 x trailing median sigma).
+
+    Returns {(variant, horizon): (z_lo, z_hi, med_sigma)}."""
     res: dict = {}
     for row in ledger:
-        if row["actual"] is None:
+        if row["actual"] is None or not row.get("sigma"):
             continue
         res.setdefault((row["variant"], row["horizon"]), []).append(
-            row["actual"] - row["pred"])
+            ((row["actual"] - row["pred"]) / row["sigma"], row["sigma"]))
     out = {}
     for k, v in res.items():
-        v = sorted(v[-100:])
+        v = v[-100:]
         if len(v) >= 20:
-            out[k] = (int(v[int(0.1 * len(v))]),
-                      int(v[min(len(v) - 1, int(0.9 * len(v)))]))
+            zs = sorted(z for z, _ in v)
+            sig = sorted(s for _, s in v)
+            out[k] = (zs[int(0.1 * len(zs))],
+                      zs[min(len(zs) - 1, int(0.9 * len(zs)))],
+                      sig[len(sig) // 2])
     return out
+
+
+def _band_offsets(band: tuple, sigma_now: float | None) -> tuple:
+    """Re-scale a (z_lo, z_hi, med_sigma) band to TODAY's volatility.
+    The 0.6x-median floor keeps calm regimes from over-narrowing (the
+    replay's one over-correction); floor/ceil instead of int() so the
+    band is never silently trimmed toward zero on both ends."""
+    zlo, zhi, medsig = band
+    scale = max(sigma_now or medsig, 0.6 * medsig)
+    return math.floor(zlo * scale), math.ceil(zhi * scale)
 
 
 def _pm_view(arms: dict, feat: dict, snap: dict | None,
@@ -1511,8 +1573,15 @@ def _history_snapshot(ledger: list[dict], kb: list[dict],
             banded = [r for r in rows if r.get("in_band") is not None]
             snap_arms[v][f"h{h}"] = {
                 "n": len(rows),
+                # mse is the headline (user-directed 2026-08-28); mae
+                # stays emitted so historical charts don't break —
+                # additive keys, never a silent rename
+                "mse": round(sum(r["abs_err"] ** 2 for r in rows)
+                             / len(rows), 1),
                 "mae": round(sum(r["abs_err"] for r in rows) / len(rows), 2),
                 "rmse": round(M.rmse([r["err"] for r in rows]) or 0, 2),
+                "msse": round(M.msse([r["abs_err"] for r in rows], naive)
+                              or 0, 3) if naive else None,
                 "mase": round(M.mase([r["abs_err"] for r in rows], naive)
                               or 0, 3) if naive else None,
                 "dir": round(sum(
@@ -1554,18 +1623,19 @@ def _history_snapshot(ledger: list[dict], kb: list[dict],
 
 
 def _winner_variant(ledger: list[dict], horizon: int) -> str | None:
-    """The arm with the best trailing MAE at this horizon (last CAL_TRAIL
-    scored rows, min 20) — the model the calibrated meta-arm shadows."""
+    """The arm with the best trailing MSE at this horizon (last CAL_TRAIL
+    scored rows, min 20) — the model the calibrated meta-arm shadows.
+    2026-08-28: ranking metric MAE -> MSE (user-directed, stamped)."""
     errs: dict[str, list[float]] = {}
     for row in ledger:
         if (row["actual"] is None or row["horizon"] != horizon
                 or row["variant"].startswith(("consensus", "cal-"))
                 or row["variant"] not in VARIANTS):  # retired arms' fossil
             continue                                 # rows can't win
-        errs.setdefault(row["variant"], []).append(row["abs_err"])
-    mae = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
+        errs.setdefault(row["variant"], []).append(row["abs_err"] ** 2)
+    mse = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
            for v, e in errs.items() if len(e) >= 20}
-    return min(mae, key=mae.get) if mae else None
+    return min(mse, key=mse.get) if mse else None
 
 
 def _calibration_adj(residuals: list[float]) -> int | None:
@@ -1818,17 +1888,20 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             if band:
                 # conformal floor: native distributions ran overconfident
                 # (52-67% live coverage) — never publish a band tighter
-                # than the arm's own residual history supports
-                nlo = min(nlo, pred + band[0])
-                nhi = max(nhi, pred + band[1])
+                # than the arm's own residual history supports. Offsets
+                # are sigma-conditioned (fix 2026-08-28).
+                blo, bhi = _band_offsets(band, sig)
+                nlo = min(nlo, pred + blo)
+                nhi = max(nhi, pred + bhi)
             row_extra["lo"], row_extra["hi"] = _cap_band(
                 pred, nlo, nhi, horizon, sig)
             row_extra["band_src"] = "native+floor" if band else "native"
         else:
             band = (bands or {}).get((variant, horizon))
             if band:
+                blo, bhi = _band_offsets(band, row_extra["sigma"])
                 row_extra["lo"], row_extra["hi"] = _cap_band(
-                    pred, pred + band[0], pred + band[1], horizon,
+                    pred, pred + blo, pred + bhi, horizon,
                     row_extra["sigma"])
         rows.append({
             "variant": variant,
@@ -1842,22 +1915,25 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     return rows
 
 
-def _greedy_mae(agent: TabularQAgent, episodes: list) -> float:
-    errs = [abs(e.price_now + agent.delta_for(
+def _greedy_mse(agent: TabularQAgent, episodes: list) -> float:
+    # 2026-08-28: retrain gate metric switched MAE -> MSE (user-directed).
+    # Caveat stated once: MSE is outlier-sensitive, so in a fat-tailed
+    # tape a single violent window weighs quadratically in accept/reject.
+    errs = [(e.price_now + agent.delta_for(
         agent.act(e.state, e.price_now, explore=False)) - e.price_future)
         for e in episodes]
-    return sum(errs) / len(errs) if errs else 0.0
+    return sum(x * x for x in errs) / len(errs) if errs else 0.0
 
 
-def _bandit_val_mae(agent: LinUCBAgent, spec: dict, episodes: list,
+def _bandit_val_mse(agent: LinUCBAgent, spec: dict, episodes: list,
                     snaps: list[dict]) -> float:
     errs = []
     for e in episodes:
         x = _context(spec, e.features, _nearest_snap(snaps, e.minute_ts))
         a = agent.select(x, greedy=True)
         d = _vol_delta(_k_of(agent, a), e.features, e.horizon_min)
-        errs.append(abs(e.price_now + d - e.price_future))
-    return sum(errs) / len(errs) if errs else 0.0
+        errs.append(e.price_now + d - e.price_future)
+    return sum(x * x for x in errs) / len(errs) if errs else 0.0
 
 
 def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
@@ -1894,7 +1970,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 else:
                     before = ([a.copy() for a in agent.A],
                               [b.copy() for b in agent.b], list(agent.pulls))
-                before_mae = _bandit_val_mae(agent, spec, veps, snaps)
+                before_mse = _bandit_val_mse(agent, spec, veps, snaps)
                 for e in eps:
                     x = _context(spec, e.features,
                                  _nearest_snap(snaps, e.minute_ts))
@@ -1907,17 +1983,25 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                     agent.update(x, a, _bandit_reward(
                         e.price_now + d, e.price_future, e.price_now, d,
                         band=_hit_band(_horizon_sigma(e.features, h))))
-                after_mae = _bandit_val_mae(agent, spec, veps, snaps)
-                reverted = after_mae > before_mae
+                after_mse = _bandit_val_mse(agent, spec, veps, snaps)
+                reverted = after_mse > before_mse
                 if reverted:
                     if isinstance(agent, DistDQNAgent):
                         agent.net.load_state_dict(before)
+                        # BUG FIX 2026-08-28: rebuild the optimizer on
+                        # revert. load_state_dict copies weights in
+                        # place, so Adam's momentum from the REJECTED
+                        # replay survived and immediately re-walked the
+                        # restored weights on the next online update.
+                        agent.opt = agent.torch.optim.Adam(
+                            agent.net.parameters(),
+                            lr=agent.opt.param_groups[0]["lr"])
                     elif isinstance(agent, LinearQAgent):
                         agent.w, agent.pulls = before
                     else:
                         agent.A, agent.b, agent.pulls = before
-                gate[f"h{h}"] = {"val_mae_before": round(before_mae, 2),
-                                 "val_mae_after": round(after_mae, 2),
+                gate[f"h{h}"] = {"val_mse_before": round(before_mse, 2),
+                                 "val_mse_after": round(after_mse, 2),
                                  "reverted": reverted}
             _checkpoint(variant, agents)
             info["arms"][variant] = gate
@@ -1926,7 +2010,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
         eps = [e for e in train_eps if e.horizon_min in horizons]
         before = {h: {s: list(qs) for s, qs in agents[h].q.items()}
                   for h in horizons}
-        before_mae = {h: _greedy_mae(agents[h],
+        before_mse = {h: _greedy_mse(agents[h],
                                      [e for e in val_eps if e.horizon_min == h])
                       for h in horizons}
         rng = random.Random(int(now.timestamp()) // RETRAIN_EVERY)
@@ -1941,14 +2025,14 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                     band=_hit_band(_horizon_sigma(e.features, e.horizon_min))))
         gate = {}
         for h in horizons:
-            after_mae = _greedy_mae(agents[h],
+            after_mse = _greedy_mse(agents[h],
                                     [e for e in val_eps if e.horizon_min == h])
-            reverted = after_mae > before_mae[h]
+            reverted = after_mse > before_mse[h]
             if reverted:  # chased noise — roll this horizon back
                 agents[h].q.clear()
                 agents[h].q.update(before[h])
-            gate[f"h{h}"] = {"val_mae_before": round(before_mae[h], 2),
-                             "val_mae_after": round(after_mae, 2),
+            gate[f"h{h}"] = {"val_mse_before": round(before_mse[h], 2),
+                             "val_mse_after": round(after_mse, 2),
                              "reverted": reverted}
         _checkpoint(variant, agents)
         info["arms"][variant] = gate
@@ -2063,26 +2147,48 @@ def run(once: bool = False) -> None:
                             if _v in _cd else PlattCalibrator())
         except Exception:
             kb_calib[_v] = PlattCalibrator()
+    # BUG FIX 2026-08-28: the calibrator used to train on EVERY settled
+    # per-minute row (~14 per window sharing one outcome), so its
+    # "150-window" sliding memory was really ~11 windows and warm-up
+    # ended after ~2. Train once per (arm, window), on the decision row
+    # (first settled row inside the <=12-min envelope). In-memory set:
+    # settled rows are skipped on restart, so no double counting.
+    calib_seen: set = set()
     # champion/challenger registry, restored across restarts
     treats: dict = {}
     for _k, _lab, _fn, _why in _treat_policies():
         treats[_k] = treatments.Treatment(
             _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
             baseline=_k in ("champion", "champion_real"))
-    treat_seen: set = set()
+    # dict-as-ordered-set: BUG FIX 2026-08-28 — the trim used to be
+    # sorted(...)[-4000:], which is LEXICOGRAPHIC over tickers like
+    # KXBTC15M-26AUG262330-30 (AUG < DEC < FEB < JAN...), so past 4,000
+    # windows an arbitrary alphabetical tail survived and dropped
+    # tickers re-scored on restart. Insertion order = settle order.
+    treat_seen: dict = {}
     fshare = treatments.FixedShare(PT_ARMS)
+    # BUG FIX 2026-08-28: seen/fshare are restored BEFORE the treats,
+    # and a failure resets the treats too. The old ordering could leave
+    # restored SPRT counters beside an EMPTIED seen-set, so the whole
+    # settled history re-scored on top of the restored evidence —
+    # doubling n and LLR: the false-auto-promotion mechanism again.
     try:
         _tp = RESULTS_DIR / TREAT_STATE_NAME
         _td = json.loads(_tp.read_text()) if _tp.exists() else {}
-        for _k, _st in (_td.get("treats") or {}).items():
-            if _k in treats:
-                treats[_k].load(_st)
-        treat_seen = set(_td.get("seen") or [])
+        treat_seen = dict.fromkeys(_td.get("seen") or [])
         if _td.get("fshare"):
             fshare = treatments.FixedShare.from_dict(_td["fshare"],
                                                      PT_ARMS)
+        for _k, _st in (_td.get("treats") or {}).items():
+            if _k in treats:
+                treats[_k].load(_st)
     except Exception:
-        treat_seen = set()
+        treat_seen = {}
+        fshare = treatments.FixedShare(PT_ARMS)
+        for _k, _lab, _fn, _why in _treat_policies():
+            treats[_k] = treatments.Treatment(
+                _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+                baseline=_k in ("champion", "champion_real"))
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -2387,9 +2493,10 @@ def run(once: bool = False) -> None:
                 }
                 cband = bands.get((ch, hz))
                 if cband:
+                    clo, chi = _band_offsets(cband, crow.get("sigma"))
                     crow["lo"], crow["hi"] = _cap_band(
-                        crow["pred"], crow["pred"] + cband[0],
-                        crow["pred"] + cband[1], hz, crow.get("sigma"))
+                        crow["pred"], crow["pred"] + clo,
+                        crow["pred"] + chi, hz, crow.get("sigma"))
                 ledger.append(crow)
                 new_preds += 1
 
@@ -2431,9 +2538,11 @@ def run(once: bool = False) -> None:
                     }
                     cband = bands.get((cal_v, cal_h))
                     if cband:
+                        clo, chi = _band_offsets(cband,
+                                                 crow.get("sigma"))
                         crow["lo"], crow["hi"] = _cap_band(
-                            crow["pred"], crow["pred"] + cband[0],
-                            crow["pred"] + cband[1], cal_h,
+                            crow["pred"], crow["pred"] + clo,
+                            crow["pred"] + chi, cal_h,
                             crow.get("sigma"))
                     ledger.append(crow)
                     new_preds += 1
@@ -2662,8 +2771,24 @@ def run(once: bool = False) -> None:
                     # risks at most 10% of funds, buys at the real ask
                     # with Kalshi fees, one entry per window. Purely
                     # observational research — nothing is purchased.
+                    # BUG FIX 2026-08-28 (critical): this guard used to
+                    # check only pt/pt2, but the entry logic for traders
+                    # 3-6 lives INSIDE the block — once pt1+pt2 entered
+                    # (same minute, same 0.62 gate), everyone else was
+                    # locked out of the window. Measured: 0 of 126
+                    # Gambler and 0 of 250 Saver entries ever differed
+                    # from pt1's minute, so the >=0.77 gates were a
+                    # filter on pt1's minute, not their own timing, and
+                    # a trader blocked by depth/bankroll never got a
+                    # second chance. Now: enter whenever ANY trader
+                    # still lacks this window; each trader's own
+                    # ticker-check and gate below are unchanged.
                     if ((pm_mkt["ticker"] not in pt_tickers
-                            or pm_mkt["ticker"] not in pt2_tickers)
+                            or pm_mkt["ticker"] not in pt2_tickers
+                            or pm_mkt["ticker"] not in pt3_tickers
+                            or pm_mkt["ticker"] not in pt4_tickers
+                            or pm_mkt["ticker"] not in pt5_tickers
+                            or pm_mkt["ticker"] not in pt6_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -2679,8 +2804,11 @@ def run(once: bool = False) -> None:
                                 syp = ptr["p_up"] >= 0.5
                                 askp = (pm_mkt["yes_ask"] if syp
                                         else 100 - pm_mkt["yes_bid"])
-                                feep = math.ceil(
-                                    7 * (askp / 100) * (1 - askp / 100))
+                                # exact per-contract fee (float) for
+                                # sizing/EV math; stakes below charge
+                                # the true per-ORDER fee via
+                                # _order_fee_c (bug fix 2026-08-28)
+                                feep = 7 * (askp / 100) * (1 - askp / 100)
                                 if 5 <= askp < 80:
                                     # ONE depth ceiling for the whole
                                     # desk: live near-touch book on the
@@ -2715,7 +2843,8 @@ def run(once: bool = False) -> None:
                                                        dcap)
                                                    // (askp + feep))
                                         if ncon >= 1:
-                                            stake = int(ncon * (askp + feep))
+                                            stake = int(ncon * askp) \
+                                                + _order_fee_c(ncon, askp)
                                             pt_bankroll_c -= stake
                                             pt_trades.append({
                                                 **base_row,
@@ -2730,7 +2859,8 @@ def run(once: bool = False) -> None:
                                                       dcap)
                                                   // (askp + feep))
                                         if nc2 >= 1:
-                                            st2 = int(nc2 * (askp + feep))
+                                            st2 = int(nc2 * askp) \
+                                                + _order_fee_c(nc2, askp)
                                             pt2_bankroll_c -= st2
                                             pt2_trades.append({
                                                 **base_row,
@@ -2752,7 +2882,8 @@ def run(once: bool = False) -> None:
                                                       dcap)
                                                   // (askp + feep))
                                         if nc3 >= 1:
-                                            st3 = int(nc3 * (askp + feep))
+                                            st3 = int(nc3 * askp) \
+                                                + _order_fee_c(nc3, askp)
                                             pt3_bankroll_c -= st3
                                             pt3_trades.append({
                                                 **base_row,
@@ -2778,7 +2909,8 @@ def run(once: bool = False) -> None:
                                                      dcap)
                                         nc4 = int(st4cap // (askp + feep))
                                         if nc4 >= 1:
-                                            st4 = int(nc4 * (askp + feep))
+                                            st4 = int(nc4 * askp) \
+                                                + _order_fee_c(nc4, askp)
                                             pt4_bankroll_c -= st4
                                             pt4_trades.append({
                                                 **base_row,
@@ -2797,7 +2929,8 @@ def run(once: bool = False) -> None:
                                                      dcap)
                                         nc5 = int(st5cap // (askp + feep))
                                         if nc5 >= 1:
-                                            st5 = int(nc5 * (askp + feep))
+                                            st5 = int(nc5 * askp) \
+                                                + _order_fee_c(nc5, askp)
                                             pt5_bankroll_c -= st5
                                             pt5_trades.append({
                                                 **base_row,
@@ -2827,8 +2960,9 @@ def run(once: bool = False) -> None:
                                                       * pt6_bankroll_c), dcap)
                                             nc6 = int(cap // (askp + feep))
                                             if nc6 >= 1:
-                                                st6 = int(nc6
-                                                          * (askp + feep))
+                                                st6 = (int(nc6 * askp)
+                                                       + _order_fee_c(
+                                                           nc6, askp))
                                                 pt6_bankroll_c -= st6
                                                 pt6_trades.append({
                                                     **base_row,
@@ -2883,8 +3017,9 @@ def run(once: bool = False) -> None:
                             sy3 = k7r["p_up"] >= 0.5
                             ask3 = (pm_mkt["yes_ask"] if sy3
                                     else 100 - pm_mkt["yes_bid"])
-                            fee3 = math.ceil(
-                                7 * (ask3 / 100) * (1 - ask3 / 100))
+                            # exact per-contract for sizing; order fee
+                            # charged once at stake (fix 2026-08-28)
+                            fee3 = 7 * (ask3 / 100) * (1 - ask3 / 100)
                             if 5 <= ask3 < 80:
                                 d3 = (pm_mkt.get("depth_no") if sy3
                                       else pm_mkt.get("depth_yes"))
@@ -2967,8 +3102,13 @@ def run(once: bool = False) -> None:
                 # M1 shadow: train this arm's calibrator on the outcome.
                 # Prequential — predict() was already stamped at write
                 # time, so the score recorded inside update() is honest.
-                _cal = kb_calib.get(r.get("variant") or "kb")
-                if _cal is not None:
+                # Once per (arm, window), decision row only (fix above).
+                _cv = r.get("variant") or "kb"
+                _cal = kb_calib.get(_cv)
+                if (_cal is not None
+                        and (r.get("mins_left") or 99) <= 12
+                        and (_cv, r["ticker"]) not in calib_seen):
+                    calib_seen.add((_cv, r["ticker"]))
                     _cal.update(r["p_up"], outcome)
                     calib_changed = True
                 kb_changed = True
@@ -3018,7 +3158,7 @@ def run(once: bool = False) -> None:
                         "treats": {k: t.to_dict()
                                    for k, t in treats.items()},
                         "fshare": fshare.to_dict(),
-                        "seen": sorted(treat_seen)[-4000:]}))
+                        "seen": list(treat_seen)[-4000:]}))
                     tmpt.replace(RESULTS_DIR / TREAT_STATE_NAME)
             except Exception as e:
                 print("treatment eval:", str(e)[:120], flush=True)

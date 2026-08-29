@@ -398,8 +398,9 @@ details[open] > summary { margin-bottom: 6px; }
     <div style="flex:1;min-width:105px;border:1px solid var(--border);border-radius:12px;padding:10px"><b style="color:var(--series-8)">L5 · t10/t11</b><br><span class="muted">Kalshi market context (t10) · RLHF human feedback (t11) · cal + kb meta-arms</span></div>
   </div>
 
-  <p class="mini" style="margin-top:16px">Offline — held-out test MAE from the runs
-  that shipped each arm (historical reference; the <a href="index.html"
+  <p class="mini" style="margin-top:16px">Offline — historical MAE (frozen backtest —
+  squared-error version not recomputable from retained aggregates) from the runs
+  that shipped each arm (the <a href="index.html"
   style="color:var(--series-2)">backtest page</a> and its previous-runs table carry
   the latest batch numbers):</p>
   <div class="scroll"><table>
@@ -422,8 +423,8 @@ details[open] > summary { margin-bottom: 6px; }
   <p class="mini" style="margin-top:16px">Online — live ledger since deployment (refreshes with the page):</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th>
-    <th class="num">+1m n·MAE·±$10</th><th class="num">+5m n·MAE·±$10</th>
-    <th class="num">+15m n·MAE·±$10</th><th class="num">+30m n·MAE·±$10</th></tr></thead>
+    <th class="num">+1m n·MSE $²·±$10</th><th class="num">+5m n·MSE $²·±$10</th>
+    <th class="num">+15m n·MSE $²·±$10</th><th class="num">+30m n·MSE $²·±$10</th></tr></thead>
     <tbody id="arm-online-body"></tbody>
   </table></div>
   <p class="sub muted" style="margin-top:8px">Full architecture/feature/reward detail per arm
@@ -511,6 +512,9 @@ const bust = u => REMOTE
 
 const H_COLOR = { 1: "var(--series-5)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const T1_HORIZONS = [1, 5, 15, 30];
+// compact $² formatter: 62 400 → "62.4k", 480 → "480"
+const fmtSq = v => v == null ? "–"
+  : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
 const armOf = p => (p.variant || "").startsWith("consensus") ? "agg"
   : (p.variant || "").startsWith("cal") ? "cal"
   : (p.variant || "").startsWith("t11") ? "t11"
@@ -667,14 +671,14 @@ function chartHorizon(prices, preds, h) {
   const m = chartMeta[h];
   preds = preds.filter(p => p.target_ts >= m.t0 && p.target_ts <= m.t1);
   let g = f.g;
-  // shaded ribbon: the trailing-MAE leader arm's 80% band
+  // shaded ribbon: the trailing-MSE leader arm's 80% band
   const armsHere = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"];
-  let leader = null, bestMae = Infinity;
+  let leader = null, bestMse = Infinity;
   for (const a of armsHere) {
     const sc = preds.filter(p => armOf(p) === a && p.actual != null).slice(-30);
     if (sc.length >= 5) {
-      const mae2 = sc.reduce((s2, p) => s2 + p.abs_err, 0) / sc.length;
-      if (mae2 < bestMae) { bestMae = mae2; leader = a; }
+      const mse2 = sc.reduce((s2, p) => s2 + p.abs_err * p.abs_err, 0) / sc.length;
+      if (mse2 < bestMse) { bestMse = mse2; leader = a; }
     }
   }
   if (leader) {
@@ -757,23 +761,23 @@ function ledgerRows(preds) {
 }
 
 function stats(preds) {
-  // ranked scorecard chips: best trailing MAE first
+  // ranked scorecard chips: best trailing MSE first
   const rows = ["ctl", "rp", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal"]
     .map(arm => {
       const sc = preds.filter(p => p.actual != null && armOf(p) === arm);
       if (sc.length < 5) return null;
-      const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+      const mse = sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length;
       const banded = sc.filter(p => p.in_band != null);
       const cov = banded.length
         ? Math.round(100 * banded.filter(p => p.in_band).length / banded.length) + "%"
         : "–";
-      return { arm, mae, cov, n: sc.length };
-    }).filter(Boolean).sort((a, b) => a.mae - b.mae);
+      return { arm, mse, cov, n: sc.length };
+    }).filter(Boolean).sort((a, b) => a.mse - b.mse);
   return rows.map((r, i) =>
     `<span class="scorechip${i === 0 ? " lead" : ""}" title="${r.arm}: ` +
-    `${r.n} scored · MAE $${Math.round(r.mae)} · 80% band coverage ${r.cov}">` +
+    `${r.n} scored · MSE ${fmtSq(r.mse)} $² · 80% band coverage ${r.cov}">` +
     `<i style="background:${ARM_COLOR[r.arm] || "var(--faint)"}"></i>` +
-    `${r.arm} $${Math.round(r.mae)} · ${r.cov}</span>`).join("");
+    `${r.arm} ${fmtSq(r.mse)} · ${r.cov}</span>`).join("");
 }
 
 function winnerChart(prices, preds, h) {
@@ -877,9 +881,9 @@ function renderArmCards(preds) {
     const sc = preds.filter(p => variants.includes(p.variant)
       && p.horizon === h && p.actual != null);
     if (!sc.length) return "–";
-    const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+    const mse = sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length;
     const w10 = sc.filter(p => p.abs_err <= 10).length / sc.length;
-    return `${sc.length} · $${Math.round(mae)} · ${(100 * w10).toFixed(0)}%`;
+    return `${sc.length} · ${fmtSq(mse)} $² · ${(100 * w10).toFixed(0)}%`;
   };
   document.getElementById("arm-online-body").innerHTML =
     LADDER_ARMS.map(([key, color, variants]) =>
@@ -1255,7 +1259,7 @@ async function poll() {
         ? "$" + Math.round(status.brti.price).toLocaleString() : "–";
       const consScored = preds.filter(p => p.variant === "consensus" && p.actual != null);
       document.getElementById("cons-acc").textContent = consScored.length
-        ? "MAE $" + Math.round(consScored.reduce((a, p) => a + p.abs_err, 0) / consScored.length)
+        ? "MSE " + fmtSq(consScored.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / consScored.length) + " $²"
           + " · ±$10: " + (100 * consScored.filter(p => p.abs_err <= 10).length / consScored.length).toFixed(0)
           + "% (" + consScored.length + ")"
         : "collecting…";

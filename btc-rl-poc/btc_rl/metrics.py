@@ -22,6 +22,20 @@ def mase(abs_errs: list[float], naive_abs_errs: list[float]) -> float | None:
     return (sum(abs_errs) / len(abs_errs)) / naive
 
 
+def msse(abs_errs: list[float], naive_abs_errs: list[float]) -> float | None:
+    """Mean Squared Scaled Error — the squared-loss analog of MASE:
+    mean(err^2) / mean(naive err^2) on the same slots. <1 beats the
+    naive floor. Added 2026-08-28 when the project's headline error
+    metric switched MAE -> MSE (user-directed); MASE is kept alongside
+    because squared loss is outlier-sensitive in fat-tailed series."""
+    if not abs_errs or not naive_abs_errs:
+        return None
+    naive = sum(e * e for e in naive_abs_errs) / len(naive_abs_errs)
+    if naive <= 0:
+        return None
+    return (sum(e * e for e in abs_errs) / len(abs_errs)) / naive
+
+
 def rmse(errs: list[float]) -> float | None:
     if not errs:
         return None

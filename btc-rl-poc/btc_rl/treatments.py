@@ -193,7 +193,18 @@ class Treatment:
                 "ev_sum": self.ev_sum, "promoted_at": self.promoted_at}
 
     def load(self, d: dict) -> None:
-        self.sprt = SPRT.from_dict(d.get("sprt", {}))
+        # BUG FIX 2026-08-28: restoring the whole SPRT from disk let the
+        # persisted edge/alpha/beta/min_n silently OVERRIDE the code
+        # constants — retuning TREAT_EDGE/TREAT_MIN_N had no effect
+        # after the first state save, defeating the "pre-registered in
+        # code" guarantee. Now only the accumulated EVIDENCE is
+        # restored; the test's configuration always comes from the
+        # constructor.
+        s = d.get("sprt", {})
+        self.sprt.n = s.get("n", 0)
+        self.sprt.mean = s.get("mean", 0.0)
+        self.sprt.m2 = s.get("m2", 0.0)
+        self.sprt.llr = s.get("llr", 0.0)
         self.n_bet = d.get("n_bet", 0)
         self.n_skip = d.get("n_skip", 0)
         self.ev_sum = d.get("ev_sum", 0.0)

@@ -48,9 +48,12 @@ window-level Brier over 100 windows.
 ## Tier 1 — RL price arms (the origin of the bias)
 
 **Measured defect.** Directional accuracy of every price arm 47–53% at
-every horizon (no edge — value is MAE/bands only); bullish drift
-priors: t10 +$45 bias @h30 with 80% up-calls, t2 +$54 @h30 with 83%
-up-calls; 80% bands under-cover at h30 (65–73% vs target 80%).
+every horizon (no edge — value is level-error/bands only; the displayed
+eval metric is now MSE rather than MAE, user-directed 2026-08-28);
+bullish drift priors: t10 +$45 bias @h30 with 80% up-calls, t2 +$54
+@h30 with 83% up-calls; 80% bands under-cover at h30 (65–73% vs target
+80%). Note: MSE is outlier-sensitive in fat-tailed data — a single
+large miss can dominate the mean.
 
 **Why it happens.** Non-stationarity / concept drift: models fit in an
 up-trending window carry the trend as a prior (survey: Gama et al.

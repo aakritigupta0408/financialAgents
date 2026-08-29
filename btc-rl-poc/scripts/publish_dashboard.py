@@ -55,6 +55,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("treatments.jsonl", 2000),
     ("training_progress.jsonl", None),
     ("live_status.json", None),
+    ("audit_report.json", None),
 ]
 
 

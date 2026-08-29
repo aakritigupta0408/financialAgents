@@ -87,7 +87,7 @@
   identical slots. Meta-arms: <b>cal</b> re-centers the trailing
   +15m leader; <b>kb</b> calls the Kalshi 15-minute binary every minute and places
   exactly one fee-adjusted paper bet per window. Level accuracy is measured against
-  the persistence floor (MASE), direction against Pesaran–Timmermann chance bounds,
+  the persistence floor (MSSE), direction against Pesaran–Timmermann chance bounds,
   probabilities against the market itself. All numbers refresh live.</p>
   <div class="pills" id="hero-pills"></div>
   <div class="btns">
@@ -97,12 +97,12 @@
   </div>
 </header>
 
-<div class="sect">Headline — online MAE, +5 minute horizon</div>
+<div class="sect">Headline — online MSE ($²), +5 minute horizon</div>
 <div class="cards-grid" id="headline"></div>
 
-<div class="sect">Online MAE — all arms, all horizons, one chart</div>
+<div class="sect">Online MSE — all arms, all horizons, one chart</div>
 <div class="panel">
-  <p class="sub">Average miss in dollars, grouped by horizon. Bars are colored by arm
+  <p class="sub">Mean squared miss in $² (values ≥1000 shown as e.g. 62.4k), grouped by horizon. Bars are colored by arm
   (same colors as the tables); the dashed marker across each group is
   <b>persistence — the "do nothing" floor</b> on the same slots. Shorter bar = better;
   a bar near its floor marker is at the theoretical ceiling. Red ▼ = Diebold–Mariano
@@ -116,7 +116,7 @@
   <p class="sub" id="score-note">loading…</p>
   <div class="scroll"><table>
     <thead><tr><th>Arm</th><th>Horizon</th><th class="num">Scored</th>
-    <th class="num">MAE</th><th class="num">RMSE</th><th class="num">MASE</th><th class="num">±$10</th>
+    <th class="num">MSE $²</th><th class="num">RMSE</th><th class="num">MSSE (vs floor)</th><th class="num">±$10</th>
     <th class="num">Direction</th><th class="num">Replay</th>
     <th class="num">Coverage</th><th class="num">Width</th>
     <th class="num">Pinball</th><th class="num">Hit%</th></tr></thead>
@@ -143,7 +143,7 @@
 <div class="panel">
   <p class="sub">Every hourly retrain appends its hold-out gate outcome and a
   trailing-6h metric snapshot to <b>metrics_history.jsonl</b>, so before/after
-  comparisons survive restarts. Green = the replay update improved hold-out MAE
+  comparisons survive restarts. Green = the replay update improved hold-out MSE
   and was kept; red = the no-regression gate reverted it. History accumulates
   from deployment of this page.</p>
   <div id="rt-strip" style="margin-top:12px"><p class="mini">no retrain history yet — first row lands at the top of the hour</p></div>
@@ -168,7 +168,7 @@
   <div class="scroll"><table>
     <thead><tr><th>Category</th><th>Industry standard</th><th>Here</th></tr></thead>
     <tbody>
-      <tr><td>Point forecast</td><td>MAE, RMSE, MASE vs naive; Diebold–Mariano significance</td><td>All present — MASE scales to the persistence floor on identical slots; DM with HAC lags vs control</td></tr>
+      <tr><td>Point forecast</td><td>MAE, RMSE, MASE vs naive; Diebold–Mariano significance</td><td>MSE displayed (user-directed) with RMSE — MSSE scales to the persistence floor on identical slots; DM with HAC lags vs control</td></tr>
       <tr><td>Direction</td><td>Directional accuracy + Pesaran–Timmermann test</td><td>Both — † marks PT-significant skill (p&lt;0.05)</td></tr>
       <tr><td>Intervals</td><td>PICP coverage + sharpness + pinball loss</td><td>All three per arm×horizon in the scoreboard</td></tr>
       <tr><td>Binary probability</td><td>Brier + skill scores vs market/climatology, reliability diagram</td><td>All present in the binary panel; the market itself is the benchmark</td></tr>
@@ -177,7 +177,7 @@
   </table></div>
   <p class="sub" style="margin-top:10px"><b>Formulation verdict:</b> minute-scale
   crypto is near-martingale — published models rarely beat the random walk on
-  level at these horizons, so MASE ≈ 1 is the honest ceiling for the level task
+  level at these horizons, so MSSE ≈ 1 is the honest ceiling for the level task
   and this scoreboard measures distance to that floor rather than pretending to
   beat it. The economically meaningful contests — direction skill, interval
   calibration, and out-predicting the market's own probabilities — each carry a
@@ -371,6 +371,9 @@ const ARMS = [
     offline: null },
 ];
 const HKEYS = { 1: "h1", 5: "h5", 15: "h15", 30: "h30" };
+// compact $² formatter: 62 400 → "62.4k", 480 → "480"
+const fmtSq = v => v == null ? "–"
+  : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
 
 function onlineStats(preds, variants) {
   const out = [];
@@ -385,9 +388,11 @@ function onlineStats(preds, variants) {
       ? sc.reduce((a, p) => a + Math.abs(p.pred - p.price_now), 0) / sc.length : 0;
     const meanMove = sc.length
       ? sc.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0) / sc.length : 0;
+    const meanSqMove = sc.length
+      ? sc.reduce((a, p) => a + (p.actual - p.price_now) ** 2, 0) / sc.length : 0;
     out.push({
       h, n: sc.length,
-      mae: sc.length ? sc.reduce((a, p) => a + p.abs_err, 0) / sc.length : null,
+      mse: sc.length ? sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length : null,
       rmse: sc.length ? Math.sqrt(sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length) : null,
       w10: sc.length ? sc.filter(p => p.abs_err <= 10).length / sc.length : null,
       w50: sc.length ? sc.filter(p => p.abs_err <= 50).length / sc.length : null,
@@ -400,7 +405,7 @@ function onlineStats(preds, variants) {
         return b.length ? b.reduce((a, p) => a + (p.hi - p.lo), 0) / b.length : null; })(),
       hits: sc.filter(p => p.hit).length,
       hitr: sc.length ? sc.filter(p => p.hit).length / sc.length : null,
-      mase: meanMove ? (sc.reduce((a, p) => a + p.abs_err, 0) / sc.length) / meanMove : null,
+      msse: meanSqMove ? (sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length) / meanSqMove : null,
       pinball: (() => { const b = sc.filter(p => p.lo != null);
         if (!b.length) return null;
         const pb = (a2, q, pr) => a2 >= pr ? q * (a2 - pr) : (1 - q) * (pr - a2);
@@ -454,35 +459,39 @@ function groupedChart(preds) {
       const sc = preds.filter(p => arm.variants.includes(p.variant)
         && p.horizon === h && p.actual != null);
       if (sc.length < 15) continue;
-      const mae = sc.reduce((a, p) => a + p.abs_err, 0) / sc.length;
+      const mse = sc.reduce((a, p) => a + p.abs_err * p.abs_err, 0) / sc.length;
       if (key === "ctl")
-        floor = sc.reduce((a, p) => a + Math.abs(p.actual - p.price_now), 0)
+        floor = sc.reduce((a, p) => a + (p.actual - p.price_now) ** 2, 0)
           / sc.length;
       const dm = key === "ctl" ? null : dmStat(preds, arm.variants, h);
-      bars.push({ key, color: arm.color, mae, n: sc.length, dm });
+      bars.push({ key, color: arm.color, mse, n: sc.length, dm });
     }
     if (bars.length) groups.push({ h, bars, floor });
   }
   if (!groups.length) return '<p class="sub">collecting…</p>';
   const W = 900, H = 330, L = 56, R = 12, T = 16, B = 44;
-  const ymax = Math.max(...groups.flatMap(g => g.bars.map(b => b.mae))) * 1.15;
+  const ymax = Math.max(...groups.flatMap(g => g.bars.map(b => b.mse))) * 1.15;
   const Y = v => T + (1 - v / ymax) * (H - T - B);
   const gw = (W - L - R) / groups.length;
   let g = "";
-  for (let v = 0; v <= ymax; v += ymax > 300 ? 100 : 25) {
+  // nice grid step (1/2/5 × 10^k) — MSE spans a much wider range than MAE did
+  const step = (() => { const raw = ymax / 5;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / mag;
+    return (m >= 5 ? 5 : m >= 2 ? 2 : 1) * mag; })();
+  for (let v = 0; v <= ymax; v += step) {
     g += `<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${W - R}" y2="${Y(v).toFixed(1)}" stroke="rgba(22,32,44,.06)"/>` +
-      `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">$${Math.round(v)}</text>`;
+      `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${fmtSq(v)}</text>`;
   }
   groups.forEach((grp, gi) => {
     const x0 = L + gi * gw + 10;
     const bw = (gw - 20) / grp.bars.length;
     grp.bars.forEach((b, bi) => {
       const x = x0 + bi * bw;
-      const y = Y(b.mae);
+      const y = Y(b.mse);
       const sig = b.dm != null && b.dm > 1.96;
       g += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw - 4).toFixed(1)}" ` +
         `height="${(H - B - y).toFixed(1)}" rx="5" fill="${b.color}" fill-opacity="0.9">` +
-        `<title>${b.key} +${grp.h}m — MAE $${Math.round(b.mae)} (n=${b.n})` +
+        `<title>${b.key} +${grp.h}m — MSE ${fmtSq(b.mse)} $² (n=${b.n})` +
         `${sig ? " — significantly worse than control" : ""}</title></rect>`;
       if (sig)
         g += `<text x="${(x + bw / 2 - 2).toFixed(1)}" y="${H - B + 14}" ` +
@@ -493,20 +502,21 @@ function groupedChart(preds) {
       g += `<line x1="${x0 - 4}" y1="${fy.toFixed(1)}" x2="${(x0 + gw - 24).toFixed(1)}" y2="${fy.toFixed(1)}" ` +
         `stroke="rgba(22,32,44,.65)" stroke-width="1.5" stroke-dasharray="5 4"/>` +
         `<text x="${(x0 + gw - 24).toFixed(1)}" y="${(fy - 5).toFixed(1)}" text-anchor="end" ` +
-        `style="fill:rgba(22,32,44,.75);font-size:10.5px;font-weight:700">floor $${Math.round(grp.floor)}</text>`;
+        `style="fill:rgba(22,32,44,.75);font-size:10.5px;font-weight:700">floor ${fmtSq(grp.floor)} $²</text>`;
     }
     g += `<text x="${(x0 + (gw - 20) / 2).toFixed(1)}" y="${H - B + 30}" ` +
       `text-anchor="middle" style="fill:#16202c;font-weight:700">+${grp.h} min</text>`;
   });
   g += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="rgba(22,32,44,.22)"/>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MAE, all arms and horizons">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="online MSE, all arms and horizons">${g}</svg>`;
 }
 
 function offlineBlock(metrics, agentKey) {
   if (!metrics) return "<i>metrics.json unavailable</i>";
   const rowsOf = name => ["h5", "h15", "h30"].map(hk => {
     const s = metrics.agents[name]?.[hk]?.all;
-    return s ? `${hk.slice(1)}m: MAE $${s.mae.toFixed(0)} · ±$10 ${(100 * s["within_$10"]).toFixed(0)}% · exact ${(100 * s.exact_int_hit_rate).toFixed(2)}%` : null;
+    // daemon emits s.mse additively; older snapshots only carry s.mae — show "–"
+    return s ? `${hk.slice(1)}m: MSE ${(s.mse ?? null) == null ? "–" : fmtSq(s.mse) + " $²"} · ±$10 ${(100 * s["within_$10"]).toFixed(0)}% · exact ${(100 * s.exact_int_hit_rate).toFixed(2)}%` : null;
   }).filter(Boolean).join("<br>");
   const ref = `persistence reference — ${rowsOf("persistence-baseline")}`;
   if (!agentKey) return `No batch backtest (online-only arm). <span class="muted">${ref}</span>`;
@@ -570,9 +580,13 @@ function retrainPanel(rows) {
       const rev = Object.values(g).some(x => x.reverted);
       const t = new Date(r.ts * 1000).toLocaleTimeString("en-US",
         { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit", hour12: false });
+      // new gate rows carry val_mse_*; historical rows only have val_mae_* —
+      // skip those (never square an old MAE: mean(|e|)² ≠ mean(e²))
+      const ent = Object.entries(g).filter(([, x]) => x.val_mse_before != null);
       cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${t} PT: ` +
-        Object.entries(g).map(([h, x]) =>
-          `${h} $${x.val_mae_before.toFixed(0)}→$${x.val_mae_after.toFixed(0)}${x.reverted ? " reverted" : ""}`).join(" · ") + '"></span>';
+        (ent.length ? ent.map(([h, x]) =>
+          `${h} ${fmtSq(x.val_mse_before)}→${fmtSq(x.val_mse_after)} $²${x.reverted ? " reverted" : ""}`).join(" · ")
+          : "pre-MSE row (MAE-era gate)") + '"></span>';
     }
     out += `<div class="rt-row"><span style="width:64px">${a}</span>${cells}</div>`;
   }
@@ -582,7 +596,7 @@ function retrainPanel(rows) {
     .filter(g => !Object.values(g).some(x => x.reverted)).length, 0);
   const allN = last.reduce((acc, r) => acc + Object.keys(r.gate || {}).length, 0);
   document.getElementById("rt-note").textContent =
-    `last ${total} retrains · ${keptN}/${allN} arm-gates kept their replay update · hover a cell for before→after hold-out MAE`;
+    `last ${total} retrains · ${keptN}/${allN} arm-gates kept their replay update · hover a cell for before→after hold-out MSE ($²)`;
 }
 
 function binaryPanel(kb, bets) {
@@ -677,15 +691,15 @@ async function poll() {
 
     const head = ARMS.map(arm => {
       const s = onlineStats(preds, arm.variants).find(x => x.h === 5);
-      return s && s.mae != null ? { arm, s } : null;
+      return s && s.mse != null ? { arm, s } : null;
     }).filter(Boolean);
-    const best = Math.min(...head.map(x => x.s.mae));
+    const best = Math.min(...head.map(x => x.s.mse));
     document.getElementById("headline").innerHTML = head.map(({ arm, s }) => `
-      <div class="mcard${s.mae === best ? " winner" : ""}">
+      <div class="mcard${s.mse === best ? " winner" : ""}">
         <div class="name"><span class="dot" style="background:${arm.color}"></span>${arm.key}
-          ${s.mae === best ? '<span class="winner-tag">· leader</span>' : ""}</div>
-        <div class="big">$${Math.round(s.mae)}</div>
-        <div class="small">MAE · ±$10 ${(100 * s.w10).toFixed(0)}% · n=${s.n}</div>
+          ${s.mse === best ? '<span class="winner-tag">· leader</span>' : ""}</div>
+        <div class="big">${fmtSq(s.mse)}</div>
+        <div class="small">MSE $² · ±$10 ${(100 * s.w10).toFixed(0)}% · n=${s.n}</div>
       </div>`).join("");
 
     document.getElementById("rel-legend").innerHTML =
@@ -709,9 +723,9 @@ async function poll() {
       for (const s of onlineStats(preds, arm.variants)) {
         sb += `<tr><td><span class="dot" style="background:${arm.color}"></span>${arm.key}</td>` +
           `<td>+${s.h}m</td><td class="num">${s.n}</td>` +
-          `<td class="num">${s.mae == null ? "–" : "$" + Math.round(s.mae)}</td>` +
+          `<td class="num">${s.mse == null ? "–" : fmtSq(s.mse)}</td>` +
           `<td class="num">${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}</td>` +
-          `<td class="num">${s.mase == null ? "–" : s.mase.toFixed(2)}</td>` +
+          `<td class="num">${s.msse == null ? "–" : s.msse.toFixed(2)}</td>` +
           `<td class="num">${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"}</td>` +
           `<td class="num">${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%" + (s.ptz != null && s.ptz > 1.96 ? "†" : "") + " (" + (100 * s.dirCov).toFixed(0) + "%)"}</td>` +
           `<td class="num">${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"}</td>` +
@@ -741,7 +755,7 @@ async function poll() {
     <dt>Data sampling</dt><dd>${arm.sampling}</dd>
     <dt>Offline metrics</dt><dd>${offlineBlock(metrics, arm.offline)}</dd>
     <dt>Online metrics</dt><dd>${onlineStats(preds, arm.variants).map(s =>
-      `+${s.h}m: n=${s.n} · MAE ${s.mae == null ? "–" : "$" + Math.round(s.mae)} · RMSE ${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}` +
+      `+${s.h}m: n=${s.n} · MSE ${s.mse == null ? "–" : fmtSq(s.mse) + " $²"} · RMSE ${s.rmse == null ? "–" : "$" + Math.round(s.rmse)}` +
       ` · ±$10 ${s.w10 == null ? "–" : (100 * s.w10).toFixed(0) + "%"} · dir ${s.dir == null ? "–" : (100 * s.dir).toFixed(0) + "%"}` +
       ` · replay ${s.replay == null ? "–" : (100 * s.replay).toFixed(0) + "%"} · hits ${s.hits} (±band)`
     ).join("<br>") || "no scored predictions yet"}</dd>

@@ -1,8 +1,9 @@
 """SEV-0 error audit — DFS of the full architecture graph.
 
 Tier 0  data feed        (ticks.jsonl, prediction_log price continuity)
-Tier 1  RL price arms    (prediction_log: MAE, signed bias, direction,
-                          band coverage — per arm family x horizon)
+Tier 1  RL price arms    (prediction_log: MSE (mean of squared errors,
+                          $^2), signed bias, direction, band coverage
+                          — per arm family x horizon)
 Tier 2  kb binary arms   (kalshi_binary_log: Brier, ROC-AUC, calibration
                           slope/intercept via from-scratch logistic
                           recalibration, prob bias, FP/FN at both gates)
@@ -91,6 +92,11 @@ def recalibrate(ps, ys, iters=50):
     return a, b
 
 
+def fmt_sq(v):
+    """Compact $^2 display: 62 400 -> '62.4k', 480 -> '480'."""
+    return f"{v / 1000:.1f}k" if v >= 1000 else f"{v:.0f}"
+
+
 def maxdd(series):
     peak, dd = -1e18, 0
     for v in series:
@@ -130,7 +136,8 @@ print()
 print("=" * 72)
 print("TIER 1 · RL PRICE ARMS (prediction_log, scored rows)")
 print("=" * 72)
-print("bias = mean(pred - actual) $ · dir-acc vs realized move · "
+print("MSE = mean of squared errors ($^2, >=1000 shown as e.g. 62.4k) · "
+      "bias = mean(pred - actual) $ · dir-acc vs realized move · "
       "up-share = calls up vs actual up share · cov80 = [lo,hi] hit rate")
 fam = defaultdict(list)
 for r in preds_all:
@@ -142,7 +149,7 @@ for r in preds_all:
 rows1 = []
 for (base, h), rs in fam.items():
     n = len(rs)
-    mae = sum(abs(r["pred"] - r["actual"]) for r in rs) / n
+    mse = sum((r["pred"] - r["actual"]) ** 2 for r in rs) / n
     bias = sum(r["pred"] - r["actual"] for r in rs) / n
     dm = [(r["pred"] - r["price_now"], r["actual"] - r["price_now"])
           for r in rs if r.get("price_now")]
@@ -153,13 +160,13 @@ for (base, h), rs in fam.items():
     upa = sum(1 for p, a in dm if a > 0) / len(dm) if dm else None
     cov = [1 if r["lo"] <= r["actual"] <= r["hi"] else 0
            for r in rs if r.get("lo") is not None]
-    rows1.append((base, h, n, mae, bias, dacc, upc, upa,
+    rows1.append((base, h, n, mse, bias, dacc, upc, upa,
                   sum(cov) / len(cov) if cov else None))
 rows1.sort(key=lambda x: (x[1], x[0]))
-print(f"{'arm':8s} {'h':>3s} {'n':>6s} {'MAE$':>7s} {'bias$':>8s} "
+print(f"{'arm':8s} {'h':>3s} {'n':>6s} {'MSE$2':>7s} {'bias$':>8s} "
       f"{'dirAcc':>7s} {'upCall':>7s} {'upReal':>7s} {'cov80':>6s}")
-for base, h, n, mae, bias, dacc, upc, upa, cov in rows1:
-    print(f"{base:8s} {h:3d} {n:6d} {mae:7.1f} {bias:+8.2f} "
+for base, h, n, mse, bias, dacc, upc, upa, cov in rows1:
+    print(f"{base:8s} {h:3d} {n:6d} {fmt_sq(mse):>7s} {bias:+8.2f} "
           f"{'' if dacc is None else format(100*dacc, '6.1f')+'%':>7s} "
           f"{'' if upc is None else format(100*upc, '6.1f')+'%':>7s} "
           f"{'' if upa is None else format(100*upa, '6.1f')+'%':>7s} "

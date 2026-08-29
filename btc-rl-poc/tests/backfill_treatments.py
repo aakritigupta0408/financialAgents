@@ -36,7 +36,7 @@ for k, lab, fn, why in O._treat_policies():
     treats[k] = treatments.Treatment(
         k, lab, fn, why, edge=O.TREAT_EDGE, min_n=O.TREAT_MIN_N,
         baseline=k in ("champion", "champion_real"))
-seen = set()
+seen = {}                      # dict-as-ordered-set, matches the daemon
 fshare = treatments.FixedShare(O.PT_ARMS)
 recs = O._treat_evaluate(pt, kb, kb_calib, treats, seen, fshare)
 print(f"scored {len(recs)} settled desk windows\n")
@@ -67,7 +67,7 @@ for a, w in sorted(fshare.w.items(), key=lambda x: -x[1]):
 state.write_text(json.dumps({
     "treats": {k: t.to_dict() for k, t in treats.items()},
     "fshare": fshare.to_dict(),
-    "seen": sorted(seen)[-4000:]}))
+    "seen": list(seen)[-4000:]}))
 log = ROOT / "results" / O.TREAT_LOG_NAME
 log.write_text("".join(json.dumps(r) + "\n" for r in recs))
 print(f"\nwrote {state.name} and {log.name} — the live daemon continues "

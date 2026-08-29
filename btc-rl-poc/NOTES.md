@@ -496,3 +496,51 @@ was the SPRT variance collapse).
 
 Fixed-Share weights after backfill: kb2 .303, kb9 .177, kb4 .156,
 kb3 .130, kb7 .119, kb8 .115.
+
+## 2026-08-28 (Fable session) — MSE everywhere + the confirmed-bug fix wave
+
+Metric switch (user-directed): headline error metric MAE -> MSE across
+daemon, all six pages, audit scripts. Load-bearing switches stamped:
+the hourly retrain no-regression gate now accepts/rejects on val MSE
+(keys val_mse_before/after; MAE-era history rows left untouched, site
+charts start the MSE series at the cutover rather than squaring old
+means — mean(|e|)^2 != mean(e^2)), and _winner_variant ranks on
+trailing MSE. Caveat on record once: squared loss is outlier-sensitive
+in fat-tailed series; MASE kept alongside MSSE for that reason. Frozen
+backtest numbers (index.html, offline table) relabeled "historical
+MAE" — recomputing MSE from retained aggregates is impossible and
+altering a dated snapshot would be falsification.
+
+Bug fixes shipped (each verified against the metric that exposed it):
+ 1. Trader lockout (critical): entry guard extended to all six traders;
+    pt3-pt6 now find their own entry minute.
+ 2. Treatment stale quote (critical): <=12-min envelope filter added to
+    _treat_evaluate row selection. VERIFIED: post-fix champion -6.04%
+    vs the independent agent's predicted -6.5%; knife-edge vetoes 29%
+    vs predicted ~30% with the predicted sign flip (+1.32%); M10 trips
+    29% vs predicted 29.3%. Three predictions, three matches.
+ 3. t_cal leakage: scores from the pre-settle p_m1 stamp, never a
+    calibrator that already saw the outcome (bets 2/150 until p_m1
+    history accumulates — honest, not fabricated).
+ 4. Per-order fee: _order_fee_c helper; per-contract ceil kept ONLY
+    for single-contract selector ledgers where the two coincide and
+    thetas are frozen. Ends the $2,355 phantom-fee accrual.
+ 5. _pt_leader ranks only tradeable (<=12 min) decisions.
+ 6. Bands sigma-conditioned (normalized conformal, Lei et al. 2018;
+    0.6x-median floor for the calm bucket; floor/ceil not int()).
+ 7. Calibrator trains once per (arm, window) on the decision row.
+ 8. SPRT hygiene: config always from code constants (pre-registration
+    restored); load-order fix kills the double-count path; seen-set
+    insertion-ordered so the 4000-cap trims chronologically.
+ 9. Torch state: checkpoints carry Adam state; revert rebuilds the
+    optimizer so rejected-replay momentum dies with the revert.
+
+Post-fix treatment board (150 windows, all COLLECTING, honest basis):
+M10+M8 +10.06% (LLR 1.10), M8 +8.23% (LLR 1.24) lead; nothing near a
+boundary; nothing promoted.
+
+Automation: scripts/run_audit.py recomputes desk/trader/tier1/tier2/
+treatment health from raw ledgers every 10 min via cron (installed
+alongside the publisher) into results/audit_report.json, shipped by
+the publisher. metrics.json now carries mse/msse beside mae/mase
+(additive keys, nothing renamed out from under history).

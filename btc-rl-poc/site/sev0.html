@@ -195,7 +195,7 @@ details.grp > section:last-of-type { border-bottom: 0; }
   Worst offenders by |bias|·√n, live:</p>
   <div class="scroll" style="margin-top:8px"><table id="t1-tbl">
     <thead><tr><th>arm · horizon</th><th class="num">n</th>
-      <th class="num">MAE $</th><th class="num">bias $</th>
+      <th class="num">MSE $²</th><th class="num">bias $</th>
       <th class="num">up-calls</th><th class="num">up-real</th>
       <th class="num">band cov (goal 80%)</th></tr></thead>
     <tbody><tr><td colspan="7" class="mini">computing…</td></tr></tbody>
@@ -829,6 +829,9 @@ const maxdd = s => { let pk = -1e18, dd = 0;
   return dd; };
 const money = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100)
   .toLocaleString("en-US", { maximumFractionDigits: 0 });
+// compact $² formatter: 62 400 → "62.4k", 480 → "480"
+const fmtSq = v => v == null ? "–"
+  : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
 
 /* ============ interactive architecture explorer ==================
    One registry of views. A node with `drill` opens the view of that
@@ -848,22 +851,22 @@ const AV = {
         name: "1 · WATCH", sub: "sees every trade happen",
         met: "healthy" },
       { id: "t1", x: 190, y: 60, w: 150, h: 62, drill: "t1", bug: 1,
-        name: "2 · GUESS", sub: "where will the price go?",
+        name: "2 · GUESS", sub: "where's the price going?",
         met: "too sure of itself", bad: true },
       { id: "t2", x: 372, y: 60, w: 150, h: 62, drill: "t2", bug: 3,
-        name: "3 · ODDS", sub: "turns the guess into a %",
-        met: "ranks well, lies a bit", bad: false },
+        name: "3 · ODDS", sub: "guess becomes a %",
+        met: "ranks well, fibs", bad: false },
       { id: "t3", x: 554, y: 60, w: 150, h: 62, drill: "t3", bug: 2,
-        name: "4 · CHOOSE", sub: "which guesser do we trust?",
+        name: "4 · CHOOSE", sub: "which guesser to trust?",
         met: "≈ a coin flip", bad: true },
       { id: "t4", x: 736, y: 60, w: 150, h: 62, drill: "t4", bug: 2,
-        name: "5 · SIZE", sub: "how much money to risk",
+        name: "5 · SIZE", sub: "how much to risk",
         met: "6 traders" },
       { id: "t5", x: 736, y: 158, w: 150, h: 62, drill: "t5", bug: 1,
         name: "6 · BUY", sub: "pays more than expected",
         met: "the biggest leak", bad: true },
       { id: "obs", x: 372, y: 158, w: 240, h: 62, drill: "obs", bug: 3,
-        name: "THE TEST BENCH", sub: "tries new ideas with fake money",
+        name: "THE TEST BENCH", sub: "new ideas, fake money",
         met: "risks nothing" },
     ],
     edges: [
@@ -883,7 +886,7 @@ const AV = {
       "<b>Retrain</b>: <code>RETRAIN_EVERY = 3600</code> (hourly); online arms update every settle",
     ],
     metrics: [
-      "T1 MAE · signed bias · 80% band coverage",
+      "T1 MSE · signed bias · 80% band coverage",
       "T2 Brier vs market Brier · ROC-AUC · Platt (a,b)",
       "T3 gate win% · cross-arm AUC · leader churn/day",
       "T4/T5 EV per $1 · max drawdown · realised slippage",
@@ -914,10 +917,10 @@ const AV = {
       { id: "snap", x: 260, y: 164, w: 170, h: 56, name: "SNAP",
         sub: "ofi_1m · ofi_5m · imb", met: "microstructure" },
       { id: "feat", x: 500, y: 56, w: 190, h: 92, name: "FEATURE SET",
-        sub: "ret_5m/15m · vol · RSI-14 · EMA · MACD · Bollinger",
+        sub: "ret · vol · RSI-14 · MACD…",
         met: "→ every tier above" },
       { id: "out", x: 750, y: 56, w: 200, h: 92, name: "→ T1 & T2",
-        sub: "bars+feat to the RL arms; snap+quote straight into kb",
+        sub: "bars+feat → arms · snap → kb",
         met: "" },
     ],
     edges: [
@@ -951,16 +954,16 @@ const AV = {
       { id: "in", x: 8, y: 90, w: 150, h: 62, name: "BARS + FEAT",
         sub: "from T0", met: "" },
       { id: "feed", x: 210, y: 20, w: 300, h: 74, name: "FEEDS DECISIONS",
-        sub: "consensus · h1 · h5 · h15 · h30 · cal",
-        met: "bias +$1.76 @h15 — near-unbiased" },
+        sub: "consensus · h1–h30 · cal",
+        met: "+$1.76 bias — near-unbiased" },
       { id: "log", x: 210, y: 128, w: 300, h: 74, name: "LOGGED ONLY — NEVER BETS",
-        sub: "t2 · t6 · t7 · t8 · t9 · t10 · t11 · rp",
+        sub: "t2–t11 · rp",
         met: "bias +$10.37 @h15", bad: true },
       { id: "band", x: 560, y: 20, w: 190, h: 74, bug: 1,
-        name: "BAND / σ", sub: "lo, hi at 80% target",
+        name: "BAND / σ", sub: "lo/hi, 80% target",
         met: "covers 74–76%", bad: true },
       { id: "out", x: 790, y: 55, w: 175, h: 74, name: "→ T2",
-        sub: "pred + σ per horizon", met: "h15 is the traded one" },
+        sub: "pred + σ per horizon", met: "h15 is traded" },
     ],
     edges: [
       { a: "in", b: "feed", k: "d" }, { a: "in", b: "log", k: "d" },
@@ -974,7 +977,7 @@ const AV = {
       "<b>Volume</b>: 60 000 predictions logged, 99.2–100% scored, zero staleness",
     ],
     metrics: [
-      "MAE per arm × horizon (vs persistence floor)",
+      "MSE per arm × horizon (vs persistence floor)",
       "<b>Signed bias</b> — mean(pred − actual); the drift detector",
       "Directional accuracy — <b>47–53% for every arm</b>: no directional edge exists here",
       "80% band coverage <b>split by volatility regime</b> — the aggregate hides the failure",
@@ -995,7 +998,7 @@ const AV = {
     w: 980, h: 300, back: "root",
     nodes: [
       { id: "z", x: 8, y: 110, w: 180, h: 76, bug: 1, name: "THE BRIDGE",
-        sub: "z₀ = (strike − base) / σ", met: "σ too small ⇒ |z| too big",
+        sub: "z₀ = (strike − base) / σ", met: "small σ ⇒ big |z|",
         bad: true },
       { id: "kb", x: 225, y: 8, w: 165, h: 52, name: "kb · control",
         sub: "shrink toward 0.5", met: "a −0.13 b 0.70" },
@@ -1051,7 +1054,7 @@ const AV = {
       { id: "in", x: 8, y: 85, w: 140, h: 66, name: "9 × p_up",
         sub: "from T2", met: "" },
       { id: "lead", x: 175, y: 20, w: 215, h: 76, bug: 1,
-        name: "LEADER SELECT", sub: "best of last 10 settled decisions",
+        name: "LEADER SELECT", sub: "best of last 10",
         met: "68.8% untradeable", bad: true },
       { id: "gate", x: 175, y: 128, w: 215, h: 76, name: "GATE",
         sub: "confidence ≥ PT_TAU 0.62", met: "AUC 0.546 — coin flip",
@@ -1059,7 +1062,7 @@ const AV = {
       { id: "env", x: 420, y: 20, w: 200, h: 76, name: "ENTRY ENVELOPE",
         sub: "mins_left ≤ 12 · ask 5–80¢", met: "one bet per window" },
       { id: "time", x: 420, y: 128, w: 200, h: 76, name: "TIMING RULE",
-        sub: "≥5¢ edge · or 75¢ door · else forced",
+        sub: "≥5¢ edge · 75¢ door",
         met: "forced entries pay up" },
       { id: "out", x: 650, y: 75, w: 180, h: 76, name: "→ T4",
         sub: "side · strike · ask", met: "" },
@@ -1152,10 +1155,10 @@ const AV = {
       { id: "fill", x: 455, y: 80, w: 175, h: 70, name: "REAL FILL",
         sub: "what the desk paid", met: "EV −9.73%", bad: true },
       { id: "tail", x: 665, y: 20, w: 290, h: 62, name: "THE TAIL",
-        sub: "worst 10% of fills · mean slip +24.3¢",
+        sub: "worst 10% of fills",
         met: "lost $524 alone", bad: true },
       { id: "late", x: 665, y: 105, w: 290, h: 62, name: "LATENESS",
-        sub: "6–9 min bucket: +9.11¢ mean slip",
+        sub: "6–9 min: +9.11¢ slip",
         met: "costs 9.93 pts EV", bad: true },
     ],
     edges: [
@@ -1188,16 +1191,16 @@ const AV = {
       { id: "win", x: 8, y: 90, w: 150, h: 66, name: "SETTLED WINDOW",
         sub: "real outcome", met: "" },
       { id: "pol", x: 185, y: 20, w: 215, h: 76, bug: 1, name: "11 POLICIES",
-        sub: "M1 M2 M3 M8 M9 M10 + combos",
+        sub: "M1–M10 + combos",
         met: "same window, same outcome" },
       { id: "pair", x: 430, y: 20, w: 200, h: 76, name: "PAIRED DIFF",
         sub: "challenger − champion", met: "regime cancels out" },
       { id: "sprt", x: 660, y: 20, w: 200, h: 76, name: "WALD SPRT",
-        sub: "H₀ no better vs H₁ ≥2%/$1",
+        sub: "H₀ vs H₁ ≥2%/$1",
         met: "boundaries −2.3 / +2.9" },
       { id: "shadow", x: 185, y: 128, w: 215, h: 76, name: "M1 SHADOW",
         sub: "p_m1 stamped, never traded",
-        met: "helps 1 of 9 arms" },
+        met: "helps 1 of 9" },
       { id: "promo", x: 660, y: 128, w: 200, h: 76, name: "AUTO-PROMOTE",
         sub: "only on boundary cross", met: "stamped · reversible" },
     ],
@@ -1205,7 +1208,7 @@ const AV = {
       { a: "win", b: "pol", k: "d" }, { a: "pol", b: "pair", k: "d" },
       { a: "pair", b: "sprt", k: "d" }, { a: "sprt", b: "promo", k: "d" },
       { a: "win", b: "shadow", k: "d" },
-      { a: "pol", b: "pair", k: "e", t: "scored on a stale quote", off: 24 },
+      { a: "pol", b: "pair", k: "e", t: "scored on stale quote", off: 24 },
     ],
     cadence: [
       "<b>Score</b>: every settle cycle, on each newly-settled desk window",
@@ -1535,7 +1538,7 @@ async function poll() {
     }
     const rows = Object.entries(fam).map(([k, rs]) => {
       const n = rs.length;
-      const mae = rs.reduce((a, r) => a + Math.abs(r.pred - r.actual), 0) / n;
+      const mse = rs.reduce((a, r) => a + (r.pred - r.actual) ** 2, 0) / n;
       const bias = rs.reduce((a, r) => a + (r.pred - r.actual), 0) / n;
       const dm = rs.filter(r => r.price_now);
       const upc = dm.filter(r => r.pred > r.price_now).length
@@ -1545,12 +1548,12 @@ async function poll() {
       const cv = rs.filter(r => r.lo != null);
       const cov = cv.filter(r => r.lo <= r.actual && r.actual <= r.hi)
         .length / Math.max(1, cv.length);
-      return { k, n, mae, bias, upc, upa, cov,
+      return { k, n, mse, bias, upc, upa, cov,
                sev: Math.abs(bias) * Math.sqrt(n) };
     }).filter(r => r.n >= 50).sort((a, b) => b.sev - a.sev).slice(0, 8);
     document.querySelector("#t1-tbl tbody").innerHTML = rows.map(r =>
       `<tr><td>${r.k}</td><td class="num">${r.n}</td>` +
-      `<td class="num">${r.mae.toFixed(0)}</td>` +
+      `<td class="num">${fmtSq(r.mse)}</td>` +
       `<td class="num" style="color:${Math.abs(r.bias) > 10
         ? "var(--down)" : "inherit"}">${r.bias >= 0 ? "+" : ""}` +
       `${r.bias.toFixed(1)}</td>` +

@@ -59,9 +59,11 @@ svg .endpt { stroke: var(--surface); stroke-width: 2; }
 </section>
 
 <section>
-  <h2>Validation MAE by epoch</h2>
-  <p class="sub muted">Dollars off the true price, greedy policy. Lower is better —
-  under the dotted baseline means the agent beats "predict no change".</p>
+  <h2>Validation MSE by epoch</h2>
+  <p class="sub muted">Mean squared miss in $² (≥1000 shown as e.g. 62.4k), greedy
+  policy. Lower is better — under the dotted baseline means the agent beats
+  "predict no change". The series starts where the trainer began logging MSE;
+  older MAE-only epochs are not re-plotted.</p>
   <div class="legend" id="legend1"></div>
   <div id="chart-mae"></div>
 </section>
@@ -79,8 +81,8 @@ svg .endpt { stroke: var(--surface); stroke-width: 2; }
   <h2>Hourly retrains — the live gate, across time</h2>
   <p class="sub muted">The online daemon retrains every arm hourly behind a
   hold-out no-regression gate, and appends each outcome to
-  metrics_history.jsonl. Green = the replay update improved hold-out MAE and
-  was kept; red = the gate reverted it. Hover a cell for before→after MAE.
+  metrics_history.jsonl. Green = the replay update improved hold-out MSE and
+  was kept; red = the gate reverted it. Hover a cell for before→after MSE ($²).
   This is the online counterpart to the batch curves above.</p>
   <div id="rt-strip" style="margin-top:12px"><p class="muted">no retrain history yet — rows append at the top of each hour</p></div>
   <p class="mini" id="rt-note"></p>
@@ -96,6 +98,10 @@ const REMOTE = !["localhost", "127.0.0.1"].includes(location.hostname);
 const bust = u => REMOTE
   ? u + (u.includes("?") ? "&" : "?") + "t=" + Math.floor(Date.now() / 30000)
   : u;
+
+// compact $² formatter: 62 400 → "62.4k", 480 → "480"
+const fmtSq = v => v == null ? "–"
+  : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(Math.round(v));
 
 const H_COLOR = { 1: "var(--series-1)", 5: "var(--series-2)", 15: "var(--series-3)", 30: "var(--series-4)" };
 const SERIES = [];
@@ -186,11 +192,22 @@ async function poll() {
         total++;
       } catch {} // ignore a partially-written trailing line
     }
+    // val MSE ($²): new rows carry val_mse; historical rows only have val_mae.
+    // Skip MAE-only rows — the MSE series simply starts at the cutover
+    // (never square an old MAE: mean(|e|)² ≠ mean(e²)).
+    const mseRows = new Map();
+    for (const [k, rows] of rowsByKey) {
+      const f = rows.filter(r => r.val_mse != null);
+      if (f.length) mseRows.set(k, f);
+    }
     const baselines = status?.baselines
       ? Object.fromEntries(Object.entries(status.baselines)
-          .map(([k, v]) => [k.replace("h", "") + "m", v.val_mae])) : null;
+          .filter(([, v]) => v.val_mse != null)
+          .map(([k, v]) => [k.replace("h", "") + "m", v.val_mse])) : null;
     document.getElementById("chart-mae").innerHTML =
-      lineChart(rowsByKey, "val_mae", { fmt: v => "$" + v.toFixed(0), baselines });
+      lineChart(mseRows, "val_mse",
+        { fmt: v => fmtSq(v) + " $²",
+          baselines: baselines && Object.keys(baselines).length ? baselines : null });
     document.getElementById("chart-reward").innerHTML =
       lineChart(rowsByKey, "train_reward_mean", { fmt: v => v.toFixed(2) });
     if (status) {
@@ -242,9 +259,12 @@ async function retrainLoop() {
             const g = (x.gate || {})[a];
             if (!g) { cells += '<span class="rt-cell"></span>'; continue; }
             const rev = Object.values(g).some(v => v.reverted);
+            // new gate rows carry val_mse_*; old rows only val_mae_* — skip those
+            const ent = Object.entries(g).filter(([, v]) => v.val_mse_before != null);
             cells += `<span class="rt-cell ${rev ? "rev" : "kept"}" title="${a} @ ${fmtHM(x.ts)} PT: ` +
-              Object.entries(g).map(([h, v]) =>
-                `${h} $${v.val_mae_before.toFixed(0)}→$${v.val_mae_after.toFixed(0)}${v.reverted ? " reverted" : ""}`).join(" · ") + '"></span>';
+              (ent.length ? ent.map(([h, v]) =>
+                `${h} ${fmtSq(v.val_mse_before)}→${fmtSq(v.val_mse_after)} $²${v.reverted ? " reverted" : ""}`).join(" · ")
+                : "pre-MSE row (MAE-era gate)") + '"></span>';
           }
           out += `<div class="rt-row"><span style="width:64px">${a}</span>${cells}</div>`;
         }

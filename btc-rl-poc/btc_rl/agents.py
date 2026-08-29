@@ -385,9 +385,14 @@ class DistDQNAgent:
         return self.steps
 
     def save(self, path) -> None:
+        # BUG FIX 2026-08-28: checkpoints now carry the Adam state.
+        # Without it, every daemon restart silently reset exp_avg /
+        # exp_avg_sq / step, putting t8/t9 back into bias-correction
+        # warm-up at ~12 online updates per hour — permanently.
         self.torch.save({"dim": self.dim, "n_arms": self.n_arms,
                          "steps": self.steps,
-                         "state": self.net.state_dict()}, path)
+                         "state": self.net.state_dict(),
+                         "opt_state": self.opt.state_dict()}, path)
 
     @classmethod
     def load(cls, path) -> "DistDQNAgent":
@@ -395,6 +400,11 @@ class DistDQNAgent:
         ck = torch.load(path, weights_only=False)
         agent = cls(dim=ck["dim"], n_arms=ck["n_arms"])
         agent.net.load_state_dict(ck["state"])
+        if ck.get("opt_state"):
+            try:
+                agent.opt.load_state_dict(ck["opt_state"])
+            except Exception:
+                pass               # older checkpoint: fresh Adam is fine
         agent.steps = ck.get("steps", 0)
         return agent
 
