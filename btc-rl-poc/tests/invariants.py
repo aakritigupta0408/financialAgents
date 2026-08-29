@@ -149,6 +149,24 @@ def _wd_conserved():
     return ok, [] if ok else [f"recomputed {bank} vs ledger {want}"]
 
 
+@check("analytics-freshness",
+       "oversized-crontab silent failure 08-29 (chain dead 2.7h)")
+def _fresh():
+    """The audit chain's own outputs must be <30 min old — cron can
+    fail SILENTLY (an oversized line is simply dropped), so the wall
+    itself watches the cadence. Note: this check runs inside the
+    chain, so it detects staleness of the PREVIOUS run."""
+    import time as _t
+    bad = []
+    for n in ("audit_report.json", "decision_board.json"):
+        p = RES / n
+        if not p.exists():
+            bad.append(n + " missing")
+        elif _t.time() - p.stat().st_mtime > 1800:
+            bad.append(f"{n} {(_t.time()-p.stat().st_mtime)/60:.0f}m")
+    return not bad, bad
+
+
 def main():
     out, failed = [], 0
     for name, origin, fn in CHECKS:
