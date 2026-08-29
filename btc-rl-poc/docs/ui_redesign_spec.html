@@ -1,0 +1,514 @@
+<title>Instrument Grade</title>
+<style>
+  :root {
+    /* dark-first "desk" palette — instrumentation ground */
+    --ground: #0d1220;
+    --surface: #151c2c;
+    --surface-2: #1b2436;
+    --ink: #e9ecf4;
+    --ink-2: #b7bfd0;
+    --muted: #8e99ae;
+    --line: rgba(233, 236, 244, .13);
+    --accent: #d9a441;          /* gauge amber — proposals & highlights */
+    --accent-ink: #0d1220;
+    --good: #43a97c;
+    --crit: #d96a5f;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+    --display: "Futura", "Avenir Next", "Century Gothic", "Trebuchet MS", sans-serif;
+    --body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      /* "print" mode — deliberately echoes the project's own brokerage palette */
+      --ground: #f3f5f8;
+      --surface: #ffffff;
+      --surface-2: #eef1f6;
+      --ink: #17202e;
+      --ink-2: #414e66;
+      --muted: #6b7890;
+      --line: rgba(23, 32, 46, .14);
+      --accent: #a1731f;
+      --accent-ink: #ffffff;
+      --good: #177a51;
+      --crit: #bb4038;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #f3f5f8;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --ink: #17202e;
+    --ink-2: #414e66;
+    --muted: #6b7890;
+    --line: rgba(23, 32, 46, .14);
+    --accent: #a1731f;
+    --accent-ink: #ffffff;
+    --good: #177a51;
+    --crit: #bb4038;
+  }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font: 15.5px/1.62 var(--body);
+    padding: 44px 20px 110px;
+  }
+  main { max-width: 71rem; margin: 0 auto; display: flex;
+         flex-direction: column; gap: 46px; }
+  .eyebrow { font: 600 10.5px var(--mono); letter-spacing: .22em;
+    text-transform: uppercase; color: var(--muted); }
+  .eyebrow b { color: var(--accent); font-weight: 600; }
+  h1 { font: 700 clamp(30px, 5vw, 44px)/1.06 var(--display);
+    letter-spacing: .015em; text-transform: uppercase; margin: 10px 0 0;
+    text-wrap: balance; }
+  h2 { font: 700 19px/1.25 var(--display); letter-spacing: .05em;
+    text-transform: uppercase; margin: 0; text-wrap: balance; }
+  h3 { font: 650 15px/1.3 var(--body); margin: 0; }
+  p { margin: 0; max-width: 68ch; color: var(--ink-2); }
+  p b, li b { color: var(--ink); }
+  .lede { font-size: 17px; color: var(--ink-2); max-width: 62ch; }
+  section { display: flex; flex-direction: column; gap: 16px; }
+  .head { display: flex; flex-direction: column; gap: 12px; }
+  .charter { border: 1px solid var(--accent); border-radius: 10px;
+    padding: 12px 16px; font-size: 13.5px; color: var(--ink-2);
+    background: var(--surface); max-width: none; }
+  .charter b { color: var(--accent); font-family: var(--mono); font-size: 11px;
+    letter-spacing: .16em; }
+
+  /* verdict tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px; }
+  .tile { background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 13px 15px 12px; display: flex;
+    flex-direction: column; gap: 3px; }
+  .tile .k { font: 600 10px var(--mono); letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted); }
+  .tile .v { font: 600 24px/1.1 var(--display); color: var(--ink);
+    font-variant-numeric: tabular-nums; }
+  .tile .n { font-size: 12px; color: var(--muted); }
+  .tile.flag .v { color: var(--crit); }
+  .tile.ok .v { color: var(--good); }
+
+  /* tables */
+  .scroll { overflow-x: auto; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th { font: 600 10.5px var(--mono); letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); text-align: left;
+    padding: 10px 14px; border-bottom: 1px solid var(--line);
+    white-space: nowrap; }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--line);
+    vertical-align: top; color: var(--ink-2); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { color: var(--ink); font-weight: 600; white-space: nowrap; }
+  td code, p code, li code { font: 12.5px var(--mono); color: var(--ink);
+    background: var(--surface-2); border-radius: 4px; padding: 1px 5px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* findings */
+  .finding { display: grid; grid-template-columns: 92px 1fr; gap: 14px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 15px 17px; }
+  .finding .id { font: 700 13px var(--mono); color: var(--ink); }
+  .finding .sev { display: inline-block; margin-top: 6px; font: 700 9.5px var(--mono);
+    letter-spacing: .12em; padding: 2px 7px; border-radius: 4px; }
+  .sev.hi { background: var(--crit); color: var(--ground); }
+  .sev.md { background: var(--accent); color: var(--accent-ink); }
+  .sev.lo { background: var(--surface-2); color: var(--muted);
+    border: 1px solid var(--line); }
+  .finding h3 { margin-bottom: 4px; }
+  .finding p { font-size: 13.5px; max-width: none; }
+  .finding .fix { margin-top: 7px; font-size: 13.5px; }
+  .finding .fix::before { content: "FIX "; font: 700 10px var(--mono);
+    letter-spacing: .14em; color: var(--accent); margin-right: 4px; }
+
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 16px 10px; overflow-x: auto; }
+  figure svg { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  figcaption { font-size: 12.5px; color: var(--muted); padding: 10px 4px 4px;
+    max-width: 70ch; }
+
+  ul { margin: 0; padding-left: 20px; color: var(--ink-2);
+    display: flex; flex-direction: column; gap: 7px; max-width: 70ch; }
+  li { padding-left: 2px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; }
+    .finding { grid-template-columns: 1fr; gap: 6px; } }
+  .card { background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 15px 17px; display: flex;
+    flex-direction: column; gap: 8px; }
+  .card .tag { font: 600 10px var(--mono); letter-spacing: .18em;
+    text-transform: uppercase; color: var(--accent); }
+  .card p { font-size: 13.5px; max-width: none; }
+
+  .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sw { display: flex; align-items: center; gap: 8px; font: 12px var(--mono);
+    color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 7px; padding: 5px 10px 5px 6px; }
+  .sw i { width: 18px; height: 18px; border-radius: 5px; display: inline-block;
+    border: 1px solid var(--line); }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover, a:focus-visible { text-decoration: underline; outline: none; }
+  .footer { font-size: 12.5px; color: var(--muted); max-width: 70ch; }
+</style>
+
+<main>
+  <div class="head">
+    <div class="eyebrow">UI/UX TEAM · SITE AUDIT &amp; REDESIGN SPEC · 2026-08-28 · <b>BTC 7PM ORACLE</b></div>
+    <h1>Instrument Grade</h1>
+    <p class="lede">The site reads as a research magazine about a trading system. The redesign
+      makes it the system's own instrument panel — every number carrying its sample size,
+      its floor, its freshness, and the version of the model that produced it. Audit first,
+      then the target design, then a migration plan that follows the project's own
+      champion/challenger rules.</p>
+    <p class="charter"><b>CHARTER — NO OVERTURN.</b>&nbsp; This spec is strictly additive.
+      No recorded decision is reversed: the ivory report default stays (theme.css records
+      why the near-black terminal was rejected), metrics_lab's decision-impact ordering
+      stays, the client-side recompute audit guarantee stays, and what the system computes
+      is untouched. The redesign changes where each fact lives and how defensibly it is
+      shown — nothing else.</p>
+  </div>
+
+  <section>
+    <h2>Verdict at a glance</h2>
+    <div class="tiles">
+      <div class="tile"><span class="k">Pages today</span><span class="v num">9</span><span class="n">~10,900 lines of HTML+JS</span></div>
+      <div class="tile flag"><span class="k">Landing pages</span><span class="v num">2</span><span class="n">index.html vs home.html</span></div>
+      <div class="tile flag"><span class="k">Experiment surfaces</span><span class="v num">4</span><span class="n">same A/B story, four tellings</span></div>
+      <div class="tile flag"><span class="k">Shared JS modules</span><span class="v num">0→1</span><span class="n">glossary.js is the first</span></div>
+      <div class="tile ok"><span class="k">Glossary shipped</span><span class="v num">62</span><span class="n">terms, verified panel, unwired</span></div>
+      <div class="tile"><span class="k">Target surfaces</span><span class="v num">5</span><span class="n">one job each, zero overlap</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Inventory — what each page is, and what it duplicates</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Page</th><th>Job today</th><th>Overlap / drift observed</th></tr></thead>
+      <tbody>
+        <tr><td>home.html</td><td>Narrative landing: the desk, headline results, the $2M question, Monte-Carlo cones</td><td>Second landing beside index.html; repeats trader scoreboard themes from ab_dashboard</td></tr>
+        <tr><td>index.html</td><td>Training-era landing: agent ladder, historical MAE, reward design</td><td>Stale: "verified 2026-08-21" data note; still headlines MAE after the 08-28 MAE→MSE switch</td></tr>
+        <tr><td>live_online.html</td><td>Live desk: per-arm calls, one bet per window, model ladder</td><td>Direction charts repeat index.html; scorecards repeat metrics_lab</td></tr>
+        <tr><td>live_training.html</td><td>Q-agent training curves, hourly retrain gate</td><td>Retrain gate also rendered in metrics_lab "Training &amp; loss regime"</td></tr>
+        <tr><td>metrics_lab.html</td><td>Canonical evaluation: every tier, decision-impact order</td><td>Strongest page. Recomputes AUC/Platt in-page ("same implementation as sev0.html" — copy-paste twin)</td></tr>
+        <tr><td>ab_dashboard.html</td><td>80/80 scoreboard, decision ledger, binary model race</td><td>Champion/challenger story told again in experiment_review, metrics_lab launch board, sev0</td></tr>
+        <tr><td>experiment_review.html</td><td>Treatment ladder head-to-head</td><td>Subset of ab_dashboard + metrics_lab content</td></tr>
+        <tr><td>board.html</td><td>Project board: owner queue, incidents, SPRT evidence bars</td><td>Internal PM artifact living inside a results site</td></tr>
+        <tr><td>sev0.html</td><td>SEV-0 audit: architecture, error attribution, mitigation tracker, sources</td><td>Champion-vs-challenger table repeats the A/B pages; in-page platt()/AUC JS duplicated</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Findings — ranked by decision impact</h2>
+
+    <div class="finding">
+      <div><div class="id">F1</div><span class="sev hi">HIGH</span></div>
+      <div><h3>The experiment record has four competing sources of truth</h3>
+        <p>ab_dashboard, experiment_review, metrics_lab's launch board, and sev0's champion
+        table each render the treatment race from their own in-page JS. Four renderers of
+        one SPRT state means four chances to disagree about the single most important fact
+        the site reports: <b>what is champion, and why</b>.</p>
+        <p class="fix">One Experiments surface owning the treatment board; every other page links to it. The SPRT evidence bar becomes a shared component, rendered from <code>results/treatments.json</code> only.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F2</div><span class="sev hi">HIGH</span></div>
+      <div><h3>Headline numbers ship without n, floor, or interval</h3>
+        <p>Stat tiles show "59,799 scored point forecasts" style counts well, but skill
+        numbers (Brier, win%, EV/$1) appear bare. The project's own core finding — direction
+        accuracy 47–53% is <b>indistinguishable from no skill</b> — is invisible in a tile
+        that says "51%". An MLE's dashboard never states a metric it cannot defend on sight.</p>
+        <p class="fix">Every stat tile carries: value · n · the floor it must beat (persistence MASE 1.0, market Brier, break-even win%) · a pass/fail skill badge. The math already exists in <code>btc_rl/metrics.py</code>; it needs a UI atom.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F3</div><span class="sev hi">HIGH</span></div>
+      <div><h3>No global freshness or version stamp</h3>
+        <p>Pages poll every 15s, but nothing tells the reader when data last arrived, which
+        champion produced tonight's bets, or which code revision rendered the page. A stale
+        tape is worse than no tape: it looks live.</p>
+        <p class="fix">A fixed status strip on every page: last-tick age (green &lt;30s, amber &lt;5m, red beyond), champion key + <code>promoted_at</code> stamp, active regime chip, data-source health. One shared module, one poll. Requires a small backend manifest — see the backend request list.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F4</div><span class="sev md">MED</span></div>
+      <div><h3>Two landings, one of them stale</h3>
+        <p>index.html still opens the site in the training-era frame: MAE headlines
+        (superseded by the 08-28 MSE switch), "open data streams verified 2026-08-21".
+        A visitor who lands there reads last week's project.</p>
+        <p class="fix">Archive index.html behind an explicit "historical training record" banner and fold its agent-ladder and reward-design content into the Models surface. One landing: the Desk. The historical record is preserved, not deleted.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F5</div><span class="sev md">MED</span></div>
+      <div><h3>Duplicated in-page metric implementations</h3>
+        <p>metrics_lab carries a Mann-Whitney AUC annotated "same implementation as
+        sev0.html"; sev0 reimplements Platt fitting in JS. <code>btc_rl/metrics.py</code>
+        solved this server-side ("every surface computes a given metric exactly one way") —
+        the browser layer never got the same discipline, and copy-paste twins drift.</p>
+        <p class="fix"><code>site/lib.js</code>: one AUC, one Platt, one drawdown, one fee model, mirroring metrics.py function-for-function; pages import and render only. glossary.js established the shared-module pattern.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F6</div><span class="sev md">MED</span></div>
+      <div><h3>Editorial voice buries operational fact</h3>
+        <p>Didot serif headlines, essay intros, and prose sections ("The tape &amp; the desk —
+        how this research would be used") read beautifully but scan slowly. On a desk
+        surface the reader's questions are: position? P&amp;L? regime? anything broken? Those
+        answers currently live mid-paragraph.</p>
+        <p class="fix">Numbers and state first; prose demoted to expandable "why" notes under each module. The glossary panel (shipped) now carries the pedagogy, so body copy can shrink without losing the teaching mission.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F7</div><span class="sev md">MED</span></div>
+      <div><h3>Single light theme; no desk mode</h3>
+        <p>theme.css records the decision: "the original near-black terminal read as shady;
+        research should look like a research report." That decision stands — ivory stays the
+        default. But a monitoring surface watched at night wants a dark ground, and the
+        tokens are already centralized, so an <em>additional</em> mode costs one media query
+        plus a toggle.</p>
+        <p class="fix">Keep ivory "print" as the default; add the dark "desk" mode via the same CSS variables, opt-in. Both palettes re-validated for CVD separation and contrast (the 10-series palette must be re-stepped for the dark ground).</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F8</div><span class="sev lo">LOW</span></div>
+      <div><h3>Every page recomputes everything from raw JSONL in-browser</h3>
+        <p>metrics_lab states it recomputes the whole ladder from <code>results/*.jsonl</code>
+        every 15s. Honest and auditable — this guarantee is kept — but redundant fetches
+        across nine pages, and growing logs will eventually make first paint crawl.</p>
+        <p class="fix">Keep client-side recompute (it is the audit guarantee) but share one fetch/cache layer in lib.js, and ask backend for byte-offset checkpoints so pages can fetch deltas.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F9</div><span class="sev lo">LOW</span></div>
+      <div><h3>Internal PM board mixed into the results site</h3>
+        <p>board.html (owner queue, incidents) is a working artifact for the team, not a
+        reader surface; its presence in the shared topnav dilutes the story the other pages
+        tell.</p>
+        <p class="fix">Merge into the Method &amp; Incidents surface with sev0's mitigation tracker and DECISIONS.md — one place where process lives.</p></div>
+    </div>
+
+    <div class="finding">
+      <div><div class="id">F10</div><span class="sev lo">LOW</span></div>
+      <div><h3>Terminology carries no on-ramp (now fixed, unwired)</h3>
+        <p>The pages speak fluent SPRT/LLR/BSS/conformal with no reader assistance. The
+        62-entry clickable glossary (what / since / intuition / math / in-this-project /
+        code) is built and verified — 75 terms wrap on metrics_lab alone — but no page
+        loads it yet.</p>
+        <p class="fix">Wire <code>&lt;script src="glossary.js" defer&gt;&lt;/script&gt;</code> into all pages (coordinator task, already planned).</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Target architecture — nine pages become five surfaces</h2>
+    <figure>
+      <svg viewBox="0 0 900 470" role="img" aria-label="Consolidation map: nine current pages merge into five target surfaces. home and live_online form the Desk; index and live_training form Models; metrics_lab stays as Evaluation; ab_dashboard, experiment_review and sev0's champion table form Experiments; sev0 and board form Method and Incidents. index is archived.">
+        <defs>
+          <marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0 0 L8 4 L0 8 z" fill="currentColor"/>
+          </marker>
+        </defs>
+        <g fill="none" stroke="currentColor" stroke-opacity=".55" marker-end="url(#arr)">
+          <path d="M198 55 C 320 55 380 75 512 78"/>
+          <path d="M198 100 C 320 100 380 88 512 86"/>
+          <path d="M198 145 C 330 145 390 160 512 163"/>
+          <path d="M198 190 C 330 190 390 172 512 170"/>
+          <path d="M198 235 C 340 235 400 247 512 249"/>
+          <path d="M198 280 C 340 280 400 320 512 331"/>
+          <path d="M198 325 C 340 325 400 335 512 337"/>
+          <path d="M198 370 C 340 370 410 344 512 341"/>
+          <path d="M198 415 C 340 415 410 420 512 421"/>
+          <path d="M198 379 C 300 390 350 408 512 415"/>
+        </g>
+        <g font-family="ui-monospace, Menlo, monospace" font-size="12">
+          <g fill="currentColor" fill-opacity=".62" font-size="10.5">
+            <text x="356" y="52" text-anchor="middle">merge</text>
+            <text x="360" y="140" text-anchor="middle">merge</text>
+            <text x="368" y="230" text-anchor="middle">stays canonical</text>
+            <text x="372" y="308" text-anchor="middle">merge</text>
+            <text x="372" y="400" text-anchor="middle">merge</text>
+          </g>
+          <g>
+            <g fill="currentColor">
+              <text x="30" y="30" font-size="10.5" letter-spacing="2" fill-opacity=".62">TODAY · 9 PAGES</text>
+              <text x="654" y="30" font-size="10.5" letter-spacing="2" fill-opacity=".62">TARGET · 5 SURFACES</text>
+            </g>
+            <g stroke="currentColor" stroke-opacity=".4" fill="none">
+              <rect x="26" y="42" width="172" height="26" rx="6"/>
+              <rect x="26" y="87" width="172" height="26" rx="6"/>
+              <rect x="26" y="132" width="172" height="26" rx="6"/>
+              <rect x="26" y="177" width="172" height="26" rx="6"/>
+              <rect x="26" y="222" width="172" height="26" rx="6"/>
+              <rect x="26" y="267" width="172" height="26" rx="6"/>
+              <rect x="26" y="312" width="172" height="26" rx="6"/>
+              <rect x="26" y="357" width="172" height="26" rx="6"/>
+              <rect x="26" y="402" width="172" height="26" rx="6"/>
+            </g>
+            <g fill="currentColor">
+              <text x="38" y="59">home</text>
+              <text x="38" y="104">live_online</text>
+              <text x="38" y="149">index (stale)</text>
+              <text x="38" y="194">live_training</text>
+              <text x="38" y="239">metrics_lab</text>
+              <text x="38" y="284">ab_dashboard</text>
+              <text x="38" y="329">experiment_review</text>
+              <text x="38" y="374">sev0</text>
+              <text x="38" y="419">board</text>
+            </g>
+          </g>
+          <g>
+            <g stroke="#d9a441" fill="none" stroke-width="1.5">
+              <rect x="516" y="60" width="356" height="42" rx="8"/>
+              <rect x="516" y="145" width="356" height="42" rx="8"/>
+              <rect x="516" y="228" width="356" height="42" rx="8"/>
+              <rect x="516" y="313" width="356" height="42" rx="8"/>
+              <rect x="516" y="396" width="356" height="42" rx="8"/>
+            </g>
+            <g fill="currentColor">
+              <text x="530" y="78" font-weight="700">DESK</text>
+              <text x="530" y="93" font-size="10.5" fill-opacity=".62">status strip · equity + MC cones · tonight's windows</text>
+              <text x="530" y="163" font-weight="700">MODELS</text>
+              <text x="530" y="178" font-size="10.5" fill-opacity=".62">arm ladder · internals · calibration · training curves</text>
+              <text x="530" y="246" font-weight="700">EVALUATION</text>
+              <text x="530" y="261" font-size="10.5" fill-opacity=".62">metrics_lab, unchanged order · sole metric authority</text>
+              <text x="530" y="331" font-weight="700">EXPERIMENTS</text>
+              <text x="530" y="346" font-size="10.5" fill-opacity=".62">treatment board · SPRT bars · promotion history</text>
+              <text x="530" y="414" font-weight="700">METHOD &amp; INCIDENTS</text>
+              <text x="530" y="429" font-size="10.5" fill-opacity=".62">architecture · SEV log · decisions · research gaps</text>
+            </g>
+          </g>
+        </g>
+      </svg>
+      <figcaption>Consolidation map. index.html is archived with a banner, its agent-ladder
+      history folded into Models. Each fact gets exactly one home; every other surface links
+      instead of re-rendering.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>The design language — what "made by an AI MLE" means concretely</h2>
+    <div class="two">
+      <div class="card"><span class="tag">Principle 1</span>
+        <h3>The dashboard is the model's self-report</h3>
+        <p>Every module answers: what do I believe, how sure am I, what would change my
+        mind. Gates and thresholds (REGIME_FLOOR 0.62, SPRT boundaries, retrain gate) are
+        drawn on the charts they govern — the reader sees the tripwire, not just the line.</p></div>
+      <div class="card"><span class="tag">Principle 2</span>
+        <h3>No naked numbers</h3>
+        <p>A metric renders only inside a StatTile that carries n, the relevant floor
+        (persistence, market, break-even), and a skill badge. If n is too small to defend,
+        the tile says so instead of showing a number — the metrics_lab "thin history"
+        pattern, promoted to a site-wide law.</p></div>
+      <div class="card"><span class="tag">Principle 3</span>
+        <h3>Provenance on every surface</h3>
+        <p>Champion key + promotion stamp, data age, config constants in force, and the
+        rendering revision, in a fixed strip. A screenshot of any page is a reproducible
+        claim, not an anonymous chart.</p></div>
+      <div class="card"><span class="tag">Principle 4</span>
+        <h3>Honesty affordances over decoration</h3>
+        <p>The Monte-Carlo falsifiability cones, the baseline-vs-arm pairing, the
+        family-wise-corrected boundaries — these are the personality of the site. The
+        redesign gives them first-class visual treatment and cuts ornament that doesn't
+        encode state.</p></div>
+    </div>
+
+    <h3 style="margin-top:8px">Theme tokens — dual mode, one variable set</h3>
+    <p>Ivory "print" stays the default (per the recorded decision in theme.css); dark
+    "desk" ships as an opt-in equal citizen for live monitoring. Same token names the
+    pages already use, so adoption is a toggle, not a rewrite. The 10-step series palette
+    gets re-stepped for the dark ground and re-validated for CVD separation.</p>
+    <div class="swatches">
+      <span class="sw"><i style="background:#0d1220"></i>desk ground</span>
+      <span class="sw"><i style="background:#151c2c"></i>desk surface</span>
+      <span class="sw"><i style="background:#e9ecf4"></i>desk ink</span>
+      <span class="sw"><i style="background:#f3f5f8"></i>print ground</span>
+      <span class="sw"><i style="background:#17202e"></i>print ink</span>
+      <span class="sw"><i style="background:#d9a441"></i>gauge amber (accent)</span>
+      <span class="sw"><i style="background:#43a97c"></i>up / good</span>
+      <span class="sw"><i style="background:#d96a5f"></i>down / critical</span>
+    </div>
+    <p><b>Type:</b> the Didot editorial voice concentrates where long-form belongs (Method
+    &amp; Incidents, the "why" notes). Instrument surfaces run a geometric sans display for
+    section titles, the system sans for body, and the monospace stack for every digit,
+    label, and stamp — tabular numerals throughout. <b>Semantic color</b> (up/down,
+    good/critical) stays reserved and is never a series color; the amber accent marks
+    proposals, gates, and attention, and appears nowhere else.</p>
+  </section>
+
+  <section>
+    <h2>Component system — eight atoms feed every surface</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Component</th><th>Contract</th><th>Replaces</th></tr></thead>
+      <tbody>
+        <tr><td>StatTile</td><td>value · n · floor · CI/badge · freshness dot; refuses to render undefended numbers</td><td>bare bignum stats on every page</td></tr>
+        <tr><td>EvidenceBar</td><td>SPRT LLR vs family-wise-corrected boundaries, progress + verdict, from <code>treatments.json</code></td><td>four independent A/B renderings (F1)</td></tr>
+        <tr><td>FreshnessChip</td><td>age of last tick/settle per source; green &lt;30s, amber &lt;5m, red stale</td><td>nothing — the gap in F3</td></tr>
+        <tr><td>VersionStamp</td><td>champion key + promoted_at, config constants, git rev</td><td>nothing — the gap in F3</td></tr>
+        <tr><td>SkillBadge</td><td>pass/fail vs named floor: MASE&lt;1, BSS&gt;0, win%&gt;break-even, PT z&gt;1.96</td><td>prose caveats buried in intros (F2, F6)</td></tr>
+        <tr><td>CalibrationStrip</td><td>Platt (a,b) + three reliability buckets, per arm</td><td>per-page Platt tables + duplicated JS (F5)</td></tr>
+        <tr><td>RegimeChip</td><td>current σ-bucket + market-accuracy gate state (M8 open/closed)</td><td>regime tables re-explained per page</td></tr>
+        <tr><td>GlossTerm</td><td>shipped — glossary.js wraps 62 terms, six-section panel</td><td>unassisted jargon (F10)</td></tr>
+      </tbody>
+    </table></div>
+    <p>All eight read from one <code>site/lib.js</code> data layer (single fetch/cache,
+    metric functions mirroring <code>btc_rl/metrics.py</code> one-for-one). Pages become
+    thin compositions of atoms — the same move the Python side already made.</p>
+  </section>
+
+  <section>
+    <h2>Backend data contracts — requested and delivered</h2>
+    <p>All additive: new emitter scripts and new output files only; nothing existing was
+    modified, and nothing the system computes changed. Delivered by the backend team
+    2026-08-28 and verified (all three outputs parse; the reconstructed board is
+    field-identical to the live daemon's status dicts; boundaries match the
+    family-wise-corrected theory: upper 5.66296 at α 0.05/16).</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Req</th><th>Deliverable</th><th>Feeds</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="num">B1</td><td><code>results/site_manifest.json</code> via <code>scripts/emit_manifest.py</code>: champion key + promoted_at, config constants in force (AST-parsed — importing online.py is side-effectful, documented), per-file size_bytes + mtime, tail-read freshness with age_s, git rev</td><td>FreshnessChip, VersionStamp, RegimeChip</td><td>DELIVERED</td></tr>
+        <tr><td class="num">B2</td><td><code>results/treatments_board.json</code> via <code>scripts/emit_board.py</code>: all 14 <code>Treatment.status()</code> dicts, config from code constants (mirroring the persisted-state override fix), family α in header</td><td>EvidenceBar as sole A/B source (F1)</td><td>DELIVERED · zero diffs vs live daemon</td></tr>
+        <tr><td class="num">B3</td><td><code>results/metric_fixtures.json</code> via <code>scripts/emit_metric_fixtures.py</code>: 10 functions, 27 cases computed by the real <code>btc_rl.metrics</code>, edge behaviors included</td><td>R1 migration gate (F5)</td><td>DELIVERED</td></tr>
+        <tr><td class="num">B4</td><td>Floors block in the manifest: break-even grid via the real fee model, market Brier/accuracy + M8 gate state over the registered lookback, persistence MAE per horizon (bounded tail reads)</td><td>StatTile, SkillBadge (F2)</td><td>DELIVERED</td></tr>
+        <tr><td class="num">B5</td><td>Byte-offset checkpoints: <code>files.size_bytes</code> in the manifest is the documented Range-request resume offset per JSONL</td><td>shared fetch layer (F8)</td><td>DELIVERED (via B1)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Migration — shipped as treatments, per the project's own rules</h2>
+    <p>Every behavior change in this project runs shadow-first with a gate. The redesign
+    obeys the same discipline it reports on. Old pages are archived, never deleted.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Step</th><th>Change</th><th>Gate to pass</th></tr></thead>
+      <tbody>
+        <tr><td class="num">R1</td><td>Wire glossary.js on all pages; extract <code>site/lib.js</code> (fetch layer + AUC/Platt/drawdown/fee, deleting the in-page twins)</td><td>Byte-identical metric output vs current pages on the B3 frozen snapshot</td></tr>
+        <tr><td class="num">R2</td><td>Dual-mode tokens in theme.css + opt-in toggle; re-stepped dark series palette</td><td>Contrast ≥ 4.5:1 for text both modes; CVD check on all 10 series; zero light-mode visual diffs</td></tr>
+        <tr><td class="num">R3</td><td>Status strip (FreshnessChip + VersionStamp + RegimeChip) on every page, from the B1 manifest</td><td>Stamp matches <code>treatments.json</code> champion and tick age within 1 poll cycle</td></tr>
+        <tr><td class="num">R4</td><td>Experiments surface: merge ab_dashboard + experiment_review + sev0 champion table; EvidenceBar everywhere</td><td>Old pages redirect; no SPRT fact rendered outside the shared component</td></tr>
+        <tr><td class="num">R5</td><td>Desk landing rebuild (home absorbs live_online's live modules); StatTile/SkillBadge law enforced</td><td>Every headline number shows n + floor; cold-reader task test: position/P&amp;L/regime/health findable in &lt;10s</td></tr>
+        <tr><td class="num">R6</td><td>Archive index.html with banner; fold ladder history into Models (with live_training curves + MODEL_INTERNALS)</td><td>No inbound link 404s; historical record still reachable</td></tr>
+        <tr><td class="num">R7</td><td>Method &amp; Incidents: sev0 + board + DECISIONS + research-gap backlog</td><td>Mitigation tracker and owner queue feature-complete vs old pages</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>Already landed</h2>
+    <ul>
+      <li><b>site/glossary.json</b> — 62 entries: what / coined / intuition / math /
+        in-this-project / code, history verified against docs/RESEARCH_BASELINE.md
+        citations; 20 coinage claims explicitly marked "attribution not verified" rather
+        than invented.</li>
+      <li><b>site/glossary.js</b> — dependency-free; wraps first occurrence per term per
+        section (75 wraps on metrics_lab, cap 150), never inside links or code; slide-over
+        panel with six labeled sections; Esc/overlay close; theme-variable styled; verified
+        live in Chrome with screenshot.</li>
+    </ul>
+    <p class="footer">Grounding: heading maps and line counts from all nine
+      site/*.html; theme.css token comments; btc_rl/metrics.py, treatments.py, online.py;
+      docs/RESEARCH_BASELINE.md, MODEL_INTERNALS.md. Nothing in this spec proposes changing
+      what the system computes — only where each fact lives and how defensibly it is shown.</p>
+  </section>
+</main>

@@ -1,0 +1,413 @@
+{
+ "generated_ts": 1787985245.716,
+ "git_rev": "fe8910f",
+ "champion": {
+  "key": "champion",
+  "promoted_at": null,
+  "promoted_count": 0,
+  "source": "results/treatments.json"
+ },
+ "config": {
+  "TREAT_ALPHA": 0.003125,
+  "TREAT_MAX_CONCURRENT": 16,
+  "TREAT_EDGE": 0.02,
+  "TREAT_MIN_N": 40,
+  "REGIME_LOOKBACK": 20,
+  "REGIME_FLOOR": 0.62,
+  "KNIFE_BAND": 0.1,
+  "TREAT_ALPHA_FAMILY": 0.05
+ },
+ "config_source": "btc_rl/online.py (AST-parsed, not imported)",
+ "files": {
+  "audit_report.json": {
+   "size_bytes": 10536,
+   "mtime_ts": 1787985002.625
+  },
+  "best_bids.jsonl": {
+   "size_bytes": 233923,
+   "mtime_ts": 1787367817.553
+  },
+  "board.json": {
+   "size_bytes": 5393,
+   "mtime_ts": 1787983105.305
+  },
+  "demo_account.json": {
+   "size_bytes": 115,
+   "mtime_ts": 1787985241.154
+  },
+  "demo_fills.jsonl": {
+   "size_bytes": 563,
+   "mtime_ts": 1787719187.606
+  },
+  "demo_orders.jsonl": {
+   "size_bytes": 42623,
+   "mtime_ts": 1787983458.338
+  },
+  "headline_scores.json": {
+   "size_bytes": 7711,
+   "mtime_ts": 1787977834.739
+  },
+  "hindsight_entries.json": {
+   "size_bytes": 15313,
+   "mtime_ts": 1787360373.659
+  },
+  "hist_bars_cache.jsonl": {
+   "size_bytes": 3017228,
+   "mtime_ts": 1787699432.064
+  },
+  "incidents.jsonl": {
+   "size_bytes": 822,
+   "mtime_ts": 1787978353.832
+  },
+  "kalshi_binary_log.jsonl": {
+   "size_bytes": 8045645,
+   "mtime_ts": 1787985198.959
+  },
+  "kalshi_history.jsonl": {
+   "size_bytes": 4141808,
+   "mtime_ts": 1787367817.55
+  },
+  "kb4_logit.json": {
+   "size_bytes": 290,
+   "mtime_ts": 1787985031.049
+  },
+  "kb5_logit.json": {
+   "size_bytes": 332,
+   "mtime_ts": 1787985031.05
+  },
+  "kb6_logit.json": {
+   "size_bytes": 292,
+   "mtime_ts": 1787985031.05
+  },
+  "kb8_logit.json": {
+   "size_bytes": 96,
+   "mtime_ts": 1787985031.05
+  },
+  "kb8_replay.jsonl": {
+   "size_bytes": 155069,
+   "mtime_ts": 1787675965.613
+  },
+  "kb_bets.jsonl": {
+   "size_bytes": 192283,
+   "mtime_ts": 1787985065.209
+  },
+  "kb_bets_sel.jsonl": {
+   "size_bytes": 4387,
+   "mtime_ts": 1787846410.66
+  },
+  "kb_bets_sel_prepolicy.jsonl": {
+   "size_bytes": 698,
+   "mtime_ts": 1787357764.291
+  },
+  "kb_calib.json": {
+   "size_bytes": 19254,
+   "mtime_ts": 1787985031.051
+  },
+  "kb_logit.json": {
+   "size_bytes": 545,
+   "mtime_ts": 1787985031.049
+  },
+  "kb_sel_policy.json": {
+   "size_bytes": 652,
+   "mtime_ts": 1787968808.508
+  },
+  "learning_log.jsonl": {
+   "size_bytes": 260798,
+   "mtime_ts": 1787985233.456
+  },
+  "linear_q.json": {
+   "size_bytes": 22100,
+   "mtime_ts": 1787266714.919
+  },
+  "linear_q_report.json": {
+   "size_bytes": 470,
+   "mtime_ts": 1787266714.92
+  },
+  "linucb_t10-h1.json": {
+   "size_bytes": 189831,
+   "mtime_ts": 1787985065.24
+  },
+  "linucb_t10-h15.json": {
+   "size_bytes": 190011,
+   "mtime_ts": 1787985065.246
+  },
+  "linucb_t10-h30.json": {
+   "size_bytes": 168326,
+   "mtime_ts": 1787985065.249
+  },
+  "linucb_t10-h5.json": {
+   "size_bytes": 189719,
+   "mtime_ts": 1787985065.243
+  },
+  "linucb_t11-h1.json": {
+   "size_bytes": 128477,
+   "mtime_ts": 1787985065.251
+  },
+  "linucb_t11-h15.json": {
+   "size_bytes": 124142,
+   "mtime_ts": 1787985065.254
+  },
+  "linucb_t11-h30.json": {
+   "size_bytes": 117712,
+   "mtime_ts": 1787985065.256
+  },
+  "linucb_t11-h5.json": {
+   "size_bytes": 128588,
+   "mtime_ts": 1787985065.253
+  },
+  "linucb_t2-h1.json": {
+   "size_bytes": 128469,
+   "mtime_ts": 1787985065.22
+  },
+  "linucb_t2-h15.json": {
+   "size_bytes": 121814,
+   "mtime_ts": 1787985065.234
+  },
+  "linucb_t2-h30.json": {
+   "size_bytes": 128723,
+   "mtime_ts": 1787985065.235
+  },
+  "linucb_t2-h5.json": {
+   "size_bytes": 128932,
+   "mtime_ts": 1787985065.232
+  },
+  "linucb_t6-h1.json": {
+   "size_bytes": 472976,
+   "mtime_ts": 1787985065.226
+  },
+  "linucb_t6-h15.json": {
+   "size_bytes": 470191,
+   "mtime_ts": 1787985065.263
+  },
+  "linucb_t6-h30.json": {
+   "size_bytes": 472507,
+   "mtime_ts": 1787985065.27
+  },
+  "linucb_t6-h5.json": {
+   "size_bytes": 281832,
+   "mtime_ts": 1787295426.884
+  },
+  "linucb_t7-h1.json": {
+   "size_bytes": 8891,
+   "mtime_ts": 1787985065.227
+  },
+  "linucb_t7-h15.json": {
+   "size_bytes": 8789,
+   "mtime_ts": 1787985065.236
+  },
+  "linucb_t7-h30.json": {
+   "size_bytes": 5456,
+   "mtime_ts": 1787295426.869
+  },
+  "linucb_t7-h5.json": {
+   "size_bytes": 5588,
+   "mtime_ts": 1787295426.869
+  },
+  "live_snapshots.jsonl": {
+   "size_bytes": 4263863,
+   "mtime_ts": 1787985233.255
+  },
+  "live_status.json": {
+   "size_bytes": 383,
+   "mtime_ts": 1787266705.396
+  },
+  "metric_fixtures.json": {
+   "size_bytes": 5802,
+   "mtime_ts": 1787985103.371
+  },
+  "metrics.json": {
+   "size_bytes": 14952,
+   "mtime_ts": 1787266705.396
+  },
+  "metrics_history.jsonl": {
+   "size_bytes": 1167853,
+   "mtime_ts": 1787983296.351
+  },
+  "model_internals.json": {
+   "size_bytes": 15838,
+   "mtime_ts": 1787984752.271
+  },
+  "offline_gate.json": {
+   "size_bytes": 3002,
+   "mtime_ts": 1787221217.105
+  },
+  "online_status.json": {
+   "size_bytes": 13770,
+   "mtime_ts": 1787985233.456
+  },
+  "pb_bets.jsonl": {
+   "size_bytes": 61833,
+   "mtime_ts": 1787985031.142
+  },
+  "prediction_log.jsonl": {
+   "size_bytes": 29960553,
+   "mtime_ts": 1787985065.579
+  },
+  "pt2_trades.jsonl": {
+   "size_bytes": 110034,
+   "mtime_ts": 1787985233.426
+  },
+  "pt3_trades.jsonl": {
+   "size_bytes": 53185,
+   "mtime_ts": 1787984124.454
+  },
+  "pt4_trades.jsonl": {
+   "size_bytes": 45556,
+   "mtime_ts": 1787984124.454
+  },
+  "pt5_trades.jsonl": {
+   "size_bytes": 101656,
+   "mtime_ts": 1787985233.427
+  },
+  "pt6_logit.json": {
+   "size_bytes": 180,
+   "mtime_ts": 1787985031.146
+  },
+  "pt6_trades.jsonl": {
+   "size_bytes": 85847,
+   "mtime_ts": 1787985233.428
+  },
+  "pt7_trades.jsonl": {
+   "size_bytes": 6388,
+   "mtime_ts": 1787985031.146
+  },
+  "pt8_trades.jsonl": {
+   "size_bytes": 4879,
+   "mtime_ts": 1787985031.146
+  },
+  "pt_trades.jsonl": {
+   "size_bytes": 99868,
+   "mtime_ts": 1787985233.425
+  },
+  "q_table.json": {
+   "size_bytes": 218865,
+   "mtime_ts": 1787266705.399
+  },
+  "q_table_online_h1.json": {
+   "size_bytes": 29280,
+   "mtime_ts": 1787985065.218
+  },
+  "q_table_online_h15.json": {
+   "size_bytes": 29221,
+   "mtime_ts": 1787985065.229
+  },
+  "q_table_online_h30.json": {
+   "size_bytes": 29025,
+   "mtime_ts": 1787985065.23
+  },
+  "q_table_online_h5.json": {
+   "size_bytes": 29145,
+   "mtime_ts": 1787985065.229
+  },
+  "recent_prices.json": {
+   "size_bytes": 12545,
+   "mtime_ts": 1787985233.433
+  },
+  "ticks.jsonl": {
+   "size_bytes": 41624353,
+   "mtime_ts": 1787985241.943
+  },
+  "training_progress.jsonl": {
+   "size_bytes": 56366,
+   "mtime_ts": 1787266705.384
+  },
+  "treatments.json": {
+   "size_bytes": 9373,
+   "mtime_ts": 1787985065.121
+  },
+  "treatments.jsonl": {
+   "size_bytes": 61969,
+   "mtime_ts": 1787985065.12
+  },
+  "treatments_board.json": {
+   "size_bytes": 5898,
+   "mtime_ts": 1787985103.333
+  },
+  "watchdog_log.jsonl": {
+   "size_bytes": 634,
+   "mtime_ts": 1787561400.593
+  }
+ },
+ "files_note": "size_bytes is the Range-request resume offset for JSONL deltas (spec B5)",
+ "freshness": {
+  "ticks": {
+   "path": "results/ticks.jsonl",
+   "last_ts": 1787985238.530314,
+   "age_s": 7.2
+  },
+  "prediction_log": {
+   "path": "results/prediction_log.jsonl",
+   "last_ts": 1787985000,
+   "age_s": 245.7
+  }
+ },
+ "floors": {
+  "break_even": {
+   "grid": [
+    {
+     "ask_c": 30,
+     "fee_c": 2.0,
+     "break_even_p": 0.32
+    },
+    {
+     "ask_c": 40,
+     "fee_c": 2.0,
+     "break_even_p": 0.42
+    },
+    {
+     "ask_c": 50,
+     "fee_c": 2.0,
+     "break_even_p": 0.52
+    },
+    {
+     "ask_c": 60,
+     "fee_c": 2.0,
+     "break_even_p": 0.62
+    },
+    {
+     "ask_c": 70,
+     "fee_c": 2.0,
+     "break_even_p": 0.72
+    },
+    {
+     "ask_c": 80,
+     "fee_c": 2.0,
+     "break_even_p": 0.82
+    }
+   ],
+   "representative": {
+    "ask_c": 54.0,
+    "fee_c": 2.0,
+    "break_even_p": 0.56,
+    "basis": "median price_c of last 50 kb_bets rows"
+   }
+  },
+  "market": {
+   "n_windows": 20,
+   "lookback": 20,
+   "brier": 0.22067,
+   "accuracy": 0.65,
+   "m8_gate_active": false,
+   "source": "results/kalshi_binary_log.jsonl (tail)"
+  },
+  "persistence_mae": {
+   "h1": {
+    "mae": 15.224,
+    "n": 155
+   },
+   "h5": {
+    "mae": 41.27,
+    "n": 154
+   },
+   "h15": {
+    "mae": 75.155,
+    "n": 152
+   },
+   "h30": {
+    "mae": 107.873,
+    "n": 149
+   },
+   "source": "results/prediction_log.jsonl (tail)"
+  }
+ }
+}
