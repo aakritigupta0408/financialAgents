@@ -191,7 +191,8 @@ def main() -> None:
               "sections": {
                   "desk": desk_section(),
                   "traders": {name: line for name in
-                              ("pt2", "pt3", "pt4", "pt5", "pt6")
+                              ("pt2", "pt3", "pt4", "pt5", "pt6",
+                               "pt7", "pt8")
                               if (line := trader_line(name)) is not None},
                   "tier1": tier1_section(),
                   "tier2": tier2_section(),

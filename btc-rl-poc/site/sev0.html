@@ -1340,7 +1340,8 @@ document.addEventListener("keydown", ev => {
 archDraw("root");
 
 async function poll() {
-  const [kb, preds, pt, pt2, pt3, pt4, pt5, pt6, st] = await Promise.all([
+  const [kb, preds, pt, pt2, pt3, pt4, pt5, pt6, pt7, pt8, st]
+    = await Promise.all([
     jsonl("../results/kalshi_binary_log.jsonl"),
     jsonl("../results/prediction_log.jsonl"),
     jsonl("../results/pt_trades.jsonl"),
@@ -1349,6 +1350,8 @@ async function poll() {
     jsonl("../results/pt4_trades.jsonl"),
     jsonl("../results/pt5_trades.jsonl"),
     jsonl("../results/pt6_trades.jsonl"),
+    jsonl("../results/pt7_trades.jsonl"),
+    jsonl("../results/pt8_trades.jsonl"),
     fetch(bust("../results/online_status.json"), { cache: "no-store" })
       .then(r => r.ok ? r.json() : {}).catch(() => ({})),
   ]);
@@ -1711,7 +1714,9 @@ async function poll() {
   try {
     const L = [["Follower", pt], ["Ladder", pt2], ["Disciplined", pt3],
       ["Gambler", pt4.filter(t => t.made_ts >= 1787788353)],
-      ["Saver", pt5], ["MLE", pt6.filter(t => !t.skipped)]];
+      ["Saver", pt5], ["MLE", pt6.filter(t => !t.skipped)],
+      ["Patient (limit)", pt7.filter(t => !t.skipped)],
+      ["Ideal (composite)", pt8.filter(t => !t.skipped)]];
     document.querySelector("#t4-tbl tbody").innerHTML = L.map(([nm, arr]) => {
       const s = arr.filter(t => t.actual != null);
       if (!s.length) return `<tr><td>${nm}</td>` +
