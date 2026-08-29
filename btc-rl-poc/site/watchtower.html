@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — The Watchtower</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* watchtower-local status tokens — site convention: amber = the
+   series-4 hex, already used as the status amber by clock.html and
+   universe.html. Status colors are never used for data series here. */
+:root { --w-green: var(--good); --w-amber: #8f6000;
+  --w-red: var(--down); --w-none: var(--muted); }
+
+/* system-health strip */
+.overall { display: flex; align-items: baseline; gap: 14px;
+  flex-wrap: wrap; margin: 6px 0 14px; }
+.overall .word { font: 650 30px/1 var(--display); letter-spacing: .04em; }
+.planes { display: flex; flex-direction: column; gap: 0; }
+.plane { display: grid; grid-template-columns: 14px 64px 170px 1fr;
+  gap: 12px; align-items: baseline; padding: 8px 0;
+  border-bottom: 1px solid var(--grid); }
+.plane:last-child { border-bottom: none; }
+.plane .pname { font-weight: 600; color: var(--ink); font-size: 13.5px; }
+.plane .pwhy { font-size: 13px; color: var(--ink-2); }
+.hdot { width: 10px; height: 10px; border-radius: 50%;
+  display: inline-block; vertical-align: -1px; align-self: center; }
+.hdot.green { background: var(--w-green); }
+.hdot.amber { background: var(--w-amber); }
+.hdot.red   { background: var(--w-red); }
+.hdot.none  { background: transparent;
+  border: 2px solid var(--w-none); }
+.stw { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; }
+td .hdot { margin-right: 7px; }
+.stw.green { color: var(--w-green); } .stw.amber { color: var(--w-amber); }
+.stw.red { color: var(--w-red); }    .stw.none { color: var(--w-none); }
+
+/* invariant wall */
+.wall td.origin { color: var(--muted); font-size: 12.5px; }
+.wall td .fail-detail { display: block; font-size: 12px;
+  color: var(--down); margin-top: 2px; }
+.wall td.iname { font-weight: 600; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+
+/* monitors */
+.queued-chip { font-size: 10.5px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  background: var(--surface-2); border: 1px dashed var(--border);
+  border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+tr.queued td { color: var(--muted); }
+
+/* sev ladder */
+.sevgrid { display: grid; gap: 12px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+.sevcard { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 12px 14px;
+  border-left-width: 3px; }
+.sevcard.s0 { border-left-color: var(--w-red); }
+.sevcard.s1 { border-left-color: #bc4514; }
+.sevcard.s2 { border-left-color: var(--w-amber); }
+.sevcard.s3 { border-left-color: var(--w-none); }
+.sevcard .lvl { font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; }
+.sevcard.s0 .lvl { color: var(--w-red); }
+.sevcard.s1 .lvl { color: #bc4514; }
+.sevcard.s2 .lvl { color: var(--w-amber); }
+.sevcard.s3 .lvl { color: var(--w-none); }
+.sevcard .meaning { font: 500 15px var(--display); color: var(--ink);
+  margin: 3px 0 6px; }
+.sevcard .trig { font-size: 12.5px; line-height: 1.55;
+  color: var(--ink-2); }
+.sevchip { font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
+.sevchip.s0 { color: var(--w-red); background: rgba(209,60,60,.1); }
+.sevchip.s1 { color: #bc4514; background: rgba(188,69,20,.1); }
+.sevchip.s2 { color: var(--w-amber); background: rgba(143,96,0,.1); }
+.sevchip.s3 { color: var(--w-none); background: rgba(124,134,149,.12); }
+
+/* routing flow */
+.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-top: 14px; }
+.fstep { border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); padding: 8px 12px; font-size: 12.5px;
+  font-weight: 600; color: var(--ink-2); text-align: center; }
+.fstep b { display: block; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); font-weight: 700;
+  margin-bottom: 2px; }
+.fstep.final { border-color: var(--w-green); color: var(--ink); }
+.farrow { color: var(--faint); font-size: 15px; }
+@media (max-width: 640px) {
+  .plane { grid-template-columns: 14px 60px 1fr; }
+  .plane .pwhy { grid-column: 2 / -1; padding-left: 26px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="board.html">Experiments</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="agents.html">Agents</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="watchtower.html">Watchtower</a><span class="spacer"></span><span class="tag">maintenance plane</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow">the maintenance plane</div>
+  <h1>The Watchtower</h1>
+  <p class="sub small">Monitors, invariants, incidents — the machinery
+  that decides whether the science can be trusted. Every light and row
+  below is fetched live from the published JSON (15-second poll);
+  where a monitor does not exist yet, it says so honestly rather than
+  pretending. Nothing on this page is invented.</p>
+</header>
+
+<section>
+  <h2>System health <span class="pill" id="hl-stamp">…</span></h2>
+  <p class="sub small">Seven planes, one light each, worst light wins.
+  Each reason is the actual measurement behind the light.</p>
+  <div class="overall"><span class="hdot none" id="ov-dot"></span>
+    <span class="word stw none" id="ov-word">READING…</span>
+    <span class="small muted" id="ov-note">fetching live signals</span></div>
+  <div class="planes" id="planes"><p class="mini">reading signals…</p></div>
+  <p class="mini">Ages quoted from inside a board file (decision
+  ledger, world clock) are as-of that file's last emit — the auditor
+  re-stamps them every 10 minutes.</p>
+</section>
+
+<section>
+  <h2>The invariant wall <span class="pill" id="inv-count">…</span></h2>
+  <p class="sub small" id="inv-sub">9 machine-checked promises,
+  re-verified every 10 minutes — each one exists because something once
+  broke. The "origin" column is the scar that created the check.</p>
+  <div class="scroll"><table class="wall" id="inv-tbl">
+    <thead><tr><th>status</th><th>invariant</th>
+      <th>origin — the scar that created it</th></tr></thead>
+    <tbody><tr><td colspan="3" class="mini">loading…</td></tr></tbody>
+  </table></div>
+</section>
+
+<section>
+  <h2>Monitors <span class="pill" id="mon-count">…</span></h2>
+  <p class="sub small">Every cadence the system actually runs (from
+  the world clock), plus the monitors the desk knows it still owes —
+  listed as queued, not faked.</p>
+  <div class="scroll"><table id="mon-tbl">
+    <thead><tr><th>status</th><th>monitor</th><th>cadence</th>
+      <th>owner</th><th class="num">last run</th></tr></thead>
+    <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="thresholds">governing thresholds: loading…</p>
+</section>
+
+<section>
+  <h2>Severity ladder &amp; open incidents</h2>
+  <p class="sub small">The four-level taxonomy adopted in the OS
+  blueprint (§7) — INCIDENTS.md grades on it. Below the ladder, every
+  incident currently on the books, in whatever state it is in; closed
+  or mitigating, it stays visible.</p>
+  <div class="sevgrid">
+    <div class="sevcard s0"><div class="lvl">SEV-0</div>
+      <div class="meaning">results cannot be trusted</div>
+      <div class="trig">leakage; eval sees future data; pairing
+      corrupted; wrong settlement; metric changed mid-experiment;
+      logged policy ≠ running policy; unreproducible result</div></div>
+    <div class="sevcard s1"><div class="lvl">SEV-1</div>
+      <div class="meaning">material performance/risk degradation</div>
+      <div class="trig">maxDD breach; EV collapse beyond threshold;
+      stake-cap breach; execution leak beyond bound</div></div>
+    <div class="sevcard s2"><div class="lvl">SEV-2</div>
+      <div class="meaning">degraded subsystem, safe fallback</div>
+      <div class="trig">stale feed within fallback; repeated retrain
+      failures; drift threshold; coverage collapse; missed monitor
+      run</div></div>
+    <div class="sevcard s3"><div class="lvl">SEV-3</div>
+      <div class="meaning">maintenance, no scientific impact</div>
+      <div class="trig">stale dashboard; publisher failure; delayed
+      non-critical report</div></div>
+  </div>
+  <div class="scroll"><table id="inc-tbl">
+    <thead><tr><th>severity</th><th>incident</th><th>opened</th>
+      <th>status</th><th>record</th></tr></thead>
+    <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+  </table></div>
+  <p class="mini" id="inc-note"></p>
+</section>
+
+<section>
+  <h2>What happens when a monitor fires</h2>
+  <p class="sub small">Observability routing: the fixed path a firing
+  monitor takes through the system. No step is skippable, and the last
+  step feeds the wall above.</p>
+  <div class="flow">
+    <div class="fstep"><b>1 · detect</b>monitor fires</div>
+    <span class="farrow">→</span>
+    <div class="fstep"><b>2 · route</b>watchdog / auditor</div>
+    <span class="farrow">→</span>
+    <div class="fstep"><b>3 · record</b>incident logged<br>(SEV graded)</div>
+    <span class="farrow">→</span>
+    <div class="fstep"><b>4 · mitigate</b>fix runs as a<br>TREATMENT arm</div>
+    <span class="farrow">→</span>
+    <div class="fstep"><b>5 · verify</b>SPRT verdict</div>
+    <span class="farrow">→</span>
+    <div class="fstep"><b>6 · decide</b>human decision<br>(owner sign-off)</div>
+    <span class="farrow">→</span>
+    <div class="fstep final"><b>7 · close the loop</b>regression test added<br>to the invariant wall</div>
+  </div>
+  <p class="mini">every incident ends as an invariant — the wall above
+  is this diagram's output.</p>
+</section>
+
+<footer>Watchtower reads only published artifacts:
+<code>invariants.json</code> · <code>world.json</code> ·
+<code>decision_board.json</code> · <code>incidents.jsonl</code> ·
+<code>online_status.json</code> · <code>audit_report.json</code> ·
+<code>site_manifest.json</code>. Re-polled every 15&nbsp;s.</footer>
+</main>
+
+<script>
+"use strict";
+const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
+const jf = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.json() : null).catch(() => null);
+const jl = u => fetch(bust(u), { cache: "no-store" })
+  .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
+    .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
+      catch { return null; } }).filter(Boolean)).catch(() => []);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const el = id => document.getElementById(id);
+const nowS = () => Date.now() / 1000;
+const ageMin = ts => (ts == null || !isFinite(ts)) ? null
+  : Math.max(0, (nowS() - ts) / 60);
+const fmtAge = m => m == null ? "–"
+  : m < 1 ? "<1 min" : m < 90 ? m.toFixed(0) + " min"
+  : (m / 60).toFixed(1) + " h";
+const RANK = { green: 0, amber: 1, none: 1, red: 2 };
+const WORD = { green: "GREEN", amber: "AMBER", red: "RED",
+  none: "NO DATA" };
+const light = (st, w) => `<span class="hdot ${st}"></span>` +
+  `<span class="stw ${st}">${w || WORD[st]}</span>`;
+
+/* PLANE MAPPING (documented per the maintenance brief):
+   Data                 <- online_status.alive_at heartbeat age
+                           (<5 min green, <15 amber, else red)
+   Prediction           <- audit_report.generated_ts age
+                           (<30 min green, <90 amber, else red)
+   Probability          <- same audit age (kb calibrators are
+                           re-scored by the same 10-min audit chain)
+   Decision             <- decision_board.integrity.health as emitted
+   Execution            <- world.regions.execution_port.status/why
+   Risk & Capital       <- world.regions.decision_hq.status/why
+   Learning & Governance<- invariants.json health (passed/failed)
+   A plane whose source failed to fetch shows NO DATA and counts as
+   amber toward the overall light — absence of signal is never green. */
+function planeRows(onl, aud, dec, wld, inv) {
+  const hbAge = ageMin(onl && onl.alive_at);
+  const auAge = ageMin(aud && aud.generated_ts);
+  const grade = (age, g, a) => age == null ? "none"
+    : age < g ? "green" : age < a ? "amber" : "red";
+  const region = k => (wld && wld.regions && wld.regions[k]) || null;
+  const ex = region("execution_port"), hq = region("decision_hq");
+  const ig = dec && dec.integrity;
+  const rows = [
+    { name: "Data", st: grade(hbAge, 5, 15),
+      why: hbAge == null ? "heartbeat not fetched"
+        : "daemon heartbeat " + fmtAge(hbAge) + " old (green < 5 min)" },
+    { name: "Prediction", st: grade(auAge, 30, 90),
+      why: auAge == null ? "audit report not fetched"
+        : "audit re-scored the price arms " + fmtAge(auAge)
+          + " ago (green < 30 min)" },
+    { name: "Probability", st: grade(auAge, 30, 90),
+      why: auAge == null ? "audit report not fetched"
+        : "kb calibrators re-scored by the same audit, "
+          + fmtAge(auAge) + " ago" },
+    { name: "Decision", st: (ig && ig.health) || "none",
+      why: ig ? ig.rows + " paired windows; treatment ledger "
+          + fmtAge(ig.age_min) + " old at last board emit"
+        : "decision board not fetched" },
+    { name: "Execution", st: (ex && ex.status) || "none",
+      why: ex ? ex.why : "world map not fetched" },
+    { name: "Risk & Capital", st: (hq && hq.status) || "none",
+      why: hq ? hq.why : "world map not fetched" },
+    { name: "Learning & Governance", st: (inv && inv.health) || "none",
+      why: inv ? inv.passed + "/" + (inv.passed + inv.failed)
+          + " invariants passing; suite ran "
+          + fmtAge(ageMin(inv.generated_ts)) + " ago"
+        : "invariant suite not fetched" }];
+  return rows;
+}
+
+function renderHealth(rows) {
+  el("planes").innerHTML = rows.map(r =>
+    `<div class="plane">${light(r.st)}` +
+    `<span class="pname">${esc(r.name)}</span>` +
+    `<span class="pwhy">${esc(r.why)}</span></div>`).join("");
+  const worst = rows.reduce((w, r) =>
+    (RANK[r.st] ?? 1) > (RANK[w] ?? 1) ? r.st : w, "green");
+  el("ov-dot").className = "hdot " + worst;
+  el("ov-word").className = "word stw " + worst;
+  el("ov-word").textContent = WORD[worst];
+  const bad = rows.filter(r => r.st !== "green").map(r => r.name);
+  el("ov-note").textContent = bad.length
+    ? "worst of seven planes — attention: " + bad.join(", ")
+    : "all seven planes green";
+  el("hl-stamp").textContent = "checked " +
+    new Date().toLocaleTimeString("en-US", { hour12: false });
+  el("hl-stamp").className = "pill " +
+    (worst === "green" ? "ok" : worst === "red" ? "bad" : "pending");
+}
+
+function renderInvariants(inv) {
+  const tb = el("inv-tbl").tBodies[0];
+  if (!inv || !Array.isArray(inv.checks) || !inv.checks.length) {
+    tb.innerHTML = `<tr><td colspan="3" class="mini">invariant suite
+      not yet published</td></tr>`;
+    el("inv-count").textContent = "unpublished";
+    el("inv-count").className = "pill pending";
+    return;
+  }
+  el("inv-count").textContent = inv.passed + " pass · " +
+    inv.failed + " fail";
+  el("inv-count").className = "pill " + (inv.failed ? "bad" : "ok");
+  el("inv-sub").textContent = inv.checks.length + " machine-checked " +
+    "promises, re-verified every 10 minutes — each one exists " +
+    "because something once broke. The origin column is the scar " +
+    "that created the check. Last run " +
+    fmtAge(ageMin(inv.generated_ts)) + " ago.";
+  tb.innerHTML = inv.checks.map(c => {
+    const st = c.ok ? "green" : "red";
+    const det = (!c.ok && c.detail && c.detail.length)
+      ? `<span class="fail-detail">${esc([].concat(c.detail)
+          .join(" · "))}</span>` : "";
+    return `<tr><td>${light(st, c.ok ? "PASS" : "FAIL")}</td>` +
+      `<td class="iname">${esc(c.name)}${det}</td>` +
+      `<td class="origin">${esc(c.origin || "–")}</td></tr>`;
+  }).join("");
+}
+
+const QUEUED = [
+  ["Brier drift", "rolling Brier vs the frozen baseline window"],
+  ["feature PSI", "population-stability index on the live feature vector"],
+  ["markout", "post-fill price drift — execution quality after entry"],
+  ["SRM", "sample-ratio mismatch check on treatment pairing"]];
+
+function renderMonitors(wld, man) {
+  const tb = el("mon-tbl").tBodies[0];
+  const clk = (wld && Array.isArray(wld.clock)) ? wld.clock : [];
+  const live = clk.map(c => {
+    const st = c.health || "none";
+    const det = c.detail ? `<span class="small muted"> — ${
+      esc(c.detail)}</span>` : "";
+    return `<tr><td>${light(st)}</td>` +
+      `<td>${esc(c.what || "–")}${det}</td>` +
+      `<td>${esc(c.every || "–")}</td>` +
+      `<td>${esc(c.owner || "–")}</td>` +
+      `<td class="num">${fmtAge(c.age_min)}</td></tr>`;
+  });
+  const queued = QUEUED.map(([n, why]) =>
+    `<tr class="queued"><td><span class="queued-chip">queued — needs
+      new capture</span></td>` +
+    `<td><b>${esc(n)}</b><span class="small muted"> — ${esc(why)
+      }</span></td><td>–</td><td>unassigned</td>` +
+    `<td class="num">never run</td></tr>`);
+  tb.innerHTML = (live.length
+    ? live : [`<tr><td colspan="5" class="mini">world clock not
+        fetched — live monitor list unavailable</td></tr>`])
+    .concat(queued).join("");
+  el("mon-count").textContent = live.length + " live · " +
+    queued.length + " queued";
+  el("mon-count").className = "pill " + (live.length ? "ok" : "pending");
+  const cfg = man && man.config;
+  el("thresholds").textContent = cfg
+    ? "governing thresholds (site_manifest.config): " +
+      ["REGIME_FLOOR", "KNIFE_BAND", "TREAT_EDGE", "TREAT_MIN_N",
+       "TREAT_ALPHA", "PT_TAU"].filter(k => cfg[k] != null)
+        .map(k => k + " = " + cfg[k]).join(" · ")
+    : "governing thresholds: site manifest not fetched";
+}
+
+function renderIncidents(inc) {
+  const tb = el("inc-tbl").tBodies[0];
+  if (!inc.length) {
+    tb.innerHTML = `<tr><td colspan="5" class="mini">no incident
+      records published</td></tr>`;
+    el("inc-note").textContent = "";
+    return;
+  }
+  tb.innerHTML = inc.map(i => {
+    const s = (i.sev == null) ? "?" : i.sev;
+    const cls = "s" + (s === "?" ? "3" : Math.min(3, Math.max(0, s)));
+    const doc = i.page ? `<a href="${esc(String(i.page)
+        .replace(/^site\//, ""))}">live page</a>`
+      : i.doc ? `<code>${esc(i.doc)}</code>` : "–";
+    return `<tr><td><span class="sevchip ${cls}">SEV-${esc(s)
+      }</span></td>` +
+      `<td><b>${esc(i.title || "untitled")}</b>` +
+      (i.rca ? `<span class="small muted"> — ${esc(i.rca)}</span>`
+        : "") + `</td>` +
+      `<td class="num">${esc(i.opened || "–")}</td>` +
+      `<td><span class="pill ${/closed/i.test(i.status || "")
+        ? "ok" : "pending"}">${esc(i.status || "open")}</span></td>` +
+      `<td>${doc}</td></tr>`;
+  }).join("");
+  const open = inc.filter(i => !/closed/i.test(i.status || ""));
+  el("inc-note").textContent = open.length
+    ? open.length + " of " + inc.length + " incidents not yet " +
+      "closed (" + open.map(i => "SEV-" + i.sev + " " +
+      (i.status || "open")).join(", ") + ") — they stay on this " +
+      "board until the regression test lands on the wall."
+    : "all " + inc.length + " recorded incidents are closed — " +
+      "kept visible here, never hidden.";
+}
+
+async function poll() {
+  const [inv, wld, dec, onl, aud, man, inc] = await Promise.all([
+    jf("../results/invariants.json"),
+    jf("../results/world.json"),
+    jf("../results/decision_board.json"),
+    jf("../results/online_status.json"),
+    jf("../results/audit_report.json"),
+    jf("../results/site_manifest.json"),
+    jl("../results/incidents.jsonl")]);
+  renderHealth(planeRows(onl, aud, dec, wld, inv));
+  renderInvariants(inv);
+  renderMonitors(wld, man);
+  renderIncidents(inc);
+}
+poll();
+setInterval(poll, 15000);
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

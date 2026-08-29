@@ -1,0 +1,277 @@
+{
+ "generated_ts": 1788001805,
+ "note": "version = artifact mtime + sha256/16 (no fabricated semvers); null artifact = in-code/frozen model with no separate weight file; training dataset hashes not yet captured (queued)",
+ "last_gated_retrain": {
+  "at": "2026-08-29T04:00:08.546937-07:00",
+  "arms": 27
+ },
+ "models": [
+  {
+   "id": "ctl",
+   "plane": "Prediction",
+   "family": "tabular Q-learning",
+   "objective": "shaped reward on realized move",
+   "inputs": "candles/returns/vol/RSI/EMA/MACD/Bollinger + path features + book/flow microstructure",
+   "training": "online per window",
+   "artifact": {
+    "file": "q_table_online_h15.json",
+    "mtime": 1788001573,
+    "sha256_16": "dd0e2aa8b339a313",
+    "bytes": 29245
+   },
+   "consumers": [
+    "leaderboard (logged-only)"
+   ],
+   "limitations": "coarse state discretization; the control floor"
+  },
+  {
+   "id": "t2/t6/t10/t11",
+   "plane": "Prediction",
+   "family": "LinUCB contextual bandit",
+   "objective": "ridge payoff + UCB exploration (Li et al. 2010)",
+   "inputs": "candles/returns/vol/RSI/EMA/MACD/Bollinger + path features + book/flow microstructure (variant feature subsets)",
+   "training": "online sufficient statistics, no gradients",
+   "artifact": {
+    "file": "linucb_t2-h15.json",
+    "mtime": 1788001573,
+    "sha256_16": "b46afcce46fe2bdc",
+    "bytes": 122068
+   },
+   "consumers": [
+    "leaderboard",
+    "consensus"
+   ],
+   "limitations": "linear payoff; exploration wasted in full-information regime"
+  },
+  {
+   "id": "t7",
+   "plane": "Prediction",
+   "family": "linear Q",
+   "objective": "TD error, linear function approximation",
+   "inputs": "candles/returns/vol/RSI/EMA/MACD/Bollinger + path features + book/flow microstructure",
+   "training": "online",
+   "artifact": {
+    "file": "q_table_online_h15.json",
+    "mtime": 1788001573,
+    "sha256_16": "dd0e2aa8b339a313",
+    "bytes": 29245
+   },
+   "consumers": [
+    "leaderboard"
+   ],
+   "limitations": "linearity"
+  },
+  {
+   "id": "t8",
+   "plane": "Prediction",
+   "family": "distributional MLP (C51-style)",
+   "objective": "cross-entropy over price-change bins",
+   "inputs": "candles/returns/vol/RSI/EMA/MACD/Bollinger + path features + book/flow microstructure",
+   "training": "hourly gated retrain (val-MSE keep/revert), Adam state checkpointed",
+   "artifact": {
+    "file": "dqn_t8-h15.pt",
+    "mtime": 1788001573,
+    "sha256_16": "3fdf554fb0c08e92",
+    "bytes": 86389
+   },
+   "consumers": [
+    "sigma feed candidates",
+    "consensus"
+   ],
+   "limitations": "data-starved at ~100 windows/day; most retrains correctly revert"
+  },
+  {
+   "id": "t9",
+   "plane": "Prediction",
+   "family": "LSTM",
+   "objective": "MSE on sequence-conditioned forecast",
+   "inputs": "last-N-minute feature sequences",
+   "training": "hourly gated retrain",
+   "artifact": {
+    "file": "lstm_t9-h15.pt",
+    "mtime": 1788001573,
+    "sha256_16": "d39280eb60d8e99f",
+    "bytes": 70675
+   },
+   "consumers": [
+    "leaderboard"
+   ],
+   "limitations": "most data-hungry arm in the ladder"
+  },
+  {
+   "id": "z-bridge",
+   "plane": "Prediction\u2192Probability",
+   "family": "deterministic",
+   "objective": "none (formula)",
+   "inputs": "strike, price, sigma per horizon",
+   "training": "none \u2014 P(up)=1-Phi((strike-base)/sigma)",
+   "artifact": null,
+   "consumers": [
+    "kb blends"
+   ],
+   "limitations": "sigma-dominated: SEV-0 root cause lived here (under-dispersion, fixed by z-normalized bands)"
+  },
+  {
+   "id": "kb",
+   "plane": "Probability",
+   "family": "frozen blend (control)",
+   "objective": "frozen",
+   "inputs": "market + model blend",
+   "training": "frozen",
+   "artifact": null,
+   "consumers": [
+    "yardstick"
+   ],
+   "limitations": "the control"
+  },
+  {
+   "id": "kb2",
+   "plane": "Probability",
+   "family": "market-anchored blend (THE deliverable)",
+   "objective": "pre-registered blend",
+   "inputs": "Kalshi mid + tilt",
+   "training": "frozen design",
+   "artifact": null,
+   "consumers": [
+    "desk via leaderboard"
+   ],
+   "limitations": "~96% market echo by construction"
+  },
+  {
+   "id": "kb3",
+   "plane": "Probability",
+   "family": "online logistic (24-dim)",
+   "objective": "log-loss SGD on settles",
+   "inputs": "24 features incl. market, technicals, micro",
+   "training": "online per settle",
+   "artifact": {
+    "file": "kb_logit.json",
+    "mtime": 1788001208,
+    "sha256_16": "215315c20c5cc39c",
+    "bytes": 541
+   },
+   "consumers": [
+    "kb4 stack",
+    "introspection"
+   ],
+   "limitations": "weights drift; introspected hourly"
+  },
+  {
+   "id": "kb4",
+   "plane": "Probability",
+   "family": "stacked ensemble",
+   "objective": "log-loss over arm outputs",
+   "inputs": "other kb arms",
+   "training": "online",
+   "artifact": {
+    "file": "kb4_logit.json",
+    "mtime": 1788001208,
+    "sha256_16": "cd8678839230d4ff",
+    "bytes": 289
+   },
+   "consumers": [
+    "leaderboard"
+   ],
+   "limitations": "inherits members' market echo"
+  },
+  {
+   "id": "kb5",
+   "plane": "Probability",
+   "family": "EV price-player",
+   "objective": "HIT label (did buying at price pay), not truth",
+   "inputs": "price + claimed edge + features",
+   "training": "online",
+   "artifact": {
+    "file": "kb5_logit.json",
+    "mtime": 1788001208,
+    "sha256_16": "895f38bb4a288b9a",
+    "bytes": 332
+   },
+   "consumers": [
+    "conviction book",
+    "pt6 features"
+   ],
+   "limitations": "edge-anti-signal: own claimed_edge weight -0.096 (D-edge-band investigation)"
+  },
+  {
+   "id": "kb7",
+   "plane": "Probability",
+   "family": "Chronos-Bolt (frozen)",
+   "objective": "zero-shot pretrained",
+   "inputs": "price series",
+   "training": "none",
+   "artifact": null,
+   "consumers": [
+    "kb8 pool"
+   ],
+   "limitations": "worst-calibrated arm; foundation != edge"
+  },
+  {
+   "id": "kb8",
+   "plane": "Probability",
+   "family": "log-opinion pool",
+   "objective": "proper fusion",
+   "inputs": "kb7 x market",
+   "training": "none",
+   "artifact": {
+    "file": "kb8_logit.json",
+    "mtime": 1788001208,
+    "sha256_16": "2cf861a93932728b",
+    "bytes": 96
+   },
+   "consumers": [
+    "leaderboard (frequent leader)"
+   ],
+   "limitations": "pool of echoes is still an echo"
+  },
+  {
+   "id": "kb9",
+   "plane": "Probability",
+   "family": "TimesFM (frozen)",
+   "objective": "zero-shot pretrained",
+   "inputs": "price series",
+   "training": "none",
+   "artifact": null,
+   "consumers": [
+    "kb8 pool"
+   ],
+   "limitations": "mid-pack"
+  },
+  {
+   "id": "M1-platt",
+   "plane": "Probability (shadow)",
+   "family": "Platt calibrator v3",
+   "objective": "drift INSTRUMENT only \u2014 never a decision input",
+   "inputs": "arm p_up + settles",
+   "training": "sliding window 50, warm 20, refit 3 (owner decision D-m1-future 08-29)",
+   "artifact": {
+    "file": "kb_calib.json",
+    "mtime": 1788001208,
+    "sha256_16": "2cf7d5fd2d31079f",
+    "bytes": 7867
+   },
+   "consumers": [
+    "drift display only"
+   ],
+   "limitations": "v2 (window 150) hurt all 9 arms prequentially; v3 exists to MEASURE drift, not fix it"
+  },
+  {
+   "id": "pt6-mle",
+   "plane": "Decision",
+   "family": "supervised edge logit",
+   "objective": "profit-labeled logistic, half-Kelly sizing",
+   "inputs": "kb features + price + claimed edge",
+   "training": "online per settle",
+   "artifact": {
+    "file": "pt6_logit.json",
+    "mtime": 1788001208,
+    "sha256_16": "55358cab68af927e",
+    "bytes": 179
+   },
+   "consumers": [
+    "pt6 trader"
+   ],
+   "limitations": "conf_minus_ask weight -0.059 (edge-anti-signal); its profit comes from refusing 84% of windows"
+  }
+ ]
+}
