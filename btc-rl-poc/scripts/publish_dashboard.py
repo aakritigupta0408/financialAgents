@@ -58,6 +58,8 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("training_progress.jsonl", None),
     ("live_status.json", None),
     ("audit_report.json", None),
+    ("incidents.jsonl", None),
+    ("model_internals.json", None),
 ]
 
 
