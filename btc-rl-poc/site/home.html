@@ -6,18 +6,20 @@
 <title>BTC 7PM Oracle — Playground</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---- the playground: fun first, science always ---- */
-.scene-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .2em;
+/* ---- three-card home: live product · executive state · learning ---- */
+main { gap: 16px; }
+main > section { padding: 18px 22px; }
+.card-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .2em;
   text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.scene-tag b { color: var(--ink); }
+.card-tag b { color: var(--ink); }
 
-/* 01 · hero */
-.hero-q { font: 400 clamp(26px, 4.6vw, 44px)/1.18 var(--display);
-  color: var(--ink); margin: 6px 0 10px; max-width: 21em; }
-.hero-sub { color: var(--ink-2); max-width: 62ch; font-size: 15px; }
-.badges { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 4px; }
-.badge { font-size: 11px; font-weight: 800; letter-spacing: .14em;
-  text-transform: uppercase; padding: 6px 14px; border-radius: 999px;
+/* ===== card 1 · the live product ===== */
+.hero-q { font: 400 clamp(25px, 4.2vw, 40px)/1.18 var(--display);
+  color: var(--ink); margin: 6px 0 10px; max-width: 22em; }
+.hero-sub { color: var(--ink-2); max-width: 66ch; font-size: 14.5px; }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
+.badge { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; padding: 5px 12px; border-radius: 999px;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-2); }
 .badge.b-live { color: var(--good-text); border-color: rgba(12,138,77,.4);
   background: rgba(12,138,77,.08); }
@@ -25,25 +27,30 @@
   background: rgba(143,96,0,.07); }
 .badge.b-exp { color: var(--series-2); border-color: rgba(36,97,184,.4);
   background: rgba(36,97,184,.07); }
-.state-tbl { margin-top: 14px; }
-.state-tbl table { min-width: 620px; }
-.state-tbl .verdict { font-weight: 800; letter-spacing: .04em; }
-
-/* 02 · play */
-.playgrid { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
-.playq { font: 400 clamp(21px, 3vw, 30px)/1.25 var(--display); color: var(--ink); }
-.play-stats { display: flex; gap: 26px; flex-wrap: wrap; margin: 12px 0 4px; }
-.pickrow { display: flex; gap: 12px; margin: 14px 0 6px; }
+.badge.b-nfa { color: var(--down); border-color: rgba(209,60,60,.35);
+  background: rgba(209,60,60,.06); }
+.winstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 10px; margin: 16px 0 4px; }
+.ws { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 9px 13px; }
+.ws .wk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); }
+.ws .wv { font: 650 21px/1.25 var(--display); color: var(--ink);
+  font-variant-numeric: tabular-nums; margin-top: 2px; }
+.ws .wv.yes { color: var(--good-text); } .ws .wv.no { color: var(--down); }
+.ws .wm { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.playq { font: 400 clamp(19px, 2.6vw, 26px)/1.25 var(--display); color: var(--ink);
+  margin-top: 16px; }
+.pickrow { display: flex; gap: 12px; margin: 12px 0 6px; }
 .pickbtn { flex: 0 1 190px; font: 800 20px/1 ui-sans-serif, system-ui;
-  letter-spacing: .06em; padding: 18px 10px; border-radius: 16px;
+  letter-spacing: .06em; padding: 16px 10px; border-radius: 16px;
   border: 2px solid var(--border); background: var(--surface);
   cursor: pointer; color: var(--ink-2);
   transition: transform .12s ease, border-color .12s ease; }
 .pickbtn:hover { transform: translateY(-2px); }
 .pickbtn.yes { border-color: rgba(12,138,77,.5); color: var(--good-text); }
 .pickbtn.no  { border-color: rgba(209,60,60,.5); color: var(--down); }
-.pickbtn.picked { background: var(--surface-2); border-width: 3px;
-  transform: none; }
+.pickbtn.picked { background: var(--surface-2); border-width: 3px; transform: none; }
 .pickbtn:disabled { opacity: .45; cursor: default; transform: none; }
 .pickbtn small { display: block; font-size: 10px; font-weight: 700;
   letter-spacing: .14em; color: var(--muted); margin-top: 6px; }
@@ -61,9 +68,85 @@
   background: var(--surface-2); border-radius: 0 10px 10px 0; }
 .lasttime b.right { color: var(--good-text); } .lasttime b.wrong { color: var(--down); }
 
-/* 03 · traders */
+/* wallet drawer (inside card 1) */
+details.drawer { margin-top: 14px; border: 1px dashed var(--border);
+  border-radius: 12px; padding: 10px 14px; background: var(--surface-2); }
+details.drawer[open] { background: var(--surface); }
+.rulechips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.walletline { display: flex; gap: 24px; flex-wrap: wrap; align-items: baseline;
+  margin-top: 8px; }
+.walletline .final { font: 650 32px/1 var(--display);
+  font-variant-numeric: tabular-nums; }
+#wallet-chart .rule-path { stroke-dasharray: 2200; stroke-dashoffset: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  #wallet-chart .rule-path.animate { animation: drawline 1.6s ease-out; }
+  @keyframes drawline { from { stroke-dashoffset: 2200; } to { stroke-dashoffset: 0; } }
+}
+
+/* ===== card 2 · executive state ===== */
+.exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr));
+  gap: 10px; margin-top: 10px; }
+.xt { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 10px 14px; }
+.xt .xk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); }
+.xt .xv { font: 650 19px/1.3 var(--display); color: var(--ink); margin-top: 3px; }
+.xt .xm { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; line-height: 1.45; }
+.xt .xm code { font-size: 10.5px; }
+.viz3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
+  gap: 12px; margin-top: 14px; }
+.viz { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 11px 13px 8px; }
+.viz .vt { font: 650 15px/1.25 var(--display); color: var(--ink); }
+.viz .vs { font-size: 11px; color: var(--muted); margin: 2px 0 6px; }
+svg .qlab { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+  fill: var(--faint); }
+svg .vnum { font-size: 11px; font-weight: 700; fill: var(--ink-2);
+  font-variant-numeric: tabular-nums; }
+svg .vlab { font-size: 11px; fill: var(--ink-2); }
+.wmap-frame { border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface-2); padding: 8px 10px 4px; margin-top: 8px; }
+
+/* ===== card 3 · learning tabs ===== */
+.tabbar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
+  border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tabbtn { font: 700 13px/1 ui-sans-serif, system-ui; color: var(--muted);
+  background: none; border: none; border-bottom: 3px solid transparent;
+  padding: 9px 13px 10px; cursor: pointer; letter-spacing: .02em; }
+.tabbtn:hover { color: var(--ink); }
+.tabbtn.on { color: var(--ink); border-bottom-color: var(--series-2); }
+.tabpane { display: none; padding-top: 12px; }
+.tabpane.on { display: block; }
+/* believe */
+.blf { display: grid; gap: 8px; }
+.blf > div { border: 1px solid var(--border); border-left-width: 4px;
+  border-radius: 10px; background: var(--surface-2); padding: 9px 13px; }
+.blf .bstat { font-size: 9px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; }
+.blf .bclaim { font: 650 15px/1.35 var(--display); color: var(--ink); margin: 2px 0; }
+.blf .bev { font: 400 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink-2); }
+/* changed feed */
+.feed { display: grid; gap: 6px; }
+.feedrow { display: flex; gap: 12px; align-items: baseline; font-size: 13.5px;
+  color: var(--ink-2); border-bottom: 1px solid var(--grid); padding: 6px 0; }
+.feedrow .fwho { flex: 0 0 96px; font-weight: 700; color: var(--ink); }
+.feedrow .fage { flex: 0 0 72px; font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+/* failed */
+.museum3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px; }
+.mus { border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px;
+  background: var(--surface-2); color: inherit; display: block; }
+a.mus { border-bottom: 1px solid var(--border) !important; }
+a.mus:hover { border-color: var(--series-2) !important; }
+.mus .mt { font: 650 17px/1.2 var(--display); color: var(--ink); }
+.mus .mv { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--down); }
+.mus p { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
+/* traders */
 .crew { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: 12px; margin-top: 10px; }
+  gap: 12px; margin-top: 4px; }
 .trader { border: 1px solid var(--border); border-radius: 14px;
   padding: 12px 15px 10px; background: var(--surface-2); position: relative;
   border-top: 3px solid var(--border); }
@@ -73,8 +156,6 @@
   text-transform: uppercase; color: var(--muted); }
 .trader .tsay { font-size: 12.5px; color: var(--ink-2); font-style: italic;
   margin: 5px 0 7px; }
-main > section { padding: 17px 20px; }
-main { gap: 14px; }
 .trader .teq { font-variant-numeric: tabular-nums; font-weight: 700;
   font-size: 15px; color: var(--ink); }
 .trader .tret { font-variant-numeric: tabular-nums; font-weight: 700; }
@@ -83,68 +164,20 @@ main { gap: 14px; }
   border-top: 1px dashed var(--border); padding-top: 7px; line-height: 1.5; }
 .trader .oops b { font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
   color: var(--faint); display: block; margin-bottom: 2px; }
+/* explore row */
+.xplore { display: flex; gap: 8px 6px; flex-wrap: wrap; align-items: baseline;
+  margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px;
+  font-size: 13px; }
+.xplore .xh { font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  font-size: 10.5px; color: var(--muted); margin-right: 6px; }
+.xplore a { font-weight: 700; }
+.xplore .sep { color: var(--faint); }
 
-/* 04 · wallet lab */
-.rulechips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
-.walletline { display: flex; gap: 24px; flex-wrap: wrap; align-items: baseline;
-  margin-top: 8px; }
-.walletline .final { font: 650 34px/1 var(--display);
-  font-variant-numeric: tabular-nums; }
-#wallet-chart .rule-path { stroke-dasharray: 2200; stroke-dashoffset: 0; }
-@media (prefers-reduced-motion: no-preference) {
-  #wallet-chart .rule-path.animate { animation: drawline 1.6s ease-out; }
-  @keyframes drawline { from { stroke-dashoffset: 2200; } to { stroke-dashoffset: 0; } }
-}
-
-/* 05 · mini world */
-.worldlink { display: block; border: none !important; }
-.worldlink:hover .wmap-frame { border-color: var(--series-2); }
-.wmap-frame { border: 1px solid var(--border); border-radius: 14px;
-  background: var(--surface-2); padding: 8px 10px 4px; }
-.wmap-cap { text-align: center; font-size: 12.5px; color: var(--series-2);
-  font-weight: 700; margin: 6px 0 8px; }
-
-/* 06 · lab now */
-.labrows { display: grid; gap: 6px; margin-top: 8px; }
-.labrow { display: flex; gap: 12px; align-items: baseline; font-size: 13.5px;
-  color: var(--ink-2); border-bottom: 1px solid var(--grid); padding: 5px 0; }
-.labrow .lwho { flex: 0 0 108px; font-weight: 700; color: var(--ink); }
-.ldot { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%;
-  background: var(--faint); align-self: center; }
-.ldot.g { background: var(--good); } .ldot.a { background: var(--series-4); }
-
-/* 07 · museum + incidents */
-.museum3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px; margin-top: 10px; }
-.mus { border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px;
-  background: var(--surface-2); color: inherit; }
-a.mus { border-bottom: 1px solid var(--border) !important; }
-a.mus:hover { border-color: var(--series-2) !important; }
-.mus .mt { font: 650 17px/1.2 var(--display); color: var(--ink); }
-.mus .mv { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--down); }
-.mus p { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
-.incrow { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
-
-/* 08 · explore */
-.grid-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 10px; margin-top: 10px; }
-.glink { border: 1px solid var(--border) !important; border-radius: 12px;
-  padding: 11px 14px; background: var(--surface-2); color: var(--ink) !important;
-  font-weight: 700; font-size: 13.5px; }
-.glink:hover { border-color: var(--series-2) !important; }
-.glink span { display: block; font-weight: 400; font-size: 11.5px;
-  color: var(--muted); margin-top: 2px; }
-.integrity { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px;
-  font-size: 11px; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); }
-.integrity span::before { content: "◆ "; color: var(--series-2); }
-
-svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
-  fill: var(--faint); }
 @media (max-width: 560px) {
+  main > section { padding: 15px 14px; }
   .pickbtn { flex: 1 1 40%; }
-  .walletline .final { font-size: 27px; }
+  .walletline .final { font-size: 26px; }
+  .winstrip { grid-template-columns: repeat(2, 1fr); }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important;
   transition: none !important; } }
@@ -170,35 +203,33 @@ svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
 
 <main>
 
-<!-- ============ 01 · HERO — THE QUANT UNIVERSE ============ -->
+<!-- ============ CARD 1 · THE LIVE PRODUCT ============ -->
 <section>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
     The Quant Universe · <span id="asof">loading…</span></div>
-  <h1 class="hero-q">Can AI learn when to predict, when to bet — and when to do nothing?</h1>
-  <p class="hero-sub">This site is a real research desk that trades <b>fake
-  money</b> on a <b>real market</b> — Bitcoin, every 15 minutes, around the
-  clock. Robot traders make predictions, place paper bets, get graded, and the
-  ideas that fail get killed in public. Everything below is live data;
-  nothing is made up.</p>
+  <h1 class="hero-q">Can AI learn when to predict, when to act — and when to do nothing?</h1>
+  <p class="hero-sub">A real research desk trading <b>fake money</b> on a
+  <b>real market</b> — Bitcoin, every 15 minutes, around the clock. Robot
+  traders predict, bet paper money, get graded, and failed ideas are killed in
+  public. Everything below is fetched live; nothing is made up.</p>
   <div class="badges">
     <span class="badge b-live">● Live data</span>
     <span class="badge b-fake">Fake money</span>
     <span class="badge b-exp">Real experiments</span>
+    <span class="badge b-exp">Forward tested</span>
+    <span class="badge b-nfa">Not financial advice</span>
   </div>
-  <div class="state-tbl scroll" id="sci-state">
-    <p class="mini">reading the audit…</p>
-  </div>
-</section>
 
-<!-- ============ 02 · PLAY THIS WINDOW ============ -->
-<section>
-  <div class="scene-tag"><b>02 · Play this window</b> · beat the robots (no money, just bragging rights)</div>
-  <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
-  <div class="play-stats">
-    <div class="stat"><div class="k">BTC now</div><div class="bignum" id="play-px">—</div></div>
-    <div class="stat"><div class="k">The line to beat</div><div class="bignum" id="play-strike2">—</div></div>
-    <div class="stat"><div class="k">Window closes in</div><div class="bignum" id="play-left">—</div></div>
+  <div class="winstrip" id="winstrip">
+    <div class="ws"><div class="wk">BTC now</div><div class="wv" id="ws-px">—</div><div class="wm">Coinbase spot</div></div>
+    <div class="ws"><div class="wk">The line (strike)</div><div class="wv" id="ws-strike">—</div><div class="wm">finish above = YES</div></div>
+    <div class="ws"><div class="wk">Window closes in</div><div class="wv" id="ws-left">—</div><div class="wm">15-minute contract</div></div>
+    <div class="ws"><div class="wk">Market says</div><div class="wv" id="ws-mkt">—</div><div class="wm" id="ws-mkt-m">mid of yes bid/ask</div></div>
+    <div class="ws"><div class="wk">Model says</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">leader arm</div></div>
+    <div class="ws"><div class="wk">Desk policy</div><div class="wv" id="ws-pol">—</div><div class="wm" id="ws-pol-m">gate τ vs break-even</div></div>
   </div>
+
+  <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
   <div class="pickrow">
     <button class="pickbtn yes" id="btn-yes" type="button">YES ⬆<small>finishes above</small></button>
     <button class="pickbtn no" id="btn-no" type="button">NO ⬇<small>finishes below</small></button>
@@ -209,89 +240,84 @@ svg .qlab { font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase;
   <p class="mini" id="play-src">strike + model probability from
   <code>online_status.json .pm</code> · gate τ from
   <code>site_manifest.json .config</code> · your pick stays in your browser only</p>
+
+  <details class="drawer" id="wallet-drawer">
+    <summary>💵 Try your own rule — the $1,000 lab (replay the real last <span id="w-n">—</span> windows)</summary>
+    <p class="sub small" style="margin-top:8px">Start with $1,000 of fake money and
+    bet $100 a window on the desk's own predictions — but <i>your</i> rule decides
+    which windows to sit out. Same real windows, same real prices; only the rule
+    differs.</p>
+    <div class="rulechips" id="rulechips" role="radiogroup" aria-label="wallet rule"></div>
+    <div id="wallet-chart"><p class="mini">reading treatments.jsonl…</p></div>
+    <div class="walletline" id="walletline"></div>
+    <div class="scroll" id="wallet-table"></div>
+    <p class="mini">EV series per policy from <code>results/treatments.jsonl</code>
+    (null = that rule skipped the window) · a wallet that hits $0 is busted and stops</p>
+  </details>
 </section>
 
-<!-- ============ 03 · MEET THE TRADERS ============ -->
+<!-- ============ CARD 2 · EXECUTIVE STATE ============ -->
 <section>
-  <div class="scene-tag"><b>03 · Meet the traders</b> · eight robots, one lesson each — live money (fake) on every card</div>
-  <div class="crew" id="crew"><p class="mini">reading the eight ledgers…</p></div>
-  <p class="mini">equity = start capital + every settled paper bet in that robot's
-  append-only ledger (<code>results/pt*_trades.jsonl</code>) · Gambler shows
-  policy v3 only · abstentions and unfilled limit orders excluded from money ·
-  full race on <a href="instrument.html">the Instrument</a></p>
-  <p class="mini">withdrawal ledger: <code>wd_c</code> / <code>skim_c</code> on
-  every settled row in the trade logs — withdrawals are earnings, not stake.</p>
-</section>
-
-<!-- ============ 04 · YOUR $1,000 LAB ============ -->
-<section>
-  <div class="scene-tag"><b>04 · Your $1,000 lab</b> · pick a rule, replay the real last <span id="w-n">—</span> windows</div>
-  <p class="sub small" style="margin-top:0">Start with $1,000 of fake money and
-  bet $100 a window on the desk's own predictions — but <i>your</i> rule decides
-  which windows to sit out. Same real windows, same real prices; only the rule
-  differs.</p>
-  <div class="rulechips" id="rulechips" role="radiogroup" aria-label="wallet rule"></div>
-  <div id="wallet-chart"><p class="mini">reading treatments.jsonl…</p></div>
-  <div class="walletline" id="walletline"></div>
-  <div class="scroll" id="wallet-table"></div>
-  <p class="mini">same real windows, same real prices — only the rule differs;
-  $100 fake stake per window · EV series per policy from
-  <code>results/treatments.jsonl</code> (null = that rule skipped the window) ·
-  a wallet that hits $0 is busted and stops</p>
-</section>
-
-<!-- ============ 05 · THE WORLD ============ -->
-<section>
-  <div class="scene-tag"><b>05 · The world</b> · the whole machine drawn as a map</div>
-  <a class="worldlink" href="universe.html" aria-label="open the full world map">
-    <div class="wmap-frame" id="wmap"></div>
-    <div class="wmap-cap">walk the full map →</div>
-  </a>
-</section>
-
-<!-- ============ 06 · THE LAB IS WORKING NOW ============ -->
-<section>
-  <div class="scene-tag"><b>06 · The lab is working right now</b> · who did what, how recently</div>
-  <div class="labrows" id="labrows"><p class="mini">reading world.json…</p></div>
-</section>
-
-<!-- ============ 07 · WHAT WE LEARNED + WHAT BROKE ============ -->
-<section>
-  <div class="scene-tag"><b>07 · What we learned (and what broke)</b> · real failed ideas, kept on display</div>
-  <div class="museum3">
-    <a class="mus" href="museum.html"><span class="mv">dropped</span>
-      <div class="mt">The Toxic Hour</div>
-      <p>9 AM looked cursed. But if you search 24 hours for a cursed one, luck
-      alone makes about two look cursed — we found exactly two (p=0.60).</p></a>
-    <a class="mus" href="museum.html"><span class="mv">retired</span>
-      <div class="mt">The Late Genius</div>
-      <p>One robot was the most accurate of all — three minutes before the
-      answer, when it was too late to bet. Right-too-late pays nothing.</p></a>
-    <a class="mus" href="museum.html"><span class="mv">measured live</span>
-      <div class="mt">The Cheap Limit Order</div>
-      <p>Paying less sounded smarter — but the cheap bid gets filled fastest
-      exactly when the market just learned you're wrong.</p></a>
+  <div class="card-tag"><b>02 · Executive state</b> · the whole desk in one card — live, not marketing</div>
+  <div class="exec-grid" id="exec-grid"><p class="mini">reading the audit…</p></div>
+  <div class="viz3">
+    <div class="viz"><div class="vt">Execution waterfall</div>
+      <div class="vs">where each decided cent goes, per $1 staked · <code>decision_board.execution_waterfall</code></div>
+      <div id="viz-waterfall"><p class="mini">loading…</p></div></div>
+    <div class="viz"><div class="vt">Top-3 experiments — effect ± 95% CI</div>
+      <div class="vs">¢ per $1 per window vs champion · ranked by P(Δ&gt;0) · <code>program.json</code></div>
+      <div id="viz-top3"><p class="mini">loading…</p></div></div>
+    <div class="viz"><div class="vt">EV vs coverage — every live experiment</div>
+      <div class="vs">a great effect at 15% coverage is not deployable · <code>program.json</code></div>
+      <div id="viz-scatter"><p class="mini">loading…</p></div></div>
   </div>
-  <div class="incrow" id="incrow"><span class="mini">reading incidents.jsonl…</span></div>
+  <details class="drawer">
+    <summary>🗺 The system as a map — drawn live from <code>world.json</code></summary>
+    <a href="universe.html" aria-label="open the full world map" style="border:none">
+      <div class="wmap-frame" id="wmap"></div>
+      <div class="mini" style="text-align:center;margin:6px 0 2px;color:var(--series-2);font-weight:700">walk the full map →</div>
+    </a>
+  </details>
 </section>
 
-<!-- ============ 08 · EXPLORE EVERYTHING ============ -->
+<!-- ============ CARD 3 · WHAT IS THE SYSTEM LEARNING? ============ -->
 <section>
-  <div class="scene-tag"><b>08 · Explore everything</b> · every claim above has a deeper room behind it</div>
-  <div class="grid-links">
-    <a class="glink" href="instrument.html">The Instrument<span>the scientific-instrument view of this page</span></a>
-    <a class="glink" href="universe.html">World Map<span>the whole system as one atlas</span></a>
-    <a class="glink" href="metrics_lab.html">Decision Board<span>every metric, with uncertainty</span></a>
-    <a class="glink" href="board.html">Experiment Board<span>what's testing, holding, killed</span></a>
-    <a class="glink" href="agents.html">Agent HQ<span>who is allowed to do what</span></a>
-    <a class="glink" href="clock.html">System Clock<span>every scheduled heartbeat</span></a>
-    <a class="glink" href="museum.html">Museum of Failures<span>dead ideas, honest plaques</span></a>
-    <a class="glink" href="analyst.html">The Analyst<span>inside the models' heads</span></a>
-    <a class="glink" href="home_classic.html">Classic Ledgers<span>the full-density original</span></a>
+  <div class="card-tag"><b>03 · What is the system learning?</b> · beliefs, changes, funerals, and the eight traders</div>
+  <div class="tabbar" role="tablist" aria-label="learning views">
+    <button class="tabbtn" data-tab="believe" role="tab" type="button">What we believe</button>
+    <button class="tabbtn" data-tab="changed" role="tab" type="button">What changed (24h)</button>
+    <button class="tabbtn" data-tab="failed" role="tab" type="button">What failed</button>
+    <button class="tabbtn" data-tab="traders" role="tab" type="button">The traders</button>
   </div>
-  <div class="integrity">
-    <span>paper only</span><span>append-only ledgers</span>
-    <span>forward-tested</span><span>every claim traceable</span>
+  <div class="tabpane" id="pane-believe" role="tabpanel">
+    <div class="blf" id="believe-list"><p class="mini">reading program.json…</p></div>
+    <p class="mini">the desk's current beliefs with the evidence that earned them —
+    from <code>program.json .system_knowledge</code> · full program on <a href="board.html">the board</a></p>
+  </div>
+  <div class="tabpane" id="pane-changed" role="tabpanel">
+    <div class="feed" id="changed-feed"><p class="mini">reading the last 24 hours…</p></div>
+  </div>
+  <div class="tabpane" id="pane-failed" role="tabpanel">
+    <div class="museum3" id="tombs"><p class="mini">reading program.json…</p></div>
+    <p class="mini">every dead idea keeps its plaque — <a href="museum.html">visit the Museum of Failures</a></p>
+  </div>
+  <div class="tabpane" id="pane-traders" role="tabpanel">
+    <div class="crew" id="crew"><p class="mini">reading the eight ledgers…</p></div>
+    <p class="mini">equity = start capital + every settled paper bet in that robot's
+    append-only ledger (<code>results/pt*_trades.jsonl</code>) · Gambler shows
+    policy v3 only · abstentions and unfilled limit orders excluded from money ·
+    withdrawals (<code>wd_c</code>/<code>skim_c</code>) are earnings, not stake ·
+    full race on <a href="instrument.html">the Instrument</a></p>
+  </div>
+  <div class="xplore">
+    <span class="xh">Explore →</span>
+    <a href="universe.html">universe</a><span class="sep">·</span>
+    <a href="models.html">models</a><span class="sep">·</span>
+    <a href="board.html">board</a><span class="sep">·</span>
+    <a href="watchtower.html">watchtower</a><span class="sep">·</span>
+    <a href="ledgers.html">ledgers</a><span class="sep">·</span>
+    <a href="paper.html">paper</a><span class="sep">·</span>
+    <a href="archive.html">archive</a>
   </div>
 </section>
 
@@ -330,6 +356,7 @@ const esc = s => String(s).replace(/[&<>]/g,
 const ageTxt = s => s < 0 ? "future-stamped" : s < 90 ? Math.round(s) + "s ago"
   : s < 5400 ? Math.round(s / 60) + "m ago" : s < 172800
   ? (s / 3600).toFixed(1) + "h ago" : Math.round(s / 86400) + "d ago";
+const cents = v => (v < 0 ? "−" : "+") + Math.abs(100 * v).toFixed(1) + "¢";
 
 /* the eight desks — same starts, cuts and skip rules as the instrument page */
 const DESKS = [
@@ -383,115 +410,96 @@ let S = {};                      /* latest fetched data */
 let walletRule = "t_regime";
 let walletFirstDraw = true;
 
-/* ---------- 01 · scientific state ---------- */
-function drawSciState() {
-  const rows = [];
-  /* market-relative edge — best BSS across tier-2 arms in the audit */
-  let edge = 'NOT ESTABLISHED — market-relative audit not published';
-  let edgeClass = "muted";
-  const t2 = S.audit && S.audit.sections && S.audit.sections.tier2;
-  if (t2) {
-    let bk = null, bv = -Infinity;
-    for (const [k, v] of Object.entries(t2))
-      if (v && v.bss_vs_market != null && v.bss_vs_market > bv) {
-        bv = v.bss_vs_market; bk = k; }
-    if (bk != null)
-      edge = `NOT ESTABLISHED <span class="muted">(best arm vs the market: BSS ${bv >= 0 ? "+" : "−"}${Math.abs(bv).toFixed(3)}, ${esc(bk)}${bv > 0 ? " — positive this sample, no significance yet" : ""})</span>`;
-  }
-  rows.push(["Market-relative edge", edge,
-    '<a href="metrics_lab.html">audit tier-2</a>']);
-  /* best challenger */
-  let ch = "—";
-  const db = S.db;
-  if (db && db.summary && db.summary.best_candidate) {
-    const key = db.summary.best_candidate;
-    const t = (db.treatments || []).find(x => x.key === key);
-    ch = esc(t && t.label ? t.label : key);
-  } else ch = "not published in decision_board.json";
-  rows.push(["Best challenger policy", ch, '<a href="metrics_lab.html">decision board</a>']);
-  /* live experiments */
-  let ex = "not published";
-  if (db && db.summary && db.summary.states) {
-    const st = db.summary.states;
-    const live = Object.entries(st).filter(([k]) => k !== "BASELINE")
-      .reduce((a, [, v]) => a + v, 0);
-    ex = `<b>${live}</b> live <span class="muted">(${Object.entries(st)
-      .map(([k, v]) => v + " " + k.toLowerCase().replace("_", "-")).join(" · ")})</span>`;
-  }
-  rows.push(["Experiments running", ex, '<a href="board.html">board</a>']);
-  /* open incidents */
-  const inc = S.incidents || [];
-  const open = inc.filter(i => String(i.status || "").toLowerCase() !== "closed");
-  rows.push(["Open incidents",
-    inc.length ? `<b>${open.length}</b> open <span class="muted">(worst: SEV-${Math.min(...open.map(i => i.sev))})</span>`
-      : "incidents.jsonl unavailable",
-    '<a href="sev0.html">SEV log</a>']);
-  /* open human decisions */
-  rows.push(["Decisions waiting on the human",
-    S.board && S.board.open_decisions
-      ? `<b>${S.board.open_decisions.length}</b>` : "board.json unavailable",
-    '<a href="board.html">open decisions</a>']);
-  /* system health = worst region */
-  let health = "world.json unavailable";
-  if (S.world && S.world.regions) {
-    const rank = { green: 0, amber: 1, red: 2 };
-    let worst = null;
-    for (const [, r] of Object.entries(S.world.regions))
-      if (!worst || (rank[r.status] || 0) > (rank[worst.status] || 0)) worst = r;
-    if (worst) health = `<span class="verdict" style="color:${
-      worst.status === "green" ? "var(--good-text)" :
-      worst.status === "amber" ? "var(--series-4)" : "var(--down)"}">${
-      worst.status.toUpperCase()}</span> <span class="muted">— ${
-      worst.status === "green" ? "all regions green" : esc(worst.label || "")}</span>`;
-  }
-  rows.push(["System health", health, '<a href="universe.html">world map</a>']);
-  $id("sci-state").innerHTML =
-    `<table><thead><tr><th colspan="3">Current scientific state — live, not marketing</th></tr></thead><tbody>` +
-    rows.map(r => `<tr><td style="white-space:nowrap"><b>${r[0]}</b></td>` +
-      `<td>${r[1]}</td><td style="white-space:nowrap">${r[2]}</td></tr>`).join("") +
-    `</tbody></table>`;
-}
-
-/* ---------- 02 · play this window ---------- */
+/* ---------- card 1 · window strip + play ---------- */
 const PICK_KEY = "oracle_playground_pick";
 function getPick() {
   try { return JSON.parse(localStorage.getItem(PICK_KEY)); } catch { return null; }
 }
 function setPick(p) { try { localStorage.setItem(PICK_KEY, JSON.stringify(p)); } catch {} }
 
+function leaderArm() {
+  const w = S.st && S.st.fshare_w;
+  if (!w) return null;
+  let bk = null, bv = -Infinity;
+  for (const [k, v] of Object.entries(w)) if (v > bv) { bv = v; bk = k; }
+  return bk ? { arm: bk, w: bv } : null;
+}
+
+function drawStrip() {
+  const st = S.st, pm = (st || {}).pm || null;
+  const px = st && (st.price_now || (st.brti && st.brti.price));
+  $id("ws-px").textContent = px
+    ? "$" + px.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
+  const mkt = pm && pm.yes_bid != null && pm.yes_ask != null
+    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
+  const p = pm ? pm.model_p_up : null;
+  $id("ws-strike").textContent = pm && pm.strike != null
+    ? "$" + pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
+  const em = $id("ws-mkt");
+  em.textContent = mkt == null ? "—" : (100 * mkt).toFixed(0) + "% YES";
+  em.className = "wv" + (mkt == null ? "" : mkt >= 0.5 ? " yes" : " no");
+  $id("ws-mkt-m").textContent = mkt == null ? "yes bid/ask absent" : "mid of yes bid/ask";
+  const eo = $id("ws-mod");
+  eo.textContent = p == null ? "—" : (100 * p).toFixed(0) + "% YES";
+  eo.className = "wv" + (p == null ? "" : p >= 0.5 ? " yes" : " no");
+  const ld = leaderArm();
+  $id("ws-mod-m").textContent = ld
+    ? `leader ${ld.arm} (w ${(100 * ld.w).toFixed(0)}%)` : "leader arm";
+  /* policy: gate τ + break-even on the desk's side */
+  const ep = $id("ws-pol"), epm = $id("ws-pol-m");
+  if (p == null) { ep.textContent = "—"; ep.className = "wv";
+    epm.textContent = "no live model probability"; }
+  else {
+    const conf = Math.max(p, 1 - p);
+    const side = p >= 0.5 ? "YES" : "NO";
+    const be = pm == null ? null : side === "YES"
+      ? (pm.yes_ask != null ? pm.yes_ask / 100 : null)
+      : (pm.yes_bid != null ? (100 - pm.yes_bid) / 100 : null);
+    const pSide = side === "YES" ? p : 1 - p;
+    if (TAU == null) { ep.textContent = "GATE?"; ep.className = "wv";
+      epm.textContent = "τ missing from manifest"; }
+    else if (conf >= TAU) {
+      ep.textContent = "BET " + side;
+      ep.className = "wv " + (side === "YES" ? "yes" : "no");
+      epm.textContent = `conf ${(100 * conf).toFixed(0)}% ≥ τ ${TAU}` +
+        (be == null ? " · no quote for break-even"
+          : ` · pays if ${side} > ${(100 * be).toFixed(0)}¢ break-even (model: ${(100 * pSide).toFixed(0)}¢)`);
+    } else {
+      ep.textContent = "ABSTAIN"; ep.className = "wv";
+      epm.textContent = `conf ${(100 * conf).toFixed(0)}% < gate τ ${TAU} — do nothing`;
+    }
+  }
+}
+
 function drawPlay() {
   const st = S.st, pm = (st || {}).pm || null;
   const closeTs = pm && pm.close_time ? Date.parse(pm.close_time) / 1000 : null;
   const live = pm && pm.strike != null && pm.model_p_up != null
     && !(closeTs && closeTs * 1000 < Date.now());
-  const px = st && (st.price_now || (st.brti && st.brti.price));
-  $id("play-px").textContent = px
-    ? "$" + px.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
   const by = $id("btn-yes"), bn = $id("btn-no");
   if (!live) {
     $id("play-q").innerHTML = "Between windows — the next 15-minute question arrives in a moment.";
-    $id("play-strike").textContent = ""; $id("play-strike2").textContent = "—";
-    $id("play-left").textContent = "—";
+    $id("ws-left").textContent = "—";
     by.disabled = bn.disabled = true;
     $id("compare-card").innerHTML =
       '<p class="mini">no live contract in online_status.json right now — nothing to bet on, so we say so</p>';
   } else {
     const strike = "$" + pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 });
     $id("play-q").innerHTML = "Will Bitcoin finish this window above <span id=\"play-strike\">" + strike + "</span>?";
-    $id("play-strike2").textContent = strike;
     by.disabled = bn.disabled = false;
     cdClose = closeTs;
     if (!cdTimer) cdTimer = setInterval(() => {
       if (!cdClose) return;
       const s = Math.max(0, cdClose - Date.now() / 1000);
-      $id("play-left").textContent =
+      $id("ws-left").textContent =
         Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
     }, 1000);
     const s0 = Math.max(0, closeTs - Date.now() / 1000);
-    $id("play-left").textContent =
+    $id("ws-left").textContent =
       Math.floor(s0 / 60) + ":" + String(Math.floor(s0 % 60)).padStart(2, "0");
     drawCompare();
   }
+  drawStrip();
   drawLastTime();
   drawPlayChart();
 }
@@ -618,89 +626,7 @@ function drawPlayChart() {
     aria-label="BTC price over the last 90 minutes against the window strike">${g}</svg>`;
 }
 
-/* ---------- 03 · traders ---------- */
-function deskSeries(rows, d) {
-  const settled = rows.filter(r => r.actual != null)
-    .sort((a, b) => a.close_ts - b.close_ts);
-  let eq = d.start;
-  for (const r of settled) eq += (r.pnl_c || 0);
-  return { eq, n: settled.length };
-}
-const moneyC2 = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100).toLocaleString(
-  undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-function drawCrew() {
-  const raw = S.ledgers;
-  if (!raw) return;
-  const cfg = (S.man && S.man.config) || {};
-  $id("crew").innerHTML = DESKS.map(d => {
-    let rows = raw[d.id] || [];
-    if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
-    if (d.skips) rows = rows.filter(r => !r.skipped);
-    let hasData = rows.length > 0;
-    let s, start = d.start, betNote = "", extra = "",
-      noDataMsg = "ledger unavailable";
-    if (d.id === "pt4") {
-      /* v3 era only — baseline + cutover fetched from the manifest.
-         bankroll = reset capital + Σ(pnl − withdrawal) over settled v3 rows
-                    − stakes still on the table (open v3 rows);
-         withdrawn cash is real earnings, permanently out of play.
-         equity = bankroll + withdrawn. */
-      const rst = cfg.PT4_RESET2_TS, rc = cfg.PT4_RESET_C;
-      if (rst == null || rc == null) {
-        s = { eq: d.start, n: 0 }; hasData = false;
-        noDataMsg = "manifest unavailable — v3 baseline unknown";
-      } else {
-        const v3 = rows.filter(r => (r.made_ts || 0) >= rst);
-        const settled = v3.filter(r => r.actual != null);
-        const open = v3.filter(r => r.actual == null);
-        const withdrawn = settled.reduce((a, r) => a + (r.wd_c || 0), 0);
-        const bankroll = rc
-          + settled.reduce((a, r) => a + ((r.pnl_c || 0) - (r.wd_c || 0)), 0)
-          - open.reduce((a, r) => a + (r.stake_c || 0), 0);
-        start = rc;
-        s = { eq: bankroll + withdrawn, n: v3.length };
-        hasData = true;
-        const since = new Date(rst * 1000).toLocaleDateString("en-US",
-          { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" })
-          .replace("/", "-");
-        betNote = ` <span class="muted">(v3 · since ${since})</span>`;
-        extra = `<div class="mini" style="margin:3px 0 0">💰 withdrawn ${
-          moneyC2(withdrawn)} — banked forever, never re-staked</div>`;
-      }
-    } else {
-      s = deskSeries(rows, d);
-      if (d.id === "pt5") {
-        /* banked savings — last settled row's running savings_c
-           (fallback: Σ skim_c); equity already = bankroll + savings
-           because each settled pnl_c is pre-skim */
-        const settled = rows.filter(r => r.actual != null)
-          .sort((a, b) => a.close_ts - b.close_ts);
-        const lastSav = [...settled].reverse().find(r => r.savings_c != null);
-        const banked = lastSav ? lastSav.savings_c
-          : settled.reduce((a, r) => a + (r.skim_c || 0), 0);
-        if (settled.length)
-          extra = `<div class="mini" style="margin:3px 0 0">💰 banked ${
-            moneyC2(banked)}</div>`;
-      }
-    }
-    const ret = 100 * (s.eq - start) / start;
-    const up = ret >= 0;
-    return `<div class="trader" style="border-top-color:${d.c}">
-      <div class="face">${d.emo}</div>
-      <div class="tname">${d.name}</div>
-      <div class="tgrp">${d.grp}</div>
-      <div class="tsay">${d.say}</div>
-      <div>${hasData
-        ? `<span class="teq">${moneyC(s.eq)}</span>
-           <span class="tret ${up ? "up" : "dn"}">${up ? "+" : ""}${ret.toFixed(1)}%</span>
-           <span class="mini" style="margin:0">· ${s.n} bets${betNote}</span>${extra}`
-        : `<span class="mini" style="margin:0">${noDataMsg}</span>`}</div>
-      <div class="oops"><b>My biggest mistake</b>${d.oops}</div>
-    </div>`;
-  }).join("");
-}
-
-/* ---------- 04 · your $1,000 lab ---------- */
+/* ---------- wallet lab (drawer in card 1) ---------- */
 function replayRule(rows, key) {
   /* bank_{i+1} = bank_i + 100·ev_i ; null ev ⇒ skip; floor at 0 = busted */
   let bank = 1000, busted = false, active = 0, skipped = 0;
@@ -763,13 +689,13 @@ function drawWallet() {
   g += `<path class="rule-path${walletFirstDraw ? " animate" : ""}" d="${path(chosen)}"
     fill="none" stroke="var(--series-2)" stroke-width="2.4"
     stroke-linejoin="round" pathLength="2200"/>`;
-  const mark = (s, colr, nm) => {
+  const mark = s => {
     const lastP = s.pts[s.pts.length - 1];
-    return `<circle cx="${X(lastP.i)}" cy="${Y(lastP.bank)}" r="4" fill="${colr}"/>` +
+    return `<circle cx="${X(lastP.i)}" cy="${Y(lastP.bank)}" r="4" fill="var(--series-2)"/>` +
       (s.busted ? `<text x="${X(lastP.i) - 6}" y="${Y(0) - 8}" text-anchor="end"
         style="fill:var(--down);font-weight:800">BUSTED 💥</text>` : "");
   };
-  g += mark(chosen, "var(--series-2)");
+  g += mark(chosen);
   g += `<text x="${L}" y="${H - 4}" class="qlab">window 1</text>` +
     `<text x="${W - R}" y="${H - 4}" text-anchor="end" class="qlab">window ${N}</text>`;
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
@@ -802,7 +728,310 @@ function drawWallet() {
     `</tbody></table>`;
 }
 
-/* ---------- 05 · miniature world ---------- */
+/* ---------- traders (tab in card 3 + exec tile) ---------- */
+function deskSeries(rows, d) {
+  const settled = rows.filter(r => r.actual != null)
+    .sort((a, b) => a.close_ts - b.close_ts);
+  let eq = d.start;
+  for (const r of settled) eq += (r.pnl_c || 0);
+  return { eq, n: settled.length };
+}
+const moneyC2 = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100).toLocaleString(
+  undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function deskStats(d) {
+  const raw = S.ledgers;
+  if (!raw) return null;
+  const cfg = (S.man && S.man.config) || {};
+  let rows = raw[d.id] || [];
+  if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
+  if (d.skips) rows = rows.filter(r => !r.skipped);
+  let hasData = rows.length > 0;
+  let s, start = d.start, betNote = "", extra = "",
+    noDataMsg = "ledger unavailable";
+  if (d.id === "pt4") {
+    /* v3 era only — baseline + cutover fetched from the manifest.
+       bankroll = reset capital + Σ(pnl − withdrawal) over settled v3 rows
+                  − stakes still on the table (open v3 rows);
+       withdrawn cash is real earnings, permanently out of play.
+       equity = bankroll + withdrawn. */
+    const rst = cfg.PT4_RESET2_TS, rc = cfg.PT4_RESET_C;
+    if (rst == null || rc == null) {
+      s = { eq: d.start, n: 0 }; hasData = false;
+      noDataMsg = "manifest unavailable — v3 baseline unknown";
+    } else {
+      const v3 = rows.filter(r => (r.made_ts || 0) >= rst);
+      const settled = v3.filter(r => r.actual != null);
+      const open = v3.filter(r => r.actual == null);
+      const withdrawn = settled.reduce((a, r) => a + (r.wd_c || 0), 0);
+      const bankroll = rc
+        + settled.reduce((a, r) => a + ((r.pnl_c || 0) - (r.wd_c || 0)), 0)
+        - open.reduce((a, r) => a + (r.stake_c || 0), 0);
+      start = rc;
+      s = { eq: bankroll + withdrawn, n: v3.length };
+      hasData = true;
+      const since = new Date(rst * 1000).toLocaleDateString("en-US",
+        { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" })
+        .replace("/", "-");
+      betNote = ` <span class="muted">(v3 · since ${since})</span>`;
+      extra = `<div class="mini" style="margin:3px 0 0">💰 withdrawn ${
+        moneyC2(withdrawn)} — banked forever, never re-staked</div>`;
+    }
+  } else {
+    s = deskSeries(rows, d);
+    if (d.id === "pt5") {
+      /* banked savings — last settled row's running savings_c
+         (fallback: Σ skim_c); equity already = bankroll + savings
+         because each settled pnl_c is pre-skim */
+      const settled = rows.filter(r => r.actual != null)
+        .sort((a, b) => a.close_ts - b.close_ts);
+      const lastSav = [...settled].reverse().find(r => r.savings_c != null);
+      const banked = lastSav ? lastSav.savings_c
+        : settled.reduce((a, r) => a + (r.skim_c || 0), 0);
+      if (settled.length)
+        extra = `<div class="mini" style="margin:3px 0 0">💰 banked ${
+          moneyC2(banked)}</div>`;
+    }
+  }
+  return { hasData, s, start, betNote, extra, noDataMsg };
+}
+function drawCrew() {
+  if (!S.ledgers) return;
+  $id("crew").innerHTML = DESKS.map(d => {
+    const st = deskStats(d);
+    if (!st) return "";
+    const { hasData, s, start, betNote, extra, noDataMsg } = st;
+    const ret = 100 * (s.eq - start) / start;
+    const up = ret >= 0;
+    return `<div class="trader" style="border-top-color:${d.c}">
+      <div class="face">${d.emo}</div>
+      <div class="tname">${d.name}</div>
+      <div class="tgrp">${d.grp}</div>
+      <div class="tsay">${d.say}</div>
+      <div>${hasData
+        ? `<span class="teq">${moneyC(s.eq)}</span>
+           <span class="tret ${up ? "up" : "dn"}">${up ? "+" : ""}${ret.toFixed(1)}%</span>
+           <span class="mini" style="margin:0">· ${s.n} bets${betNote}</span>${extra}`
+        : `<span class="mini" style="margin:0">${noDataMsg}</span>`}</div>
+      <div class="oops"><b>My biggest mistake</b>${d.oops}</div>
+    </div>`;
+  }).join("");
+}
+
+/* ---------- card 2 · executive state grid ---------- */
+function drawExecGrid() {
+  const tiles = [];
+  const tile = (k, v, m) => tiles.push(
+    `<div class="xt"><div class="xk">${k}</div><div class="xv">${v}</div>` +
+    `<div class="xm">${m}</div></div>`);
+  /* model skill — best BSS across tier-2 arms in the audit */
+  let skillV = "NOT ESTABLISHED", skillM = "market-relative audit not published";
+  const t2 = S.audit && S.audit.sections && S.audit.sections.tier2;
+  if (t2) {
+    let bk = null, bv = -Infinity;
+    for (const [k, v] of Object.entries(t2))
+      if (v && v.bss_vs_market != null && v.bss_vs_market > bv) {
+        bv = v.bss_vs_market; bk = k; }
+    if (bk != null)
+      skillM = `best arm vs market: BSS ${bv >= 0 ? "+" : "−"}${Math.abs(bv).toFixed(3)}
+        (${esc(bk)})${bv > 0 ? " — positive this sample, no significance yet" : ""}
+        · <a href="metrics_lab.html">audit</a>`;
+  }
+  tile("Model skill", skillV, skillM);
+  /* best experiment — Δ / CI / LLR / state from decision_board */
+  const db = S.db;
+  let bev = "—", bem = "decision_board.json unavailable";
+  if (db && db.summary && db.summary.best_candidate) {
+    const key = db.summary.best_candidate;
+    const t = (db.treatments || []).find(x => x.key === key) || {};
+    const ci = t.boot_ci95 || t.ci95;
+    bev = esc(t.label || key);
+    bem = (t.mean != null ? `Δ ${cents(t.mean)}/$1` : "Δ —") +
+      (ci ? ` · CI [${cents(ci[0])}, ${cents(ci[1])}]` : "") +
+      (t.llr != null ? ` · LLR ${t.llr.toFixed(2)}` : "") +
+      (t.state ? ` · <b>${esc(t.state)}</b>` : "") +
+      ` · <a href="metrics_lab.html">board</a>`;
+  }
+  tile("Best experiment", bev, bem);
+  /* positive-EV policies — desks above their start capital */
+  if (S.ledgers) {
+    let pos = 0, tot = 0;
+    for (const d of DESKS) {
+      const st = deskStats(d);
+      if (st && st.hasData) { tot++; if (st.s.eq > st.start) pos++; }
+    }
+    tile("Positive-EV policies", tot ? `${pos} of ${tot}` : "—",
+      tot ? `trader desks above start capital, per their append-only ledgers` +
+        ` · <a href="instrument.html">the race</a>` : "ledgers unavailable");
+  } else tile("Positive-EV policies", "—", "ledgers unavailable");
+  /* system health — worst region in world.json */
+  let hv = "—", hm = "world.json unavailable";
+  if (S.world && S.world.regions) {
+    const rank = { green: 0, amber: 1, red: 2 };
+    let worst = null;
+    for (const [, r] of Object.entries(S.world.regions))
+      if (!worst || (rank[r.status] || 0) > (rank[worst.status] || 0)) worst = r;
+    if (worst) {
+      const c = worst.status === "green" ? "var(--good-text)"
+        : worst.status === "amber" ? "var(--series-4)" : "var(--down)";
+      hv = `<span style="color:${c}">${worst.status.toUpperCase()}</span>`;
+      hm = (worst.status === "green" ? "all regions green"
+        : esc(worst.label || "")) + ` · <a href="universe.html">world map</a>`;
+    }
+  }
+  tile("System health", hv, hm);
+  /* open SEVs */
+  const inc = S.incidents || [];
+  const open = inc.filter(i => String(i.status || "").toLowerCase() !== "closed");
+  tile("Open SEVs",
+    inc.length ? String(open.length) : "—",
+    inc.length
+      ? (open.length ? `worst: SEV-${Math.min(...open.map(i => i.sev))} · ` : "no open incidents · ")
+        + `<a href="sev0.html">SEV log</a>`
+      : "incidents.jsonl unavailable");
+  /* program counts — decisions waiting + experiments */
+  const pc = S.prog && S.prog.counts;
+  tile("Research program",
+    pc ? `${pc.decisions_waiting != null ? pc.decisions_waiting : "—"} waiting · ${
+      pc.live != null ? pc.live : "—"} live` : "—",
+    pc ? `decisions waiting on the human · live experiments${
+      pc.retire_candidates != null ? ` · ${pc.retire_candidates} retire candidates` : ""}` +
+      ` · <a href="board.html">board</a>` : "program.json unavailable");
+  /* cost */
+  const costs = (S.world && S.world.costs) || null;
+  if (costs) {
+    const metered = costs.filter(c => c.amount != null)
+      .reduce((a, c) => a + c.amount, 0);
+    const unmetered = costs.filter(c => c.amount == null);
+    tile("Cost to run", "$" + metered.toLocaleString(),
+      (unmetered.length ? unmetered.map(c => esc(c.item)).join(", ") +
+        " not metered — shown as null, not invented" : "all line items metered") +
+      ` · <a href="universe.html">cost table</a>`);
+  } else tile("Cost to run", "—", "world.json unavailable");
+  $id("exec-grid").innerHTML = tiles.join("");
+}
+
+/* ---------- card 2 · visual (a): execution waterfall ---------- */
+function drawWaterfall() {
+  const box = $id("viz-waterfall");
+  const ew = S.db && S.db.execution_waterfall;
+  if (!ew || ew.decision_ev_per_1 == null || ew.realized_ev_per_1 == null) {
+    box.innerHTML = '<p class="mini">execution_waterfall not published in decision_board.json</p>';
+    return;
+  }
+  const dec = ew.decision_ev_per_1, gap = ew.execution_gap_per_1 != null
+    ? ew.execution_gap_per_1 : ew.realized_ev_per_1 - dec;
+  const rea = ew.realized_ev_per_1;
+  const W = 440, H = 190, L = 14, R = 14, T = 16, B = 34;
+  const vals = [0, dec, dec + gap, rea];
+  let vmin = Math.min(...vals), vmax = Math.max(...vals);
+  const pad = (vmax - vmin) * .18 || .02; vmin -= pad; vmax += pad;
+  const Y = v => T + (1 - (v - vmin) / (vmax - vmin)) * (H - T - B);
+  const bw = (W - L - R) / 3 - 18;
+  const xs = i => L + 9 + i * ((W - L - R) / 3);
+  const y0 = Y(0);
+  const bar = (i, from, to, color, name, val) => {
+    const yA = Y(Math.max(from, to)), yB = Y(Math.min(from, to));
+    const h = Math.max(2, yB - yA);
+    return `<rect x="${xs(i)}" y="${yA}" width="${bw}" height="${h}"
+      rx="3" fill="${color}" opacity=".85"/>
+    <text x="${xs(i) + bw / 2}" y="${yA - 6}" text-anchor="middle" class="vnum">${cents(val)}</text>
+    <text x="${xs(i) + bw / 2}" y="${H - 18}" text-anchor="middle" class="vlab">${name}</text>
+    <text x="${xs(i) + bw / 2}" y="${H - 5}" text-anchor="middle" class="qlab">per $1</text>`;
+  };
+  let g = `<line x1="${L}" x2="${W - R}" y1="${y0}" y2="${y0}"
+    stroke="var(--axis)" stroke-width="1.2"/>
+    <text x="${W - R}" y="${y0 - 5}" text-anchor="end" class="qlab">$0 line</text>`;
+  /* connector from decision bar end to gap bar start */
+  g += `<line x1="${xs(0) + bw}" x2="${xs(1)}" y1="${Y(dec)}" y2="${Y(dec)}"
+    stroke="var(--faint)" stroke-dasharray="3 3"/>`;
+  g += `<line x1="${xs(1) + bw}" x2="${xs(2)}" y1="${Y(dec + gap)}" y2="${Y(dec + gap)}"
+    stroke="var(--faint)" stroke-dasharray="3 3"/>`;
+  g += bar(0, 0, dec, "var(--series-2)", "decision EV", dec);
+  g += bar(1, dec, dec + gap, "var(--series-4)", "execution gap", gap);
+  g += bar(2, 0, rea, rea < 0 ? "var(--down)" : "var(--good)", "realized", rea);
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="waterfall: decision EV, execution gap, realized EV per dollar">${g}</svg>
+    <p class="mini" style="margin:4px 0 0">${ew.windows != null
+      ? ew.windows + " paired windows — " : ""}the quotes we decide on vs the
+    fills we actually get</p>`;
+}
+
+/* ---------- card 2 · visual (b): top-3 experiments, mean ± CI ---------- */
+function progExps() {
+  const ex = (S.prog && S.prog.experiments) || [];
+  return ex.filter(e => e.effect != null && e.p_gt0 != null);
+}
+function drawTop3() {
+  const box = $id("viz-top3");
+  const ex = progExps().slice().sort((a, b) => b.p_gt0 - a.p_gt0).slice(0, 3);
+  if (!ex.length) {
+    box.innerHTML = '<p class="mini">no experiments with effect estimates in program.json</p>';
+    return;
+  }
+  const W = 440, H = 172, L = 96, R = 58, T = 14, B = 26;
+  let vmin = 0, vmax = 0;
+  for (const e of ex) { const ci = e.ci95_boot || [e.effect, e.effect];
+    vmin = Math.min(vmin, ci[0], e.effect); vmax = Math.max(vmax, ci[1], e.effect); }
+  const pad = (vmax - vmin) * .12 || .02; vmin -= pad; vmax += pad;
+  const X = v => L + (v - vmin) / (vmax - vmin) * (W - L - R);
+  const rowH = (H - T - B) / ex.length;
+  let g = `<line x1="${X(0)}" x2="${X(0)}" y1="${T - 4}" y2="${H - B + 4}"
+    stroke="var(--axis)" stroke-dasharray="3 3"/>
+    <text x="${X(0)}" y="${H - 8}" text-anchor="middle" class="qlab">0¢ = champion</text>`;
+  ex.forEach((e, i) => {
+    const y = T + rowH * (i + .5);
+    const ci = e.ci95_boot;
+    const col = e.effect >= 0 ? "var(--good)" : "var(--down)";
+    g += `<text x="${L - 8}" y="${y - 2}" text-anchor="end" class="vlab"
+      style="font-weight:700">${esc(e.id)}</text>
+    <text x="${L - 8}" y="${y + 11}" text-anchor="end" class="qlab">${esc((e.key || "").replace(/^t_/, ""))}</text>`;
+    if (ci) g += `<line x1="${X(ci[0])}" x2="${X(ci[1])}" y1="${y}" y2="${y}"
+      stroke="${col}" stroke-width="2.5" opacity=".45" stroke-linecap="round"/>
+      <line x1="${X(ci[0])}" x2="${X(ci[0])}" y1="${y - 5}" y2="${y + 5}" stroke="${col}" stroke-width="1.6"/>
+      <line x1="${X(ci[1])}" x2="${X(ci[1])}" y1="${y - 5}" y2="${y + 5}" stroke="${col}" stroke-width="1.6"/>`;
+    g += `<circle cx="${X(e.effect)}" cy="${y}" r="5" fill="${col}"/>
+    <text x="${W - R + 6}" y="${y - 2}" class="vnum">${cents(e.effect)}</text>
+    <text x="${W - R + 6}" y="${y + 11}" class="qlab">P ${(100 * e.p_gt0).toFixed(0)}%</text>`;
+  });
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="top three experiments: mean effect with 95 percent confidence intervals">${g}</svg>`;
+}
+
+/* ---------- card 2 · visual (c): EV vs coverage scatter ---------- */
+function drawScatter() {
+  const box = $id("viz-scatter");
+  const ex = progExps().filter(e => e.coverage != null);
+  if (!ex.length) {
+    box.innerHTML = '<p class="mini">no experiments with coverage in program.json</p>';
+    return;
+  }
+  const W = 440, H = 190, L = 46, R = 14, T = 14, B = 34;
+  let vmin = 0, vmax = 0;
+  for (const e of ex) { vmin = Math.min(vmin, e.effect); vmax = Math.max(vmax, e.effect); }
+  const pad = (vmax - vmin) * .18 || .02; vmin -= pad; vmax += pad;
+  const X = c => L + c * (W - L - R);
+  const Y = v => T + (1 - (v - vmin) / (vmax - vmin)) * (H - T - B);
+  let g = "";
+  for (const cv of [0, .25, .5, .75, 1])
+    g += `<line x1="${X(cv)}" x2="${X(cv)}" y1="${T}" y2="${H - B}" class="gridline"/>
+      <text x="${X(cv)}" y="${H - 18}" text-anchor="middle" class="qlab">${100 * cv}%</text>`;
+  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}"
+    stroke="var(--axis)" stroke-width="1.2"/>
+    <text x="${L - 4}" y="${Y(0) + 4}" text-anchor="end" class="qlab">0¢</text>
+    <text x="${L - 4}" y="${T + 6}" text-anchor="end" class="vnum">${cents(vmax - pad)}</text>
+    <text x="${L - 4}" y="${H - B}" text-anchor="end" class="vnum">${cents(vmin + pad)}</text>
+    <text x="${(L + W - R) / 2}" y="${H - 5}" text-anchor="middle" class="qlab">coverage — share of windows the policy actually bets</text>`;
+  for (const e of ex) {
+    const col = e.effect >= 0 ? "var(--good)" : "var(--down)";
+    const x = X(e.coverage), y = Y(e.effect);
+    g += `<circle cx="${x}" cy="${y}" r="4.5" fill="${col}" opacity=".85"/>
+    <text x="${x + 6}" y="${y - 5}" class="qlab" style="fill:var(--ink-2)">${esc(e.id)}</text>`;
+  }
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="scatter of experiment effect versus coverage">${g}</svg>`;
+}
+
+/* ---------- card 2 · miniature world (drawer) ---------- */
 function drawWorldMini() {
   const regs = (S.world && S.world.regions) || {};
   const dot = id => { const r = regs[id];
@@ -867,75 +1096,113 @@ function drawWorldMini() {
   </defs></svg>`;
 }
 
-/* ---------- 06 · the lab is working now ---------- */
-function drawLabNow() {
-  const now = Date.now() / 1000;
-  const w = S.world, st = S.st, db = S.db;
-  const rows = [];
-  const row = (who, ok, text) => rows.push(
-    `<div class="labrow"><span class="ldot ${ok === true ? "g" : ok === false ? "a" : ""}"></span>
-    <span class="lwho">${who}</span><span>${text}</span></div>`);
-  /* data heartbeat */
-  if (st && st.alive_at) {
-    const a = now - st.alive_at;
-    row("Data", a < 300, `market heartbeat ${ageTxt(a)} — polls Coinbase + Kalshi every 30 s`);
-  } else row("Data", null, "online_status.json unavailable");
-  /* trainer */
-  const lr = st && st.last_retrain;
-  if (lr && lr.at) {
-    const a = now - Date.parse(lr.at) / 1000;
-    let kept = 0, rev = 0;
-    for (const arm of Object.values(lr.arms || {}))
-      for (const h of Object.values(arm)) h.reverted ? rev++ : kept++;
-    row("Trainer", a < 2.5 * 3600,
-      `last gated retrain ${ageTxt(a)} — kept ${kept} model updates, reverted ${rev} (worse on holdout)`);
-  } else row("Trainer", null, "no retrain record in online_status.json");
-  /* evaluator + watchdog + analyst-cron from world clock */
-  const clk = (w && w.clock) || [];
-  const find = s => clk.find(c => (c.owner || "").includes(s));
-  const aud = find("auditor");
-  if (aud) row("Evaluator", aud.health === "green",
-    `independent audit re-derived every metric ${aud.age_min != null ? Math.round(aud.age_min) + "m ago" : "(age unknown)"}`);
-  else row("Evaluator", null, "auditor entry missing from world.json clock");
-  const wdg = find("watchdog");
-  if (wdg) row("Watchdog", wdg.health === "green",
-    `guards the heartbeat every 5 min — logs only when it acts (last action ${wdg.last_run_ts ? ageTxt(now - wdg.last_run_ts) : "never"}; silence = health)`);
-  else row("Watchdog", null, "watchdog entry missing from world.json clock");
-  /* analyst — latest commentary note */
-  const com = S.commentary || [];
-  if (com.length) {
-    const ts = Math.max(...com.map(c => c.ts || 0));
-    const a = now - ts;
-    row("Analyst", a >= 0 && a < 26 * 3600, a < 0
-      ? `latest note is future-stamped (${new Date(ts * 1000).toLocaleString()}) — timestamp skew, shown as-is`
-      : `latest research note ${ageTxt(a)}: “${esc((com.find(c => c.ts === ts) || {}).topic || "")}”`);
-  } else row("Analyst", null, "commentary.jsonl unavailable");
-  /* experiments */
-  if (db && db.summary && db.summary.states) {
-    const a = db.generated_ts ? now - db.generated_ts : null;
-    row("Experiments", a != null && a < 3600,
-      Object.entries(db.summary.states).map(([k, v]) =>
-        `${v} ${k.toLowerCase().replace("_", "-")}`).join(" · ") +
-      (a != null ? ` — board refreshed ${ageTxt(a)}` : ""));
-  } else row("Experiments", null, "decision_board.json unavailable");
-  $id("labrows").innerHTML = rows.join("");
-}
-
-/* ---------- 07 · incidents strip ---------- */
-function drawIncidents() {
-  const inc = S.incidents || [];
-  const box = $id("incrow");
-  if (!inc.length) {
-    box.innerHTML = '<span class="mini">incidents.jsonl unavailable</span>';
+/* ---------- card 3 · tab: what we believe ---------- */
+const BELIEF_COLORS = {
+  "supported": ["var(--good-text)", "rgba(12,138,77,.5)"],
+  "developing": ["var(--series-2)", "rgba(36,97,184,.5)"],
+  "under pressure": ["var(--series-4)", "rgba(143,96,0,.5)"],
+  "rejected implementation": ["var(--down)", "rgba(209,60,60,.5)"],
+  "unknown": ["var(--muted)", "var(--border)"],
+};
+function drawBelieve() {
+  const box = $id("believe-list");
+  const sk = S.prog && S.prog.system_knowledge;
+  if (!sk || !sk.length) {
+    box.innerHTML = '<p class="mini">system_knowledge not published in program.json</p>';
     return;
   }
-  box.innerHTML = inc.map(i => {
-    const open = String(i.status || "").toLowerCase() !== "closed";
-    return `<a class="chip" href="sev0.html" style="text-decoration:none">
-      <b style="color:var(--down)">SEV-${i.sev}</b>&nbsp; ${esc(i.title)}
-      &nbsp;<span class="pill ${open ? "pending" : "ok"}">${esc(i.status || "?")}</span></a>`;
-  }).join("") + '<span class="mini" style="margin:0;align-self:center">every breakage is public — <a href="sev0.html">the SEV log</a></span>';
+  box.innerHTML = sk.map(b => {
+    const [ink, bord] = BELIEF_COLORS[b.status] || BELIEF_COLORS.unknown;
+    return `<div style="border-left-color:${bord}">
+      <span class="bstat" style="color:${ink}">${esc(b.status || "unknown")}</span>
+      <div class="bclaim">${esc(b.claim || "")}</div>
+      <div class="bev">${esc(b.evidence || "")}</div></div>`;
+  }).join("");
 }
+
+/* ---------- card 3 · tab: what changed (24h) ---------- */
+function drawChanged() {
+  const box = $id("changed-feed");
+  const now = Date.now() / 1000;
+  const items = [];
+  /* analyst notes < 24h */
+  for (const c of (S.commentary || []))
+    if (c.ts && now - c.ts < 86400 && now - c.ts >= -3600)
+      items.push({ ts: c.ts, who: "Analyst",
+        html: `new research note — “${esc(c.topic || "untitled")}” · <a href="analyst.html">read it</a>` });
+  /* last retrain (kept vs reverted) */
+  const lr = S.st && S.st.last_retrain;
+  if (lr && lr.at) {
+    const ts = Date.parse(lr.at) / 1000;
+    if (now - ts < 86400) {
+      let kept = 0, rev = 0;
+      for (const arm of Object.values(lr.arms || {}))
+        for (const h of Object.values(arm)) h.reverted ? rev++ : kept++;
+      items.push({ ts, who: "Trainer",
+        html: `gated retrain — kept <b>${kept}</b> model updates, reverted <b>${rev}</b>
+        (worse on holdout) · <a href="live_training.html">training</a>` });
+    }
+  }
+  /* decision board refresh + best candidate */
+  const db = S.db;
+  if (db && db.generated_ts && now - db.generated_ts < 86400
+      && db.summary && db.summary.best_candidate) {
+    const key = db.summary.best_candidate;
+    const t = (db.treatments || []).find(x => x.key === key) || {};
+    items.push({ ts: db.generated_ts, who: "Board",
+      html: `best candidate is <b>${esc(t.label || key)}</b>${t.mean != null
+        ? ` at Δ ${cents(t.mean)}/$1` : ""}${t.state
+        ? ` (${esc(t.state)})` : ""} · <a href="metrics_lab.html">decision board</a>` });
+  }
+  if (!items.length) {
+    box.innerHTML = `<p class="mini">a quiet day — no analyst notes, retrains or
+    board refreshes landed in the last 24 hours. The desk kept trading; the
+    ledgers kept growing.</p>`;
+    return;
+  }
+  items.sort((a, b) => b.ts - a.ts);
+  box.innerHTML = items.map(i =>
+    `<div class="feedrow"><span class="fage">${ageTxt(now - i.ts)}</span>
+    <span class="fwho">${i.who}</span><span>${i.html}</span></div>`).join("");
+}
+
+/* ---------- card 3 · tab: what failed ---------- */
+function drawFailed() {
+  const box = $id("tombs");
+  const tb = S.prog && S.prog.tombstones;
+  if (!tb || !tb.length) {
+    box.innerHTML = '<p class="mini">tombstones not published in program.json</p>';
+    return;
+  }
+  box.innerHTML = tb.map(t =>
+    `<a class="mus" href="museum.html"><span class="mv">${esc(t.type || "retired")}
+      · ${esc(t.retired || "")}</span>
+    <div class="mt">${esc(t.id || "?")}</div>
+    <p><b>Looked good:</b> ${esc(t.looked_good || "—")}<br>
+    <b>Failed:</b> ${esc(t.failed || "—")}<br>
+    <b>Lesson:</b> ${esc(t.lesson || "—")}</p></a>`).join("");
+}
+
+/* ---------- card 3 · tabs ---------- */
+const TAB_KEY = "oracle_home_tab";
+function showTab(name, save) {
+  const valid = ["believe", "changed", "failed", "traders"];
+  if (!valid.includes(name)) name = "believe";
+  for (const b of document.querySelectorAll(".tabbtn")) {
+    const on = b.dataset.tab === name;
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-selected", on ? "true" : "false");
+  }
+  for (const v of valid)
+    $id("pane-" + v).classList.toggle("on", v === name);
+  if (save) try { localStorage.setItem(TAB_KEY, name); } catch {}
+}
+for (const b of document.querySelectorAll(".tabbtn"))
+  b.onclick = () => showTab(b.dataset.tab, true);
+(function initTab() {
+  let t = null; try { t = localStorage.getItem(TAB_KEY); } catch {}
+  showTab(t || "believe", false);
+})();
 
 /* ---------- header status ---------- */
 function drawAsOf() {
@@ -949,7 +1216,7 @@ function drawAsOf() {
 
 /* ---------- boot ---------- */
 async function boot() {
-  const [st, man, prices, audit, db, board, world, incidents, treatments,
+  const [st, man, prices, audit, db, board, world, prog, incidents, treatments,
     commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r] =
     await Promise.all([
       jget("../results/online_status.json"),
@@ -959,6 +1226,7 @@ async function boot() {
       jget("../results/decision_board.json"),
       jget("../results/board.json"),
       jget("../results/world.json"),
+      jget("../results/program.json"),
       jsonl("../results/incidents.jsonl"),
       jsonl("../results/treatments.jsonl"),
       jsonl("../results/commentary.jsonl"),
@@ -975,18 +1243,22 @@ async function boot() {
   if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
   else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
   else { TAU = null; TAU_SRC = ""; }
-  S = { st, man, prices, audit, db, board, world, incidents, treatments,
+  S = { st, man, prices, audit, db, board, world, prog, incidents, treatments,
     commentary,
     ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
       pt6: pt6r, pt7: pt7r, pt8: pt8r } };
   try { drawAsOf(); } catch (e) {}
-  try { drawSciState(); } catch (e) {}
   try { drawPlay(); } catch (e) {}
-  try { drawCrew(); } catch (e) {}
   try { drawWallet(); } catch (e) {}
+  try { drawExecGrid(); } catch (e) {}
+  try { drawWaterfall(); } catch (e) {}
+  try { drawTop3(); } catch (e) {}
+  try { drawScatter(); } catch (e) {}
   try { drawWorldMini(); } catch (e) {}
-  try { drawLabNow(); } catch (e) {}
-  try { drawIncidents(); } catch (e) {}
+  try { drawBelieve(); } catch (e) {}
+  try { drawChanged(); } catch (e) {}
+  try { drawFailed(); } catch (e) {}
+  try { drawCrew(); } catch (e) {}
 }
 boot();
 setInterval(boot, 15000);
