@@ -81,6 +81,37 @@ svg .endpt { stroke: var(--surface); stroke-width: 2; }
 .wbar .track .fill { position: absolute; top: 0; bottom: 0; }
 h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   margin-top: 18px; }
+
+/* Jobs cut: verdict hero + finding-labeled doors */
+.hero2 { padding: 26px 30px; }
+.hero2 .verdict { font: 400 26px/1.3 var(--display); color: var(--ink);
+  max-width: 30ch; }
+.hnums { display: grid; gap: 20px; margin-top: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.hnums > div { border-top: 2px solid var(--ink); padding-top: 9px; }
+.hnums b { display: block; font: 700 22px/1.15 var(--display);
+  font-variant-numeric: tabular-nums; }
+.hnums b.neg { color: var(--down); }
+.hnums b.pos { color: var(--good-text); }
+.hnums span { display: block; margin-top: 5px; font-size: 12px;
+  line-height: 1.45; color: var(--muted); }
+details.grp { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; }
+details.grp > summary { list-style: none; cursor: pointer;
+  padding: 16px 22px; display: flex; align-items: baseline; gap: 12px;
+  flex-wrap: wrap; }
+details.grp > summary::-webkit-details-marker { display: none; }
+details.grp > summary::after { content: "open"; margin-left: auto;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--series-2); }
+details.grp[open] > summary::after { content: "close"; }
+details.grp > summary h2 { display: inline; margin: 0;
+  font-size: 16.5px; }
+details.grp > summary:hover h2 { color: var(--series-2); }
+details.grp .gsub { font-size: 12.5px; color: var(--muted); }
+details.grp .gsub b { color: var(--ink); }
+details.grp[open] > summary { border-bottom: 1px solid var(--border); }
+details.grp > section { border: 0; border-radius: 0; box-shadow: none; }
 </style>
 </head>
 <body>
@@ -108,8 +139,23 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   <div class="stat"><div class="k">Hourly retrains logged</div><div class="bignum" id="s-retrains">–</div></div>
   <div class="stat"><div class="k">Refreshed</div><div class="bignum" id="s-upd">–</div></div>
 </section>
+<section class="hero2">
+  <p class="verdict" id="hv">Reading the ledgers…</p>
+  <div class="hnums">
+    <div><b id="h1v">…</b><span id="h1s">best skill vs the market
+      (BSS) — positive would mean someone beats the book</span></div>
+    <div><b id="h2v">…</b><span id="h2s">the only trader in the green
+      — everyone else pays for their execution</span></div>
+    <div><b id="h3v">…</b><span id="h3s">pipeline leader (paired
+      Δ/$1 · SPRT evidence toward 5.66)</span></div>
+    <div><b id="h4v">…</b><span>oracle regret per $1 per window — the
+      distance to the utopian trade</span></div>
+  </div>
+</section>
+
 
 <!-- ============ WHY THIS ORDER ============ -->
+<details class="grp"><summary><h2>Why this order</h2><span class="gsub">the decision-impact ranking legend</span></summary>
 <section>
   <h2>Why this order</h2>
   <p class="sub muted">Sections (and lead columns inside tables) follow the
@@ -130,8 +176,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
     <li><a href="#sec-training">Training / validation losses</a> — upstream health</li>
   </ol>
 </section>
+</details>
 
 <!-- ============ 1 · LAUNCH PIPELINE BOARD ============ -->
+<details class="grp"><summary><h2>Launch pipeline</h2><span class="gsub">rank 1 · <b id="d-pipe">…</b></span></summary>
 <section id="sec-pipeline">
   <h2>Launch pipeline board<span class="rank">rank 1</span></h2>
   <p class="sub muted">The standing rule for promoting any candidate policy,
@@ -151,8 +199,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   <div class="pipe" id="pipe"><div class="pipe-empty">loading online_status.json…</div></div>
   <p class="mini" id="pipe-note"></p>
 </section>
+</details>
 
 <!-- ============ 2 · REVENUE ============ -->
+<details class="grp"><summary><h2>Traders &amp; revenue</h2><span class="gsub">rank 2 · <b id="d-rev">…</b></span></summary>
 <section id="sec-revenue">
   <h2>Traders &amp; revenue<span class="rank">rank 2</span></h2>
   <p class="sub muted">Settled, non-skipped entries from each
@@ -172,8 +222,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   </table></div>
   <p class="gap-note" id="t3-gap"></p>
 </section>
+</details>
 
 <!-- ============ 3 · KB ARMS (BSS · Brier · calibration · AUC) ============ -->
+<details class="grp"><summary><h2>KB arms — skill &amp; calibration</h2><span class="gsub">ranks 3–5, 8 · <b id="d-kb">…</b></span></summary>
 <section id="sec-kb">
   <h2>Kalshi binary arms — skill, Brier, calibration, AUC<span class="rank">ranks 3–5 · 8</span></h2>
   <p class="sub muted">One decision per market window from
@@ -198,8 +250,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   </table></div>
   <p class="mini" id="t2-note"></p>
 </section>
+</details>
 
 <!-- ============ 4 · TIER 1 — INTERVAL + POINT QUALITY ============ -->
+<details class="grp"><summary><h2>Price arms — intervals &amp; points</h2><span class="gsub">ranks 6–7 · <b id="d-int">…</b></span></summary>
 <section id="sec-intervals">
   <h2>Price arms — interval quality, then point quality<span class="rank">ranks 6–7</span></h2>
   <p class="sub muted">Every scored row of <code>prediction_log.jsonl</code>,
@@ -221,8 +275,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   </table></div>
   <p class="mini" id="t1-note"></p>
 </section>
+</details>
 
 <!-- ============ 5 · EXECUTION ============ -->
+<details class="grp"><summary><h2>Execution</h2><span class="gsub">rank 9 · <b id="d-exec">…</b></span></summary>
 <section id="sec-exec">
   <h2>Execution — slippage vs the decision quote<span class="rank">rank 9</span></h2>
   <p class="sub muted">Selection and execution are scored separately: the same
@@ -237,8 +293,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   </table></div>
   <p class="mini" id="exec-note"></p>
 </section>
+</details>
 
 <!-- ============ 6 · DRIFT & REGIME CUTS ============ -->
+<details class="grp"><summary><h2>Drift &amp; regime cuts</h2><span class="gsub">rank 10 · thin history flagged honestly</span></summary>
 <section id="sec-drift">
   <h2>Drift &amp; regime cuts<span class="rank">rank 10</span></h2>
 
@@ -262,8 +320,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   <div class="scroll"><table id="t2-tod"></table></div>
   <p class="gap-note" id="t2-gap"></p>
 </section>
+</details>
 
 <!-- ============ 7 · MECHANISM HEALTH ============ -->
+<details class="grp"><summary><h2>Mechanism health</h2><span class="gsub">rank 11 · <b id="d-mech">…</b></span></summary>
 <section id="sec-mech">
   <h2>Mechanism health — churn, idle &amp; skip rates<span class="rank">rank 11</span></h2>
   <p class="sub muted">The plumbing behind the numbers: how often the desk's
@@ -276,8 +336,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   <h3>Gate idle / skip rates (live treatment ledger)</h3>
   <div class="scroll"><table id="mech-skips" style="min-width:680px"></table></div>
 </section>
+</details>
 
 <!-- ============ 8 · TRAINING & LOSS REGIME ============ -->
+<details class="grp"><summary><h2>Training &amp; loss regime</h2><span class="gsub">rank 12 · <b id="d-train">…</b></span></summary>
 <section id="sec-training">
   <h2>Training &amp; loss regime<span class="rank">rank 12</span></h2>
   <p class="sub muted">What each tier optimizes, and whether the hourly online
@@ -308,8 +370,10 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
   <p class="mini" id="t5-strip-note"></p>
   <div class="scroll"><table id="t5-gate"></table></div>
 </section>
+</details>
 
 <!-- ============ LEAKAGE & METHOD ============ -->
+<details class="grp"><summary><h2>Leakage &amp; method</h2><span class="gsub">how hindsight is kept out of every number</span></summary>
 <section id="sec-method">
   <h2>Leakage &amp; method</h2>
   <p class="sub" style="max-width:78ch">Every number on this page is
@@ -338,12 +402,15 @@ h3 { font: 600 14px/1.3 ui-sans-serif, system-ui; color: var(--ink);
     internals section below renders them automatically); monthly seasonality
     needs more than one month of data — not shown rather than shown thin.</div>
 </section>
+</details>
 
 <!-- ============ MODEL INTERNALS ============ -->
+<details class="grp"><summary><h2>Model internals</h2><span class="gsub"><b id="d-mi">…</b></span></summary>
 <section id="sec-internals">
   <h2>Model internals</h2>
   <div id="mi-body"><p class="muted small">checking for results/model_internals.json…</p></div>
 </section>
+</details>
 
 <footer id="foot">Research study for education — not financial advice ·
 recomputed client-side from results/*.jsonl every 15 s</footer>
@@ -1074,6 +1141,92 @@ async function poll() {
   setTimeout(poll, 15000);
 }
 poll();
+</script>
+
+<script>
+(function () {
+  "use strict";
+  const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
+  const jf = u => fetch(bust(u), { cache: "no-store" })
+    .then(r => r.ok ? r.json() : null).catch(() => null);
+  const put = (id, txt, cls) => { const e = document.getElementById(id);
+    if (e) { e.textContent = txt; if (cls) e.className = cls; } };
+  async function heroPoll() {
+    const [ar, st, mi] = await Promise.all([
+      jf("../results/audit_report.json"),
+      jf("../results/online_status.json"),
+      jf("../results/model_internals.json")]);
+    try {
+      // best BSS vs market
+      const t2 = (ar && ar.sections && ar.sections.tier2) || {};
+      let bestA = null, bestB = -9;
+      for (const [a, v] of Object.entries(t2))
+        if (v.bss_vs_market != null && v.bss_vs_market > bestB) {
+          bestB = v.bss_vs_market; bestA = a; }
+      if (bestA != null) {
+        put("h1v", (bestB >= 0 ? "+" : "") + bestB.toFixed(3)
+          + " · " + bestA, bestB >= 0 ? "pos" : "neg");
+        put("d-kb", "best BSS " + bestB.toFixed(3) + " (" + bestA
+          + ") — " + (bestB >= 0 ? "beats the book"
+            : "nobody beats the book right now"));
+      }
+      // only green trader
+      const tr = (ar && ar.sections && ar.sections.traders) || {};
+      const greens = Object.entries(tr)
+        .filter(([, v]) => (v.ev_per_dollar ?? v.ev ?? -1) > 0);
+      const desk = (ar && ar.sections && ar.sections.desk) || {};
+      const g = greens.sort((a, b) =>
+        (b[1].ev_per_dollar ?? b[1].ev) - (a[1].ev_per_dollar ?? a[1].ev))[0];
+      if (g) {
+        const ev = g[1].ev_per_dollar ?? g[1].ev;
+        put("h2v", g[0] + " +" + (100 * ev).toFixed(1) + "% /$1", "pos");
+        put("d-rev", greens.length + " of "
+          + (Object.keys(tr).length + 1)
+          + " ledgers green — " + g[0] + " leads");
+      } else { put("h2v", "none in the green", "neg"); }
+      // pipeline leader + M11 verdict line
+      const T = (st && st.treatments) || [];
+      const live = T.filter(t => t.verdict !== "baseline");
+      const lead = live.slice().sort((a, b) => b.llr - a.llr)[0];
+      const worst = live.slice().sort((a, b) => a.llr - b.llr)[0];
+      if (lead) {
+        put("h3v", lead.label.split("\u00b7")[0].trim() + " · Δ +"
+          + (100 * lead.mean_diff).toFixed(1) + "%/$1 · LLR "
+          + lead.llr.toFixed(2), lead.llr > 0 ? "pos" : "");
+        put("d-pipe", live.length + " under test · leader "
+          + lead.label.split(" \u00b7")[0] + " (LLR "
+          + lead.llr.toFixed(2) + "/" + lead.upper.toFixed(2)
+          + ") · weakest " + worst.label.split(" \u00b7")[0]
+          + " (" + worst.llr.toFixed(2) + ")");
+      }
+      // oracle regret + verdict sentence
+      if (mi && mi.oracle) {
+        put("h4v", mi.oracle.regret.toFixed(2) + " /$1", "neg");
+        put("d-mi", "oracle regret " + mi.oracle.regret.toFixed(2)
+          + "/$1 over " + mi.oracle.windows + " windows");
+      }
+      const v = document.getElementById("hv");
+      if (v && bestA != null)
+        v.textContent = (bestB >= 0
+          ? bestA + " currently beats the market — "
+          : "Right now nobody beats the market's own price — ")
+          + (g ? "and only " + g[0] + " turns that into money."
+               : "and no trader is in the green.");
+      // small door badges
+      const churnEl = document.getElementById("d-mech");
+      if (churnEl && st) churnEl.textContent =
+        live.length + " gates live";
+      const dtr = document.getElementById("d-train");
+      if (dtr) dtr.textContent = "hourly gate: most updates SHOULD revert";
+      const dint = document.getElementById("d-int");
+      if (dint) dint.textContent = "coverage + pinball lead, MSE follows";
+      const dex = document.getElementById("d-exec");
+      if (dex) dex.textContent = "selection vs execution, separated";
+    } catch (e) {}
+  }
+  heroPoll();
+  setInterval(heroPoll, 15000);
+})();
 </script>
 <script src="glossary.js" defer></script>
 </body>
