@@ -72,6 +72,9 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("world.json", None),
     ("invariants.json", None),
     ("model_registry.json", None),
+    ("loss_reviews.json", None),
+    ("loss_reviews.jsonl", 3000),
+    ("fill_curve.json", None),
 ]
 
 
