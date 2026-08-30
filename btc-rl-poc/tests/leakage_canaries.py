@@ -242,6 +242,17 @@ def match_treatment_records(treat_recs, pt_trades, kb_rows):
             unmatchable += 1     # log rotation can outlive old windows
             continue
         row = max(cand, key=lambda r: r["mins_left"])
+        # HALF-ROTATED window: the hourly log trim can keep only the
+        # tail of an old window's path; if the retained rows start
+        # after the desk's recorded decision minute, the true scoring
+        # row is gone and any replay is against the wrong quote
+        # (observed 2026-08-29: decision at 11.6 min, retained path
+        # starting at 6.6). Partial history = unmatchable, not a
+        # violation.
+        if t.get("mins_left") is not None \
+                and row["mins_left"] < t["mins_left"] - 1.0:
+            unmatchable += 1
+            continue
         # rows tied at the max mins_left: the runtime keeps the
         # first-seen on a strict > comparison, so a tie with differing
         # quotes is selection-AMBIGUOUS, not evidence of a newer quote

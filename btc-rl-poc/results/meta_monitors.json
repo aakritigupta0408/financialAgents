@@ -1,82 +1,82 @@
 {
- "generated_ts": 1788054237,
+ "generated_ts": 1788054333,
  "overall": "WARNING",
  "monitors": [
   {
    "artifact": "online_status.json",
    "source": "daemon heartbeat",
    "cadence_s": 30,
-   "age_s": 12,
+   "age_s": 4,
    "status": "HEALTHY"
   },
   {
    "artifact": "audit_report.json",
    "source": "audit chain step 1",
    "cadence_s": 600,
-   "age_s": 236,
+   "age_s": 332,
    "status": "HEALTHY"
   },
   {
    "artifact": "decision_board.json",
    "source": "audit chain (SRM gate)",
    "cadence_s": 600,
-   "age_s": 233,
+   "age_s": 329,
    "status": "HEALTHY"
   },
   {
    "artifact": "invariants.json",
    "source": "invariant wall",
    "cadence_s": 600,
-   "age_s": 233,
+   "age_s": 329,
    "status": "HEALTHY"
   },
   {
    "artifact": "reconciliation.json",
    "source": "independent reconciler",
    "cadence_s": 600,
-   "age_s": 228,
+   "age_s": 324,
    "status": "HEALTHY"
   },
   {
    "artifact": "readiness.json",
    "source": "readiness machine",
    "cadence_s": 600,
-   "age_s": 226,
+   "age_s": 322,
    "status": "HEALTHY"
   },
   {
    "artifact": "execution_ledger.json",
    "source": "markout ledger",
    "cadence_s": 600,
-   "age_s": 228,
+   "age_s": 324,
    "status": "HEALTHY"
   },
   {
    "artifact": "world.json",
    "source": "world/clock emitter",
    "cadence_s": 600,
-   "age_s": 232,
+   "age_s": 328,
    "status": "HEALTHY"
   },
   {
    "artifact": "model_internals.json",
    "source": "hourly introspection",
    "cadence_s": 3600,
-   "age_s": 1433,
+   "age_s": 1529,
    "status": "HEALTHY"
   },
   {
    "artifact": "metrics_history.jsonl",
    "source": "retrain history append",
    "cadence_s": 3600,
-   "age_s": 2603,
+   "age_s": 2699,
    "status": "HEALTHY"
   },
   {
    "artifact": "online_status.alive_at",
    "source": "daemon inner heartbeat",
    "cadence_s": 30,
-   "age_s": 12,
+   "age_s": 4,
    "status": "HEALTHY"
   },
   {
@@ -100,12 +100,11 @@
   "compliant": [
    "critical_ledger_integrity",
    "duplicate_decisions_zero",
+   "future_data_violations_zero",
    "reconciliation_ok",
    "unresolved_sev0_zero"
   ],
-  "breached": [
-   "future_data_violations_zero"
-  ],
+  "breached": [],
   "unknown": [],
   "note": "snapshot per run; burn rate from slo_history.jsonl as it accrues"
  },
