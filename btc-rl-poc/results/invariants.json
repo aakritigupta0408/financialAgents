@@ -1,6 +1,6 @@
 {
- "generated_ts": 1788067297,
- "passed": 11,
+ "generated_ts": 1788068968,
+ "passed": 12,
  "failed": 0,
  "health": "green",
  "checks": [
@@ -67,6 +67,12 @@
   {
    "name": "a3-experiment-integrity",
    "origin": "A3-v1.1 evaluator spec \u00a753 (A3-02..06,10,11)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "a3-independent-artifact-audit",
+   "origin": "A3 measurement spec \u00a741 (A3-13,15,19,21,22) \u2014 the evaluator may not certify its own implementation",
    "ok": true,
    "detail": []
   }

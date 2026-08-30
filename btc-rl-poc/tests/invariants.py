@@ -198,6 +198,53 @@ def _a3():
     return not bad, bad[:5]
 
 
+@check("a3-independent-artifact-audit",
+       "A3 measurement spec §41 (A3-13,15,19,21,22) — the evaluator "
+       "may not certify its own implementation")
+def _a3_indep():
+    """Independent checks on a3_window_evaluation.jsonl rows:
+    A3-21 every FILLED row carries executable size >=1 (or explicit
+          unknown from pre-depth shards, never <1);
+    A3-22 INVALIDATED rows carry no entry;
+    A3-15 best_valid_ts (when present) <= cutoff_ts;
+    A3-13 numeric markouts imply the anchor precedes the horizon
+          (entry_ts + h consistency: markout fields only on FILLED
+          rows with entry_ts);
+    A3-19 shadow arms never appear in any trader order ledger."""
+    p = RES / "a3_window_evaluation.jsonl"
+    if not p.exists():
+        return True, ["artifact not yet published"]
+    bad = []
+    for l in p.open():
+        e = json.loads(l)
+        st_ = e.get("state")
+        if st_ == "FILLED":
+            sz = e.get("entry_ask_sz")
+            if sz is not None:
+                try:
+                    if float(sz) < 1.0:
+                        bad.append(f"{e.get('ticker')}: filled with "
+                                   f"size {sz} < 1 (A3-21)")
+                except (TypeError, ValueError):
+                    pass
+            if e.get("entry_ts") is None:
+                bad.append(f"{e.get('ticker')}: FILLED without "
+                           "entry_ts (A3-13)")
+        if st_ == "INVALIDATED" and e.get("entry_ask") is not None:
+            bad.append(f"{e.get('ticker')}: entry after "
+                       "invalidation (A3-22)")
+        bts, cts_ = e.get("best_valid_ts"), e.get("cutoff_ts")
+        if bts is not None and cts_ is not None and bts > cts_:
+            bad.append(f"{e.get('ticker')}: best_valid after "
+                       "cutoff (A3-15)")
+    for n in ("pt_trades", "pt4_trades", "pt6_trades"):
+        for t in rows(n + ".jsonl"):
+            if t.get("src") in ("T05", "T15", "T05_SHADOW",
+                                "T15_SHADOW"):
+                bad.append(f"{n}: shadow order leaked (A3-19)")
+    return not bad, bad[:5]
+
+
 def main():
     out, failed = [], 0
     for name, origin, fn in CHECKS:

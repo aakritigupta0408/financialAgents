@@ -76,7 +76,8 @@ def load_events():
             ev.setdefault(r["ticker"], []).append(
                 (r["receive_ts"], r["yes_ask"], r.get("no_ask"),
                  r.get("close_time"), r.get("yes_bid"),
-                 r.get("no_bid"), r.get("yes_ask_sz")))
+                 r.get("no_bid"), r.get("yes_ask_sz"),
+                 r.get("yes_bid_sz")))
     for tk in ev:
         ev[tk].sort()
     return ev
@@ -89,6 +90,22 @@ def side_ask(q, up):
 def side_bid(q, up):
     b = q[4] if up else q[5]
     return b
+
+
+def side_depth(q, up):
+    """Executable size at the SIDE ask. NO-side ruling
+    (A3_CHANGE_CONTROL.md): no_ask ≡ 100−yes_bid natively, so its
+    depth is yes_bid_size. Returns float or None (unknown ≠ zero)."""
+    raw = q[6] if up else (q[7] if len(q) > 7 else None)
+    try:
+        return float(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def depth_ok(q, up):
+    d = side_depth(q, up)
+    return d is None or d >= 1.0   # unknown passes (old shards); <1 fails
 
 
 def markouts(q, up, t0, price):
@@ -115,9 +132,10 @@ def run_shadow(dip_c, q, up, reg_ts, call_ask, conf_at, cutoff_ts):
         if conf_at(x[0]) < FLOOR:
             return {"state": "INVALIDATED"}
         a = side_ask(x, up)
-        if call_ask - a >= dip_c:
+        if call_ask - a >= dip_c and depth_ok(x, up):
             return {"state": "FILLED", "entry_ask": round(a, 1),
                     "entry_ts": x[0],
+                    "entry_ask_sz": side_depth(x, up),
                     "improvement_c": round(call_ask - a, 1)}
     return {"state": "MISSED"}
 
@@ -204,10 +222,11 @@ def main():
                 st["invalidated_conf"] = round(c, 3)
                 break
             a = side_ask(x, up)
-            if call_ask - a >= DIP_C:
+            if call_ask - a >= DIP_C and depth_ok(x, up):
                 st["state"] = "TRIGGERED"
                 st["entry_ask"] = round(a, 1)
                 st["entry_ts"] = x[0]
+                st["entry_ask_sz"] = side_depth(x, up)
                 st["improvement_c"] = round(call_ask - a, 1)
                 st["entry_conf"] = round(c, 3)
                 break
@@ -220,6 +239,11 @@ def main():
             bv = min(valid_asks)
             st["best_valid_price"] = round(bv, 1)
             st["best_valid_improvement_c"] = round(call_ask - bv, 1)
+            st["best_valid_ts"] = round(next(
+                x[0] for x in q if reg_ts < x[0] <= cutoff_ts
+                and conf_at(x[0]) >= FLOOR
+                and abs(side_ask(x, up) - bv) < 0.05), 1)
+        st["cutoff_ts"] = round(cutoff_ts, 1)
         # prospective threshold shadows (observation only)
         st["shadows"] = {name: run_shadow(dc, q, up, reg_ts,
                                           call_ask, conf_at,
