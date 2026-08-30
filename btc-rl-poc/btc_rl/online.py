@@ -70,7 +70,16 @@ KNIFE_BAND = 0.10
 # (claimed edges beyond ~12c live where kb5/pt6 regressions say the
 # model, not the market, is wrong).
 M13_MIN_EDGE_C = 2.0
-M13_MAX_EDGE_C = 12.0              # |mkt_p_up - 0.5| veto width (M2)
+M13_MAX_EDGE_C = 12.0
+# LEAN MACHINE (owner, 2026-08-29): per horizon exactly ONE control
+# (the h-family feeding path) and ONE treatment, selected on val-MSE:
+#   h1: t9-h1 (LSTM 277 vs 280) · h5: t10-h5 (1003 vs 1094)
+#   h15: t7-h15 (1642 vs 2322) · h30: t9-h30 (1581 vs 2701)
+# All other arms FREEZE: weights kept and serving, no hourly retrain,
+# no further selection attention. Same upstream (sigma feed) and
+# downstream (kb bridge) untouched.
+LEAN_RETRAIN = {"h1", "h5", "h15", "h30",
+                "t9-h1", "t10-h5", "t7-h15", "t9-h30"}              # |mkt_p_up - 0.5| veto width (M2)
 # M10: decline a fill worse than the decision-time quote by more than
 # this. Motivated by measurement, not by tuning: execution costs 2.70
 # points of EV (real fills -9.73% vs model quotes -7.02%), more than
@@ -2187,6 +2196,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
         _heartbeat()  # a full-fleet retrain can outlast the watchdog window
         if not agents:
             continue  # replay baseline has no model
+        if variant not in LEAN_RETRAIN:
+            continue  # lean machine: frozen arms serve, never retrain
         if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
             spec = VARIANTS[variant]
             gate = {}

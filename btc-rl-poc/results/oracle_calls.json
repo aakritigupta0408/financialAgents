@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788050909,
+ "generated_ts": 1788051165,
  "config": {
   "conf_threshold": 0.8,
   "envelope_mins_left": [
@@ -25,7 +25,7 @@
   "no_calls": 158
  },
  "kb5": {
-  "windows_seen": 167,
+  "windows_seen": 168,
   "settled": 167,
   "calls": 43,
   "coverage": 0.257,
@@ -75,6 +75,28 @@
   "selective_accuracy": null,
   "wilson_ci95": null,
   "promise_met": null
+ },
+ "early_ct": {
+  "control": {
+   "arm": "kb2",
+   "threshold": 0.75,
+   "settled": 0,
+   "calls": 0,
+   "hits": 0,
+   "selective_accuracy": null,
+   "wilson_ci95": null,
+   "coverage": null
+  },
+  "treatment": {
+   "arm": "kb9",
+   "threshold": 0.75,
+   "settled": 0,
+   "calls": 0,
+   "hits": 0,
+   "selective_accuracy": null,
+   "wilson_ci95": null,
+   "coverage": null
+  }
  },
  "live": {
   "ticker": "KXBTC15M-26AUG292100-00",

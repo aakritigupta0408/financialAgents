@@ -174,6 +174,22 @@ def main():
         "wilson_ci95": wilson(e_hits, e_calls),
         "promise_met": (e_hits / e_calls >= 0.80) if e_calls else None,
     }
+    # ---- THE experiment: control kb2 vs treatment kb9, early ----
+    out["early_ct"] = {}
+    for role, arm in (("control", "kb2"), ("treatment", "kb9")):
+        ws = [w[arm] for w in eby.values() if arm in w
+              and w[arm].get("actual") is not None
+              and (w[arm].get("close_ts") or 0) >= EARLY_REGISTERED_TS]
+        cs = [r for r in ws
+              if max(r["p_up"], 1 - r["p_up"]) >= 0.75]
+        h = sum(1 for r in cs
+                if (r["p_up"] >= 0.5) == bool(r["actual"]))
+        out["early_ct"][role] = {
+            "arm": arm, "threshold": 0.75, "settled": len(ws),
+            "calls": len(cs), "hits": h,
+            "selective_accuracy": round(h / len(cs), 3) if cs else None,
+            "wilson_ci95": wilson(h, len(cs)),
+            "coverage": round(len(cs) / len(ws), 3) if ws else None}
     # live pending call, if any (most recent unsettled window)
     pend = [r for (tk, vv), r in first.items()
             if vv == "kb2" and r.get("actual") is None]
