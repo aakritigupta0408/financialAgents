@@ -107,11 +107,11 @@ def main():
                   detail="authority: RESTART the daemon process only. "
                   "Logs only when it acts — a days-old log means "
                   "days of health, not neglect"),
-        clock_row("10 min", "audit → site manifest → treatments board "
-                  "→ decision board (chained)", "cron · auditor",
-                  "scripts/run_audit.py + emit_manifest + emit_board "
-                  "+ emit_decision_board", _mtime(logs["audit"]),
-                  "run_audit.py"),
+        clock_row("10 min", "audit chain (~17 independent steps: audit "
+                  "→ boards → A3 → reconcile → canaries → readiness)",
+                  "cron · auditor",
+                  "scripts/audit_chain.py", _mtime(logs["audit"]),
+                  "audit_chain.py"),
         clock_row("1 h", "gated retraining of neural arms (candidate "
                   "vs holdout MSE; keep or revert)", "daemon",
                   f"btc_rl/online.py RETRAIN_EVERY={O.RETRAIN_EVERY}s",

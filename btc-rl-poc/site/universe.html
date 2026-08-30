@@ -3,1233 +3,1357 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — The Quant Universe</title>
+<title>BTC 7PM Oracle — Map</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---- mode toggle ---- */
-.maphead { display: flex; align-items: flex-start; gap: 18px;
+/* ---------- header strip (board.html pattern) ---------- */
+.hstrip { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.hs { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; }
+.hs .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); }
+.hs .v { font-size: 15px; font-weight: 750; margin-top: 3px;
+  font-variant-numeric: tabular-nums; line-height: 1.35; }
+.hs .v small { font-weight: 600; color: var(--ink-2); font-size: 12px; }
+/* ---------- semantic state chips ---------- */
+.state { display: inline-block; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase; border-radius: 6px;
+  padding: 3px 10px; white-space: nowrap; }
+.st-good { color: var(--good-text); background: rgba(12,138,77,.12); }
+.st-collect { color: var(--series-4); background: rgba(143,96,0,.12); }
+.st-kill { color: var(--down); background: rgba(209,60,60,.12); }
+.st-frozen { color: var(--muted); background: rgba(124,134,149,.14); }
+.st-live { color: var(--series-2); background: rgba(36,97,184,.10); }
+.hdot { display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.hdot.green { background: var(--good); }
+.hdot.amber { background: var(--series-4); }
+.hdot.red { background: var(--down); }
+.hdot.gray { background: var(--faint); }
+/* ---------- lens / tab chips ---------- */
+.chiprow { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+.lensnote { font-size: 12.5px; color: var(--muted); margin: 6px 0 12px; }
+/* ---------- card 1: the pipeline ---------- */
+.pipe { display: flex; flex-direction: column; margin-top: 10px; }
+.plink { width: 2px; height: 24px; background: var(--axis);
+  margin: 0 auto; position: relative; flex: none; }
+.plink::after { content: "▾"; position: absolute; bottom: -8px; left: 50%;
+  transform: translateX(-50%); color: var(--axis); font-size: 11px;
+  line-height: 1; }
+.psplit { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.rblock { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 12px 16px; cursor: pointer; }
+.rblock:hover { border-color: var(--series-2); }
+.rblock.open { border-color: var(--series-2); background: var(--surface); }
+.rblock.dim { opacity: .45; }
+.rblock.xhl { border-color: var(--series-4);
+  box-shadow: 0 0 0 1px var(--series-4) inset; }
+.rblock.hb-green { background: rgba(12,138,77,.07); }
+.rblock.hb-amber { background: rgba(143,96,0,.09); }
+.rblock.hb-red { background: rgba(209,60,60,.09); }
+.rblock.hb-gray { background: rgba(124,134,149,.10); }
+.rhead { display: flex; gap: 8px 12px; align-items: baseline;
   flex-wrap: wrap; }
-.maphead .grow { flex: 1; min-width: 260px; }
-.modetog { display: flex; gap: 0; border: 1px solid var(--border);
-  border-radius: 999px; overflow: hidden; background: var(--surface); }
-.modetog button { border: 0; background: transparent; cursor: pointer;
-  font: 700 11px ui-sans-serif, system-ui; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); padding: 8px 16px; }
-.modetog button.on { background: var(--ink); color: var(--page); }
-.modetog button:focus-visible { outline: 2px solid var(--series-2);
-  outline-offset: -2px; }
-.modehint { font-size: 11.5px; color: var(--faint); margin-top: 6px;
-  text-align: right; }
-/* ---- the map ---- */
-#map svg { width: 100%; height: auto; }
-#map .ocean { fill: var(--series-2); opacity: .07; }
-#map .wave { stroke: var(--series-2); stroke-width: 1.4; fill: none;
-  opacity: .35; }
-#map .boundary { fill: none; stroke: var(--axis); stroke-width: 1.4;
-  stroke-dasharray: 8 7; opacity: .8; }
-#map .bcap { font: 600 10px ui-sans-serif, system-ui; fill: var(--faint);
-  letter-spacing: .08em; }
-#map .rshape { fill: var(--surface-2); stroke: var(--border);
-  stroke-width: 1.3; }
-#map g.region { cursor: pointer; }
-#map g.region:hover .rshape, #map g.region:focus .rshape,
-#map g.region.open .rshape { stroke: var(--series-2); stroke-width: 2;
-  fill: var(--surface); }
-#map g.region:focus { outline: none; }
-#map .remoji { font-size: 21px; }
-#map .rlabel { font: 700 14px ui-sans-serif, system-ui; fill: var(--ink);
-  letter-spacing: .02em; }
-#map .rsub { font: 11px ui-sans-serif, system-ui; fill: var(--muted); }
-#map .stword { font: 700 9.5px ui-sans-serif, system-ui;
-  letter-spacing: .1em; fill: var(--muted); }
-#map .stdot { stroke: var(--surface); stroke-width: 1.5; }
-#map .st-green { fill: var(--good); }
-#map .st-amber { fill: var(--series-4); }
-#map .st-red { fill: var(--down); }
-#map .deco { fill: var(--grid); stroke: var(--axis); stroke-width: 1;
-  opacity: .9; }
-#map .peaklab, #map .bldglab { font: 600 10px ui-sans-serif, system-ui;
-  fill: var(--ink-2); }
-#map .ann { font: 600 10.5px ui-monospace, Menlo, monospace;
-  fill: var(--series-2); }
-#map .river { stroke: var(--series-2); stroke-width: 2.4; fill: none;
-  stroke-dasharray: 6 7; animation: flow 1.5s linear infinite;
-  opacity: .65; }
-#map .river.thin { stroke-width: 1.7; }
-#map .river.loop { stroke: var(--series-7); animation-duration: 2.2s; }
-@keyframes flow { to { stroke-dashoffset: -13; } }
-@media (prefers-reduced-motion: reduce) { #map .river { animation: none; } }
-#map .rivlab { font: italic 600 10.5px var(--display), Georgia, serif;
-  fill: var(--series-2); letter-spacing: .03em; }
-#map .rivlab.loop { fill: var(--series-7); }
-/* explore mode hides dense engineer annotations; both classes swap */
-body.mode-explore .engx { display: none; }
-body.mode-engineer .exx { display: none; }
-/* ---- card head rows ---- */
-.cardhead { display: flex; align-items: flex-start; gap: 18px;
-  flex-wrap: wrap; margin-bottom: 10px; }
-.cardhead .grow { flex: 1; min-width: 220px; }
-.cardhead h2 { margin: 0; }
-/* ---- card 2: tabs ---- */
-.tabrow { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0 14px; }
+.rname { font-weight: 750; font-size: 14.5px; color: var(--ink); }
+.rstat { margin-left: auto; }
+.rsub { font-size: 12px; color: var(--muted); margin-top: 2px;
+  line-height: 1.5; }
+.rmeta { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12px;
+  color: var(--ink-2); margin-top: 7px;
+  font-variant-numeric: tabular-nums; }
+.rmeta .inc { color: var(--down); font-weight: 700; }
+.rmeta .inc0 { color: var(--faint); }
+.xchip { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  border: 1px solid var(--series-4); color: var(--series-4);
+  border-radius: 5px; padding: 1px 6px; margin-right: 4px; }
+.rzoom { margin-top: 11px; border-top: 1px dashed var(--border);
+  padding-top: 10px; cursor: default; font-size: 12.5px;
+  color: var(--ink-2); line-height: 1.6; }
+.rzoom h4 { font-size: 10.5px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted); margin: 10px 0 4px; }
+.rzoom table { min-width: 460px; font-size: 12.5px; margin-top: 4px; }
+.loopnote { margin: 12px auto 0; width: max-content; max-width: 100%;
+  font-size: 12px; color: var(--series-7); border: 1px dashed
+  var(--series-7); border-radius: 999px; padding: 4px 14px;
+  text-align: center; }
+/* ---------- card 2 ---------- */
 .tabpane { display: none; }
 .tabpane.on { display: block; }
-/* runtime rows — pattern shared with the Clock page */
-.cadence { display: flex; flex-direction: column; }
-.crow { display: grid; grid-template-columns: 112px 1fr auto;
-  gap: 6px 18px; align-items: baseline; padding: 12px 2px;
+.crow { display: grid; grid-template-columns: 116px 1fr auto;
+  gap: 4px 18px; align-items: baseline; padding: 11px 2px;
   border-bottom: 1px solid var(--grid); }
 .crow:last-child { border-bottom: none; }
 .crow.red { background: rgba(209,60,60,.06);
   border-left: 3px solid var(--down); padding-left: 12px;
   border-radius: 8px; }
 .cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
-  monospace; letter-spacing: .1em; text-transform: uppercase;
+  monospace; letter-spacing: .08em; text-transform: uppercase;
   color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 3px 8px; text-align: center; align-self: start; }
-.cwhat { font-size: 14px; color: var(--ink); font-weight: 600; }
-.cmeta { grid-column: 2; font-size: 12.5px; color: var(--muted);
-  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+  border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px;
+  text-align: center; align-self: start; }
+.cwhat { font-size: 13.5px; color: var(--ink); font-weight: 600; }
+.cmeta { grid-column: 2; font-size: 12px; color: var(--muted);
+  display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
 .cright { text-align: right; font-variant-numeric: tabular-nums;
   font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
-.hdot { display: inline-block; width: 8px; height: 8px;
-  border-radius: 50%; margin-right: 6px; }
-.hdot.green { background: var(--good); }
-.hdot.amber { background: var(--series-4); }
-.hdot.red { background: var(--down); }
-.owner-chip { font-size: 10.5px; font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 999px;
-  padding: 2px 9px; }
-.age { font-weight: 650; color: var(--ink); }
-/* lifecycle flow */
-.flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+.owner-chip { font-size: 10px; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 9px; }
+.sla { font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  color: var(--down); border: 1px solid var(--down); border-radius: 5px;
+  padding: 1px 6px; }
+.flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch;
+  margin-top: 12px; }
 .stage { border: 1px solid var(--border); border-radius: 12px;
   background: var(--surface-2); padding: 10px 14px; min-width: 128px;
   flex: 1 1 128px; }
-.stage b { display: block; font-size: 12px; letter-spacing: .1em;
+.stage b { display: block; font-size: 11.5px; letter-spacing: .1em;
   text-transform: uppercase; color: var(--ink); }
-.stage .sdesc { font-size: 12px; color: var(--muted); margin-top: 3px;
-  line-height: 1.45; }
-.stage .scount { font-size: 12.5px; color: var(--series-2);
-  font-weight: 650; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.stage .scount { font-size: 22px; font-weight: 800; color: var(--ink);
+  font-variant-numeric: tabular-nums; margin-top: 4px; }
+.stage .sdesc { font-size: 11.5px; color: var(--muted); margin-top: 3px;
+  line-height: 1.5; }
 .flowarr { align-self: center; color: var(--faint); font-size: 16px; }
-/* lineage chain */
-.chain { display: flex; flex-wrap: wrap; gap: 6px 8px;
-  align-items: center; }
-.chain .node { font: 650 12.5px ui-monospace, Menlo, monospace;
+.lchain { display: flex; flex-direction: column; margin-top: 12px; }
+.lnode { display: grid; grid-template-columns: 160px 1fr; gap: 4px 16px;
+  padding: 9px 2px; border-bottom: 1px solid var(--grid);
+  font-size: 12.5px; align-items: baseline; }
+.lnode:last-child { border-bottom: none; }
+.lnode .lk { font: 700 11px ui-monospace, Menlo, monospace;
+  letter-spacing: .06em; color: var(--series-2); }
+.lnode .lv { color: var(--ink-2); font-variant-numeric: tabular-nums;
+  line-height: 1.55; }
+.lnode .lv b { color: var(--ink); }
+/* ---------- card 3 ---------- */
+.exbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+  margin-top: 12px; }
+.exbar input { font: 600 13px ui-sans-serif, system-ui;
   color: var(--ink); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 8px; padding: 5px 11px; }
-.chain .carr { color: var(--series-2); font-weight: 700; }
-.worked { border: 1px dashed var(--border); border-radius: 12px;
-  padding: 12px 15px; margin-top: 14px; font-size: 13px;
-  color: var(--ink-2); line-height: 1.7; }
-.worked b { color: var(--ink); }
-.worked .carr { color: var(--series-2); }
-/* ---- card 3: component explorer ---- */
-.selrow { display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
-  margin: 4px 0 14px; }
-.selrow select { font: 600 13px ui-sans-serif, system-ui;
-  color: var(--ink-2); background: var(--surface-2);
   border: 1px solid var(--border); border-radius: 999px;
-  padding: 5px 12px; max-width: 100%; }
-#crumb { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
-#crumb a { cursor: pointer; }
-.modelmeta { display: grid; grid-template-columns: 130px 1fr;
-  gap: 7px 16px; font-size: 13px; margin-top: 12px; }
-.modelmeta .mk { font-size: 10.5px; text-transform: uppercase;
-  letter-spacing: .12em; color: var(--muted); font-weight: 600;
+  padding: 7px 16px; min-width: 220px; flex: 1 1 220px; }
+.exbar input:focus-visible { outline: 2px solid var(--series-2); }
+.exlist { margin-top: 8px; }
+.exrow { display: grid; grid-template-columns: minmax(130px,1fr) 92px
+  minmax(180px,2.2fr) 150px; gap: 8px; align-items: baseline;
+  padding: 8px 2px; border-bottom: 1px solid var(--grid);
+  font-size: 12.5px; cursor: pointer; min-width: 640px; }
+.exrow:hover { background: var(--surface-2); }
+.exrow.sel { background: rgba(36,97,184,.07); }
+.exrow b { font-size: 13px; }
+.exrow .ty { font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); }
+.exrow .pu { color: var(--ink-2); }
+.exrow .stc { text-align: right; }
+.drawer { margin-top: 12px; background: var(--surface-2);
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 12px 15px; }
+.dgrid { display: grid; grid-template-columns: 110px 1fr; gap: 7px 16px;
+  font-size: 13px; }
+.dgrid .dk { font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--muted); font-weight: 700;
   padding-top: 2px; }
-.modelmeta .mv { color: var(--ink-2); overflow-wrap: anywhere; }
+.dgrid .dv { color: var(--ink-2); overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums; }
+.dgrid .dv b { color: var(--ink); }
+/* ---------- footer ---------- */
+.minifoot { font-size: 13px; color: var(--muted); }
 @media (max-width: 640px) {
+  .psplit { grid-template-columns: 1fr; }
   .crow { grid-template-columns: 1fr; }
   .cmeta { grid-column: 1; }
   .cright { text-align: left; }
   .cbadge { justify-self: start; }
-  .modelmeta { grid-template-columns: 1fr; gap: 2px 0; }
-  .modelmeta .mk { margin-top: 8px; }
-}
-.kidline { font: 400 17px/1.55 var(--display); color: var(--ink);
-  max-width: 64ch; margin: 6px 0 10px; }
-.kidline.tail { font-size: 14.5px; color: var(--ink-2);
-  border-top: 1px solid var(--grid); padding-top: 10px; margin-top: 14px; }
-.factrow { display: flex; gap: 26px; flex-wrap: wrap; margin: 10px 0 4px; }
-.cardgrid { display: grid; gap: 12px; margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.cardgrid .cg { border: 1px solid var(--border); border-radius: 12px;
-  padding: 10px 13px; font-size: 12.5px; color: var(--ink-2); }
-.cardgrid .cg b { color: var(--ink); display: block; margin-bottom: 3px;
-  font-size: 13px; }
-/* ---- storms strip ---- */
-#storms .wx { display: flex; gap: 10px; align-items: baseline;
-  padding: 6px 0; font-size: 13.5px; color: var(--ink-2); }
-#storms .wx b { color: var(--ink); }
-#storms .wx.amber b { color: var(--series-4); }
-#storms .wx.red b { color: var(--down); }
-/* ---- footer links ---- */
-.minilinks { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13px; }
-@media (max-width: 700px) {
-  .modehint { text-align: left; }
+  .dgrid { grid-template-columns: 1fr; gap: 2px 0; }
+  .dgrid .dk { margin-top: 8px; }
+  .lnode { grid-template-columns: 1fr; }
+  .rstat { margin-left: 0; }
 }
 </style>
 </head>
-<body class="mode-explore">
+<body>
 
 <nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><a class="nav here" href="universe.html">Map</a><span class="spacer"></span><span class="tag">world map</span></nav>
+  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">world map</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
-  <div class="eyebrow"><span class="live-dot" id="dot"></span> the world map</div>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span>
+    the living system atlas · <span id="asof">loading…</span></div>
   <h1>The Quant Universe</h1>
-  <p class="sub">The whole system in three cards — the map, how it runs,
-  and a component explorer. Click any region to open it below.
-  <span id="asof" class="muted small"></span></p>
+  <p class="sub small">One living graph of the whole desk — every region
+  carries its real health, its open incidents and its last heartbeat.
+  Nothing here is decoration: a missing artifact renders as
+  <b>not yet published</b>, and UNKNOWN is never green.</p>
+  <div class="hstrip" id="hstrip"></div>
 </header>
 
-<!-- ═══ CARD 1 — THE SYSTEM MAP ═══ -->
-<section id="card-map" aria-label="the system map">
-<div class="cardhead">
-  <div class="grow">
-    <h2>The system map</h2>
-    <p class="mini" style="margin-top:4px">One geometry, two label sets —
-    flip the toggle and the same world reads at two depths.</p>
-  </div>
-  <div>
-    <div class="modetog" role="group" aria-label="map mode">
-      <button id="btn-explore" class="on" type="button">Explore</button>
-      <button id="btn-engineer" type="button">Engineer</button>
-    </div>
-    <div class="modehint exx">friendly names · for anyone twelve and up</div>
-    <div class="modehint engx">same geometry · real component names + config</div>
-  </div>
-</div>
-<div id="map" aria-label="system atlas">
-<!--
-  REGION → EMITTED-HEALTH MAPPING (world.json emits 6 region healths; the
-  map draws 9 landmasses):
-    market_ocean       → regions.market_ocean
-    forecast_mountains → regions.forecast_country   (tier-1 arms)
-    model_city         → regions.probability_city   (tier-2 kb arms)
-    decision_hq        → regions.decision_hq
-    execution_port     → regions.execution_port
-    capital_town       → regions.decision_hq        (sizing/Kelly constants
-                          live inside the policy engine; no separate feed)
-    ledger_valley      → regions.ledger_valley
-    evaluation_lab     → regions.forecast_country   (the audit-chain recency
-                          is the source of forecast_country's "why")
-    training_factory   → regions.forecast_country   (retrain recency is the
-                          other half of that same emitted health)
--->
-<svg viewBox="0 0 1000 1292" role="img"
-     aria-label="atlas of the trading system, market ocean at the top flowing down through forecasting, decisions, execution and learning">
-  <defs>
-    <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7"
-      markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="var(--series-2)" opacity=".8"/>
-    </marker>
-    <marker id="arrloop" viewBox="0 0 10 10" refX="8" refY="5"
-      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="var(--series-7)" opacity=".8"/>
-    </marker>
-  </defs>
-
-  <!-- ═══ MARKET OCEAN — outside the world boundary ═══ -->
-  <g class="region" data-region="market_ocean" tabindex="0" role="button"
-     aria-label="Market Ocean — external feeds">
-    <title>Market Ocean — the outside world. Click to open.</title>
-    <rect class="rshape ocean-shape" x="40" y="18" width="920" height="100" rx="18"/>
-    <rect class="ocean" x="40" y="18" width="920" height="100" rx="18"/>
-    <path class="wave" d="M560 96 q14 -9 28 0 t28 0 t28 0 t28 0"/>
-    <path class="wave" d="M790 90 q14 -9 28 0 t28 0 t28 0"/>
-    <path class="wave" d="M420 40 q14 -9 28 0 t28 0"/>
-    <text class="remoji" x="66" y="72">☁</text>
-    <text class="rlabel" x="100" y="60"
-      data-ex="Market Ocean" data-en="T0 · external feeds (sources.py)">Market Ocean</text>
-    <text class="rsub" x="100" y="79"
-      data-ex="the outside world — live prices, order books, the crowd's mood"
-      data-en="Coinbase spot + book · Kalshi 15-min quotes · alternative.me Fear&amp;Greed">the outside world — live prices, order books, the crowd's mood</text>
-    <text class="ann engx" id="an-poll" x="100" y="97">poll every — s</text>
-    <circle class="stdot st-green" id="dot-market_ocean" cx="922" cy="42" r="5.5"/>
-    <text class="stword" id="st-market_ocean" x="912" y="46" text-anchor="end">—</text>
-  </g>
-
-  <!-- ═══ world boundary ═══ -->
-  <rect class="boundary" x="36" y="150" width="928" height="1122" rx="26"/>
-  <text class="bcap" x="58" y="1262"
-    data-ex="⛰ THE WORLD — everything inside is ours; the ocean is not"
-    data-en="SYSTEM BOUNDARY — external I/O above; owned processes below">⛰ THE WORLD — everything inside is ours; the ocean is not</text>
-
-  <!-- rivers in from the ocean -->
-  <path class="river" d="M240 118 C240 168 250 205 264 248" marker-end="url(#arr)"/>
-  <text class="rivlab" x="230" y="188" text-anchor="end">Coinbase River</text>
-  <path class="river thin" d="M460 118 C452 168 424 205 404 248" marker-end="url(#arr)"/>
-  <text class="rivlab" x="466" y="180">Fear &amp; Greed Creek</text>
-  <path class="river" d="M700 118 C700 168 710 205 722 248" marker-end="url(#arr)"/>
-  <text class="rivlab" x="712" y="192">Kalshi River</text>
-
-  <!-- ═══ FORECAST MOUNTAINS ═══ -->
-  <g class="region" data-region="forecast_mountains" tabindex="0" role="button"
-     aria-label="Forecast Mountains — tier-1 price arms">
-    <title>Forecast Mountains — tier-1 price arms. Click to open.</title>
-    <rect class="rshape" x="66" y="250" width="404" height="180" rx="22"/>
-    <text class="remoji" x="88" y="288">🏔</text>
-    <text class="rlabel" x="122" y="280"
-      data-ex="Forecast Mountains" data-en="tier-1 RL price arms">Forecast Mountains</text>
-    <text class="rsub" x="122" y="298"
-      data-ex="four peaks each guess the future price"
-      data-en="μ + 80% band per horizon · h1/h5/h15/h30">four peaks each guess the future price</text>
-    <polygon class="deco" points="100,398 150,330 200,398"/>
-    <polygon class="deco" points="170,398 232,316 294,398"/>
-    <polygon class="deco" points="252,398 320,304 388,398"/>
-    <polygon class="deco" points="336,398 404,292 458,398"/>
-    <text class="peaklab" x="150" y="416" text-anchor="middle">+1m</text>
-    <text class="peaklab" x="232" y="416" text-anchor="middle">+5m</text>
-    <text class="peaklab" x="320" y="416" text-anchor="middle">+15m</text>
-    <text class="peaklab" x="404" y="416" text-anchor="middle">+30m</text>
-    <circle class="stdot st-green" id="dot-forecast_mountains" cx="444" cy="274" r="5.5"/>
-    <text class="stword" id="st-forecast_mountains" x="434" y="278" text-anchor="end">—</text>
-  </g>
-
-  <!-- ═══ MODEL CITY ═══ -->
-  <g class="region" data-region="model_city" tabindex="0" role="button"
-     aria-label="Model City — tier-2 kb probability arms">
-    <title>Model City — nine kb probability arms. Click to open.</title>
-    <rect class="rshape" x="530" y="250" width="404" height="180" rx="22"/>
-    <text class="remoji" x="552" y="288">🧠</text>
-    <text class="rlabel" x="586" y="280"
-      data-ex="Model City" data-en="tier-2 kb probability arms">Model City</text>
-    <text class="rsub" x="586" y="298"
-      data-ex="nine buildings of robots saying how sure: UP, or not"
-      data-en="9 arms stating P(up) each minute on the live 15-min window">nine buildings of robots saying how sure: UP, or not</text>
-    <rect class="deco" x="556" y="338" width="30" height="60"/>
-    <rect class="deco" x="598" y="314" width="30" height="84"/>
-    <rect class="deco" x="640" y="350" width="30" height="48"/>
-    <rect class="deco" x="682" y="312" width="30" height="86"/>
-    <rect class="deco" x="724" y="328" width="30" height="70"/>
-    <rect class="deco" x="766" y="306" width="30" height="92"/>
-    <rect class="deco" x="808" y="342" width="30" height="56"/>
-    <rect class="deco" x="850" y="320" width="30" height="78"/>
-    <rect class="deco" x="892" y="334" width="30" height="64"/>
-    <text class="bldglab" x="571" y="414" text-anchor="middle">kb</text>
-    <text class="bldglab" x="613" y="414" text-anchor="middle">kb2</text>
-    <text class="bldglab" x="655" y="414" text-anchor="middle">kb3</text>
-    <text class="bldglab" x="697" y="414" text-anchor="middle">kb4</text>
-    <text class="bldglab" x="739" y="414" text-anchor="middle">kb5</text>
-    <text class="bldglab" x="781" y="414" text-anchor="middle">kb6</text>
-    <text class="bldglab" x="823" y="414" text-anchor="middle">kb7</text>
-    <text class="bldglab" x="865" y="414" text-anchor="middle">kb8</text>
-    <text class="bldglab" x="907" y="414" text-anchor="middle">kb9</text>
-    <circle class="stdot st-green" id="dot-model_city" cx="908" cy="274" r="5.5"/>
-    <text class="stword" id="st-model_city" x="898" y="278" text-anchor="end">—</text>
-  </g>
-
-  <!-- rivers into Decision HQ -->
-  <path class="river" d="M268 430 C300 470 380 490 428 514" marker-end="url(#arr)"/>
-  <text class="rivlab" x="330" y="506" data-ex="guesses"
-    data-en="μ, σ per horizon">guesses</text>
-  <path class="river" d="M732 430 C700 470 620 490 572 514" marker-end="url(#arr)"/>
-  <text class="rivlab" x="700" y="506" text-anchor="end" data-ex="sureness"
-    data-en="calibrated P(up)">sureness</text>
-
-  <!-- ═══ DECISION HQ ═══ -->
-  <g class="region" data-region="decision_hq" tabindex="0" role="button"
-     aria-label="Decision HQ — gates and experiments">
-    <title>Decision HQ — gates + experiment arena. Click to open.</title>
-    <rect class="rshape" x="340" y="515" width="320" height="145" rx="22"/>
-    <text class="remoji" x="362" y="553">🏛</text>
-    <text class="rlabel" x="396" y="545"
-      data-ex="Decision HQ" data-en="policy engine">Decision HQ</text>
-    <text class="rsub" x="396" y="563"
-      data-ex="the gates: bet — or sit this one out"
-      data-en="PT_TAU gate + SPRT treatment registry">the gates: bet — or sit this one out</text>
-    <rect class="deco" x="396" y="584" width="10" height="34"/>
-    <rect class="deco" x="418" y="584" width="10" height="34"/>
-    <rect class="deco" x="440" y="584" width="10" height="34"/>
-    <text class="rsub exx" x="466" y="600">three gates: sure enough?</text>
-    <text class="rsub exx" x="466" y="615">market healthy? not a coin-flip?</text>
-    <text class="ann engx" id="an-gates" x="466" y="600">τ ≥ — · floor — · knife ±—</text>
-    <text class="ann engx" id="an-arena" x="466" y="618">— treatments racing</text>
-    <text class="rsub engx" x="396" y="643">every skip is a scored decision, not an absence</text>
-    <text class="rsub exx" x="396" y="643" data-ex="sitting out is also an answer"
-      data-en="">sitting out is also an answer</text>
-    <circle class="stdot st-green" id="dot-decision_hq" cx="634" cy="539" r="5.5"/>
-    <text class="stword" id="st-decision_hq" x="624" y="543" text-anchor="end">—</text>
-  </g>
-
-  <!-- split rivers -->
-  <path class="river" d="M430 660 C390 690 340 706 305 724" marker-end="url(#arr)"/>
-  <path class="river" d="M570 660 C610 690 660 706 695 724" marker-end="url(#arr)"/>
-
-  <!-- ═══ EXECUTION PORT ═══ -->
-  <g class="region" data-region="execution_port" tabindex="0" role="button"
-     aria-label="Execution Port — orders, fills, fees">
-    <title>Execution Port — quotes, fills, fees. Click to open.</title>
-    <rect class="rshape" x="80" y="725" width="370" height="145" rx="22"/>
-    <text class="remoji" x="102" y="763">⚓</text>
-    <text class="rlabel" x="136" y="755"
-      data-ex="Execution Port" data-en="order path">Execution Port</text>
-    <text class="rsub" x="136" y="773"
-      data-ex="where bets become real orders — ships leak a little cargo"
-      data-en="real fills, fees, slippage guard — decision vs realized EV">where bets become real orders — ships leak a little cargo</text>
-    <rect class="deco" x="110" y="822" width="130" height="8"/>
-    <rect class="deco" x="110" y="840" width="95" height="8"/>
-    <text class="remoji" x="300" y="840" font-size="17">⛵</text>
-    <text class="ann engx" id="an-gap" x="136" y="805">execution gap — ¢/$1</text>
-    <circle class="stdot st-green" id="dot-execution_port" cx="424" cy="749" r="5.5"/>
-    <text class="stword" id="st-execution_port" x="414" y="753" text-anchor="end">—</text>
-  </g>
-
-  <!-- ═══ CAPITAL TOWN ═══ -->
-  <g class="region" data-region="capital_town" tabindex="0" role="button"
-     aria-label="Capital Town — sizing and banking">
-    <title>Capital Town — sizing, Kelly, banking. Click to open.</title>
-    <rect class="rshape" x="550" y="725" width="370" height="145" rx="22"/>
-    <text class="remoji" x="572" y="763">🏦</text>
-    <text class="rlabel" x="606" y="755"
-      data-ex="Capital Town" data-en="sizing">Capital Town</text>
-    <text class="rsub" x="606" y="773"
-      data-ex="eight play-money traders, eight personalities"
-      data-en="fractional Kelly, banking · 8 paper-trader ablations">eight play-money traders, eight personalities</text>
-    <rect class="deco" x="580" y="826" width="24" height="20"/>
-    <rect class="deco" x="612" y="820" width="24" height="26"/>
-    <rect class="deco" x="644" y="830" width="24" height="16"/>
-    <rect class="deco" x="676" y="816" width="24" height="30"/>
-    <rect class="deco" x="708" y="824" width="24" height="22"/>
-    <rect class="deco" x="740" y="818" width="24" height="28"/>
-    <rect class="deco" x="772" y="828" width="24" height="18"/>
-    <rect class="deco" x="804" y="822" width="24" height="24"/>
-    <text class="rsub" x="850" y="840"
-      data-ex="who goes broke?" data-en="ruin ablation">who goes broke?</text>
-    <circle class="stdot st-green" id="dot-capital_town" cx="894" cy="749" r="5.5"/>
-    <text class="stword" id="st-capital_town" x="884" y="753" text-anchor="end">—</text>
-  </g>
-
-  <!-- rivers into Ledger Valley -->
-  <path class="river" d="M265 870 C310 906 380 922 425 936" marker-end="url(#arr)"/>
-  <path class="river" d="M735 870 C690 906 620 922 575 936" marker-end="url(#arr)"/>
-
-  <!-- ═══ LEDGER VALLEY ═══ -->
-  <g class="region" data-region="ledger_valley" tabindex="0" role="button"
-     aria-label="Ledger Valley — append-only records">
-    <title>Ledger Valley — append-only JSONL ledgers. Click to open.</title>
-    <rect class="rshape" x="320" y="935" width="360" height="125" rx="22"/>
-    <text class="remoji" x="342" y="973">📚</text>
-    <text class="rlabel" x="376" y="965"
-      data-ex="Ledger Valley" data-en="append-only JSONL ledgers">Ledger Valley</text>
-    <text class="rsub" x="376" y="983"
-      data-ex="books nobody can erase — if it isn't written, it didn't happen"
-      data-en="ticks · predictions · trades · treatments · incidents">books nobody can erase — if it isn't written, it didn't happen</text>
-    <rect class="deco" x="560" y="1004" width="84" height="12"/>
-    <rect class="deco" x="570" y="1018" width="70" height="12"/>
-    <rect class="deco" x="554" y="1032" width="90" height="12"/>
-    <text class="ann engx" id="an-windows" x="376" y="1012">— windows scored</text>
-    <circle class="stdot st-green" id="dot-ledger_valley" cx="654" cy="959" r="5.5"/>
-    <text class="stword" id="st-ledger_valley" x="644" y="963" text-anchor="end">—</text>
-  </g>
-
-  <!-- rivers to the lab, then factory -->
-  <path class="river" d="M448 1060 C400 1090 350 1102 306 1118" marker-end="url(#arr)"/>
-  <path class="river" d="M470 1180 L524 1180" marker-end="url(#arr)"/>
-  <text class="rivlab" x="497" y="1104" text-anchor="middle"
-    data-ex="report cards" data-en="holdout verdicts">report cards</text>
-
-  <!-- ═══ EVALUATION LAB ═══ -->
-  <g class="region" data-region="evaluation_lab" tabindex="0" role="button"
-     aria-label="Evaluation Lab — prequential audits">
-    <title>Evaluation Lab — 10-minute audit chain. Click to open.</title>
-    <rect class="rshape" x="100" y="1115" width="370" height="130" rx="22"/>
-    <text class="remoji" x="122" y="1153">🔬</text>
-    <text class="rlabel" x="156" y="1145"
-      data-ex="Evaluation Lab" data-en="prequential audits">Evaluation Lab</text>
-    <text class="rsub" x="156" y="1163"
-      data-ex="an inspector re-checks all the math from the raw books"
-      data-en="10-min cron · dual implementation vs the daemon">an inspector re-checks all the math from the raw books</text>
-    <text class="ann engx" id="an-audit" x="156" y="1192">audit chain: —</text>
-    <text class="rsub exx" x="156" y="1192">trust nothing; recompute everything</text>
-    <circle class="stdot st-green" id="dot-evaluation_lab" cx="444" cy="1139" r="5.5"/>
-    <text class="stword" id="st-evaluation_lab" x="434" y="1143" text-anchor="end">—</text>
-  </g>
-
-  <!-- ═══ TRAINING FACTORY ═══ -->
-  <g class="region" data-region="training_factory" tabindex="0" role="button"
-     aria-label="Training Factory — gated hourly retraining">
-    <title>Training Factory — hourly gated retraining. Click to open.</title>
-    <rect class="rshape" x="530" y="1115" width="370" height="130" rx="22"/>
-    <text class="remoji" x="552" y="1153">🏭</text>
-    <text class="rlabel" x="586" y="1145"
-      data-ex="Training Factory" data-en="gated retraining">Training Factory</text>
-    <text class="rsub" x="586" y="1163"
-      data-ex="hourly robot school — bad lessons get thrown away"
-      data-en="hourly · candidate vs holdout MSE · keep or revert">hourly robot school — bad lessons get thrown away</text>
-    <text class="ann engx" id="an-retrain" x="586" y="1192">retrain: —</text>
-    <text class="rsub exx" x="586" y="1192">worse on the quiz? back it goes</text>
-    <circle class="stdot st-green" id="dot-training_factory" cx="874" cy="1139" r="5.5"/>
-    <text class="stword" id="st-training_factory" x="864" y="1143" text-anchor="end">—</text>
-  </g>
-
-  <!-- the learning loop — back up to the city and the mountains -->
-  <path class="river loop" d="M900 1180 C952 1160 952 1100 952 1000 L952 360
-    C952 334 946 326 936 322" marker-end="url(#arrloop)"/>
-  <path class="river loop thin" d="M952 320 C952 232 900 216 700 216
-    C500 216 330 222 274 246" marker-end="url(#arrloop)"/>
-  <text class="rivlab loop" transform="rotate(90 962 700)" x="962" y="700"
-    text-anchor="middle" data-ex="the learning loop — new brains flow home"
-    data-en="learning loop — kept weights redeploy">the learning loop — new brains flow home</text>
-</svg>
-<p class="mini exx">Every region has a weather light: <b>OK</b> green,
-  <b>WATCH</b> amber, <b>DOWN</b> red — click any landmass to zoom in.</p>
-<p class="mini engx">Status dots derive from <code>world.json</code> region
-  healths (6 emitted healths mapped onto 9 landmasses — mapping documented
-  in the page source). Click any node for the level-2 panel.</p>
-</div>
-<div id="storms">
-  <h3 style="margin:16px 0 2px">Weather report</h3>
-  <div id="storms-body"><p class="mini">reading the sky…</p></div>
-</div>
+<!-- ═══ CARD 1 — THE SYSTEM WORLD ═══ -->
+<section aria-label="the system world">
+  <div class="eyebrow">card 1 · the system world</div>
+  <h2>The system world</h2>
+  <p class="sub small">Market data falls in at the top and learning flows
+  back up from the bottom. Five lenses re-read the same geometry; click
+  any region to zoom in without leaving the page.</p>
+  <div class="chiprow" id="lensrow" role="group" aria-label="map lens"></div>
+  <div class="lensnote" id="lensnote"></div>
+  <div class="pipe" id="pipe"><p class="mini">reading world.json…</p></div>
 </section>
 
 <!-- ═══ CARD 2 — HOW THE SYSTEM RUNS ═══ -->
-<section id="card-runs" aria-label="how the system runs">
-<div class="cardhead">
-  <div class="grow">
-    <h2>How the system runs</h2>
-    <p class="mini" style="margin-top:4px">Three views of the same machine:
-    what fires on a timer, how an idea earns its way to live traffic, and
-    the path a single datum travels.</p>
+<section aria-label="how the system runs">
+  <div class="eyebrow">card 2 · how the system runs</div>
+  <h2>How the system runs</h2>
+  <p class="sub small">Three views of the same machine: what fires on a
+  timer, how an idea earns live traffic, and the real path one recent
+  decision travelled from raw tick to settled ledger row.</p>
+  <div class="chiprow" id="tabrow" role="tablist"
+    aria-label="how the system runs"></div>
+  <div class="tabpane" id="tab-runtime" role="tabpanel">
+    <p class="mini" id="clock-gen"></p>
+    <div id="cadence"><p class="mini">reading the clock…</p></div>
   </div>
-</div>
-<div class="tabrow" role="tablist" aria-label="how the system runs">
-  <button class="chip" id="tabbtn-runtime" data-tab="runtime" role="tab"
-    type="button">Runtime</button>
-  <button class="chip" id="tabbtn-lifecycle" data-tab="lifecycle" role="tab"
-    type="button">Learning lifecycle</button>
-  <button class="chip" id="tabbtn-lineage" data-tab="lineage" role="tab"
-    type="button">Data lineage</button>
-</div>
-
-<div class="tabpane" id="tab-runtime" role="tabpanel">
-  <p class="mini" id="run-gen">loading world.json…</p>
-  <div class="cadence" id="cadence"><p class="mini">reading the clock…</p></div>
-</div>
-
-<div class="tabpane" id="tab-lifecycle" role="tabpanel">
-  <p class="sub small" style="margin:2px 0 12px">Every model and policy
-  change walks the same road; nothing skips a stage. Counts are live from
-  the experiment program and the decision board.</p>
-  <div class="flow" id="flow">
-    <div class="stage"><b>Idea</b>
-      <div class="sdesc">a hypothesis is written down before any code runs</div>
-      <div class="scount" id="lc-idea">—</div></div>
-    <span class="flowarr">→</span>
-    <div class="stage"><b>Offline</b>
-      <div class="sdesc">backtest / replay against the recorded ledgers</div>
-      <div class="scount" id="lc-offline">replay-gated</div></div>
-    <span class="flowarr">→</span>
-    <div class="stage"><b>Shadow</b>
-      <div class="sdesc">runs on live data, logged only — no orders</div>
-      <div class="scount" id="lc-shadow">logged-only</div></div>
-    <span class="flowarr">→</span>
-    <div class="stage"><b>Live A/B</b>
-      <div class="sdesc">paired against the champion in the treatment arena</div>
-      <div class="scount" id="lc-ab">—</div></div>
-    <span class="flowarr">→</span>
-    <div class="stage"><b>Promote / retire</b>
-      <div class="sdesc">SPRT verdicts only — nothing is promoted on vibes</div>
-      <div class="scount" id="lc-promote">—</div></div>
-    <span class="flowarr">→</span>
-    <div class="stage"><b>Monitor</b>
-      <div class="sdesc">audited every 10 min; regressions reopen the loop</div>
-      <div class="scount" id="lc-monitor">—</div></div>
+  <div class="tabpane" id="tab-lifecycle" role="tabpanel">
+    <div id="funnel"><p class="mini">reading program.json…</p></div>
   </div>
-  <p class="mini" id="lc-note" style="margin-top:12px"></p>
-</div>
-
-<div class="tabpane" id="tab-lineage" role="tabpanel">
-  <p class="sub small" style="margin:2px 0 12px">Every published number can
-  be traced backwards along this chain to raw, append-only rows.</p>
-  <div class="chain">
-    <span class="node">source</span><span class="carr">→</span>
-    <span class="node">feature</span><span class="carr">→</span>
-    <span class="node">model</span><span class="carr">→</span>
-    <span class="node">policy</span><span class="carr">→</span>
-    <span class="node">trade</span><span class="carr">→</span>
-    <span class="node">experiment</span><span class="carr">→</span>
-    <span class="node">metric</span><span class="carr">→</span>
-    <span class="node">decision</span>
+  <div class="tabpane" id="tab-lineage" role="tabpanel">
+    <div id="lineage"><p class="mini">reading treatments.jsonl…</p></div>
   </div>
-  <div class="worked"><b>One real walk down the chain:</b><br>
-    Coinbase candle <span class="carr">→</span> σ_h15
-    <span class="carr">→</span> kb8 P(up)
-    <span class="carr">→</span> champion YES @ 67¢
-    <span class="carr">→</span> <code>treatments.jsonl</code> row
-    <span class="carr">→</span> paired Δ
-    <span class="carr">→</span> decision board</div>
-  <p class="mini" style="margin-top:12px">Rows are appended, never edited —
-  the audit chain recomputes every metric from the raw books, so the
-  daemon can never grade its own homework.</p>
-</div>
 </section>
 
 <!-- ═══ CARD 3 — COMPONENT EXPLORER ═══ -->
-<section id="card-explorer" aria-label="component explorer" aria-live="polite">
-<div class="cardhead">
-  <div class="grow">
-    <h2>Component explorer</h2>
-    <p class="mini" style="margin-top:4px">Zoom level 2 — pick a region of
-    the map, or a single model from the registry.</p>
+<section aria-label="component explorer">
+  <div class="eyebrow">card 3 · component explorer</div>
+  <h2>Component explorer</h2>
+  <p class="sub small">Every model, policy, experiment, agent, job and
+  monitor in one index. Fields are real or explicitly “—”; versions,
+  costs and latencies are never invented.</p>
+  <div class="exbar">
+    <input id="exq" type="search" placeholder="search components…"
+      aria-label="search components">
   </div>
-</div>
-<div class="selrow" id="region-chips"></div>
-<div class="selrow">
-  <label class="mini" for="model-pick">or one model:</label>
-  <select id="model-pick"><option value="">— model registry —</option></select>
-</div>
-<div id="crumb"></div>
-<div id="panel-body"><p class="mini">Click a landmass on the map, a region
-chip, or pick a model to open its card.</p></div>
+  <div class="chiprow" id="exfilters" role="group"
+    aria-label="component type filter"></div>
+  <div class="scroll exlist" id="exlist"><p class="mini">building
+    index…</p></div>
+  <div class="drawer" id="exdrawer" hidden></div>
 </section>
 
 <footer>
-  <div class="minilinks">
-    <a href="clock.html">Clock</a>
-    <a href="agents.html">Agent HQ</a>
-    <a href="museum.html">Museum</a>
-    <a href="sev0.html">SEV-0</a>
-    <a href="board.html">Board</a>
-    <a href="home_classic.html">Ledgers (classic)</a>
-  </div>
-  <p style="margin-top:10px">One geometry, two label sets — flip the toggle
-  and the same world reads at two depths. Data republished every minute;
-  this page re-reads it every 15 s.</p>
+  <p class="minifoot">Research Command → <a href="board.html">board</a>
+  · Control Tower → <a href="watchtower.html">watchtower</a>
+  · Evidence → <a href="ledgers.html">ledgers</a></p>
 </footer>
 </main>
 
 <script>
 "use strict";
-/* The Quant Universe — explorable system atlas.
-   All live numbers come from published JSON; nothing live is hardcoded.
-   Null-safe throughout: any missing file or field renders "—". */
+/* The Quant Universe — living system map.
+   All live values come from published artifacts; a missing file renders
+   "not yet published". UNKNOWN is never shown green. */
 
-/* map-region key → world.json regions key (see SVG comment for rationale) */
-var HEALTH_MAP = {
-  market_ocean: "market_ocean",
-  forecast_mountains: "forecast_country",
-  model_city: "probability_city",
-  decision_hq: "decision_hq",
-  execution_port: "execution_port",
-  capital_town: "decision_hq",
-  ledger_valley: "ledger_valley",
-  evaluation_lab: "forecast_country",
-  training_factory: "forecast_country"
+/* ---------------------------------------------------------- fetch -- */
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
+  + Math.floor(Date.now() / 15000);
+const J = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? r.json() : null; } catch { return null; }
+};
+const JL = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    if (!r.ok) return null;
+    return (await r.text()).split("\n").filter(l => l.trim())
+      .map(l => { try { return JSON.parse(l); } catch { return null; } })
+      .filter(Boolean);
+  } catch { return null; }
 };
 
-var REGION_NAMES = {
-  market_ocean: { ex: "Market Ocean", en: "T0 external feeds" },
-  forecast_mountains: { ex: "Forecast Mountains", en: "tier-1 price arms" },
-  model_city: { ex: "Model City", en: "tier-2 kb arms" },
-  decision_hq: { ex: "Decision HQ", en: "policy engine" },
-  execution_port: { ex: "Execution Port", en: "order path" },
-  capital_town: { ex: "Capital Town", en: "sizing & banking" },
-  ledger_valley: { ex: "Ledger Valley", en: "append-only ledgers" },
-  evaluation_lab: { ex: "Evaluation Lab", en: "prequential audits" },
-  training_factory: { ex: "Training Factory", en: "gated retraining" }
-};
+/* ----------------------------------------------------- formatting -- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;",
+  "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const isNum = v => typeof v === "number" && isFinite(v);
+const dash = v => v == null ? "—" : esc(v);
+const cS = v => !isNum(v) ? "—"
+  : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
+const f = (v, dp) => isNum(v) ? v.toFixed(dp == null ? 1 : dp) : "—";
+const pc = v => isNum(v) ? (100 * v).toFixed(0) + "%" : "—";
+const ageMin = ts => isNum(ts) ? (Date.now() / 1000 - ts) / 60 : null;
+const fmtAge = m => !isNum(m) ? "—"
+  : m < 1 ? "<1 min ago"
+  : m < 90 ? m.toFixed(m < 10 ? 1 : 0) + " min ago"
+  : m < 48 * 60 ? (m / 60).toFixed(1) + " h ago"
+  : (m / 1440).toFixed(1) + " d ago";
+const fmtDur = s => !isNum(s) ? "—"
+  : s < 90 ? s + " s" : s < 5400 ? Math.round(s / 60) + " min"
+  : (s / 3600).toFixed(s % 3600 ? 1 : 0) + " h";
+const whenTZ = (ts, tz, tag) => !isNum(ts) ? "—"
+  : new Date(ts * 1000).toLocaleString("en-US", { month: "short",
+      day: "numeric", hour: "numeric", minute: "2-digit", hour12: false,
+      timeZone: tz }) + " " + tag;
+const whenBoth = ts => !isNum(ts) ? "—"
+  : whenTZ(ts, "America/New_York", "ET") + " · "
+  + whenTZ(ts, "Asia/Kolkata", "IST");
 
-var STATUS_WORD = { green: "OK", amber: "WATCH", red: "DOWN" };
-var WEATHER = {
-  market_ocean: "storms over the Market Ocean",
-  forecast_country: "fog on the Forecast Mountains",
-  probability_city: "power flickers in Model City",
-  decision_hq: "sirens at Decision HQ",
-  execution_port: "rough seas at Execution Port",
-  ledger_valley: "floodwater in Ledger Valley"
-};
+/* health status → dot color + word.  UNKNOWN is never green. */
+const ST_WORD = { green: "HEALTHY", amber: "WATCH", red: "CRITICAL" };
+const ST_CHIP = { green: "st-good", amber: "st-collect", red: "st-kill" };
+const dotCls = st => ({ green: "green", amber: "amber", red: "red" }[st]
+  || "gray");
+const stateChip = st => '<span class="state ' + (ST_CHIP[st] ||
+  "st-frozen") + '"><span class="hdot ' + dotCls(st) + '"></span>'
+  + (ST_WORD[st] || "UNKNOWN") + "</span>";
+const NOTPUB = '<p class="mini">not yet published</p>';
 
-var state = { world: null, manifest: null, board: null, online: null,
-              audit: null };
-var openRegion = null;
-var mode = "explore";
+/* --------------------------------------------------------- state -- */
+const S = { world: null, prog: null, a3: null, inv: null, inc: null,
+  online: null, audit: null, ready: null, board: null, treat: null };
+const openRegions = new Set();
+let lens = "explore", tab = "runtime", exType = "all", exSel = null,
+  exQuery = "";
 try {
-  var saved = localStorage.getItem("universe_mode");
-  if (saved === "engineer" || saved === "explore") mode = saved;
-} catch (e) { /* private mode */ }
+  lens = localStorage.getItem("map_lens") || "explore";
+  tab = localStorage.getItem("map_tab") || "runtime";
+} catch {}
+if (!["explore", "engineer", "health", "experiments", "cost"]
+  .includes(lens)) lens = "explore";
+if (!["runtime", "lifecycle", "lineage"].includes(tab)) tab = "runtime";
 
-/* ------------ tiny helpers, all null-safe ------------ */
-function esc(s) {
-  return String(s == null ? "—" : s)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+/* ------------------------------------------------- clock helpers -- */
+const clockRow = rx => (S.world?.clock || []).find(c =>
+  rx.test(String(c?.what || "") + " " + String(c?.source || "")))
+  || null;
+
+/* -------------------------------------------------- region model -- */
+/* world.json emits 6 region healths; the pipeline draws 10 blocks.
+   Unemitted blocks borrow the documented nearest feed (noted inline
+   in the zoom) or a clock-row health; missing = UNKNOWN, never green. */
+const REGIONS = [
+  { k: "ocean", ex: "Market Ocean",
+    en: "T0 · external feeds — btc_rl/online.py sources",
+    kid: "the outside sea — live prices, order books and the crowd's mood flow in as rivers",
+    ensub: "Coinbase spot + book · Kalshi 15-min quotes · alternative.me Fear & Greed" },
+  { k: "delta", ex: "Data Delta",
+    en: "feature pipeline — 30 s loop in btc_rl/online.py",
+    kid: "the river mouth — raw water is filtered into clean features every poll",
+    ensub: "candles, book, trades, quotes → features → arm inference",
+    borrow: "no separate health feed — borrows Market Ocean's (same daemon loop)" },
+  { k: "forecast", ex: "Forecast Country",
+    en: "tier-1 price arms — t2 / t6 / t7 / t8 / t9 / t10 / t11",
+    kid: "mountain watchers who each guess the future price at 1, 5, 15 and 30 minutes",
+    ensub: "μ + 80% band per horizon · h1/h5/h15/h30 · logged-only" },
+  { k: "city", ex: "Probability City",
+    en: "tier-2 kb probability arms",
+    kid: "buildings full of robots each saying how sure they are the price goes UP",
+    ensub: "P(up) each minute on the live 15-min window" },
+  { k: "republic", ex: "Decision Republic",
+    en: "policy engine — champion + M-treatment registry",
+    kid: "the town hall — bet, or sit this one out; sitting out is also an answer",
+    ensub: "champion policy + M-treatments, gates, paired SPRT arena" },
+  { k: "split" },
+  { k: "port", ex: "Execution Port",
+    en: "order path — quotes, fills, fees",
+    kid: "where decisions become orders — ships leak a little cargo on the way in",
+    ensub: "decision EV vs realized EV · A3 entry-timing experiment" },
+  { k: "island", ex: "Capital Island",
+    en: "sizing & banking — paper traders pt…pt8",
+    kid: "eight pretend traders, eight personalities — who grows the pile, who goes broke?",
+    ensub: "fractional Kelly, banking rules · simulated bankrolls",
+    borrow: "no separate health feed — borrows Decision Republic's (sizing lives inside the policy engine)" },
+  { k: "valley", ex: "Ledger Valley",
+    en: "append-only JSONL ledgers + publisher",
+    kid: "books nobody can erase — if it isn't written down, it didn't happen",
+    ensub: "ticks · predictions · trades · treatments · incidents" },
+  { k: "academy", ex: "Evaluation Academy",
+    en: "audit chain — scripts/run_audit.py (10-min cron)",
+    kid: "an inspector re-does all the math from the raw books, trusting no one",
+    ensub: "dual implementation vs the daemon · invariants · readiness",
+    borrow: "health taken from the audit clock row" },
+  { k: "factory", ex: "Training Factory",
+    en: "gated retraining — hourly, candidate vs holdout MSE",
+    kid: "hourly robot school — lessons that make the quiz worse get thrown away",
+    ensub: "keep-or-revert per arm · kept weights redeploy upstream",
+    borrow: "health taken from the retrain clock row" }
+];
+
+const LENSES = [
+  ["explore", "Explore"], ["engineer", "Engineer"], ["health", "Health"],
+  ["experiments", "Experiments"], ["cost", "Cost"]
+];
+const LENS_NOTE = {
+  explore: "friendly names + one-line explanations — for anyone twelve and up.",
+  engineer: "same geometry, real component and file names.",
+  health: "color only by live status — green HEALTHY, amber WATCH, red CRITICAL, gray UNKNOWN.",
+  experiments: "regions currently modified by LIVE experiments are outlined with their ids; everything else dims.",
+  cost: "per-region running cost from world.json.costs — “not metered” where no meter exists."
+};
+
+/* which world.json region feeds each block's health */
+const HEALTH_SRC = { ocean: "market_ocean", delta: "market_ocean",
+  forecast: "forecast_country", city: "probability_city",
+  republic: "decision_hq", port: "execution_port",
+  island: "decision_hq", valley: "ledger_valley" };
+
+function regionStatus(k) {
+  if (k === "academy") return clockRow(/audit/i)?.health ?? null;
+  if (k === "factory") return clockRow(/retrain/i)?.health ?? null;
+  const r = S.world?.regions?.[HEALTH_SRC[k]];
+  return r ? (r.status ?? null) : null;
 }
-function isNum(v) { return typeof v === "number" && isFinite(v); }
-function nn(v, dp) { return isNum(v) ? v.toFixed(dp == null ? 1 : dp) : "—"; }
-function cents(v, dp) {   /* $/1 → ¢/$1 */
-  return isNum(v) ? (v * 100).toFixed(dp == null ? 1 : dp) : "—";
+function regionWhy(k) {
+  if (k === "academy" || k === "factory") return null;
+  return S.world?.regions?.[HEALTH_SRC[k]]?.why ?? null;
 }
-function g(obj, path) {   /* g(o, "a.b.c") → value or null */
-  var cur = obj;
-  var parts = path.split(".");
-  for (var i = 0; i < parts.length; i++) {
-    if (cur == null || typeof cur !== "object") return null;
-    cur = cur[parts[i]];
+
+/* open incidents, mapped to regions by keyword */
+const openIncidents = () => (S.inc || []).filter(i =>
+  !/closed|resolved/i.test(String(i?.status || "")));
+function incidentsFor(k) {
+  const pats = {
+    port: /exec|fee|order|fill|binding|markout/i,
+    delta: /daemon|poll|heartbeat/i,
+    republic: /leader|gambler|stake|policy|treatment|win-rate/i,
+    valley: /publish|site|rebase|front.end|ledger/i,
+    forecast: /band|dispersion|calibrat/i
+  };
+  const rx = pats[k];
+  if (!rx) return [];
+  return openIncidents().filter(i =>
+    rx.test(String(i?.title || "") + " " + String(i?.rca || "")));
+}
+
+/* best BSS across kb arms (from the audit) — null if unpublished */
+function bestBSS() {
+  const t2 = S.audit?.sections?.tier2;
+  if (!t2) return null;
+  let best = null, arm = null;
+  for (const [k, v] of Object.entries(t2)) {
+    if (isNum(v?.bss_vs_market) && (best == null ||
+        v.bss_vs_market > best)) { best = v.bss_vs_market; arm = k; }
   }
-  return cur == null ? null : cur;
-}
-function ageMin(ts) {
-  return isNum(ts) ? (Date.now() / 1000 - ts) / 60 : null;
-}
-function fmtAge(m) {
-  if (!isNum(m)) return "—";
-  if (m < 1) return "under a minute ago";
-  if (m < 90) return m.toFixed(m < 10 ? 1 : 0) + " min ago";
-  return (m / 60).toFixed(1) + " h ago";
-}
-function fmtDur(s) {
-  if (!isNum(s)) return "—";
-  if (s < 90) return s + " s";
-  if (s < 5400) return Math.round(s / 60) + " min";
-  return (s / 3600).toFixed(s % 3600 ? 1 : 0) + " h";
-}
-function pill(health) {
-  var h = health === "green" ? "ok" : health === "amber" ? "pending" : "bad";
-  return '<span class="pill ' + h + '">' + esc(health || "?") + "</span>";
-}
-function bust(u) {
-  return u + (u.indexOf("?") >= 0 ? "&" : "?") + "_=" + Date.now();
-}
-function fetchJSON(u) {
-  return fetch(bust(u), { cache: "no-store" })
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .catch(function () { return null; });
+  return best == null ? null : { bss: best, arm };
 }
 
-/* ------------ mode ------------ */
-function applyLabels() {
-  var els = document.querySelectorAll("[data-ex]");
-  for (var i = 0; i < els.length; i++) {
-    var t = els[i].getAttribute(mode === "engineer" ? "data-en" : "data-ex");
-    if (t != null) els[i].textContent = t;
-  }
-}
-function setMode(m) {
-  mode = m === "engineer" ? "engineer" : "explore";
-  document.body.className = "mode-" + mode;
-  document.getElementById("btn-explore").className =
-    mode === "explore" ? "on" : "";
-  document.getElementById("btn-engineer").className =
-    mode === "engineer" ? "on" : "";
-  try { localStorage.setItem("universe_mode", mode); } catch (e) {}
-  applyLabels();
-  if (openRegion) renderPanel(openRegion);
+/* retrain keep/revert summary from online_status.last_retrain */
+function retrainSummary() {
+  const arms = S.online?.last_retrain?.arms;
+  if (!arms || typeof arms !== "object") return null;
+  let kept = 0, rev = 0;
+  for (const per of Object.values(arms))
+    for (const r of Object.values(per || {}))
+      if (r && r.reverted) rev++; else kept++;
+  return { kept, rev };
 }
 
-/* ------------ map status ------------ */
-function regionHealth(key) {
-  return g(state.world, "regions." + HEALTH_MAP[key]) || null;
+/* live experiments (program.json + A3) and the regions they modify */
+const EXP_REGION = { M8: ["republic"], M10: ["port"], M11: ["port"],
+  M12: ["republic"], M13: ["republic"], M9: ["republic"],
+  M1: ["republic"], M2: ["republic"], M3: ["republic"] };
+function expRegions(id) {
+  const out = new Set();
+  for (const p of String(id).split("+"))
+    for (const r of (EXP_REGION[p.trim()] || ["republic"])) out.add(r);
+  return [...out];
 }
-function paintStatus() {
-  Object.keys(HEALTH_MAP).forEach(function (key) {
-    var r = regionHealth(key);
-    var st = (r && r.status) || null;
-    var dot = document.getElementById("dot-" + key);
-    var word = document.getElementById("st-" + key);
-    if (dot) dot.setAttribute("class", "stdot st-" + (st || "amber"));
-    if (word) word.textContent = st ? (STATUS_WORD[st] || st) : "—";
-    var grp = document.querySelector('[data-region="' + key + '"] title');
-    if (grp && r && r.why) {
-      grp.textContent = (REGION_NAMES[key][mode === "engineer" ? "en" : "ex"])
-        + " — " + r.why + ". Click to open.";
+function liveExperiments() {
+  const out = (S.prog?.experiments || [])
+    .filter(e => /\bLIVE\b/.test(String(e?.lifecycle || "")))
+    .map(e => ({ id: e.id, regions: expRegions(e.id) }));
+  if (S.a3) out.push({ id: "A3-v1.1", regions: ["port"] });
+  for (const sh of Object.keys(S.a3?.shadows || {}))
+    out.push({ id: sh + " shadow", regions: ["port"] });
+  return out;
+}
+
+/* per-region cost lines from world.json.costs */
+function costLine(k) {
+  const costs = S.world?.costs;
+  if (!Array.isArray(costs)) return "costs not yet published";
+  const pick = rx => costs.filter(c => rx.test(String(c?.item || "")));
+  const fmt = rows => rows.map(c => (isNum(c.amount)
+    ? "$" + c.amount : "not metered") + " — " + c.item).join(" · ");
+  const M = {
+    ocean: pick(/coinbase|kalshi|fear/i),
+    delta: pick(/compute/i), factory: pick(/compute/i),
+    valley: pick(/storage|publish/i),
+    academy: pick(/LLM/i)
+  };
+  const rows = M[k];
+  return rows && rows.length ? fmt(rows) : "not metered";
+}
+
+/* -------------------------------------------- region metric lines -- */
+function regionMetric(k) {
+  const facts = S.world?.facts || {};
+  switch (k) {
+    case "ocean": {
+      const p = S.online?.price_now;
+      return (isNum(p) ? "BTC $" + Math.round(p).toLocaleString("en-US")
+        : "BTC —") + " · poll every "
+        + (isNum(facts.poll_seconds) ? facts.poll_seconds + " s" : "—");
     }
-  });
-}
-
-/* ------------ engineer annotations (live values) ------------ */
-function setText(id, txt) {
-  var el = document.getElementById(id);
-  if (el) el.textContent = txt;
-}
-function paintAnnotations() {
-  var facts = g(state.world, "facts") || {};
-  var cfg = g(state.manifest, "config") || {};
-  setText("an-poll", "poll every " +
-    (isNum(facts.poll_seconds) ? facts.poll_seconds : "—") + " s");
-  setText("an-gates", "τ ≥ " + (cfg.PT_TAU != null ? cfg.PT_TAU : "—") +
-    " · floor " + (cfg.REGIME_FLOOR != null ? cfg.REGIME_FLOOR : "—") +
-    " · knife ±" + (cfg.KNIFE_BAND != null ? cfg.KNIFE_BAND : "—"));
-  var states = g(state.board, "summary.states");
-  var total = null;
-  if (states && typeof states === "object") {
-    total = 0;
-    Object.keys(states).forEach(function (k) {
-      if (isNum(states[k])) total += states[k];
-    });
+    case "delta":
+      return "daemon heartbeat " + fmtAge(ageMin(S.online?.alive_at))
+        + " · features each poll";
+    case "forecast": {
+      const t1 = S.audit?.sections?.tier1;
+      return (t1 ? Object.keys(t1).length : "—")
+        + " arms audited · retrain cadence "
+        + fmtDur(facts.retrain_every_s);
+    }
+    case "city": {
+      const t2 = S.audit?.sections?.tier2;
+      const b = bestBSS();
+      return (t2 ? Object.keys(t2).length : "—") + " kb arms · best BSS "
+        + (b ? f(b.bss, 4) + " (" + b.arm + ")" : "—");
+    }
+    case "republic": {
+      const st = S.board?.summary?.states;
+      const total = st ? Object.values(st).reduce((s, v) =>
+        s + (isNum(v) ? v : 0), 0) : null;
+      return dash(facts.windows_scored) + " paired windows · "
+        + dash(total) + " treatments racing";
+    }
+    case "port": {
+      const gap = S.board?.execution_waterfall?.execution_gap_per_1;
+      return "execution gap " + cS(gap) + "/$1 · A3 "
+        + dash(S.a3?.live?.state);
+    }
+    case "island": {
+      const tr = S.audit?.sections?.traders;
+      const ev = S.audit?.sections?.desk?.ev_per_dollar;
+      return (tr ? Object.keys(tr).length : "—")
+        + " paper traders audited · desk EV " + cS(ev) + "/$1";
+    }
+    case "valley": {
+      const ig = S.board?.integrity;
+      return dash(ig?.rows) + " treatment rows · ledger "
+        + (isNum(ig?.age_min) ? f(ig.age_min, 1) + " min old" : "—");
+    }
+    case "academy": {
+      const p = S.inv?.passed, fl = S.inv?.failed;
+      return "invariants " + (isNum(p) && isNum(fl)
+        ? p + "/" + (p + fl) + " passing" : "—")
+        + " · readiness " + dash(S.ready?.system?.level);
+    }
+    case "factory": {
+      const rs = retrainSummary();
+      return rs ? rs.kept + " kept / " + rs.rev
+        + " reverted last cycle" : "retrain detail not yet published";
+    }
   }
-  setText("an-arena", (total == null ? "—" : total) + " treatments racing");
-  setText("an-gap", "execution gap " +
-    cents(g(state.board, "execution_waterfall.execution_gap_per_1")) +
-    " ¢/$1");
-  setText("an-windows",
-    (isNum(facts.windows_scored) ? facts.windows_scored : "—") +
-    " windows scored");
-  var audRow = clockRow(/audit/i);
-  setText("an-audit", "audit chain: every " +
-    (audRow ? audRow.every : "—") + " · ran " +
-    fmtAge(audRow ? audRow.age_min : null));
-  var rtRow = clockRow(/retrain/i);
-  setText("an-retrain", "retrain every " + fmtDur(facts.retrain_every_s) +
-    " · last " + fmtAge(rtRow ? rtRow.age_min : null));
+  return "—";
 }
-function clockRow(rx) {
-  var clock = g(state.world, "clock");
-  if (!Array.isArray(clock)) return null;
-  for (var i = 0; i < clock.length; i++) {
-    var c = clock[i] || {};
-    if (rx.test(String(c.what || "") + " " + String(c.source || "")))
-      return c;
+function regionAge(k) {
+  switch (k) {
+    case "ocean": case "delta": return ageMin(S.online?.alive_at);
+    case "forecast": case "factory":
+      return clockRow(/retrain/i)?.age_min ?? null;
+    case "city": case "island": case "academy":
+      return clockRow(/audit/i)?.age_min ?? null;
+    case "republic": return S.board?.integrity?.age_min ?? null;
+    case "port": return ageMin(S.a3?.generated_ts);
+    case "valley": return clockRow(/publish/i)?.age_min ?? null;
   }
   return null;
 }
 
-/* ------------ weather strip ------------ */
-function paintStorms() {
-  var box = document.getElementById("storms-body");
-  var regions = g(state.world, "regions");
-  if (!regions) {
-    box.innerHTML = '<p class="mini">weather station offline — ' +
-      "world.json not readable yet.</p>";
+/* ------------------------------------------------- region zooms -- */
+function zoomHTML(k) {
+  const why = regionWhy(k);
+  const R = REGIONS.find(r => r.k === k) || {};
+  let h = why ? '<p class="mini" style="margin-top:0">why this status: '
+    + esc(why) + "</p>" : "";
+  if (R.borrow) h += '<p class="mini">' + esc(R.borrow) + ".</p>";
+  const zb = ZOOMS[k];
+  h += zb ? zb() : NOTPUB;
+  const incs = incidentsFor(k);
+  if (incs.length) {
+    h += "<h4>open incidents touching this region</h4>";
+    h += incs.map(i => "<div>· <b>" + esc(i.title) + "</b> " +
+      '<span class="mini">(sev ' + dash(i.sev) + " · " +
+      dash(i.status) + ")</span></div>").join("");
+  }
+  return h;
+}
+
+const ZOOMS = {
+  ocean() {
+    const o = S.online;
+    if (!o) return NOTPUB;
+    const bc = o.brti?.constituents || {};
+    const rows = Object.entries(bc).map(([k, v]) =>
+      "<tr><td>" + esc(k) + '</td><td class="num">' + (isNum(v)
+        ? "$" + v.toLocaleString("en-US") : "—") + "</td></tr>")
+      .join("");
+    return "<h4>the three rivers</h4>" +
+      "Coinbase spot + order book · Kalshi 15-min quotes (demo env, " +
+      "production key quarantined) · alternative.me Fear &amp; Greed " +
+      "— all $0 public feeds." +
+      "<h4>BRTI constituents (live composite)</h4>" +
+      '<div class="scroll"><table><thead><tr><th>venue</th>' +
+      '<th class="num">price</th></tr></thead><tbody>' + (rows ||
+      '<tr><td colspan="2">—</td></tr>') + "</tbody></table></div>" +
+      '<p class="mini">live 15-min market: ' + dash(o.pm?.ticker) +
+      " · strike " + (isNum(o.pm?.strike) ? "$" +
+        o.pm.strike.toLocaleString("en-US") : "—") +
+      " · yes " + dash(o.pm?.yes_bid) + "/" + dash(o.pm?.yes_ask) +
+      "¢</p>";
+  },
+  delta() {
+    const o = S.online;
+    if (!o) return NOTPUB;
+    return "daemon started " + fmtAge(ageMin(o.started_at)) +
+      " · heartbeat " + fmtAge(ageMin(o.alive_at)) +
+      " · runtime state <b>" + dash(o.runtime_state) + "</b> · " +
+      dash(o.predictions_total) + " predictions total · online " +
+      "updates this session: " + dash(o.online_updates_session);
+  },
+  forecast() {
+    const t1 = S.audit?.sections?.tier1;
+    if (!t1) return NOTPUB;
+    const rows = Object.keys(t1).sort().map(k => {
+      const a = t1[k] || {};
+      return '<tr><td><span class="arm-tag">' + esc(k) + "</span></td>" +
+        '<td class="num">' + dash(a.n) + "</td>" +
+        '<td class="num">' + f(a.mse, 0) + "</td>" +
+        '<td class="num">' + f(a.bias, 2) + "</td>" +
+        '<td class="num">' + (isNum(a.band80_cov)
+          ? (a.band80_cov * 100).toFixed(1) + "%" : "—") + "</td></tr>";
+    }).join("");
+    return "<h4>tier-1 price arms (audited)</h4>" +
+      '<div class="scroll"><table><thead><tr><th>arm</th>' +
+      '<th class="num">n</th><th class="num">MSE $²</th>' +
+      '<th class="num">bias $</th><th class="num">80% coverage</th>' +
+      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      '<p class="mini">Price arms are logged-only — they never place ' +
+      'bets directly. Deep dive: <a href="metrics_lab.html">Metrics ' +
+      "Lab</a>.</p>";
+  },
+  city() {
+    const t2 = S.audit?.sections?.tier2;
+    if (!t2) return NOTPUB;
+    const rows = Object.keys(t2).sort().map(k => {
+      const a = t2[k] || {};
+      return '<tr><td><span class="arm-tag">' + esc(k) + "</span></td>" +
+        '<td class="num">' + dash(a.n) + "</td>" +
+        '<td class="num">' + f(a.brier, 4) + "</td>" +
+        '<td class="num">' + f(a.mkt_brier, 4) + "</td>" +
+        '<td class="num">' + f(a.bss_vs_market, 4) + "</td></tr>";
+    }).join("");
+    const b = bestBSS();
+    const note = b == null ? "—"
+      : b.bss <= 0
+        ? "no arm beats the book yet — best BSS " + f(b.bss, 4) +
+          " (" + esc(b.arm) + "); the edge must come from " +
+          "selectivity, not clairvoyance."
+        : esc(b.arm) + " currently beats the book — BSS " + f(b.bss, 4)
+          + ".";
+    return "<h4>" + Object.keys(t2).length +
+      " active kb arms (audited)</h4>" +
+      '<div class="scroll"><table><thead><tr><th>arm</th>' +
+      '<th class="num">n</th><th class="num">Brier</th>' +
+      '<th class="num">market Brier</th>' +
+      '<th class="num">BSS vs market</th>' +
+      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      '<p class="mini"><b>Standing lesson:</b> ' + note + "</p>";
+  },
+  republic() {
+    const st = S.board?.summary?.states;
+    let h = "";
+    if (st) {
+      h += '<h4>treatment arena</h4><div class="legend">';
+      h += Object.entries(st).map(([k, v]) =>
+        '<span class="pill ' + (k === "BASELINE" ? "pending" :
+          k === "HOLD" ? "miss" : "ok") + '">' + esc(k) + " · " +
+        dash(v) + "</span>").join("");
+      h += "</div>";
+      const best = S.board?.summary?.best_candidate;
+      if (best) h += '<p class="mini">best candidate: <b>' + esc(best) +
+        "</b> — nothing is promoted until paired traffic earns it.</p>";
+    } else h += NOTPUB;
+    const live = liveExperiments().filter(e =>
+      e.regions.includes("republic"));
+    if (live.length) h += "<h4>live experiments here</h4><div>" +
+      live.map(e => '<span class="xchip">' + esc(e.id) + "</span>")
+        .join(" ") + "</div>";
+    return h;
+  },
+  port() {
+    const w = S.board?.execution_waterfall;
+    let h = "";
+    if (w) h += "<h4>the measured leak</h4>" +
+      "decision EV " + cS(w.decision_ev_per_1) + "/$1 → realized " +
+      cS(w.realized_ev_per_1) + "/$1 — execution gap <b>" +
+      cS(w.execution_gap_per_1) + "/$1</b> over " + dash(w.windows) +
+      " windows.";
+    else h += NOTPUB;
+    const a3 = S.a3;
+    if (a3) {
+      const fw = a3.forward || {};
+      h += "<h4>A3 — entry timing vs frozen control</h4>" +
+        "state <b>" + dash(a3.live?.state) + "</b>" +
+        (a3.live?.ticker ? " on " + esc(a3.live.ticker) : "") +
+        " · forward n=" + dash(fw.eligible) + " eligible · " +
+        "incremental " + cS(fw.incremental_per_eligible) +
+        "/eligible · spec hash " +
+        (a3.spec_hash_ok === true ? "verified" :
+         a3.spec_hash_ok === false ? "MISMATCH" : "—");
+      const shTxt = Object.entries(a3.shadows || {}).map(([k, v]) =>
+        esc(k) + " dip " + dash(v?.dip_c) + "¢ · " + dash(v?.eligible) +
+        " eligible · " + cS(v?.pnl_per_eligible) + "/eligible")
+        .join("<br>");
+      if (shTxt) h += "<h4>dip-depth shadows (logged only)</h4>" + shTxt;
+    } else h += "<h4>A3</h4>" + NOTPUB;
+    return h;
+  },
+  island() {
+    const tr = S.audit?.sections?.traders;
+    if (!tr) return NOTPUB;
+    const rows = Object.keys(tr).sort().map(k => {
+      const a = tr[k] || {};
+      return '<tr><td><span class="arm-tag">' + esc(k) + "</span> " +
+        esc(PT_NAMES[k] || "") + "</td>" +
+        '<td class="num">' + dash(a.n_settled) + "</td>" +
+        '<td class="num">' + f(a.win_pct, 1) + "%</td>" +
+        '<td class="num">' + cS(a.ev_per_dollar) + "</td>" +
+        '<td class="num">' + (isNum(a.bankroll_c)
+          ? "$" + (a.bankroll_c / 100).toLocaleString("en-US") : "—") +
+        "</td></tr>";
+    }).join("");
+    return "<h4>the paper-trader ablation (simulated)</h4>" +
+      '<div class="scroll"><table><thead><tr><th>trader</th>' +
+      '<th class="num">n</th><th class="num">win</th>' +
+      '<th class="num">EV /$1</th><th class="num">bankroll</th>' +
+      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
+      '<p class="mini">All play money — a sizing ablation, not a ' +
+      'portfolio. Full books: <a href="ledgers.html">Evidence</a>.</p>';
+  },
+  valley() {
+    const ig = S.board?.integrity;
+    const n = openIncidents().length;
+    return (ig ? "treatment ledger: " + dash(ig.rows) +
+      " rows · last close " + whenBoth(ig.last_close_ts) + " · " +
+      (isNum(ig.age_min) ? f(ig.age_min, 1) + " min old" : "—") +
+      " · health " + dash(ig.health) + "." : NOTPUB) +
+      "<h4>the books</h4>ticks.jsonl · prediction_log.jsonl · " +
+      "treatments.jsonl · incidents.jsonl (" +
+      (S.inc ? S.inc.length : "—") + " records, " + n + " open) — " +
+      "append-only, recomputed by the auditor." +
+      '<p class="mini">Storage &amp; publishing: ' +
+      esc(costLine("valley")) + "</p>";
+  },
+  academy() {
+    const inv = S.inv;
+    let h = "";
+    if (inv) {
+      h += "<h4>invariant suite — " + dash(inv.passed) + " passing, " +
+        dash(inv.failed) + " failing</h4>";
+      h += (inv.checks || []).map(c =>
+        "<div>" + (c?.ok ? "✓" : "✗") + " " + dash(c?.name) +
+        ' <span class="mini">(' + dash(c?.origin) + ")</span></div>")
+        .join("");
+    } else h += NOTPUB;
+    const sys = S.ready?.system;
+    if (sys) h += "<h4>readiness</h4><b>" + dash(sys.level) + "</b> — " +
+      dash(sys.headline) + " · strategy: " +
+      dash(S.ready?.strategy?.status);
+    return h;
+  },
+  factory() {
+    const lr = S.online?.last_retrain;
+    if (!lr) return NOTPUB;
+    const rows = Object.entries(lr.arms || {}).map(([arm, per]) =>
+      Object.entries(per || {}).map(([hz, r]) =>
+        "<tr><td>" + esc(arm) + "</td><td>" + esc(hz) + "</td>" +
+        '<td class="num">' + f(r?.val_mse_before, 1) + "</td>" +
+        '<td class="num">' + f(r?.val_mse_after, 1) + "</td>" +
+        "<td>" + (r?.reverted
+          ? '<span class="pill miss">reverted</span>'
+          : '<span class="pill ok">kept</span>') + "</td></tr>")
+        .join("")).join("");
+    return "<h4>last gated retrain — " + dash(lr.at) + "</h4>" +
+      dash(lr.train_episodes) + " train / " + dash(lr.val_episodes) +
+      " holdout episodes · " + dash(lr.epochs) + " epochs · " +
+      dash(S.online?.retrains_this_session) + " retrains this session" +
+      '<div class="scroll"><table><thead><tr><th>arm</th><th>hz</th>' +
+      '<th class="num">val MSE before</th><th class="num">after</th>' +
+      "<th>verdict</th></tr></thead><tbody>" + (rows ||
+      '<tr><td colspan="5">—</td></tr>') + "</tbody></table></div>";
+  }
+};
+
+/* ------------------------------------------------ card 1 render -- */
+function blockHTML(R) {
+  const st = regionStatus(R.k);
+  const mine = liveExperiments().filter(e => e.regions.includes(R.k));
+  let name = R.ex, sub = R.kid;
+  if (lens === "engineer") { name = R.en; sub = R.ensub; }
+  else if (lens === "health") sub = "";
+  else if (lens === "experiments")
+    sub = mine.length ? "modified by live experiments here"
+      : "no live experiment touches this region";
+  else if (lens === "cost") sub = costLine(R.k);
+  let cls = "rblock";
+  if (openRegions.has(R.k)) cls += " open";
+  if (lens === "health") cls += " hb-" + dotCls(st);
+  if (lens === "experiments") cls += mine.length ? " xhl" : " dim";
+  const nInc = incidentsFor(R.k).length;
+  const chips = (lens === "experiments" && mine.length)
+    ? '<div style="margin-top:6px">' + mine.map(e =>
+        '<span class="xchip">' + esc(e.id) + "</span>").join(" ") +
+      "</div>"
+    : "";
+  const zoom = openRegions.has(R.k)
+    ? '<div class="rzoom">' + zoomHTML(R.k) + "</div>" : "";
+  return '<div class="' + cls + '" data-r="' + R.k +
+    '" role="button" tabindex="0" aria-expanded="' +
+    openRegions.has(R.k) + '">' +
+    '<div class="rhead"><span class="rname">' + esc(name) + "</span>" +
+    '<span class="rstat">' + stateChip(st) + "</span></div>" +
+    (sub ? '<div class="rsub">' + esc(sub) + "</div>" : "") +
+    '<div class="rmeta"><span>' + esc(regionMetric(R.k)) + "</span>" +
+    '<span class="' + (nInc ? "inc" : "inc0") + '">' + nInc +
+    " open incident" + (nInc === 1 ? "" : "s") + "</span>" +
+    "<span>last event " + fmtAge(regionAge(R.k)) + "</span></div>" +
+    chips + zoom + "</div>";
+}
+
+function renderMap() {
+  const el = document.getElementById("pipe");
+  if (!S.world) {
+    el.innerHTML = '<p class="mini">world.json not yet published — ' +
+      "the map draws nothing it cannot fetch.</p>";
     return;
   }
-  var rows = [];
-  Object.keys(regions).forEach(function (k) {
-    var r = regions[k] || {};
-    if (r.status === "amber" || r.status === "red") {
-      rows.push('<div class="wx ' + esc(r.status) + '">' +
-        (r.status === "red" ? "⛈" : "⚠") + " <div><b>" +
-        esc(WEATHER[k] || ("trouble in " + (r.label || k))) +
-        "</b> — " + esc(r.why || "no detail given") + "</div></div>");
-    }
-  });
-  box.innerHTML = rows.length ? rows.join("") :
-    '<div class="wx"><b>🌤 clear skies everywhere</b> — all monitored ' +
-    "regions report green.</div>";
-}
-
-/* ------------ zoom level 2 — panels ------------ */
-function kid(txt) { return '<p class="kidline">' + txt + "</p>"; }
-function kidTail(txt) {
-  return '<p class="kidline tail">In plain words: ' + txt + "</p>";
-}
-function statRow(pairs) {
-  var h = '<div class="factrow">';
-  pairs.forEach(function (p) {
-    h += '<div class="stat"><div class="k">' + esc(p[0]) +
-      '</div><div class="bignum">' + esc(p[1]) + "</div></div>";
-  });
-  return h + "</div>";
-}
-
-var KID = {
-  market_ocean: "This is the big sea outside our world. Three rivers " +
-    "carry fresh prices and the crowd's mood into our land, all day long.",
-  forecast_mountains: "Four robot mountain-watchers each guess where the " +
-    "price will be in 1, 5, 15 and 30 minutes. Their guesses flow " +
-    "downhill to headquarters.",
-  model_city: "Nine buildings full of robots that each say how sure they " +
-    "are the price goes UP in the next 15 minutes. The market itself is " +
-    "the tallest building in town — nobody has out-guessed it yet.",
-  decision_hq: "The town hall. A bet only gets through if the robots are " +
-    "sure enough, the market isn't acting weird, and it isn't a pure " +
-    "coin-flip. Otherwise HQ says: sit this one out.",
-  execution_port: "Where decisions become real orders. Ships lose a " +
-    "little cargo between deciding and docking — that leak is currently " +
-    "our world's biggest problem.",
-  capital_town: "Eight pretend traders each got play money and one " +
-    "personality. We watch which habits grow the pile and which ones go " +
-    "broke — so we learn without losing anything real.",
-  ledger_valley: "Every single thing that happens is written in books " +
-    "nobody is allowed to erase. If it's not in the book, it didn't " +
-    "happen.",
-  evaluation_lab: "Every ten minutes an inspector walks in, takes the raw " +
-    "books, and re-does all our math without trusting anyone — not even " +
-    "us.",
-  training_factory: "Once an hour the robots take a one-hour class. If " +
-    "the new lesson makes them worse on the quiz, we throw it away and " +
-    "keep the old brain."
-};
-
-var PANELS = {
-  /* -- Market Ocean: sources + polling clock rows + heartbeat -- */
-  market_ocean: function () {
-    var h = "";
-    var hb = ageMin(g(state.online, "alive_at"));
-    h += statRow([
-      ["daemon heartbeat", fmtAge(hb)],
-      ["market poll", (g(state.world, "facts.poll_seconds") != null ?
-        g(state.world, "facts.poll_seconds") + " s" : "—")],
-      ["BTC now", isNum(g(state.online, "price_now")) ?
-        "$" + Math.round(g(state.online, "price_now")).toLocaleString() : "—"]
-    ]);
-    var costs = g(state.world, "costs");
-    h += '<h3 class="k" style="margin-top:14px;font-size:11px;' +
-      'text-transform:uppercase;letter-spacing:.12em;color:var(--muted)">' +
-      "the three rivers</h3>";
-    var srcRows = [];
-    if (Array.isArray(costs)) {
-      costs.forEach(function (c) {
-        if (/coinbase|kalshi|fear/i.test(String(c.item || ""))) {
-          srcRows.push("<tr><td>" + esc(c.item) + "</td><td>" +
-            esc(c.basis) + "</td><td>" + pill(
-              g(state.world, "regions.market_ocean.status")) +
-            "</td></tr>");
-        }
-      });
-    }
-    h += '<div class="scroll"><table><thead><tr><th>source</th>' +
-      "<th>terms</th><th>status</th></tr></thead><tbody>" +
-      (srcRows.length ? srcRows.join("") :
-        '<tr><td colspan="3" class="mini">—</td></tr>') +
-      "</tbody></table></div>";
-    var clock = g(state.world, "clock") || [];
-    var polls = clock.filter(function (c) {
-      return /poll|publish|re-fetch|fetch/i.test(String((c || {}).what));
-    });
-    h += '<div class="scroll"><table><thead><tr><th>every</th>' +
-      "<th>what moves</th><th>owner</th><th class=num>last ran</th>" +
-      "<th>health</th></tr></thead><tbody>";
-    h += polls.length ? polls.map(function (c) {
-      return "<tr><td>" + esc(c.every) + "</td><td>" + esc(c.what) +
-        "</td><td>" + esc(c.owner) + '</td><td class="num">' +
-        fmtAge(c.age_min) + "</td><td>" + pill(c.health) + "</td></tr>";
-    }).join("") : '<tr><td colspan="5" class="mini">—</td></tr>';
-    h += "</tbody></table></div>";
-    h += '<p class="mini">Full cadence table lives on the ' +
-      '<a href="clock.html">Clock</a> page.</p>';
-    return h;
-  },
-
-  /* -- Forecast Mountains: tier-1 arms -- */
-  forecast_mountains: function () {
-    var h = "";
-    var t1 = g(state.audit, "sections.tier1");
-    var keys = t1 ? Object.keys(t1).sort() :
-      ["ctl", "t2", "t6", "t7", "t8", "t9", "t10", "t11", "cal",
-       "consensus"];
-    h += '<div class="scroll"><table><thead><tr><th>arm</th>' +
-      '<th class="num">n</th><th class="num">MSE $²</th>' +
-      '<th class="num">bias $</th><th class="num">80% band coverage</th>' +
-      "</tr></thead><tbody>";
-    h += keys.map(function (k) {
-      var a = t1 ? (t1[k] || {}) : {};
-      return "<tr><td><span class=\"arm-tag\">" + esc(k) + "</span></td>" +
-        '<td class="num">' + (isNum(a.n) ? a.n : "—") + "</td>" +
-        '<td class="num">' + nn(a.mse, 0) + "</td>" +
-        '<td class="num">' + nn(a.bias, 2) + "</td>" +
-        '<td class="num">' + (isNum(a.band80_cov) ?
-          (a.band80_cov * 100).toFixed(1) + "%" : "—") + "</td></tr>";
-    }).join("");
-    h += "</tbody></table></div>";
-    h += '<p class="mini">These price arms are <b>logged-only</b> — their ' +
-      "dollar forecasts are recorded and audited but do not place bets " +
-      "directly; only the feature path that feeds Model City touches the " +
-      "live decision. Deep dive: " +
-      '<a href="metrics_lab.html">Metrics Lab</a>.</p>';
-    return h;
-  },
-
-  /* -- Model City: kb arms -- */
-  model_city: function () {
-    var h = "";
-    var t2 = g(state.audit, "sections.tier2");
-    var kb = g(state.online, "kb_treatments");
-    var src = t2 || kb;
-    var keys = src ? Object.keys(src).sort() : [];
-    h += '<div class="scroll"><table><thead><tr><th>building</th>' +
-      '<th class="num">windows</th><th class="num">Brier (lower = better)' +
-      '</th><th class="num">market Brier</th><th class="num">accuracy</th>' +
-      "</tr></thead><tbody>";
-    h += keys.length ? keys.map(function (k) {
-      var a = src[k] || {};
-      var n = isNum(a.scored) ? a.scored : (isNum(a.n) ? a.n : null);
-      return "<tr><td><span class=\"arm-tag\">" + esc(k) + "</span></td>" +
-        '<td class="num">' + (n == null ? "—" : n) + "</td>" +
-        '<td class="num">' + nn(a.brier, 4) + "</td>" +
-        '<td class="num">' + nn(a.mkt_brier, 4) + "</td>" +
-        '<td class="num">' + (isNum(a.acc) ?
-          (a.acc * 100).toFixed(0) + "%" : "—") + "</td></tr>";
-    }).join("") : '<tr><td colspan="5" class="mini">—</td></tr>';
-    h += "</tbody></table></div>";
-    h += '<p class="mini"><b>The town\'s standing lesson:</b> nobody ' +
-      "beats the book — over the full history the best arm's Brier skill " +
-      "vs the market (BSS) is −0.008: a hair worse than just reading the " +
-      "market's own price. The desk's edge must come from selectivity, " +
-      "not clairvoyance. Arm anatomy: " +
-      '<a href="analyst.html">Analyst</a>.</p>';
-    return h;
-  },
-
-  /* -- Decision HQ: gates + arena -- */
-  decision_hq: function () {
-    var cfg = g(state.manifest, "config") || {};
-    var h = statRow([
-      ["confidence gate τ", cfg.PT_TAU != null ? "≥ " + cfg.PT_TAU : "—"],
-      ["regime floor", cfg.REGIME_FLOOR != null ?
-        cfg.REGIME_FLOOR + " (trailing " +
-        (cfg.REGIME_LOOKBACK != null ? cfg.REGIME_LOOKBACK : "—") + ")" :
-        "—"],
-      ["knife-edge band", cfg.KNIFE_BAND != null ?
-        "±" + cfg.KNIFE_BAND : "—"]
-    ]);
-    var states = g(state.board, "summary.states");
-    h += '<h3 class="k" style="margin-top:14px;font-size:11px;' +
-      'text-transform:uppercase;letter-spacing:.12em;color:var(--muted)">' +
-      "experiment arena</h3>";
-    if (states && typeof states === "object") {
-      h += '<div class="legend" style="margin-top:8px">';
-      Object.keys(states).forEach(function (k) {
-        var cls = k === "BASELINE" ? "pending" :
-          k === "HOLD" ? "miss" : "ok";
-        h += '<span class="pill ' + cls + '">' + esc(k) + " · " +
-          esc(states[k]) + "</span>";
-      });
-      h += "</div>";
-      var best = g(state.board, "summary.best_candidate");
-      if (best) h += '<p class="mini">current best candidate: <b>' +
-        esc(best) + "</b> — nothing is promoted until paired traffic " +
-        "earns it (SPRT).</p>";
+  let h = "", i = 0;
+  while (i < REGIONS.length) {
+    const R = REGIONS[i];
+    if (R.k === "split") {
+      h += '<div class="plink"></div><div class="psplit">' +
+        blockHTML(REGIONS[i + 1]) + blockHTML(REGIONS[i + 2]) +
+        "</div>";
+      i += 3;
     } else {
-      h += '<p class="mini">experiment registry unreadable — —</p>';
+      if (i > 0) h += '<div class="plink"></div>';
+      h += blockHTML(R);
+      i += 1;
     }
-    h += '<p class="mini">Registry with full statistics: ' +
-      '<a href="board.html">Board</a> · gate mechanics: ' +
-      '<a href="metrics_lab.html">Metrics Lab</a>.</p>';
-    return h;
-  },
-
-  /* -- Execution Port: the waterfall -- */
-  execution_port: function () {
-    var w = g(state.board, "execution_waterfall") || {};
-    var h = statRow([
-      ["decision EV / $1", cents(w.decision_ev_per_1) + " ¢"],
-      ["realized EV / $1", cents(w.realized_ev_per_1) + " ¢"],
-      ["the leak (gap)", cents(w.execution_gap_per_1) + " ¢"],
-      ["windows", isNum(w.windows) ? w.windows : "—"]
-    ]);
-    var why = g(state.world, "regions.execution_port.why");
-    h += '<p class="sub small" style="margin-top:10px"><b>Biggest open ' +
-      "leak:</b> " + esc(why || "—") + "</p>";
-    h += '<p class="mini">The port pays the difference between the price ' +
-      "the desk decided at and the price it actually filled at — fees, " +
-      "slippage, stale quotes. Root-cause investigation: " +
-      '<a href="sev0.html">SEV-0</a>.</p>';
-    return h;
-  },
-
-  /* -- Capital Town: the eight traders as ablation lessons -- */
-  capital_town: function () {
-    var h = '<div class="cardgrid">' +
-      '<div class="cg"><b>The Follower</b>bets every desk call at fixed ' +
-      "size — the baseline habit everything is measured against.</div>" +
-      '<div class="cg"><b>The Saver</b>tiny fixed stakes; survives every ' +
-      "storm, learns slowly, earns little.</div>" +
-      '<div class="cg"><b>The Disciplined</b>only bets when the edge ' +
-      "clears the fees; treats skipping as a position.</div>" +
-      '<div class="cg"><b>The Gambler</b>over-stakes every hunch — the ' +
-      "fastest lesson in ruin the town offers.</div>" +
-      '<div class="cg"><b>The Whale-Ladder</b>scales size with bankroll; ' +
-      "wins compound, and so do mistakes.</div>" +
-      '<div class="cg"><b>The MLE</b>sizes by maximum-likelihood edge; ' +
-      "right on paper, fragile at the fill.</div>" +
-      '<div class="cg"><b>The Patient</b>waits for fat edges only — few ' +
-      "bets, high conviction, long silences.</div>" +
-      '<div class="cg"><b>The Ideal</b>bets with perfect hindsight; the ' +
-      "ceiling nobody reaches, kept to measure the gap.</div></div>";
-    var tr = g(state.audit, "sections.traders");
-    if (tr && typeof tr === "object") {
-      h += '<div class="scroll"><table><thead><tr><th>ledger id</th>' +
-        '<th class="num">settled</th><th class="num">win %</th>' +
-        '<th class="num">EV / $1</th><th class="num">bankroll ¢</th>' +
-        "</tr></thead><tbody>";
-      h += Object.keys(tr).sort().map(function (k) {
-        var t = tr[k] || {};
-        return "<tr><td>" + esc(k) + '</td><td class="num">' +
-          (isNum(t.n_settled) ? t.n_settled : "—") +
-          '</td><td class="num">' + nn(t.win_pct, 1) +
-          '</td><td class="num">' + cents(t.ev_per_dollar) + " ¢" +
-          '</td><td class="num">' + (isNum(t.bankroll_c) ?
-            t.bankroll_c.toLocaleString() : "—") + "</td></tr>";
-      }).join("");
-      h += "</tbody></table></div>";
-    }
-    h += '<p class="mini">All play money — a sizing ablation, not a ' +
-      'portfolio. Live standings: <a href="live_online.html">Live desk' +
-      "</a>.</p>";
-    return h;
-  },
-
-  /* -- Ledger Valley: the books -- */
-  ledger_valley: function () {
-    var files = [
-      ["ticks.jsonl", "every market snapshot the daemon sees, 30 s apart"],
-      ["prediction_log.jsonl", "every price forecast from every arm, " +
-        "stamped before the outcome is knowable"],
-      ["pt_trades.jsonl", "every paper trade each of the eight traders " +
-        "makes — entry, size, settle"],
-      ["treatments.jsonl", "every paired policy decision — bet and skip " +
-        "alike — for the experiment arena"],
-      ["commentary.jsonl", "the analyst's running notes, timestamped"],
-      ["incidents.jsonl", "every SEV, when it opened, what it cost"]
-    ];
-    var manifest = g(state.manifest, "files");
-    var h = '<div class="scroll"><table><thead><tr><th>book</th>' +
-      '<th>what gets written</th><th class="num">size</th>' +
-      "</tr></thead><tbody>";
-    h += files.map(function (f) {
-      var info = manifest ? manifest[f[0]] : null;
-      var kb = info && isNum(info.size_bytes) ?
-        (info.size_bytes / 1024).toFixed(0) + " KB" : "—";
-      return "<tr><td><code>" + esc(f[0]) + "</code></td><td>" +
-        esc(f[1]) + '</td><td class="num">' + kb + "</td></tr>";
-    }).join("");
-    h += "</tbody></table></div>";
-    h += '<p class="mini">Append-only: rows are added, never edited — ' +
-      "the audit chain recomputes everything from these raw books. " +
-      'Ledger views: <a href="home_classic.html">classic home</a>.</p>';
-    return h;
-  },
-
-  /* -- Evaluation Lab: the audit chain -- */
-  evaluation_lab: function () {
-    var row = clockRow(/audit/i) || {};
-    var h = statRow([
-      ["cadence", row.every || "—"],
-      ["last audit", fmtAge(row.age_min)],
-      ["health", row.health || "—"],
-      ["audit report age", fmtAge(ageMin(g(state.audit, "generated_ts")))]
-    ]);
-    h += '<p class="sub small" style="margin-top:10px">' +
-      esc(row.what || "audit → site manifest → treatments board → " +
-        "decision board (chained)") + " — a second, independent " +
-      "implementation recomputes every published number from the raw " +
-      "ledgers, so the daemon can never grade its own homework.</p>";
-    var aud = null;
-    var agents = g(state.world, "agents");
-    if (Array.isArray(agents)) {
-      agents.forEach(function (a) {
-        if (/auditor/i.test(String((a || {}).name))) aud = a;
-      });
-    }
-    if (aud) {
-      h += '<p class="mini"><b>authority:</b> ' + esc(aud.authority) +
-        " · <b>cannot:</b> " + esc(aud.cannot) + "</p>";
-    }
-    h += '<p class="mini">Its findings feed <a href="sev0.html">SEV-0</a> ' +
-      'and the <a href="board.html">Board</a>.</p>';
-    return h;
-  },
-
-  /* -- Training Factory: gated retraining -- */
-  training_factory: function () {
-    var row = clockRow(/retrain/i) || {};
-    var facts = g(state.world, "facts") || {};
-    var h = statRow([
-      ["cadence", "every " + fmtDur(facts.retrain_every_s)],
-      ["last class", fmtAge(row.age_min)],
-      ["health", row.health || "—"]
-    ]);
-    h += '<p class="sub small" style="margin-top:10px">' +
-      esc(row.what || "gated retraining of neural arms (candidate vs " +
-        "holdout MSE; keep or revert)") + ".</p>";
-    h += '<p class="mini"><b>evidence:</b> ' + esc(row.detail ||
-      "per-arm validation MSE before/after each retrain, plus the " +
-      "kept/reverted verdict") + ". Only kept weights sail the learning " +
-      "loop back to the mountains and the city — reverted candidates " +
-      "never touch live inference. History: " +
-      '<a href="live_training.html">Training</a>.</p>';
-    return h;
   }
+  h += '<div class="loopnote">↺ learning loop — kept weights redeploy ' +
+    "from the Training Factory back to Forecast Country &amp; " +
+    "Probability City</div>";
+  el.innerHTML = h;
+  for (const b of el.querySelectorAll(".rblock")) {
+    const toggle = ev => {
+      if (ev.target.closest("a") || ev.target.closest(".rzoom")) return;
+      const k = b.dataset.r;
+      if (openRegions.has(k)) openRegions.delete(k);
+      else openRegions.add(k);
+      renderMap();
+    };
+    b.addEventListener("click", toggle);
+    b.addEventListener("keydown", ev => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault(); toggle(ev);
+      }
+    });
+  }
+}
+
+function renderLensRow() {
+  document.getElementById("lensrow").innerHTML = LENSES.map(([k, lbl]) =>
+    '<button type="button" class="chip' + (lens === k ? " on" : "") +
+    '" data-lens="' + k + '">' + lbl + "</button>").join("");
+  document.getElementById("lensnote").textContent = LENS_NOTE[lens] || "";
+  for (const b of document.querySelectorAll("#lensrow .chip"))
+    b.addEventListener("click", () => {
+      lens = b.dataset.lens;
+      try { localStorage.setItem("map_lens", lens); } catch {}
+      renderLensRow(); renderMap();
+    });
+}
+
+/* ------------------------------------------------ card 2 render -- */
+const TABS = [["runtime", "Runtime"],
+  ["lifecycle", "Learning lifecycle"], ["lineage", "Data lineage"]];
+function renderTabs() {
+  document.getElementById("tabrow").innerHTML = TABS.map(([k, lbl]) =>
+    '<button type="button" role="tab" aria-selected="' + (tab === k) +
+    '" class="chip' + (tab === k ? " on" : "") + '" data-tab="' + k +
+    '">' + lbl + "</button>").join("");
+  for (const [k] of TABS)
+    document.getElementById("tab-" + k).classList
+      .toggle("on", tab === k);
+  for (const b of document.querySelectorAll("#tabrow .chip"))
+    b.addEventListener("click", () => {
+      tab = b.dataset.tab;
+      try { localStorage.setItem("map_tab", tab); } catch {}
+      renderTabs();
+    });
+}
+
+const parseEvery = s => {
+  const m = /([\d.]+)\s*(s|min|h)\b/.exec(String(s || ""));
+  if (!m) return Infinity;
+  const v = parseFloat(m[1]);
+  return m[2] === "s" ? v : m[2] === "min" ? v * 60 : v * 3600;
 };
-
-function renderPanel(key) {
-  openRegion = key;
-  var sec = document.getElementById("detail");
-  sec.className = "open";
-  var name = REGION_NAMES[key][mode === "engineer" ? "en" : "ex"];
-  document.getElementById("crumb").innerHTML =
-    '<a id="crumb-up">Universe</a> → <b>' + esc(name) + "</b>";
-  var body = document.getElementById("panel-body");
-  var fn = PANELS[key];
-  var dataHtml = "";
-  try { dataHtml = fn ? fn() : '<p class="mini">—</p>'; }
-  catch (e) { dataHtml = '<p class="mini">panel error: ' +
-    esc(e && e.message) + "</p>"; }
-  body.innerHTML = mode === "explore"
-    ? kid(KID[key] || "") + dataHtml
-    : dataHtml + kidTail(KID[key] || "");
-  var up = document.getElementById("crumb-up");
-  if (up) up.addEventListener("click", closePanel);
-  var marked = document.querySelectorAll("#map g.region.open");
-  for (var i = 0; i < marked.length; i++) marked[i].classList.remove("open");
-  var grp = document.querySelector('[data-region="' + key + '"]');
-  if (grp) grp.classList.add("open");
-}
-function closePanel() {
-  openRegion = null;
-  document.getElementById("detail").className = "";
-  var marked = document.querySelectorAll("#map g.region.open");
-  for (var i = 0; i < marked.length; i++) marked[i].classList.remove("open");
+function renderRuntime() {
+  const el = document.getElementById("cadence");
+  const clock = S.world?.clock;
+  if (!Array.isArray(clock)) { el.innerHTML = NOTPUB; return; }
+  const rows = clock.slice().sort((a, b) =>
+    parseEvery(a?.every) - parseEvery(b?.every));
+  document.getElementById("clock-gen").textContent =
+    "the system clock — every cadence in the machine, fastest first · " +
+    "generated " + fmtAge(ageMin(S.world?.generated_ts));
+  el.innerHTML = rows.map(c => {
+    const red = c?.health === "red";
+    return '<div class="crow' + (red ? " red" : "") + '">' +
+      '<span class="cbadge">' + dash(c?.every) + "</span>" +
+      '<span class="cwhat">' + dash(c?.what) + "</span>" +
+      '<span class="cright"><span class="hdot ' + dotCls(c?.health) +
+      '"></span>' + (c?.health ? (ST_WORD[c.health] || esc(c.health))
+        : "UNKNOWN") + " · " + fmtAge(c?.age_min) + "</span>" +
+      '<span class="cmeta">' +
+      '<span class="owner-chip">' + dash(c?.owner) + "</span>" +
+      (c?.in_crontab === true ? "<span>in crontab ✓</span>" :
+        c?.in_crontab === false ?
+        '<span style="color:var(--series-4)">not in crontab</span>' :
+        "") +
+      (red ? '<span class="sla">MISSED SLA</span>' : "") +
+      (c?.source ? "<span>" + esc(c.source) + "</span>" : "") +
+      "</span></div>";
+  }).join("");
 }
 
-/* ------------ wiring ------------ */
-document.getElementById("btn-explore")
-  .addEventListener("click", function () { setMode("explore"); });
-document.getElementById("btn-engineer")
-  .addEventListener("click", function () { setMode("engineer"); });
+function renderLifecycle() {
+  const el = document.getElementById("funnel");
+  const exps = S.prog?.experiments;
+  if (!Array.isArray(exps)) { el.innerHTML = NOTPUB; return; }
+  const lc = e => String(e?.lifecycle || "");
+  const liveIds = exps.filter(e => /\bLIVE\b/.test(lc(e)))
+    .map(e => e.id);
+  const retired = exps.filter(e => /^RETIRED/.test(lc(e)));
+  const redesign = exps.filter(e => /^REDESIGN/.test(lc(e)));
+  const offline = exps.filter(e => isNum(e?.n) && e.n > 0).length;
+  const shadows = Object.keys(S.a3?.shadows || {});
+  const ideas = exps.length + (S.a3 ? 1 : 0) + shadows.length;
+  const liveN = liveIds.length + (S.a3 ? 1 : 0);
+  const stg = (name, count, desc) => '<div class="stage"><b>' + name +
+    '</b><div class="scount">' + count + '</div><div class="sdesc">' +
+    desc + "</div></div>";
+  const arr = '<span class="flowarr">→</span>';
+  el.innerHTML = '<p class="mini" style="margin-top:2px">Real counts ' +
+    "from program.json + a3_live.json — every idea walks the same " +
+    "road, and nothing skips a stage.</p>" +
+    '<div class="flow">' +
+    stg("Ideas", ideas, esc(exps.length) + " M-experiments + A3" +
+      (shadows.length ? " + " + shadows.length + " dip shadows" : "")) +
+    arr +
+    stg("Offline", offline, "replay-scored against the recorded " +
+      "ledgers (n &gt; 0)") +
+    arr +
+    stg("Shadow", shadows.length, shadows.length
+      ? esc(shadows.join(" · ")) +
+        " — A3 dip-depth shadows, logged only, no orders"
+      : "none currently logging") +
+    arr +
+    stg("Live A/B", liveN, esc(liveIds.join(", ") +
+      (S.a3 ? (liveIds.length ? ", " : "") + "A3-v1.1" : "")) +
+      " — paired against the champion") +
+    arr +
+    stg("Retired", retired.length, "SPRT / dominance verdicts" +
+      (redesign.length ? " · +" + redesign.length + " in REDESIGN (" +
+        esc(redesign.map(e => e.id).join(", ")) + ")" : "")) +
+    arr +
+    stg("Promoted", 0, "0 promoted — the bar is deliberately high; " +
+      "only the owner can promote") +
+    "</div>";
+}
 
-document.getElementById("map").addEventListener("click", function (e) {
-  var grp = e.target.closest ? e.target.closest("[data-region]") : null;
-  if (grp) {
-    renderPanel(grp.getAttribute("data-region"));
-    document.getElementById("detail")
-      .scrollIntoView({ behavior: "smooth", block: "nearest" });
+function renderLineage() {
+  const el = document.getElementById("lineage");
+  const rows = S.treat;
+  if (!Array.isArray(rows) || !rows.length) {
+    el.innerHTML = NOTPUB; return;
   }
-});
-document.getElementById("map").addEventListener("keydown", function (e) {
-  if (e.key !== "Enter" && e.key !== " ") return;
-  var grp = e.target.closest ? e.target.closest("[data-region]") : null;
-  if (grp) { e.preventDefault(); renderPanel(grp.getAttribute("data-region")); }
-});
+  const settled = rows.filter(r => r && r.outcome != null && r.ev);
+  const row = settled[settled.length - 1];
+  if (!row) {
+    el.innerHTML = '<p class="mini">no settled treatment row yet — ' +
+      "lineage renders once the first window settles.</p>";
+    return;
+  }
+  const idx = rows.indexOf(row) + 1;
+  const evKeys = Object.keys(row.ev || {});
+  const node = (k, v) => '<div class="lnode"><span class="lk">' + k +
+    '</span><span class="lv">' + v + "</span></div>";
+  el.innerHTML = '<p class="mini" style="margin-top:2px">One real ' +
+    "decision, traced end-to-end — the latest settled window, <b>" +
+    esc(row.ticker) + "</b>, closed " + whenBoth(row.close_ts) +
+    ".</p>" +
+    '<div class="lchain">' +
+    node("1 · tick", "Coinbase + Kalshi polls append to " +
+      "<b>ticks.jsonl</b> throughout the 15-minute window ending " +
+      esc(whenTZ(row.close_ts, "America/New_York", "ET"))) +
+    node("2 · snapshot", "the pipeline snapshots features (candles, " +
+      "book, tape, quotes) into <b>live_snapshots.jsonl</b>") +
+    node("3 · forecast arm", "tier-1 price arms emit μ + bands per " +
+      "horizon into <b>prediction_log.jsonl</b> (logged-only)") +
+    node("4 · kb probability", "tier-2 arms state P(up) for the " +
+      "window; the seated arm was <b>" + dash(row.leader) + "</b>") +
+    node("5 · leader", "<b>" + dash(row.leader) + "</b> holds the " +
+      "seat under the live selection rule") +
+    node("6 · gates", "trailing market regime accuracy <b>" +
+      (isNum(row.regime_acc) ? (row.regime_acc * 100).toFixed(0) + "%"
+        : "—") + "</b> checked against the regime floor") +
+    node("7 · decision", "champion decision EV <b>" +
+      cS(row.ev?.champion) + "/$1</b>" +
+      (isNum(row.ev?.champion_real) ? " · realized " +
+        cS(row.ev.champion_real) + "/$1" : "")) +
+    node("8 · settlement", "outcome <b>" +
+      (row.outcome === 1 ? "UP — the YES side settled" :
+       row.outcome === 0 ? "DOWN — the NO side settled" :
+       dash(row.outcome)) + "</b> at " + whenBoth(row.close_ts)) +
+    node("9 · experiment row", "appended as row " + idx + " of " +
+      rows.length + " in <b>treatments.jsonl</b>, scoring " +
+      evKeys.length + " policies in parallel — the paired evidence " +
+      'behind <a href="board.html">Research Command</a>') +
+    "</div>";
+}
 
-/* ------------ data loop ------------ */
-function renderAll() {
-  paintStatus();
-  paintAnnotations();
-  paintStorms();
-  if (openRegion) renderPanel(openRegion);
-  var ts = g(state.world, "generated_ts");
-  document.getElementById("asof").textContent =
-    isNum(ts) ? "World snapshot " + fmtAge(ageMin(ts)) + "." : "";
-  var dot = document.getElementById("dot");
-  var hb = ageMin(g(state.online, "alive_at"));
-  dot.className = "live-dot" + (isNum(hb) && hb < 5 ? "" : " stale");
+/* ------------------------------------------------ card 3 render -- */
+const EX_TYPES = [["all", "All"], ["model", "Models"],
+  ["policy", "Policies"], ["experiment", "Experiments"],
+  ["agent", "Agents"], ["job", "Jobs"], ["monitor", "Monitors"]];
+
+const T1_ROLES = { t2: "LinUCB linear bandit (baseline)",
+  t6: "LinUCB + live-only microstructure features",
+  t7: "LinUCB variant (per-horizon)", t8: "DQN (deep Q-network)",
+  t9: "LSTM sequence model",
+  t10: "live-only-signal arm (batch-vs-persistence gated)",
+  t11: "t2 + live feedback (equals t2 until feedback flows)",
+  cal: "Platt-calibrated blend", consensus: "cross-arm consensus",
+  ctl: "persistence control", rp: "random-policy baseline",
+  h15: "champion 15-min head" };
+const KB_ROLES = { kb: "base online probability arm",
+  kb2: "market blend — w·p_cal + (1−w)·market mid",
+  kb3: "direct online logistic on the binary task", kb4: "—",
+  kb5: "train-where-you-trade arm",
+  kb6: "fast-information arm (perp lead, tape, whale)",
+  kb7: "zero-shot foundation model (Chronos)",
+  kb8: "calibrated decorrelation stack on kb7",
+  kb9: "second foundation family (TimesFM)", kbf: "—" };
+const PT_NAMES = { pt: "Follower", pt2: "Ladder", pt3: "Disciplined",
+  pt4: "Gambler", pt5: "Saver", pt6: "MLE", pt7: "Patient",
+  pt8: "Ideal" };
+
+function buildIndex() {
+  const ix = [];
+  const t1 = S.audit?.sections?.tier1;
+  const t1keys = t1 ? Object.keys(t1)
+    : ["t2", "t6", "t7", "t8", "t9", "t10", "t11"];
+  for (const k of t1keys.sort()) {
+    const a = t1?.[k];
+    ix.push({ id: "m1-" + k, name: k, type: "model", tier: "T1",
+      purpose: T1_ROLES[k] || "—",
+      status: a ? "ACTIVE — audited every 10 min"
+        : "roster (no audit row published)",
+      health: regionStatus("forecast"),
+      inputs: "engineered features from the 30 s pipeline",
+      outputs: "μ + 80% band per horizon (logged-only)",
+      stats: a ? "n " + dash(a.n) + " · MSE " + f(a.mse, 0) +
+        " $² · 80% cov " + (isNum(a.band80_cov)
+          ? (a.band80_cov * 100).toFixed(1) + "%" : "—") : "—",
+      evidence: ["metrics_lab.html", "Metrics Lab"] });
+  }
+  const t2 = S.audit?.sections?.tier2;
+  const t2keys = t2 ? Object.keys(t2)
+    : ["kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8", "kb9"];
+  for (const k of t2keys.sort()) {
+    const a = t2?.[k];
+    ix.push({ id: "m2-" + k, name: k, type: "model", tier: "T2",
+      purpose: KB_ROLES[k] || "—",
+      status: a ? "ACTIVE — audited every 10 min"
+        : "roster (no audit row published)",
+      health: regionStatus("city"),
+      inputs: "tier-1 forecasts + live market state",
+      outputs: "P(up) for the live 15-min window",
+      stats: a ? "n " + dash(a.n) + " · Brier " + f(a.brier, 4) +
+        " · BSS " + f(a.bss_vs_market, 4) : "—",
+      evidence: ["metrics_lab.html", "Metrics Lab"] });
+  }
+  const tr = S.audit?.sections?.traders;
+  for (const k of Object.keys(PT_NAMES)) {
+    const a = tr?.[k];
+    ix.push({ id: "p-" + k, name: k + " · " + PT_NAMES[k],
+      type: "policy", tier: "—",
+      purpose: "paper-trader ablation personality (simulated bankroll)",
+      status: "ACTIVE — paper trading",
+      health: regionStatus("island"),
+      inputs: "leader signal + own sizing/banking rules",
+      outputs: "simulated orders, fills, bankroll ledger",
+      stats: a ? "n " + dash(a.n_settled) + " · win " +
+        f(a.win_pct, 1) + "% · EV " + cS(a.ev_per_dollar) +
+        "/$1 · bankroll " + (isNum(a.bankroll_c)
+          ? "$" + (a.bankroll_c / 100).toLocaleString("en-US") : "—")
+        : "—",
+      evidence: ["ledgers.html", "Evidence"] });
+  }
+  for (const e of (S.prog?.experiments || [])) {
+    ix.push({ id: "x-" + e.id,
+      name: e.id + " — " + (e.name || "—"),
+      type: "experiment", tier: e.tier_path ?? "—",
+      purpose: e.hypothesis || e.problem || "—",
+      status: e.lifecycle ?? "—",
+      health: null,
+      inputs: "paired windows vs the champion (same windows, " +
+        "same theses)",
+      outputs: "paired Δ + SPRT evidence in treatments.jsonl",
+      stats: "effect " + cS(e.effect) + " · P(Δ>0) " + pc(e.p_gt0) +
+        " · n " + dash(e.n) + " · rec " +
+        (e.analysis_recommendation ?? "—"),
+      evidence: ["board.html", "Research Command"] });
+  }
+  if (S.a3) {
+    const fw = S.a3.forward || {};
+    ix.push({ id: "x-a3",
+      name: "A3-v1.1 — entry timing vs frozen control",
+      type: "experiment", tier: "—",
+      purpose: "does waiting for a ≥10¢ valid dip beat buying the " +
+        "moment the thesis fires?",
+      status: "LIVE — " + (S.a3.live?.state ?? "—"),
+      health: null,
+      inputs: "executable event-tape asks (modeled asks forbidden)",
+      outputs: "paired PnL per eligible window",
+      stats: "n " + dash(fw.eligible) + " eligible · incremental " +
+        cS(fw.incremental_per_eligible) + "/eligible · spec hash " +
+        (S.a3.spec_hash_ok === true ? "verified" : "MISMATCH"),
+      evidence: ["board.html", "Research Command"] });
+    for (const [k, v] of Object.entries(S.a3.shadows || {})) {
+      ix.push({ id: "x-sh-" + k, name: k + " — A3 dip-depth shadow",
+        type: "experiment", tier: "—",
+        purpose: "shadow of A3 at a " + (v?.dip_c ?? "—") +
+          "¢ dip trigger — logged only, no orders",
+        status: "SHADOW — collecting",
+        health: null,
+        inputs: "the same A3 event tape",
+        outputs: "shadow fills + PnL per eligible",
+        stats: "eligible " + dash(v?.eligible) + " · filled " +
+          dash(v?.filled) + " · " + cS(v?.pnl_per_eligible) +
+          "/eligible",
+        evidence: ["board.html", "Research Command"] });
+    }
+  }
+  for (const a of (S.world?.agents || [])) {
+    ix.push({ id: "a-" + a.name, name: a.name ?? "—", type: "agent",
+      tier: "—",
+      purpose: (a.role ?? "—") + " — " + (a.trigger ?? "—"),
+      status: a.last_ts != null ? "last active " +
+        fmtAge(ageMin(a.last_ts)) : "session-based / on demand",
+      health: null,
+      inputs: "authority: " + (a.authority ?? "—"),
+      outputs: "cannot: " + (a.cannot ?? "—") + " · evidence: " +
+        (a.evidence ?? "—"),
+      stats: "—", evidence: ["watchtower.html", "Control Tower"] });
+  }
+  for (const c of (S.world?.clock || [])) {
+    ix.push({ id: "j-" + (c.source || c.what), name: c.what ?? "—",
+      type: "job", tier: "—",
+      purpose: "runs every " + (c.every ?? "—") + " · owner " +
+        (c.owner ?? "—"),
+      status: c.in_crontab === true ? "in crontab" :
+        c.in_crontab === false ? "NOT in crontab" : "self-scheduled",
+      health: c.health ?? null,
+      inputs: c.source ?? "—", outputs: c.detail ?? "—",
+      stats: "last ran " + fmtAge(c.age_min),
+      evidence: ["watchtower.html", "Control Tower"] });
+  }
+  /* monitors: real ones from the clock + invariants, then the queue */
+  const wd = clockRow(/watchdog/i), au = clockRow(/audit/i);
+  if (wd) ix.push({ id: "mon-wd", name: "Watchdog", type: "monitor",
+    tier: "—",
+    purpose: "restart the daemon when the heartbeat is stale >5 min",
+    status: "ACTIVE — every " + (wd.every ?? "—"),
+    health: wd.health ?? null, inputs: "online_status.alive_at",
+    outputs: "daemon restarts (logs only when it acts)",
+    stats: "last ran " + fmtAge(wd.age_min),
+    evidence: ["watchtower.html", "Control Tower"] });
+  if (au) ix.push({ id: "mon-au", name: "Auditor (prequential)",
+    type: "monitor", tier: "—",
+    purpose: "recompute every published metric from raw ledgers — " +
+      "dual implementation vs the daemon",
+    status: "ACTIVE — every " + (au.every ?? "—"),
+    health: au.health ?? null, inputs: "raw JSONL ledgers",
+    outputs: "audit_report.json + boards",
+    stats: "last ran " + fmtAge(au.age_min),
+    evidence: ["watchtower.html", "Control Tower"] });
+  if (S.inv) ix.push({ id: "mon-inv", name: "Invariant suite",
+    type: "monitor", tier: "—",
+    purpose: "structural laws distilled from past incidents (fee " +
+      "parity, one-decision-per-window, …)",
+    status: dash(S.inv.passed) + " passing / " + dash(S.inv.failed) +
+      " failing",
+    health: S.inv.health ?? null,
+    inputs: "all ledgers", outputs: "invariants.json",
+    stats: "generated " + fmtAge(ageMin(S.inv.generated_ts)),
+    evidence: ["watchtower.html", "Control Tower"] });
+  const QUEUED = [
+    ["Brier drift monitor", "alert when a kb arm's rolling Brier " +
+      "degrades vs its own history", "NOT IMPLEMENTED"],
+    ["Feature PSI monitor", "population-stability index on the live " +
+      "feature distributions", "NOT IMPLEMENTED"],
+    ["Markout monitor", "post-fill 10 s / 60 s markout tracking on " +
+      "every entry", "NEEDS DATA"],
+    ["SRM monitor", "sample-ratio mismatch check on paired " +
+      "experiment traffic", "NOT IMPLEMENTED"]];
+  for (const [nm, pu, stt] of QUEUED)
+    ix.push({ id: "mon-q-" + nm, name: nm, type: "monitor", tier: "—",
+      purpose: pu, status: stt, health: null, inputs: "—",
+      outputs: "—", stats: "queued workstream",
+      evidence: ["watchtower.html", "Control Tower"] });
+  return ix;
 }
-function loadAll() {
-  Promise.all([
-    fetchJSON("../results/world.json"),
-    fetchJSON("../results/site_manifest.json"),
-    fetchJSON("../results/decision_board.json"),
-    fetchJSON("../results/online_status.json"),
-    fetchJSON("../results/audit_report.json")
-  ]).then(function (rs) {
-    state.world = rs[0]; state.manifest = rs[1]; state.board = rs[2];
-    state.online = rs[3]; state.audit = rs[4];
-    renderAll();
-  });
+
+function exStateChip(it) {
+  if (it.health) return stateChip(it.health);
+  const s = String(it.status || "");
+  if (/NOT IMPLEMENTED|NEEDS DATA/.test(s))
+    return '<span class="state st-frozen">' + esc(s) + "</span>";
+  if (/^LIVE|^ACTIVE/.test(s))
+    return '<span class="state st-live">LIVE</span>';
+  if (/^RETIRED|^FROZEN/.test(s))
+    return '<span class="state st-frozen">' +
+      esc(s.split(" ")[0].split("(")[0]) + "</span>";
+  if (/SHADOW/.test(s))
+    return '<span class="state st-collect">SHADOW</span>';
+  if (/^REDESIGN/.test(s))
+    return '<span class="state st-collect">REDESIGN</span>';
+  return '<span class="state st-frozen">—</span>';
 }
-setMode(mode);
-loadAll();
-setInterval(loadAll, 15000);
+
+function renderExplorer() {
+  document.getElementById("exfilters").innerHTML =
+    EX_TYPES.map(([k, lbl]) => '<button type="button" class="chip' +
+      (exType === k ? " on" : "") + '" data-t="' + k + '">' + lbl +
+      "</button>").join("");
+  for (const b of document.querySelectorAll("#exfilters .chip"))
+    b.addEventListener("click", () => {
+      exType = b.dataset.t; renderExplorer();
+    });
+  const ix = buildIndex();
+  const q = exQuery.trim().toLowerCase();
+  const rows = ix.filter(it =>
+    (exType === "all" || it.type === exType) &&
+    (!q || (it.name + " " + it.purpose + " " + it.status)
+      .toLowerCase().includes(q)));
+  document.getElementById("exlist").innerHTML = rows.length
+    ? rows.map(it => '<div class="exrow' +
+        (exSel === it.id ? " sel" : "") + '" data-id="' + esc(it.id) +
+        '" role="button" tabindex="0"><b>' + esc(it.name) + "</b>" +
+        '<span class="ty">' + esc(it.type) + "</span>" +
+        '<span class="pu">' + esc(it.purpose) + "</span>" +
+        '<span class="stc">' + exStateChip(it) + "</span></div>")
+      .join("")
+    : '<p class="mini">no components match.</p>';
+  for (const r of document.querySelectorAll(".exrow")) {
+    const open = () => {
+      exSel = exSel === r.dataset.id ? null : r.dataset.id;
+      renderExplorer();
+    };
+    r.addEventListener("click", open);
+    r.addEventListener("keydown", ev => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault(); open();
+      }
+    });
+  }
+  const dr = document.getElementById("exdrawer");
+  const it = ix.find(x => x.id === exSel);
+  if (!it) { dr.hidden = true; dr.innerHTML = ""; return; }
+  dr.hidden = false;
+  const drow = (k, v) => '<div class="dk">' + k +
+    '</div><div class="dv">' + v + "</div>";
+  dr.innerHTML = '<div class="dgrid">' +
+    drow("name", "<b>" + esc(it.name) + "</b>") +
+    drow("type", esc(it.type)) +
+    drow("tier", esc(it.tier)) +
+    drow("purpose", esc(it.purpose)) +
+    drow("status", esc(it.status)) +
+    drow("health", it.health ? stateChip(it.health)
+      : "— (not separately monitored)") +
+    drow("inputs", esc(it.inputs)) +
+    drow("outputs", esc(it.outputs)) +
+    drow("live stats", esc(it.stats)) +
+    drow("evidence", '<a href="' + esc(it.evidence[0]) + '">' +
+      esc(it.evidence[1]) + " →</a>") +
+    "</div>";
+}
+
+/* ------------------------------------------------- header strip -- */
+function renderStrip() {
+  const el = document.getElementById("hstrip");
+  const hs = (k, v) => '<div class="hs"><div class="k">' + k +
+    '</div><div class="v">' + v + "</div></div>";
+  const regs = S.world?.regions;
+  let regTxt = "—";
+  if (regs) {
+    const vals = Object.values(regs);
+    const green = vals.filter(r => r?.status === "green").length;
+    regTxt = green + "/" + vals.length +
+      " <small>regions healthy</small>";
+  }
+  const openInc = S.inc ? String(openIncidents().length) : "—";
+  el.innerHTML =
+    hs("system world", regTxt) +
+    hs("open incidents", openInc +
+      ' <small><a href="watchtower.html">Control Tower →</a></small>') +
+    hs("paired windows", dash(S.world?.facts?.windows_scored) +
+      " <small>scored</small>") +
+    hs("readiness", dash(S.ready?.system?.level) + " <small>" +
+      dash(S.ready?.strategy?.status) + "</small>") +
+    hs("daemon heartbeat", fmtAge(ageMin(S.online?.alive_at)));
+}
+
+/* ---------------------------------------------------------- poll -- */
+async function poll() {
+  const [world, prog, a3, inv, inc, online, audit, ready, board,
+    treat] = await Promise.all([
+      J("../results/world.json"), J("../results/program.json"),
+      J("../results/a3_live.json"), J("../results/invariants.json"),
+      JL("../results/incidents.jsonl"),
+      J("../results/online_status.json"),
+      J("../results/audit_report.json"),
+      J("../results/readiness.json"),
+      J("../results/decision_board.json"),
+      JL("../results/treatments.jsonl")]);
+  Object.assign(S, { world, prog, a3, inv, inc, online, audit, ready,
+    board, treat });
+  const gen = world?.generated_ts;
+  document.getElementById("asof").textContent = isNum(gen)
+    ? "world snapshot " + fmtAge(ageMin(gen))
+    : "world.json not yet published";
+  const stale = !isNum(gen) || ageMin(gen) > 10;
+  document.getElementById("dot").className =
+    "live-dot" + (stale ? " stale" : "");
+  renderStrip();
+  renderLensRow();
+  renderMap();
+  renderRuntime();
+  renderLifecycle();
+  renderLineage();
+  renderExplorer();
+}
+renderTabs();
+document.getElementById("exq").addEventListener("input", ev => {
+  exQuery = ev.target.value || "";
+  renderExplorer();
+});
+poll();
+setInterval(poll, 15000);
 </script>
 <script src="glossary.js" defer></script>
 <script src="nav.js" defer></script>
