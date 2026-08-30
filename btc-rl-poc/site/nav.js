@@ -15,24 +15,31 @@
      pages — Home / Map / Models / Experiments / Watchtower. Every
      other page stays published (append-only history) but lives in
      the Archive, the slim More menu, drawers, and search. */
+  /* Two-product IA (master contract 08-30): Home is the public MVP,
+     Backend is the one internal console. Everything else stays
+     published for link integrity and depth drill-downs, reachable
+     via More and in-app links — not primary navigation. */
   var PRIMARY = [
-    { label: "Home",        href: "home.html" },
-    { label: "Map",         href: "universe.html" },
-    { label: "Models",      href: "models.html" },
-    { label: "Research",    href: "board.html" },
-    { label: "Control Tower", href: "watchtower.html" }
+    { label: "Home",    href: "home.html" },
+    { label: "Backend", href: "backend.html" }
   ];
 
   var MORE = [
-    { label: "Ledgers",     href: "ledgers.html" },
-    { label: "The Paper",   href: "paper.html" },
-    { label: "Archive",     href: "archive.html" }
+    { label: "Map",           href: "universe.html" },
+    { label: "Models",        href: "models.html" },
+    { label: "Research",      href: "board.html" },
+    { label: "Control Tower", href: "watchtower.html" },
+    { label: "Evidence",      href: "ledgers.html" },
+    { label: "The Paper",     href: "paper.html" },
+    { label: "Archive",       href: "archive.html" }
   ];
 
   /* Static search index: every page, 3-6 honest keywords each. */
   var PAGE_INDEX = [
     { title: "Play — the Playground", href: "home.html",
       kw: "playground, forecast, oracle, 7pm, horizons, live price" },
+    { title: "Backend — the operating console", href: "backend.html",
+      kw: "backend, overview, models, experiments, data, operations, agents, registry, console" },
     { title: "Map — the Quant Universe", href: "universe.html",
       kw: "world map, atlas, overview, navigation, all pages" },
     { title: "Live desk", href: "live_online.html",
