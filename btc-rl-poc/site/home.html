@@ -823,6 +823,38 @@ function drawExecGrid() {
   const tile = (k, v, m) => tiles.push(
     `<div class="xt"><div class="xk">${k}</div><div class="xv">${v}</div>` +
     `<div class="xm">${m}</div></div>`);
+  /* production qualification — real-money-equivalent readiness (§77);
+     level = MIN over planes, strategy verdict is independent (§83) */
+  const rd = S.readiness;
+  if (rd && rd.system && rd.system.level != null) {
+    const lvl = String(rd.system.level);
+    const rm = /^R(\d+)/.exec(lvl.toUpperCase());
+    const rn = rm ? +rm[1] : null;
+    const col = rn == null ? "var(--series-4)" : rn <= 1 ? "var(--down)"
+      : rn <= 3 ? "var(--series-4)" : rn <= 6 ? "var(--series-2)"
+      : "var(--good-text)";
+    const stratTxt = (rd.strategy && rd.strategy.status) || "STATUS UNPUBLISHED";
+    const stratCol = /qualified/i.test(stratTxt) && !/\bno\b/i.test(stratTxt)
+      ? "var(--good-text)" : "var(--series-4)";
+    const weak = (rd.system.weakest_planes || []).map(esc).join(", ");
+    const sev0 = Array.isArray(rd.sev0_open) ? rd.sev0_open.length : null;
+    const frozen = rd.system.qualification_frozen === true;
+    tile("Production qualification",
+      `<span style="color:${col};font-size:24px">${esc(lvl)}</span>` +
+      `<span style="font-size:12px;color:var(--muted)"> / R8 target · MIN over planes</span>` +
+      (frozen ? ` <span style="font-size:11px;font-weight:800;color:var(--down)">FROZEN</span>` : ""),
+      `strategy: <b style="color:${stratCol}">${esc(stratTxt)}</b>` +
+      (weak ? ` · weakest: ${weak}` : "") +
+      ` · ${sev0 == null ? "SEV-0 count unknown"
+        : sev0 ? `<b style="color:var(--down)">${sev0} SEV-0 open</b>`
+        : "0 SEV-0 open"}` +
+      (rd.live_execution ? " · live execution: demo-only" : "") +
+      ` · <a href="watchtower.html">qualification board</a>`);
+  } else {
+    tile("Production qualification", "NOT PUBLISHED",
+      `readiness.json not yet published — no level is claimed without ` +
+      `evidence · <a href="watchtower.html">watchtower</a>`);
+  }
   /* model skill — best BSS across tier-2 arms in the audit */
   let skillV = "NOT ESTABLISHED", skillM = "market-relative audit not published";
   const t2 = S.audit && S.audit.sections && S.audit.sections.tier2;
@@ -1217,7 +1249,7 @@ function drawAsOf() {
 /* ---------- boot ---------- */
 async function boot() {
   const [st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r] =
+    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r, readiness] =
     await Promise.all([
       jget("../results/online_status.json"),
       jget("../results/site_manifest.json"),
@@ -1238,13 +1270,14 @@ async function boot() {
       jsonl("../results/pt6_trades.jsonl"),
       jsonl("../results/pt7_trades.jsonl"),
       jsonl("../results/pt8_trades.jsonl"),
+      jget("../results/readiness.json"),
     ]);
   const cfg = man && man.config ? man.config : {};
   if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
   else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
   else { TAU = null; TAU_SRC = ""; }
   S = { st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary,
+    commentary, readiness,
     ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
       pt6: pt6r, pt7: pt7r, pt8: pt8r } };
   try { drawAsOf(); } catch (e) {}

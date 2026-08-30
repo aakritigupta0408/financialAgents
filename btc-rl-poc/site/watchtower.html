@@ -201,7 +201,61 @@ details.folded .trow .tnote, details.folded .trow .tid {
 .bill td.amt { font-variant-numeric: tabular-nums; }
 .bill .pill { white-space: nowrap; }
 
+/* qualification tab (§77 readiness matrix + evidence) */
+.qhead { display: flex; flex-wrap: wrap; gap: 6px 24px;
+  align-items: baseline; margin: 8px 0 2px; }
+.qhead .qlevel { font: 650 42px/1 var(--display); }
+.qhead .qof { font-size: 12px; color: var(--muted); max-width: 22ch; }
+.qhead .qstrat { flex: 1 1 280px; }
+.qhead .qstrat .stw { font-size: 15px; letter-spacing: .06em; }
+.qhead .qstrat .mini { margin: 2px 0 0; }
+.qtagrow { display: flex; flex-wrap: wrap; gap: 8px;
+  align-items: baseline; margin: 8px 0 2px; flex-basis: 100%; }
+.qtag { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-2);
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.qtag.red { color: var(--w-red); border-color: rgba(209,60,60,.4);
+  background: rgba(209,60,60,.07); }
+.qtag.green { color: var(--w-green); border-color: rgba(12,138,77,.4);
+  background: rgba(12,138,77,.07); }
+.qtag.amber { color: var(--w-amber); border-color: rgba(143,96,0,.4);
+  background: rgba(143,96,0,.07); }
+.qsec { margin-top: 18px; font-size: 11px; font-weight: 800;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: var(--muted); }
+.rchip { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
+  monospace; letter-spacing: .08em; border-radius: 6px;
+  padding: 2px 8px; white-space: nowrap; }
+.rchip.r-red { color: var(--w-red); background: rgba(209,60,60,.12); }
+.rchip.r-amber { color: var(--w-amber); background: rgba(143,96,0,.12); }
+.rchip.r-blue { color: var(--series-2); background: rgba(57,135,229,.14); }
+.rchip.r-green { color: var(--w-green); background: rgba(12,138,77,.12); }
+#q-matrix td.qname { font-weight: 600; color: var(--ink);
+  white-space: nowrap; }
+#q-matrix td.qblk { font-size: 12px; color: var(--muted);
+  line-height: 1.5; min-width: 30ch; max-width: 52ch; }
+#q-matrix td.qdown { font-size: 12px; color: var(--w-red);
+  line-height: 1.5; }
+#q-matrix tr.q-weak td { background: rgba(209,60,60,.05); }
+.qgrid { display: grid; gap: 10px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.qt { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 10px 13px 9px; }
+.qt .qk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); }
+.qt .qv { font: 650 15px/1.35 var(--display); color: var(--ink);
+  margin-top: 3px; }
+.qt .qm { font-size: 12px; color: var(--ink-2); line-height: 1.5;
+  margin-top: 3px; font-variant-numeric: tabular-nums; }
+.qt .qf { font: 400 10.5px/1.4 ui-monospace, SFMono-Regular, Menlo,
+  monospace; color: var(--faint); margin-top: 7px; }
+.qslo { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+  align-items: baseline; }
+.qslo .qf { margin-top: 0; }
+
 @media (max-width: 640px) {
+  .qhead .qlevel { font-size: 32px; }
   .plane { grid-template-columns: 14px 60px 1fr; }
   .plane .pwhy { grid-column: 2 / -1; padding-left: 26px; }
   .crow { grid-template-columns: 1fr; }
@@ -246,12 +300,43 @@ details.folded .trow .tnote, details.folded .trow .tid {
   re-stamps them every 10 minutes.</p>
 
   <div class="tabs" id="c1-tabs" role="tablist">
+    <button type="button" class="chip" role="tab" data-tab="qual">🏁
+      Qualification <span class="pill" id="qual-pill">…</span></button>
     <button type="button" class="chip" role="tab" data-tab="wall">🧱
       Invariant wall <span class="pill" id="inv-count">…</span></button>
     <button type="button" class="chip" role="tab" data-tab="sevs">🚨
       SEV ladder &amp; incidents</button>
     <button type="button" class="chip" role="tab" data-tab="route">🧭
       Routing</button>
+  </div>
+
+  <div class="tabpane" id="pane-qual" hidden>
+    <p class="sub small">Real-money-equivalent qualification — the
+    production standard graded plane by plane (§77). The system level
+    is the <b>MIN over all critical planes — never averaged</b> — and
+    strategy qualification is an independent verdict (§83). Every
+    value below is read live from the published artifacts; a missing
+    artifact reads "not yet published" — UNKNOWN is never green.</p>
+    <div class="qhead" id="q-head"><p class="mini">reading
+      readiness.json…</p></div>
+
+    <h3 class="qsec">The readiness matrix</h3>
+    <div class="scroll"><table id="q-matrix">
+      <thead><tr><th>plane</th><th>level</th><th>target</th>
+        <th>blocker to the next level</th>
+        <th>live downgrades</th></tr></thead>
+      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
+    </table></div>
+    <p class="mini">system = MIN over planes — never averaged ·
+    weakest planes highlighted · source <code>readiness.json</code></p>
+
+    <h3 class="qsec">Qualification evidence</h3>
+    <div class="qgrid" id="q-evidence"><p class="mini">loading
+      evidence artifacts…</p></div>
+
+    <h3 class="qsec">SLO snapshot</h3>
+    <div class="qslo" id="q-slo"><p class="mini">loading
+      meta_monitors.json…</p></div>
   </div>
 
   <div class="tabpane" id="pane-wall" hidden>
@@ -444,7 +529,11 @@ details.folded .trow .tnote, details.folded .trow .tid {
 <code>decision_board.json</code> · <code>incidents.jsonl</code> ·
 <code>online_status.json</code> · <code>commentary.jsonl</code> ·
 <code>treatments.jsonl</code> · <code>audit_report.json</code> ·
-<code>site_manifest.json</code>. Re-polled every 15&nbsp;s.</footer>
+<code>site_manifest.json</code> · <code>readiness.json</code> ·
+<code>reconciliation.json</code> · <code>chaos_drills.json</code> ·
+<code>leakage_canaries.json</code> · <code>exec_sensitivity.json</code> ·
+<code>meta_monitors.json</code> · <code>execution_ledger.json</code> ·
+<code>build_manifest.json</code>. Re-polled every 15&nbsp;s.</footer>
 </main>
 
 <script>
@@ -471,12 +560,12 @@ const light = (st, w) => `<span class="hdot ${st}"></span>` +
   `<span class="stw ${st}">${w || WORD[st]}</span>`;
 
 /* ---- tab machinery: one persisted selection per card ---- */
-function wireTabs(card, fallback) {
+function wireTabs(card, fallback, storeKey) {
   const bar = el(card + "-tabs");
   if (!bar) return;
   const ids = [...bar.querySelectorAll("button[data-tab]")]
     .map(b => b.dataset.tab);
-  const key = "watchtower." + card;
+  const key = storeKey || ("watchtower." + card);
   const show = id => {
     if (!ids.includes(id)) id = fallback;
     for (const b of bar.querySelectorAll("button[data-tab]")) {
@@ -498,9 +587,241 @@ function wireTabs(card, fallback) {
   try { saved = localStorage.getItem(key); } catch {}
   show(saved || fallback);
 }
-wireTabs("c1", "wall");
+/* c1 uses a fresh storage key so the new Qualification tab is the
+   default even for browsers that had "wall" saved under the old key */
+wireTabs("c1", "qual", "watchtower.c1.q");
 wireTabs("c2", "mon");
 wireTabs("c3", "agents");
+
+/* ========= CARD 1 · QUALIFICATION (§77 readiness) ========= */
+function rChipCls(lv) {
+  const m = /^R(\d+)/.exec(String(lv ?? "").trim().toUpperCase());
+  if (!m) return "r-amber";            /* UNKNOWN is never green */
+  const n = +m[1];
+  return n <= 1 ? "r-red" : n <= 3 ? "r-amber"
+    : n <= 6 ? "r-blue" : "r-green";
+}
+const R_COLOR = { "r-red": "var(--w-red)", "r-amber": "var(--w-amber)",
+  "r-blue": "var(--series-2)", "r-green": "var(--w-green)" };
+const rChip = lv => `<span class="rchip ${rChipCls(lv)}">${
+  esc(lv ?? "UNKNOWN")}</span>`;
+const evC = v => v == null ? "—"
+  : (v < 0 ? "−" : "+") + Math.abs(100 * v).toFixed(1) + "¢/$1";
+const ppF = v => v == null ? "—"
+  : (v < 0 ? "−" : "+") + Math.abs(v).toFixed(2) + "pp";
+
+function qTile(name, val, meta, file) {
+  return `<div class="qt"><div class="qk">${name}</div>` +
+    `<div class="qv">${val}</div><div class="qm">${meta}</div>` +
+    `<div class="qf">${esc(file)}</div></div>`;
+}
+const qMissing = (name, file) => qTile(name,
+  `<span class="stw amber">NOT YET PUBLISHED</span>`,
+  "artifact absent — nothing is shown as green without evidence",
+  file);
+
+function renderQualification(rdy, rec, chaos, leak, exs, mm, ledg, bld) {
+  /* --- headline strip + tab pill --- */
+  const head = el("q-head"), pill = el("qual-pill");
+  if (!rdy || !rdy.system) {
+    head.innerHTML = `<p class="mini">readiness.json not yet
+      published — no qualification level exists to show, and none is
+      claimed (UNKNOWN is never green)</p>`;
+    if (pill) { pill.textContent = "unpublished";
+      pill.className = "pill pending"; }
+  } else {
+    const sys = rdy.system, strat = rdy.strategy || {};
+    const cls = rChipCls(sys.level);
+    const frozen = sys.qualification_frozen === true;
+    const sev0 = Array.isArray(rdy.sev0_open)
+      ? rdy.sev0_open.length : null;
+    const stratTxt = strat.status || "STATUS UNPUBLISHED";
+    const stratSt = /qualified/i.test(stratTxt)
+      && !/\bno\b/i.test(stratTxt) ? "green" : "amber";
+    head.innerHTML =
+      `<span class="qlevel" style="color:${R_COLOR[cls]}">${
+        esc(sys.level ?? "UNKNOWN")}</span>` +
+      `<span class="qof">system level · MIN over planes · target R8</span>` +
+      `<div class="qstrat"><b class="stw ${stratSt}">${esc(stratTxt)
+        }</b>` + (strat.separation_note
+        ? `<div class="mini">${esc(strat.separation_note)}</div>` : "")
+      + `</div>` +
+      `<div class="qtagrow">` +
+        `<span class="qtag">standard v${esc(rdy.standard_version ?? "?")
+          }</span>` +
+        (frozen
+          ? `<span class="qtag red">QUALIFICATION FROZEN${
+              sys.frozen_reason ? " — " + esc(sys.frozen_reason) : ""
+            }</span>`
+          : `<span class="qtag">not frozen</span>`) +
+        (sev0 == null
+          ? `<span class="qtag amber">SEV-0 count unknown</span>`
+          : sev0
+          ? `<span class="qtag red">${sev0} SEV-0 OPEN</span>`
+          : `<span class="qtag green">0 SEV-0 open</span>`) +
+        (rdy.live_execution
+          ? `<span class="qtag">live execution: demo-only</span>` : "")
+      + `</div>` +
+      (sys.headline || rdy.live_execution
+        ? `<p class="mini" style="flex-basis:100%;margin:2px 0 0">${
+            [sys.headline, rdy.live_execution].filter(Boolean)
+              .map(esc).join(" · ")}</p>` : "");
+    if (pill) {
+      pill.textContent = String(sys.level ?? "?") +
+        (sev0 ? ` · ${sev0} SEV-0` : "");
+      pill.className = "pill " + (cls === "r-green" ? "ok"
+        : cls === "r-red" || frozen || sev0 ? "bad" : "pending");
+    }
+  }
+
+  /* --- the readiness matrix --- */
+  const mtb = el("q-matrix").tBodies[0];
+  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
+  if (!planes.length) {
+    mtb.innerHTML = `<tr><td colspan="5" class="mini">readiness.json
+      not yet published — the matrix cannot be shown</td></tr>`;
+  } else {
+    const weak = new Set((rdy.system && rdy.system.weakest_planes)
+      || []);
+    mtb.innerHTML = planes.map(([name, p]) => {
+      const downs = Array.isArray(p.live_downgrades)
+        && p.live_downgrades.length
+        ? p.live_downgrades.map(esc).join(" · ") : "";
+      return `<tr${weak.has(name) ? ' class="q-weak"' : ""}>` +
+        `<td class="qname">${esc(name)}${weak.has(name)
+          ? ' <span class="stw red">· weakest</span>' : ""}</td>` +
+        `<td>${rChip(p.level)}</td>` +
+        `<td>${rChip(p.target ?? "R8")}</td>` +
+        `<td class="qblk">${esc(p.blocker || "—")}</td>` +
+        `<td class="qdown">${downs
+          || '<span class="small muted">none</span>'}</td></tr>`;
+    }).join("");
+  }
+
+  /* --- evidence sub-grid: six tiles, each null-safe --- */
+  const tiles = [];
+  if (rec && Array.isArray(rec.checks) && rec.checks.length) {
+    const ok = rec.checks.filter(c => c.status === "OK").length;
+    const rows = rec.checks.reduce(
+      (a, c) => Math.max(a, c.rows_checked || 0), 0);
+    const st = rec.overall === "OK" ? "green"
+      : /sev/i.test(rec.overall || "") ? "red" : "amber";
+    tiles.push(qTile("Reconciliation",
+      `<span class="stw ${st}">${esc(rec.overall ?? "UNKNOWN")}</span>`,
+      `${ok}/${rec.checks.length} checks OK · ${rows.toLocaleString()
+        } rows recomputed to the cent, independently of btc_rl`,
+      "reconciliation.json"));
+  } else tiles.push(qMissing("Reconciliation", "reconciliation.json"));
+  if (chaos && Array.isArray(chaos.drills) && chaos.drills.length) {
+    const pass = chaos.drills
+      .filter(d => /^PASS/.test(d.result || "")).length;
+    const defer = chaos.drills
+      .filter(d => /DEFER/i.test(d.result || "")).length;
+    const st = chaos.overall === "PASS" ? "green"
+      : /fail/i.test(chaos.overall || "") ? "red" : "amber";
+    tiles.push(qTile("Chaos drills",
+      `<span class="stw ${st}">${esc(chaos.overall ?? "UNKNOWN")
+        }</span>`,
+      `${pass}/${chaos.drills.length} drills PASS${defer
+        ? ` (${defer} with an honest deferral)` : ""} — live
+        kill/recovery, write atomicity, malformed input, stale
+        heartbeat, fail-closed`,
+      "chaos_drills.json"));
+  } else tiles.push(qMissing("Chaos drills", "chaos_drills.json"));
+  if (leak && Array.isArray(leak.checks) && leak.checks.length) {
+    const pass = leak.checks.filter(c => c.result === "PASS").length;
+    const st = /^(ok|pass)$/i.test(leak.overall || "") ? "green"
+      : /sev|fail/i.test(leak.overall || "") ? "red" : "amber";
+    const failing = leak.checks.filter(c => c.result !== "PASS")
+      .map(c => esc(c.name)).join(", ");
+    tiles.push(qTile("Leakage canaries & placebos",
+      `<span class="stw ${st}">${esc(leak.overall ?? "UNKNOWN")
+        }</span>`,
+      `${pass}/${leak.checks.length} checks PASS${failing
+        ? ` — failing: ${failing}` : ""}`,
+      "leakage_canaries.json"));
+  } else tiles.push(qMissing("Leakage canaries & placebos",
+    "leakage_canaries.json"));
+  const em = exs && exs.execution_models;
+  if (em) {
+    const g = k => em[k] ? em[k].ev_per_dollar : null;
+    const v = exs.verdict || {};
+    const st = v.edge_survives_E2 === true
+      && v.edge_survives_E3 === true ? "green"
+      : v.edge_survives_E2 === true ? "amber"
+      : v.edge_survives_E2 === false ? "red" : "amber";
+    const verdictTxt = v.edge_survives_E2 == null
+      ? "VERDICT UNPUBLISHED"
+      : (v.edge_survives_E2 ? "SURVIVES E2" : "FAILS E2") + " · " +
+        (v.edge_survives_E3 == null ? "E3 —"
+          : v.edge_survives_E3 ? "SURVIVES E3"
+          : "FAILS E3 STRESS");
+    tiles.push(qTile("Execution models",
+      `<span class="stw ${st}">${verdictTxt}</span>`,
+      `E1 taker ${evC(g("E1_taker_at_book"))} · E2 calibrated ${
+        evC(g("E2_calibrated"))} · E3 stress ${evC(g("E3_stress"))}` +
+      (v.delay_crossing_min != null
+        ? ` · delay crossing at ${v.delay_crossing_min}m` : ""),
+      "exec_sensitivity.json"));
+  } else tiles.push(qMissing("Execution models",
+    "exec_sensitivity.json"));
+  const ms = ledg && ledg.markout_summary;
+  if (ms) {
+    const adv = ms.adverse_selection_signature;
+    const st = adv === true ? "red" : adv === false ? "green"
+      : "amber";
+    tiles.push(qTile("Markouts",
+      `<span class="stw ${st}">${adv === true ? "ADVERSE SELECTION"
+        : adv === false ? "NO ADVERSE-SELECTION SIGNATURE"
+        : "SIGNATURE UNKNOWN"}</span>`,
+      `mean markout +1m ${ppF(ms.mean_markout_1m_pp)} · +5m ${
+        ppF(ms.mean_markout_5m_pp)} · ${
+        ms.orders_with_derivable_markouts ?? "?"}/${ms.orders ?? "?"
+        } orders with derivable markouts`,
+      "execution_ledger.json"));
+  } else tiles.push(qMissing("Markouts", "execution_ledger.json"));
+  if (bld) {
+    const scan = bld.secret_scan;
+    const clean = scan ? scan.clean === true : null;
+    const st = clean === true ? "green"
+      : clean === false ? "red" : "amber";
+    const lock = bld.dependency_lock || {};
+    const nModels = bld.model_artifacts
+      ? Object.keys(bld.model_artifacts).length : null;
+    tiles.push(qTile("Build & supply chain",
+      `<span class="stw ${st}">${clean === true ? "SECRET SCAN CLEAN"
+        : clean === false ? "SECRET SCAN FLAGGED"
+        : "SECRET SCAN UNKNOWN"}</span>`,
+      `git ${esc(String(bld.git_sha || "").slice(0, 7) || "?")} · ${
+        lock.packages ?? "?"} packages locked` +
+      (nModels != null ? ` · ${nModels} model artifacts hashed` : "") +
+      (Array.isArray(bld.gaps) && bld.gaps.length
+        ? ` · ${bld.gaps.length} declared gaps` : ""),
+      "build_manifest.json"));
+  } else tiles.push(qMissing("Build & supply chain",
+    "build_manifest.json"));
+  el("q-evidence").innerHTML = tiles.join("");
+
+  /* --- SLO strip from the monitor-of-monitors --- */
+  const sbox = el("q-slo"), slo = mm && mm.slo;
+  if (!slo) {
+    sbox.innerHTML = `<span class="qtag amber">SLO snapshot not yet
+      published</span><span class="qf">meta_monitors.json</span>`;
+  } else {
+    const parts = [];
+    const nc = (slo.compliant || []).length;
+    parts.push(`<span class="qtag ${nc ? "green" : "amber"}">${nc
+      } SLO${nc === 1 ? "" : "s"} compliant</span>`);
+    for (const b of (slo.breached || []))
+      parts.push(`<span class="qtag red">BREACHED · ${esc(b)}</span>`);
+    for (const u of (slo.unknown || []))
+      parts.push(`<span class="qtag amber">UNKNOWN · ${esc(u)
+        }</span>`);
+    parts.push(`<span class="qf">meta_monitors.json${mm.overall
+      ? " · monitor-of-monitors " + esc(mm.overall) : ""}</span>`);
+    sbox.innerHTML = parts.join("");
+  }
+}
 
 /* ================= CARD 1 · HEALTH & SEVS ================= */
 /* PLANE MAPPING (documented per the maintenance brief):
@@ -949,7 +1270,8 @@ function renderBill() {
 
 /* ======================= poll loop ======================= */
 async function poll() {
-  const [inv, wld, dec, onl, aud, man, inc, prog, brd, notes, treats]
+  const [inv, wld, dec, onl, aud, man, inc, prog, brd, notes, treats,
+    rdy, recon, chaos, leak, exs, mmon, eledg, bld]
     = await Promise.all([
       jf("../results/invariants.json"),
       jf("../results/world.json"),
@@ -961,8 +1283,17 @@ async function poll() {
       jf("../results/program.json"),
       jf("../results/board.json"),
       jl("../results/commentary.jsonl"),
-      jl("../results/treatments.jsonl")]);
+      jl("../results/treatments.jsonl"),
+      jf("../results/readiness.json"),
+      jf("../results/reconciliation.json"),
+      jf("../results/chaos_drills.json"),
+      jf("../results/leakage_canaries.json"),
+      jf("../results/exec_sensitivity.json"),
+      jf("../results/meta_monitors.json"),
+      jf("../results/execution_ledger.json"),
+      jf("../results/build_manifest.json")]);
   if (wld) lastWorld = wld;
+  renderQualification(rdy, recon, chaos, leak, exs, mmon, eledg, bld);
   renderHealth(planeRows(onl, aud, dec, wld, inv));
   renderInvariants(inv);
   renderIncidents(inc);
