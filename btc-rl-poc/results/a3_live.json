@@ -1,0 +1,69 @@
+{
+ "generated_ts": 1788066851,
+ "spec": "A3_SPEC.yaml v1.1",
+ "registered_ts": 1788059100,
+ "price_source": "EXECUTABLE event-tape asks (1s) \u2014 modeled asks forbidden (spec \u00a74); v0 ledger retained as exploratory replay only",
+ "conventions": "fill = take ask qty 1 (no depth data yet, recorded); entry cutoff 60s; quote freshness 10s",
+ "live": {
+  "state": "NO_THESIS"
+ },
+ "forward": {
+  "eligible": 0,
+  "filled": 0,
+  "missed": 0,
+  "invalidated": 0,
+  "system_excluded": 6,
+  "miss_rate": null,
+  "control_pnl_per_eligible": null,
+  "a3_pnl_per_eligible": null,
+  "incremental_per_eligible": null,
+  "mean_entry_improvement_c": null,
+  "a3_fill_win_rate": null,
+  "control_win_rate": null,
+  "missed_control_pnl_total": null
+ },
+ "recent_settled": [
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG300045-45",
+   "close_ts": 1788065100,
+   "settled": true
+  },
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG300030-30",
+   "close_ts": 1788064200,
+   "settled": true
+  },
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG300015-15",
+   "close_ts": 1788063300,
+   "settled": true
+  },
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG300000-00",
+   "close_ts": 1788062400,
+   "settled": true
+  },
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG292345-45",
+   "close_ts": 1788061500,
+   "settled": true
+  },
+  {
+   "state": "SYSTEM_EXCLUDED",
+   "reason": "no fresh executable quote at registration (event tape)",
+   "ticker": "KXBTC15M-26AUG292315-15",
+   "close_ts": 1788059700,
+   "settled": true
+  }
+ ]
+}

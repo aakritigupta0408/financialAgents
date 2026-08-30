@@ -113,15 +113,26 @@ def kalshi_loop():
         try:
             with urllib.request.urlopen(KALSHI, timeout=5) as r:
                 mkts = json.loads(r.read()).get("markets", [])
+            def cents(m, k):
+                v = m.get(k)
+                try:
+                    return round(float(v) * 100, 1) \
+                        if v is not None else None
+                except (TypeError, ValueError):
+                    return None
             for m in mkts:
                 emit({"src": "kalshi", "kind": "quote",
                       "exchange_ts": None,   # REST: no event time
                       "receive_ts": rt,
                       "ticker": m.get("ticker"),
-                      "yes_bid": m.get("yes_bid"),
-                      "yes_ask": m.get("yes_ask"),
-                      "no_bid": m.get("no_bid"),
-                      "no_ask": m.get("no_ask"),
+                      # 2026 API: prices arrive as *_dollars strings
+                      "yes_bid": cents(m, "yes_bid_dollars"),
+                      "yes_ask": cents(m, "yes_ask_dollars"),
+                      "no_bid": cents(m, "no_bid_dollars"),
+                      "no_ask": cents(m, "no_ask_dollars"),
+                      "yes_bid_sz": m.get("yes_bid_size_fp"),
+                      "yes_ask_sz": m.get("yes_ask_size_fp"),
+                      "last": cents(m, "last_price_dollars"),
                       "volume": m.get("volume"),
                       "close_time": m.get("close_time"),
                       "strike": (m.get("floor_strike")

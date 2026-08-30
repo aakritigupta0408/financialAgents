@@ -1,4 +1,15 @@
-# A3 OVERREACTION HARVEST — pre-registration v1 (2026-08-29)
+# A3 OVERREACTION HARVEST — pre-registration v1.1 (2026-08-29)
+# v1.1 supersedes v0 SAME EVENING per the no-peeking rule (§48):
+# v0 used modeled asks, forbidden by evaluator spec §4. Gates
+# unchanged; price source + execution conventions added; clean
+# forward counter from registered_ts_v1_1. v0 ledger = replay only.
+version: 1.1
+registered_ts_v1_1: 1788059100
+price_source: executable event-tape side ask (results/events/, ~1s)
+entry_cutoff_seconds: 60
+quote_freshness_seconds: 10
+fill_convention: take the ask, qty 1 contract (no chasing; depth
+  now captured — sized fills are a future registered variant)
 # Frozen before forward data. Changes = governance events (DECISIONS).
 thesis_gate:            # Gate 1 — registered thesis
   caller: kb2

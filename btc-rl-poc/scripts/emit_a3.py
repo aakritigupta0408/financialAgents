@@ -1,0 +1,238 @@
+"""A3-v1.1 forward evaluator (TA specification, 2026-08-29).
+
+v1.1 supersedes the v0 shortcut REGISTERED same evening: v0 used
+modeled asks (100p+2.5), which §4 forbids ("never model-derived
+synthetic price"). Per §48 a price-source change creates a new
+registration with a clean forward counter. v0's ledger is retained
+as exploratory replay only (§53 A3-11).
+
+Hybrid tape (both point-in-time):
+  * THESIS/CONFIDENCE: kb2 minute rows (the model updates per
+    minute — using its step function at finer resolution is honest);
+  * EXECUTABLE PRICES: the Layer-A event tape (results/events/,
+    ~1s Kalshi quotes with receive_ts) — real side asks, never mid,
+    never modeled. Windows whose event coverage is missing are
+    SYSTEM_EXCLUDED (§7), not guessed.
+
+Frozen v1.1 parameters (== A3_SPEC.yaml; invariant A3-12 checks):
+  CALL_CONF 0.75 · envelope mins_left [6,13] · FLOOR 0.65
+  DIP_C 10 · ENTRY_CUTOFF_SECONDS 60 · one primary entry ·
+  unit size 1 contract · quote freshness gate 10s.
+State machine (§7): REGISTERED -> INVALIDATED | TRIGGERED->FILLED
+  (v1: fill == take the ask, qty 1 — no depth data yet, recorded as
+  convention) | MISSED | SYSTEM_EXCLUDED.
+Primary (§10): sum(PnL_A3 - PnL_C0) / N_eligible, every eligible
+window counted, misses = 0 trading P&L. Control fills at the real
+call-time ask (§9, same realism).
+"""
+from __future__ import annotations
+
+import glob
+import json
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+RES = ROOT / "results"
+CALL_CONF, FLOOR, DIP_C = 0.75, 0.65, 10.0
+ENV_LO, ENV_HI = 6.0, 13.0
+CUTOFF_S = 60
+FRESH_S = 10.0
+V11_REGISTERED_TS = 1788059100   # 2026-08-29 ~19:45 PT — v1.1 frozen
+
+
+def fee(a):
+    return 7 * (a / 100.0) * (1 - a / 100.0)
+
+
+def pnl(ask, won):
+    cost = ask + fee(ask)
+    return (100 - cost) / cost if won else -1.0
+
+
+def load_events():
+    """ticker -> sorted [(receive_ts, yes_ask, no_ask...)] from the
+    event tape (kalshi quotes only)."""
+    ev = {}
+    for f in sorted(glob.glob(str(RES / "events" / "*.jsonl"))):
+        for l in open(f):
+            try:
+                r = json.loads(l)
+            except ValueError:
+                continue
+            if r.get("src") != "kalshi" or r.get("yes_ask") is None:
+                continue
+            ev.setdefault(r["ticker"], []).append(
+                (r["receive_ts"], r["yes_ask"], r.get("no_ask"),
+                 r.get("close_time")))
+    for tk in ev:
+        ev[tk].sort()
+    return ev
+
+
+def side_ask(q, up):
+    return q[1] if up else (q[2] if q[2] is not None else 100 - q[1])
+
+
+def main():
+    now = int(time.time())
+    rows = [json.loads(l) for l in
+            (RES / "kalshi_binary_log.jsonl").open() if l.strip()]
+    kb2 = {}
+    for r in rows:
+        if (r.get("variant") or "kb") != "kb2":
+            continue
+        if r.get("p_up") is None or r.get("mins_left") is None:
+            continue
+        kb2.setdefault(r["ticker"], []).append(r)
+    events = load_events()
+
+    ledger, live = [], None
+    for tk, rs in kb2.items():
+        rs.sort(key=lambda r: -r["mins_left"])
+        cts = max(r.get("close_ts") or 0 for r in rs)
+        if cts < V11_REGISTERED_TS:
+            continue                      # clean forward counter
+        env = [r for r in rs if ENV_LO <= r["mins_left"] <= ENV_HI]
+        call = next((r for r in env
+                     if max(r["p_up"], 1 - r["p_up"]) >= CALL_CONF),
+                    None)
+        if call is None:
+            st = {"state": "NO_THESIS", "ticker": tk,
+                  "close_ts": cts,
+                  "settled": any(r.get("actual") is not None
+                                 for r in rs)}
+            if not st["settled"] and (live is None
+                                      or cts > (live.get("close_ts")
+                                                or 0)):
+                live = st
+            continue
+        up = call["p_up"] >= 0.5
+        reg_ts = cts - call["mins_left"] * 60   # registration wall-time
+        q = events.get(tk, [])
+        call_q = next((x for x in reversed(q)
+                       if x[0] <= reg_ts + FRESH_S
+                       and x[0] >= reg_ts - FRESH_S * 6), None)
+        if call_q is None:
+            ledger_or_live = {"state": "SYSTEM_EXCLUDED",
+                              "reason": "no fresh executable quote "
+                              "at registration (event tape)",
+                              "ticker": tk, "close_ts": cts,
+                              "settled": any(
+                                  r.get("actual") is not None
+                                  for r in rs)}
+            if ledger_or_live["settled"]:
+                ledger.append(ledger_or_live)
+            continue
+        call_ask = side_ask(call_q, up)
+        st = {"state": "REGISTERED", "ticker": tk, "close_ts": cts,
+              "side": "UP" if up else "DOWN",
+              "call_conf": round(max(call["p_up"],
+                                     1 - call["p_up"]), 3),
+              "call_ask": round(call_ask, 1),
+              "call_mins_left": call["mins_left"],
+              "trigger_ask": round(call_ask - DIP_C, 1)}
+        # confidence step function (minute rows after registration)
+        conf_steps = [(cts - r["mins_left"] * 60,
+                       (r["p_up"] if up else 1 - r["p_up"]))
+                      for r in rs if r["mins_left"] < call["mins_left"]]
+        conf_steps.sort()
+
+        def conf_at(t):
+            c = st["call_conf"]
+            for ts_, cv in conf_steps:
+                if ts_ <= t:
+                    c = cv
+                else:
+                    break
+            return c
+        cutoff_ts = cts - CUTOFF_S
+        for x in q:
+            if x[0] <= reg_ts or x[0] > cutoff_ts:
+                continue
+            c = conf_at(x[0])
+            if c < FLOOR:
+                st["state"] = "INVALIDATED"
+                st["invalidated_conf"] = round(c, 3)
+                break
+            a = side_ask(x, up)
+            if call_ask - a >= DIP_C:
+                st["state"] = "TRIGGERED"
+                st["entry_ask"] = round(a, 1)
+                st["entry_ts"] = x[0]
+                st["improvement_c"] = round(call_ask - a, 1)
+                st["entry_conf"] = round(c, 3)
+                break
+        settled = [r for r in rs if r.get("actual") is not None]
+        if settled:
+            won = bool(settled[-1]["actual"]) == up
+            st["won"] = won
+            st["settled"] = True
+            st["control_pnl"] = round(pnl(call_ask, won), 4)
+            if st["state"] == "TRIGGERED":
+                st["state"] = "FILLED"      # v1 fill = take ask, qty 1
+                st["a3_pnl"] = round(pnl(st["entry_ask"], won), 4)
+            else:
+                if st["state"] == "REGISTERED":
+                    st["state"] = "MISSED"
+                st["a3_pnl"] = 0.0
+            ledger.append(st)
+        else:
+            if live is None or cts > (live.get("close_ts") or 0):
+                live = st
+
+    el = [e for e in ledger if e["state"] != "SYSTEM_EXCLUDED"]
+    filled = [e for e in el if e["state"] == "FILLED"]
+    agg = {"eligible": len(el),
+           "filled": len(filled),
+           "missed": sum(1 for e in el if e["state"] == "MISSED"),
+           "invalidated": sum(1 for e in el
+                              if e["state"] == "INVALIDATED"),
+           "system_excluded": sum(1 for e in ledger
+                                  if e["state"] == "SYSTEM_EXCLUDED"),
+           "miss_rate": round(sum(1 for e in el if e["state"]
+                                  in ("MISSED", "INVALIDATED"))
+                              / len(el), 3) if el else None,
+           "control_pnl_per_eligible": round(
+               sum(e["control_pnl"] for e in el) / len(el), 4)
+           if el else None,
+           "a3_pnl_per_eligible": round(
+               sum(e["a3_pnl"] for e in el) / len(el), 4)
+           if el else None,
+           "incremental_per_eligible": round(
+               sum(e["a3_pnl"] - e["control_pnl"] for e in el)
+               / len(el), 4) if el else None,
+           "mean_entry_improvement_c": round(
+               sum(e["improvement_c"] for e in filled)
+               / len(filled), 1) if filled else None,
+           "a3_fill_win_rate": round(
+               sum(1 for e in filled if e["won"]) / len(filled), 3)
+           if filled else None,
+           "control_win_rate": round(
+               sum(1 for e in el if e["won"]) / len(el), 3)
+           if el else None,
+           "missed_control_pnl_total": round(
+               sum(e["control_pnl"] for e in el
+                   if e["state"] in ("MISSED", "INVALIDATED")), 3)
+           if el else None}
+    doc = {"generated_ts": now, "spec": "A3_SPEC.yaml v1.1",
+           "registered_ts": V11_REGISTERED_TS,
+           "price_source": "EXECUTABLE event-tape asks (1s) — "
+           "modeled asks forbidden (spec §4); v0 ledger retained as "
+           "exploratory replay only",
+           "conventions": "fill = take ask qty 1 (no depth data yet, "
+           "recorded); entry cutoff 60s; quote freshness 10s",
+           "live": live or {"state": "NO_THESIS"},
+           "forward": agg,
+           "recent_settled": sorted(
+               ledger, key=lambda e: -e["close_ts"])[:10]}
+    (RES / "a3_live.json").write_text(json.dumps(doc, indent=1))
+    print(f"a3-v1.1: live={doc['live']['state']} · eligible "
+          f"{agg['eligible']} filled {agg['filled']} excluded "
+          f"{agg['system_excluded']} · incr "
+          f"{agg['incremental_per_eligible']}")
+
+
+if __name__ == "__main__":
+    main()

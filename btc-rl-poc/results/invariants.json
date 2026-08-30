@@ -1,6 +1,6 @@
 {
- "generated_ts": 1788001805,
- "passed": 9,
+ "generated_ts": 1788066850,
+ "passed": 11,
  "failed": 0,
  "health": "green",
  "checks": [
@@ -55,6 +55,18 @@
   {
    "name": "withdrawals-never-restaked",
    "origin": "D-gambler-sizing ledger law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "analytics-freshness",
+   "origin": "oversized-crontab silent failure 08-29 (chain dead 2.7h)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "a3-experiment-integrity",
+   "origin": "A3-v1.1 evaluator spec \u00a753 (A3-02..06,10,11)",
    "ok": true,
    "detail": []
   }

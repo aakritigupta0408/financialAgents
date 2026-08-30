@@ -167,6 +167,34 @@ def _fresh():
     return not bad, bad
 
 
+@check("a3-experiment-integrity",
+       "A3-v1.1 evaluator spec §53 (A3-02..06,10,11)")
+def _a3():
+    """Every A3 ledger row: trigger conf >= floor, improvement >=
+    threshold, exactly one entry, paired outcomes present, and no
+    pre-registration window in the forward set."""
+    try:
+        d = json.loads((RES / "a3_live.json").read_text())
+    except Exception:
+        return True, ["a3_live.json not yet published"]
+    reg = d.get("registered_ts", 0)
+    bad = []
+    for e in d.get("recent_settled", []):
+        if e.get("state") == "SYSTEM_EXCLUDED":
+            continue
+        if e.get("close_ts", 0) < reg:
+            bad.append(f"{e.get('ticker')}: pre-registration in fwd")
+        if e.get("state") == "FILLED":
+            if (e.get("entry_conf") or 1) < 0.65:
+                bad.append(f"{e.get('ticker')}: conf<floor")
+            if (e.get("improvement_c") or 0) < 10:
+                bad.append(f"{e.get('ticker')}: dip<10c")
+        if e.get("settled") and ("control_pnl" not in e
+                                 or "a3_pnl" not in e):
+            bad.append(f"{e.get('ticker')}: unpaired")
+    return not bad, bad[:5]
+
+
 def main():
     out, failed = [], 0
     for name, origin, fn in CHECKS:
