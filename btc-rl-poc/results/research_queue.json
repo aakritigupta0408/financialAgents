@@ -1,0 +1,68 @@
+{
+ "generated_ts": 1788082700,
+ "queue": [
+  {
+   "priority": "P0",
+   "research_question": "Accumulate A3 forward evidence",
+   "bottleneck": "n=11 eligible (compare gate 25, decision gate 50)",
+   "evidence": "biggest current unknown",
+   "estimated_impact": "unknown \u2014 evidence first",
+   "state": "COLLECTING",
+   "blocked_by": "evidence N (compare gate 25, decision gate 50)",
+   "owner": "market clock",
+   "next_gate": "n>=10 arms the pre-registered failure watch"
+  },
+  {
+   "priority": "P1",
+   "research_question": "Validate A3 execution quality",
+   "bottleneck": "markout_h / ECR",
+   "evidence": "mean 10s markout +5.0c on filled entries",
+   "estimated_impact": "unknown \u2014 evidence first",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "research_manager",
+   "next_gate": null
+  },
+  {
+   "priority": "P2",
+   "research_question": "Continue M10+M8",
+   "bottleneck": "incremental paired PnL",
+   "evidence": "strongest existing positive legacy branch (P(\u0394>0) 96%)",
+   "estimated_impact": "unknown \u2014 evidence first",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "research_manager",
+   "next_gate": null
+  },
+  {
+   "priority": "P3",
+   "research_question": "A2 early divergence",
+   "bottleneck": "early-window divergence hit rate",
+   "evidence": "+14pp exploratory residual, early windows only (n=28)",
+   "estimated_impact": "unknown \u2014 evidence first",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "research_manager",
+   "next_gate": null
+  }
+ ],
+ "blocked": [
+  {
+   "item": "Value-of-Wait ML",
+   "reason": "A3 has not demonstrated a timing loss yet (needs poor ECR at positive \u0394 per the frozen decision tree)"
+  },
+  {
+   "item": "Sizing",
+   "reason": "positive durable alpha not established"
+  },
+  {
+   "item": "Passive execution",
+   "reason": "standalone maker already failed (M11)"
+  },
+  {
+   "item": "Champion simplification (CHAMPION-vLean)",
+   "reason": "would mutate the frozen control \u2014 the leader pool (kb3/kb4/kb7/kb8) is a CONTROL_DEPENDENCY; requires a registered CHAMPION-vCurrent vs CHAMPION-vLean experiment, and only after current research resolves (PM 08-30)"
+  }
+ ],
+ "provenance": "emit_program.py research_manager block"
+}

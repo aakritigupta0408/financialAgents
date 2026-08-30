@@ -437,8 +437,37 @@ def main():
              "reason": "positive durable alpha not established"},
             {"item": "Passive execution",
              "reason": "standalone maker already failed (M11)"},
+            {"item": "Champion simplification (CHAMPION-vLean)",
+             "reason": "would mutate the frozen control — the "
+                       "leader pool (kb3/kb4/kb7/kb8) is a "
+                       "CONTROL_DEPENDENCY; requires a registered "
+                       "CHAMPION-vCurrent vs CHAMPION-vLean "
+                       "experiment, and only after current research "
+                       "resolves (PM 08-30)"},
         ],
     }
+
+    # results/research_queue.json — the canonical prioritization
+    # artifact (PM 08-30): the future Research Manager agent MAINTAINS
+    # this rather than inventing priorities from scratch.
+    rq = {"generated_ts": now,
+          "queue": [
+              {"priority": f"P{i}",
+               "research_question": q["title"],
+               "bottleneck": q.get("bottleneck") or q.get("metric"),
+               "evidence": q["why"],
+               "estimated_impact": "unknown — evidence first",
+               "state": "COLLECTING" if i == 0 else "ACTIVE",
+               "blocked_by": ("evidence N (compare gate 25, "
+                              "decision gate 50)") if i == 0 else None,
+               "owner": "market clock" if i == 0
+               else "research_manager",
+               "next_gate": "n>=10 arms the pre-registered "
+                            "failure watch" if i == 0 else None}
+              for i, q in enumerate(queue)],
+          "blocked": research_manager["blocked"],
+          "provenance": "emit_program.py research_manager block"}
+    (RES / "research_queue.json").write_text(json.dumps(rq, indent=1))
 
     doc = {"generated_ts": now,
            "counts": {

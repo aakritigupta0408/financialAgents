@@ -5,11 +5,32 @@
 # Enforced by tests/invariants.py (retired-roster-frozen,
 # one-control-one-treatment) and consumed by emitters/agents/UI.
 
-version: 1.0.0
+version: 1.1.0
 budgets:
   max_active_traders: 5          # one slot deliberately EMPTY
-  max_serving_model_roles: 3     # end-state; horizon pairs interim
+  max_serving_model_roles: 3     # ROLES, not physical artifacts —
+                                 # an ensemble/control may depend on
+                                 # several frozen internals (PM 08-30)
   max_live_treatments_per_experiment: 1
+
+# GOVERNANCE RULE (PM 08-30, from the M3 leader-pool discovery):
+# "Runtime reachability beats registry intention." Before retiring
+# anything, compute its dependency path to a live decision and assign
+# a dependency_class:
+#   ZERO_DECISION_IMPACT      -> may retire without registration
+#   CONTROL_DEPENDENCY        -> retiring = NEW champion registration
+#   TREATMENT_DEPENDENCY      -> retiring = experiment change
+#   EXPERIMENT_DEPENDENCY     -> promotion/retirement via its experiment
+#   OBSERVABILITY_DEPENDENCY  -> audit/safety consumer exists
+#
+# Model-role accounting (three roles, not three artifacts):
+#   ROLE 1  MARKET/STRUCTURAL CONTROL
+#   ROLE 2  CHAMPION POLICY MODEL SYSTEM (frozen internal leader
+#           pool: kb3, kb4, kb7, kb8 + inputs kb, kb2)
+#   ROLE 3  CHALLENGER (kb9)
+# kb5 is an EXPERIMENT dependency of M14-v2, not a fourth role.
+# Champion simplification (CHAMPION-vLean) is a FUTURE registered
+# question — never a cleanup action.
 
 traders:
   - {id: pt,  name: Follower,    lifecycle: CONTROL,  runtime: true,
@@ -58,23 +79,34 @@ models:
   - {id: kb, tier: T2, lifecycle: ACTIVE, runtime: true,
      role: INTERNAL, note: raw calibrated arm — kb2's p_cal input}
   - {id: kb3, tier: T2, lifecycle: ACTIVE, runtime: true,
-     role: LEADER_POOL,
-     note: frozen champion input (PT_ARMS) — retiring it would change
-       the control policy; also INCUMBENT CANDIDATE pending M2}
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true,
+     note: frozen champion leader-pool member — cannot retire without
+       a NEW champion registration; also INCUMBENT CANDIDATE
+       pending M2}
   - {id: kb4, tier: T2, lifecycle: ACTIVE, runtime: true,
-     role: LEADER_POOL, note: frozen champion input (PT_ARMS)}
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true}
   - {id: kb5, tier: T2, lifecycle: ACTIVE, runtime: true,
-     role: ORACLE_V2_CALLER,
-     note: serves the registered M14-v2 prediction product; also the
-       edge anti-signal research stream}
+     role: EXPERIMENT_DEPENDENCY, experiment: M14-v2,
+     dependency_class: EXPERIMENT_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true,
+     promotion_path: via M14-v2 only,
+     note: also the edge anti-signal research stream}
   - {id: kb6, tier: T2, lifecycle: ARCHIVED, runtime: false,
      reason: falsified (coverage 37%, calibration ~noise),
      note: inference physically removed 08-30 (M3) — history frozen}
   - {id: kb7, tier: T2, lifecycle: ACTIVE, runtime: true,
-     role: LEADER_POOL,
-     note: frozen champion input (PT_ARMS) + Conviction Book stream 2}
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true,
+     note: leader-pool member + Conviction Book stream 2}
   - {id: kb8, tier: T2, lifecycle: ACTIVE, runtime: true,
-     role: LEADER_POOL, note: frozen champion input (PT_ARMS)}
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true}
   - {id: kbf, tier: T2, lifecycle: ARCHIVED, runtime: false,
      reason: accuracy without monetizability — forecast arrives too late;
        canonical teaching specimen,
