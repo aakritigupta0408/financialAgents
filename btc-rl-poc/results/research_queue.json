@@ -1,48 +1,49 @@
 {
- "generated_ts": 1788082700,
+ "generated_ts": 1788091023,
+ "maintained_by": "agent_research_manager (script-backed)",
  "queue": [
   {
    "priority": "P0",
-   "research_question": "Accumulate A3 forward evidence",
-   "bottleneck": "n=11 eligible (compare gate 25, decision gate 50)",
-   "evidence": "biggest current unknown",
-   "estimated_impact": "unknown \u2014 evidence first",
+   "research_question": "A3 forward qualification \u2014 does waiting for a dip beat immediate entry after costs?",
+   "bottleneck": "evidence n=18 (compare 25, decision 50)",
+   "evidence": "a3_live.json; experiment_analysis.json \u2014 two loss mechanisms identified (opportunity cost + fill-conditioned thesis degradation)",
+   "estimated_impact": "decides the desk's entry policy",
    "state": "COLLECTING",
-   "blocked_by": "evidence N (compare gate 25, decision gate 50)",
+   "blocked_by": "evidence N",
    "owner": "market clock",
-   "next_gate": "n>=10 arms the pre-registered failure watch"
+   "next_gate": "registered decision gate; watch flags informative from n>=10"
   },
   {
    "priority": "P1",
-   "research_question": "Validate A3 execution quality",
-   "bottleneck": "markout_h / ECR",
-   "evidence": "mean 10s markout +5.0c on filled entries",
-   "estimated_impact": "unknown \u2014 evidence first",
+   "research_question": "Why does no model beat the market? (all candidates OFFLINE_FAIL)",
+   "bottleneck": "diagnosis, not new model families",
+   "evidence": "model_qualification.json \u2014 confirmed: no positive median-fold BSS anywhere",
+   "estimated_impact": "unlocks a legitimate challenger pipeline",
    "state": "ACTIVE",
    "blocked_by": null,
-   "owner": "research_manager",
-   "next_gate": null
+   "owner": "model_researcher (M5.4, not yet active)",
+   "next_gate": "one candidate question max"
   },
   {
    "priority": "P2",
-   "research_question": "Continue M10+M8",
-   "bottleneck": "incremental paired PnL",
-   "evidence": "strongest existing positive legacy branch (P(\u0394>0) 96%)",
-   "estimated_impact": "unknown \u2014 evidence first",
+   "research_question": "Legacy M10 vs M10+M8 closure",
+   "bottleneck": "paired increment P(\u0394>0) 77% \u2014 unclear",
+   "evidence": "program.json incremental; decision_board.json",
+   "estimated_impact": "closes the legacy experiment family",
    "state": "ACTIVE",
    "blocked_by": null,
-   "owner": "research_manager",
-   "next_gate": null
+   "owner": "experiment_analyst",
+   "next_gate": "SPRT verdict"
   },
   {
    "priority": "P3",
-   "research_question": "A2 early divergence",
-   "bottleneck": "early-window divergence hit rate",
-   "evidence": "+14pp exploratory residual, early windows only (n=28)",
-   "estimated_impact": "unknown \u2014 evidence first",
+   "research_question": "Maintenance/observability: feature PSI + prediction-drift instrumentation",
+   "bottleneck": "declared NOT INSTRUMENTED gaps",
+   "evidence": "backend Data module gap rows",
+   "estimated_impact": "drift visibility before label decay",
    "state": "ACTIVE",
    "blocked_by": null,
-   "owner": "research_manager",
+   "owner": "data_reliability (M5.3, not yet active)",
    "next_gate": null
   }
  ],
@@ -64,5 +65,11 @@
    "reason": "would mutate the frozen control \u2014 the leader pool (kb3/kb4/kb7/kb8) is a CONTROL_DEPENDENCY; requires a registered CHAMPION-vCurrent vs CHAMPION-vLean experiment, and only after current research resolves (PM 08-30)"
   }
  ],
- "provenance": "emit_program.py research_manager block"
+ "provenance": [
+  "a3_live.json",
+  "experiment_analysis.json",
+  "model_qualification.json",
+  "program.json",
+  "agent_recommendations.jsonl"
+ ]
 }

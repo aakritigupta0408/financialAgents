@@ -447,27 +447,9 @@ def main():
         ],
     }
 
-    # results/research_queue.json — the canonical prioritization
-    # artifact (PM 08-30): the future Research Manager agent MAINTAINS
-    # this rather than inventing priorities from scratch.
-    rq = {"generated_ts": now,
-          "queue": [
-              {"priority": f"P{i}",
-               "research_question": q["title"],
-               "bottleneck": q.get("bottleneck") or q.get("metric"),
-               "evidence": q["why"],
-               "estimated_impact": "unknown — evidence first",
-               "state": "COLLECTING" if i == 0 else "ACTIVE",
-               "blocked_by": ("evidence N (compare gate 25, "
-                              "decision gate 50)") if i == 0 else None,
-               "owner": "market clock" if i == 0
-               else "research_manager",
-               "next_gate": "n>=10 arms the pre-registered "
-                            "failure watch" if i == 0 else None}
-              for i, q in enumerate(queue)],
-          "blocked": research_manager["blocked"],
-          "provenance": "emit_program.py research_manager block"}
-    (RES / "research_queue.json").write_text(json.dumps(rq, indent=1))
+    # research_queue.json ownership moved to the M5.1 Research
+    # Manager agent (scripts/agent_research_manager.py) — one writer
+    # per artifact; this emitter keeps only the program.json view.
 
     doc = {"generated_ts": now,
            "counts": {

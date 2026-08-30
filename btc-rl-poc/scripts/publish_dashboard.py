@@ -96,6 +96,8 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("feature_snapshots.jsonl", 200),
     ("system_change_log.jsonl", 500),
     ("research_queue.json", None),
+    ("experiment_analysis.json", None),
+    ("agent_recommendations.jsonl", 500),
     ("reconciliation.json", None),
     ("meta_monitors.json", None),
     ("leakage_canaries.json", None),

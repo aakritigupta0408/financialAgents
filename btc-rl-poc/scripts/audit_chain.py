@@ -38,6 +38,8 @@ STEPS = [
     "scripts/emit_model_observatory.py",
     "scripts/check_parity.py",
     "scripts/eval_engine.py",
+    "scripts/agent_experiment_analyst.py",
+    "scripts/agent_research_manager.py",
     "scripts/emit_pm_snapshot.py",
     "scripts/emit_readiness.py",
 ]

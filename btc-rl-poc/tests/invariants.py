@@ -211,6 +211,34 @@ def _one_ctl_one_treat():
     return not bad, bad[:5]
 
 
+@check("agent-decision-firewall",
+       "M5 (PM 08-30) — the firewall is code, not prompt: forbidden "
+       "classes never execute, proposals name their loss term")
+def _firewall():
+    """Every ledger row: valid action_class; RESEARCH_POLICY_CHANGE /
+    RISK_CHANGE only ever REJECTED_BY_FIREWALL; SAFE_OPS_REPAIR only
+    BLOCKED_UNTIL_M6 (until an explicit whitelist ships); every
+    PROPOSE carries targeted_loss_term; nothing is ever marked
+    executed autonomously."""
+    VALID = {"OBSERVE", "DIAGNOSE", "PROPOSE", "SAFE_OPS_REPAIR",
+             "RESEARCH_POLICY_CHANGE", "RISK_CHANGE"}
+    bad = []
+    for r in rows("agent_recommendations.jsonl"):
+        ac, st = r.get("action_class"), r.get("status")
+        rid = r.get("recommendation_id", "?")
+        if ac not in VALID:
+            bad.append(f"{rid}: unknown class {ac}")
+        if ac in ("RESEARCH_POLICY_CHANGE", "RISK_CHANGE") \
+                and st != "REJECTED_BY_FIREWALL":
+            bad.append(f"{rid}: forbidden class escaped ({st})")
+        if ac == "SAFE_OPS_REPAIR" and st not in (
+                "BLOCKED_UNTIL_M6",):
+            bad.append(f"{rid}: ops repair not blocked ({st})")
+        if ac == "PROPOSE" and not r.get("targeted_loss_term"):
+            bad.append(f"{rid}: PROPOSE without loss term")
+    return not bad, bad[:5]
+
+
 @check("zombie-component-count",
        "M3 (PM 08-30) — registry says retired, nothing may still "
        "invoke it; a zombie is a red operational condition")
