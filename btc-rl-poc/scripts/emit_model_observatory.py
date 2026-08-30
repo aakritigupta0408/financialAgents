@@ -165,8 +165,13 @@ def emit_training_runs(now):
                     "decision_reason":
                         "candidate val MSE vs incumbent holdout — "
                         "gated retrain",
-                    "provenance": "metrics_history.jsonl",
-                    "registered_ts": now,
+                    # PM correction 08-30: rows reconstructed from
+                    # historical retrain records are RECOVERED_HISTORY;
+                    # only rows emitted at training time under this
+                    # contract may claim NATIVE_REGISTERED_RUN
+                    "registry_origin": "RECOVERED_HISTORY",
+                    "source_artifact": "metrics_history.jsonl",
+                    "reconstructed_at": now,
                 })
     if new:
         with out_p.open("a") as f:
@@ -241,6 +246,20 @@ def main():
                "runs_source": "metrics_history.jsonl",
            }}
     (RES / "model_lifecycle.json").write_text(json.dumps(doc, indent=1))
+    # model_online.json — the rolling-window view (M2.4 / §40): same
+    # definitions as the lifecycle blocks, one artifact the Models
+    # module can render without custom code
+    online = {"generated_ts": now,
+              "metric_contract": "config/METRICS.yaml v1.1.0",
+              "windows_def": {"LAST_25": 25, "LAST_50": 50,
+                              "LAST_100": 100, "LIFETIME": None},
+              "min_n": MIN_N,
+              "models": {v: {"windows": m["windows"],
+                             "trend": m["trend"],
+                             "role": m["role"],
+                             "lifecycle": m["lifecycle"]}
+                         for v, m in models.items()}}
+    (RES / "model_online.json").write_text(json.dumps(online, indent=1))
     k2 = models.get("kb2", {})
     print(f"model_lifecycle: kb2 lifetime brier "
           f"{k2.get('lifetime', {}).get('brier')} "

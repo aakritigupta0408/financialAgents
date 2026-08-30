@@ -1,0 +1,131 @@
+{
+ "generated_ts": 1788076589,
+ "metric_contract": "config/METRICS.yaml v1.1.0",
+ "windows_def": {
+  "LAST_25": 25,
+  "LAST_50": 50,
+  "LAST_100": 100,
+  "LIFETIME": null
+ },
+ "min_n": {
+  "display": 10,
+  "compare": 25,
+  "gate": 50
+ },
+ "models": {
+  "kb2": {
+   "windows": {
+    "LIFETIME": {
+     "n": 168,
+     "brier": 0.2006,
+     "log_loss": 0.5866,
+     "selective_acc_75": 0.8,
+     "selective_coverage_75": 0.2083,
+     "selective_n_75": 35,
+     "market_brier": 0.2007,
+     "bss_vs_market": 0.0002,
+     "market_n": 168
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.2033,
+     "log_loss": 0.5937,
+     "selective_acc_75": 0.8421,
+     "selective_coverage_75": 0.19,
+     "selective_n_75": 19,
+     "market_brier": 0.2028,
+     "bss_vs_market": -0.0026,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.201,
+     "log_loss": 0.5868,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.1,
+     "selective_n_75": 5,
+     "market_brier": 0.201,
+     "bss_vs_market": -0.0001,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1663,
+     "log_loss": 0.5141,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.12,
+     "selective_n_75": 3,
+     "market_brier": 0.1662,
+     "bss_vs_market": -0.0001,
+     "market_n": 25
+    }
+   },
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1663,
+    "brier_prior_75": 0.2157,
+    "delta": -0.0494,
+    "why": "Brier last-25 0.1663 vs prior-75 0.2157 (\u0394 -0.0494, band \u00b10.01)"
+   },
+   "role": "CONTROL (market-anchored)",
+   "lifecycle": "CONTROL"
+  },
+  "kb9": {
+   "windows": {
+    "LIFETIME": {
+     "n": 168,
+     "brier": 0.2078,
+     "log_loss": 0.6053,
+     "selective_acc_75": 0.7805,
+     "selective_coverage_75": 0.244,
+     "selective_n_75": 41,
+     "market_brier": 0.2007,
+     "bss_vs_market": -0.0354,
+     "market_n": 168
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.208,
+     "log_loss": 0.6087,
+     "selective_acc_75": 0.8,
+     "selective_coverage_75": 0.2,
+     "selective_n_75": 20,
+     "market_brier": 0.2028,
+     "bss_vs_market": -0.0259,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.2004,
+     "log_loss": 0.5995,
+     "selective_acc_75": 0.9,
+     "selective_coverage_75": 0.2,
+     "selective_n_75": 10,
+     "market_brier": 0.201,
+     "bss_vs_market": 0.0031,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1726,
+     "log_loss": 0.5213,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.24,
+     "selective_n_75": 6,
+     "market_brier": 0.1662,
+     "bss_vs_market": -0.0381,
+     "market_n": 25
+    }
+   },
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1726,
+    "brier_prior_75": 0.2199,
+    "delta": -0.0473,
+    "why": "Brier last-25 0.1726 vs prior-75 0.2199 (\u0394 -0.0473, band \u00b10.01)"
+   },
+   "role": "CHALLENGER (TimesFM fusion)",
+   "lifecycle": "TREATMENT"
+  }
+ }
+}

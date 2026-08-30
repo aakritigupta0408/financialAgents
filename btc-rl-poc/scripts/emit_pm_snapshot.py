@@ -55,6 +55,7 @@ def main():
                   in ("CONTROL", "TREATMENT")]
     n = fwd.get("eligible") or 0
     queue = rm.get("queue") or []
+    prev = j("pm_snapshot.json", {}) or {}
     doc = {
         "generated_ts": now,
         "a3": {"n": n,
@@ -94,11 +95,39 @@ def main():
             "shadows": ["T05", "T15", "M8", "M13", "pt6"]},
         "top_bottleneck": (queue[0]["title"] + " — " + queue[0]["why"])
         if queue else "unknown",
-        "next_action": queue[1]["title"] if len(queue) > 1 else None,
-        "blocked": [b["item"] for b in (rm.get("blocked") or [])],
+        "next_unblocked_action": queue[1]["title"]
+        if len(queue) > 1 else None,
+        "blocked_work": [b["item"] for b in (rm.get("blocked") or [])],
         "provenance": ["a3_live.json", "program.json",
                        "model_lifecycle.json", "readiness.json",
                        "invariants.json", "incidents.jsonl"],
+    }
+    # change detection vs the previous snapshot (PM 08-30): the
+    # snapshot is a change-detection artifact, not another dashboard
+    def _get(d, *path):
+        for k in path:
+            d = (d or {}).get(k)
+        return d
+    WATCH = [
+        ("A3 eligible_n", ("a3", "n")),
+        ("A3 paired_delta", ("a3", "paired_delta")),
+        ("kb9 trend", ("models", "challenger_trend")),
+        ("kb2 trend", ("models", "control_trend")),
+        ("invariants", ("system", "invariants")),
+        ("open_sevs", ("system", "open_sevs")),
+        ("readiness", ("system", "readiness")),
+        ("active_traders", ("complexity", "active_traders")),
+        ("top_bottleneck", ("top_bottleneck",)),
+    ]
+    changes = []
+    if prev.get("generated_ts"):
+        for label, path in WATCH:
+            was, cur = _get(prev, *path), _get(doc, *path)
+            if was != cur:
+                changes.append(f"{label}: {was} -> {cur}")
+    doc["changed_since_last_snapshot"] = {
+        "prev_ts": prev.get("generated_ts"),
+        "changes": changes or ["unchanged"],
     }
     (RES / "pm_snapshot.json").write_text(json.dumps(doc, indent=1))
     print(f"pm_snapshot: A3 n={n} Δ={doc['a3']['paired_delta']} · "

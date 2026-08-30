@@ -86,6 +86,8 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("a3_live.json", None),
     ("a3_window_evaluation.jsonl", 2000),
     ("model_lifecycle.json", None),
+    ("model_online.json", None),
+    ("model_offline.json", None),
     ("training_runs.jsonl", 3000),
     ("pm_snapshot.json", None),
     ("reconciliation.json", None),

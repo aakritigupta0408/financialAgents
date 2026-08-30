@@ -445,6 +445,28 @@ function renderA3(a3) {
           : pc(od.top10pct_share)
         }<br>Δ ex-best-1 ${cS(od.delta_ex_best1)}</div>`) +
     `</div>`;
+  /* the estimate path — teaches variance without narrative: the
+     cumulative paired-Δ after each settled eligible window */
+  const ordered = rows.filter(r => r && r.state !== "SYSTEM_EXCLUDED"
+      && typeof r.a3_pnl === "number"
+      && typeof r.control_pnl === "number")
+    .sort((a, b) => (a.close_ts || 0) - (b.close_ts || 0));
+  let cum = 0;
+  const pathPts = ordered.map((r, i) => {
+    cum += r.a3_pnl - r.control_pnl;
+    return `n=${i + 1} ${cS(cum / (i + 1))}`;
+  });
+  const shownPts = pathPts.length > 6
+    ? ["…"].concat(pathPts.slice(-6)) : pathPts;
+  const bestContrib = od.total_delta != null
+    && od.delta_ex_best1 != null
+    ? cS(od.total_delta - od.delta_ex_best1) : "—";
+  const path = pathPts.length >= 2
+    ? `<div class="gateline" style="border-left-color:var(--series-2)">
+       <b>Estimate path:</b> ${shownPts.join(" → ")}
+       <span class="sub2" style="display:inline"> · best single window
+       contributes ${bestContrib} of the total Δ — variance, not
+       narrative</span></div>` : "";
   const gate = `<div class="gateline"><b>Next decision gate:</b>
     sufficient forward windows (n ≥ 50); no policy changes allowed —
     any threshold change is a new registered experiment.</div>`;
@@ -487,7 +509,7 @@ function renderA3(a3) {
     `<span>${em.system_excluded ?? "—"} excluded of ${
       em.potential_registrations ?? "—"} potential</span>` +
     `<span><a href="home.html">watch live →</a></span></div>`;
-  setHTML(el, top + grid + gate + drawer + foot);
+  setHTML(el, top + grid + path + gate + drawer + foot);
 }
 
 /* --------------------------------------------- CARD 2 — portfolio -- */
