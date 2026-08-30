@@ -434,6 +434,27 @@ PT6_DIM = 7
 # +15.9c entry would have qualified (it won).
 PT6_MIN_EDGE_C = 10           # bet only if pw*100 - (ask+fee) >= 10c
 
+# ---- GREAT SIMPLIFICATION (PM directive 2026-08-29) -----------------
+# docs/RETIREMENT_MANIFEST.md. The active roster is capped at 5 slots,
+# one deliberately empty: Follower (control), Disciplined (thesis),
+# MLE (SHADOW), A3/T10 (entry-timing treatment), [empty]. Retired
+# traders take NO new positions; open rows settle normally and their
+# logs freeze as archives (history is never deleted). pt6 is lifecycle
+# SHADOW: it decides and learns at full window rate but stakes nothing
+# until independently justified — would-bet rows carry would_* fields
+# so its hypothetical economics stay measurable.
+ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
+RETIRED_TRADERS = frozenset({"pt2", "pt4", "pt5", "pt7", "pt8"})
+PT6_SHADOW = True
+# One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
+# t_exec_reg (M10+M8); t_regime kept as the single-factor diagnostic,
+# t_limit_reg + t_edgeband observe as shadows. Every other treatment
+# stops consuming runtime — the paired history in treatments.jsonl
+# stays frozen evidence.
+RETIRED_TREATMENTS = frozenset({
+    "t_cal", "t_knife", "t_cheap", "t_both", "t_fshare",
+    "t_fs_reg", "t_limit", "t_evlead"})
+
 
 def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
                   sy: bool, pf: list[float], mins_left: float
@@ -833,6 +854,9 @@ def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
         outcome = t["actual"]
         evs, basis = {}, {}
         for key, _lab, fn, _r in _treat_policies():
+            if key in RETIRED_TREATMENTS:
+                continue    # Great Simplification: no new ev rows;
+                            # a missing key = policy no longer exists
             try:
                 d = fn(ctx)
             except Exception:
@@ -3203,7 +3227,9 @@ def run(once: bool = False) -> None:
                                                 "bankroll_c": pt_bankroll_c,
                                             })
                                             pt_tickers.add(pm_mkt["ticker"])
-                                    if pm_mkt["ticker"] not in pt2_tickers:
+                                    if ("pt2" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt2_tickers):
                                         nc2 = int(min(PT_FRAC
                                                       * pt2_bankroll_c,
                                                       dcap)
@@ -3259,7 +3285,9 @@ def run(once: bool = False) -> None:
                                     # degenerates into a price
                                     # threshold). Same lesson as pt6's
                                     # margin gate, applied here.
-                                    if (pm_mkt["ticker"] not in pt4_tickers
+                                    if ("pt4" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt4_tickers
                                             and base_row["p_arm"]
                                             >= PT4_TAU
                                             and base_row["p_arm"] * 100
@@ -3286,7 +3314,9 @@ def run(once: bool = False) -> None:
                                             pt4_tickers.add(pm_mkt["ticker"])
                                     # Trader 5, the SAVER: 25% stakes,
                                     # skims 25% of each win to savings
-                                    if pm_mkt["ticker"] not in pt5_tickers:
+                                    if ("pt5" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt5_tickers):
                                         st5cap = min(int(PT5_FRAC
                                                      * pt5_bankroll_c),
                                                      dcap)
@@ -3322,7 +3352,34 @@ def run(once: bool = False) -> None:
                                             cap = min(int(frac
                                                       * pt6_bankroll_c), dcap)
                                             nc6 = int(cap // (askp + feep))
-                                            if nc6 >= 1:
+                                            if nc6 >= 1 and PT6_SHADOW:
+                                                # lifecycle SHADOW (PM
+                                                # 08-29): decide + learn,
+                                                # stake NOTHING; would_*
+                                                # keeps the hypothetical
+                                                # economics measurable
+                                                st6 = (int(nc6 * askp)
+                                                       + _order_fee_c(
+                                                           nc6, askp))
+                                                pt6_trades.append({
+                                                    **base_row,
+                                                    "contracts": 0,
+                                                    "stake_c": 0,
+                                                    "shadow": True,
+                                                    "would_contracts":
+                                                        nc6,
+                                                    "would_stake_c": st6,
+                                                    "b6x": [round(v, 5)
+                                                            for v in b6x],
+                                                    "p_win": round(pw6, 4),
+                                                    "trained":
+                                                        pt6_logit.updates,
+                                                    "bankroll_c":
+                                                        pt6_bankroll_c,
+                                                })
+                                                pt6_tickers.add(
+                                                    pm_mkt["ticker"])
+                                            elif nc6 >= 1:
                                                 st6 = (int(nc6 * askp)
                                                        + _order_fee_c(
                                                            nc6, askp))
@@ -3368,7 +3425,9 @@ def run(once: bool = False) -> None:
                                     # limit PT7_IMPROVE_C below the
                                     # quoted ask; the fill block above
                                     # completes it if price comes down
-                                    if (pm_mkt["ticker"] not in pt7_tickers
+                                    if ("pt7" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt7_tickers
                                             and pm_mkt["ticker"]
                                             not in pt7_pending):
                                         pt7_pending[pm_mkt["ticker"]] = {
@@ -3383,7 +3442,9 @@ def run(once: bool = False) -> None:
                                     # Trader 8, the IDEAL: regime gate,
                                     # edge-at-fill margin, maker-style
                                     # limit, half-Kelly x depth cap
-                                    if (pm_mkt["ticker"] not in pt8_tickers
+                                    if ("pt8" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt8_tickers
                                             and pm_mkt["ticker"]
                                             not in pt8_pending):
                                         lim8 = askp - PT8_IMPROVE_C

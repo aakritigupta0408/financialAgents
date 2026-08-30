@@ -167,6 +167,47 @@ def _fresh():
     return not bad, bad
 
 
+@check("retired-roster-frozen",
+       "Great Simplification 08-29 (docs/RETIREMENT_MANIFEST.md)")
+def _roster_frozen():
+    """No retired trader may open a position after the freeze, and
+    every pt6 row after the freeze is a zero-stake SHADOW row —
+    max-5-slot roster law, machine-checked."""
+    bad = []
+    for n in sorted(O.RETIRED_TRADERS):
+        for t in rows(n + "_trades.jsonl"):
+            if t.get("made_ts", 0) > O.ROSTER_FREEZE_TS \
+                    and not t.get("skipped"):
+                bad.append(f"{n}:{t.get('ticker')} opened post-freeze")
+    if O.PT6_SHADOW:
+        for t in rows("pt6_trades.jsonl"):
+            if t.get("made_ts", 0) > O.ROSTER_FREEZE_TS \
+                    and (t.get("stake_c") or 0) > 0:
+                bad.append(f"pt6:{t.get('ticker')} staked in SHADOW")
+    return not bad, bad[:5]
+
+
+@check("one-control-one-treatment",
+       "Great Simplification 08-29 — no strategy forests")
+def _one_ctl_one_treat():
+    """Post-freeze treatment rows may carry ONLY the sanctioned keys:
+    the two baselines, the one legacy control/treatment pair, and the
+    registered diagnostics/shadows. A retired key reappearing (or a
+    new key arriving unregistered) is a roster violation."""
+    ALLOWED = {"champion", "champion_real", "t_regime", "t_exec",
+               "t_exec_reg", "t_limit_reg", "t_edgeband"}
+    bad = []
+    for r in rows("treatments.jsonl"):
+        if r.get("close_ts", 0) <= O.ROSTER_FREEZE_TS:
+            continue
+        extra = set((r.get("ev") or {})) - ALLOWED
+        if extra:
+            bad.append(f"{r.get('ticker')}: {sorted(extra)}")
+        if not {"t_exec", "t_exec_reg"} <= set(r.get("ev") or {}):
+            bad.append(f"{r.get('ticker')}: legacy pair missing")
+    return not bad, bad[:5]
+
+
 @check("a3-experiment-integrity",
        "A3-v1.1 evaluator spec §53 (A3-02..06,10,11)")
 def _a3():

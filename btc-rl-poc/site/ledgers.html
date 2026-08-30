@@ -3,375 +3,877 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — The Ledgers</title>
+<title>BTC 7PM Oracle — Evidence Explorer</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-.tabs { display: flex; flex-wrap: wrap; gap: 8px; }
-.strip { display: flex; flex-wrap: wrap; gap: 26px; margin: 4px 0 2px; }
-.strip .stat .k { display: block; margin-bottom: 1px; }
-.sev-chip { display: inline-block; font-size: 11px; font-weight: 700;
-  letter-spacing: .06em; padding: 2px 9px; border-radius: 999px;
-  border: 1px solid var(--border); }
-.sev-chip.s01 { color: var(--down); background: rgba(255,93,93,.10);
-  border-color: rgba(209,60,60,.35); }
-.sev-chip.s23 { color: var(--series-4); background: rgba(143,96,0,.08);
-  border-color: rgba(143,96,0,.35); }
-.sev-chip.s4 { color: var(--ink-2); background: var(--surface-2); }
-.sev-chip.s5 { color: var(--muted); background: var(--surface-2); }
-.era { font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
-  padding: 1px 7px; border-radius: 6px; border: 1px solid var(--border);
-  color: var(--muted); background: var(--surface-2); }
-.era.v3 { color: var(--series-2); border-color: rgba(36,97,184,.4); }
-.era.v2 { color: var(--series-5); border-color: rgba(11,125,138,.4); }
+/* ---------- header tiles (same pattern as board.html) ---------- */
+.hstrip { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.hs { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px; }
+.hs .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); }
+.hs .v { font-size: 15px; font-weight: 750; margin-top: 3px;
+  font-variant-numeric: tabular-nums; line-height: 1.35; }
+.hs .v small { font-weight: 600; color: var(--ink-2); font-size: 12px; }
+.hs .v.pos { color: var(--good-text); }
+.hs .v.neg { color: var(--down); }
+/* ---------- ledger selector ---------- */
+.lgroups { display: flex; flex-wrap: wrap; gap: 8px 18px;
+  align-items: center; margin-top: 12px; }
+.lgroups .glab { font-size: 10px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--faint); }
+.lchips { display: flex; flex-wrap: wrap; gap: 8px; }
+/* ---------- filter bar ---------- */
+.fbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin-top: 12px; }
+.fbar .glab { font-size: 10px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--faint); margin-right: 2px; }
+.chip.sm { font-size: 11.5px; padding: 3px 11px; }
+/* ---------- table ---------- */
+.tt { border-collapse: collapse; width: 100%; font-size: 12.5px;
+  min-width: 640px; margin-top: 10px; }
+.tt th { text-align: left; font-size: 10px; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--faint); white-space: nowrap;
+  border-bottom: 1px solid var(--axis); padding: 6px 10px 6px 0; }
+.tt td { border-bottom: 1px solid var(--grid); padding: 6px 10px 6px 0;
+  color: var(--ink-2); white-space: nowrap; }
+.tt th.num, .tt td.num { text-align: right;
+  font-variant-numeric: tabular-nums; }
+.tt tbody tr { cursor: pointer; }
+.tt tbody tr:hover { background: var(--surface-2); }
+.tt tbody tr.sel { background: rgba(36,97,184,.07); }
 td.pos { color: var(--good-text); font-weight: 600; }
 td.neg { color: var(--down); font-weight: 600; }
-.skipnote { font-size: 11.5px; color: var(--faint); margin-left: 6px; }
-.resp { max-width: 34ch; overflow: hidden; text-overflow: ellipsis;
-  white-space: nowrap; display: inline-block; vertical-align: bottom; }
-.showall { margin-top: 10px; }
-.files code { margin-right: 10px; }
+/* ---------- anomaly flag + era chips ---------- */
+.fl { display: inline-block; font-size: 9px; font-weight: 800;
+  letter-spacing: .07em; border-radius: 5px; padding: 1.5px 6px;
+  margin: 0 3px 2px 0; white-space: nowrap;
+  border: 1px solid var(--border); color: var(--ink-2);
+  background: var(--surface-2); }
+.fl.crit { color: var(--down); border-color: rgba(209,60,60,.4);
+  background: rgba(209,60,60,.07); }
+.fl.warn { color: var(--series-4); border-color: rgba(143,96,0,.4);
+  background: rgba(143,96,0,.07); }
+.fl.era { color: var(--series-9); border-color: rgba(95,80,199,.4);
+  background: rgba(95,80,199,.06); }
+/* ---------- trace (card 3) ---------- */
+.trhead { display: flex; flex-wrap: wrap; gap: 8px 18px;
+  align-items: baseline; margin-top: 12px; }
+.trhead code { font: 12.5px ui-monospace, Menlo, monospace;
+  background: var(--surface-2); border: 1px solid var(--grid);
+  border-radius: 5px; padding: 1px 7px; }
+.trhead .ts { font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.chain { margin-top: 14px; }
+.cstep { display: flex; gap: 12px; }
+.cstep .rail { display: flex; flex-direction: column;
+  align-items: center; flex: none; width: 22px; }
+.cstep .dotc { width: 10px; height: 10px; border-radius: 50%;
+  border: 2px solid var(--series-2); background: var(--surface);
+  flex: none; margin-top: 4px; }
+.cstep.last .line { display: none; }
+.cstep .line { width: 2px; flex: 1; background: var(--grid);
+  min-height: 14px; }
+.cstep .cbody { padding-bottom: 14px; font-size: 12.5px;
+  line-height: 1.55; color: var(--ink-2); min-width: 0; }
+.cstep .ch { font-size: 10px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted); }
+.cstep .cbody b { color: var(--ink); }
+.usedin { display: flex; flex-wrap: wrap; gap: 6px 14px;
+  align-items: center; margin-top: 10px; padding-top: 9px;
+  border-top: 1px solid var(--grid); font-size: 12.5px;
+  color: var(--ink-2); }
+details.drawer { margin-top: 12px; background: var(--surface-2);
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 9px 13px; }
+details.drawer > summary { cursor: pointer; font-size: 12px;
+  font-weight: 800; letter-spacing: .06em; color: var(--ink-2); }
+.twtbl { border-collapse: collapse; width: 100%; font-size: 12px;
+  margin-top: 8px; min-width: 420px; }
+.twtbl th { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); text-align: right;
+  border-bottom: 1px solid var(--axis); padding: 4px 8px; }
+.twtbl th:first-child, .twtbl td:first-child { text-align: left; }
+.twtbl td { padding: 4px 8px; border-bottom: 1px solid var(--grid);
+  text-align: right; font-variant-numeric: tabular-nums; }
+.twtbl td.pos { color: var(--good-text); }
+.twtbl td.neg { color: var(--down); }
+.scrollx { overflow-x: auto; }
+.showmore { margin-top: 10px; }
+.provline code { font: 11px ui-monospace, Menlo, monospace; }
+.rawlist { font-size: 12.5px; line-height: 2; }
+.rawlist code { font: 11.5px ui-monospace, Menlo, monospace; }
+@media (max-width: 640px) {
+  body { padding: 24px 10px 72px; }
+  section { padding: 14px 13px; }
+  .hstrip { grid-template-columns: repeat(2, 1fr); }
+  .tt { font-size: 11.5px; min-width: 560px; }
+  .chip { padding: 4px 11px; font-size: 12px; }
+  .trhead { gap: 4px 10px; }
+}
 </style>
 </head>
 <body>
 
 <nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><span class="spacer"></span><span class="tag">the ledgers</span></nav>
+  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">evidence explorer</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
-  <div class="eyebrow">ledger valley · every book, open</div>
-  <h1>The Ledgers</h1>
-  <p class="sub small">Every append-only paper book on the desk, readable
-  row by row, live. If it isn't written here, it didn't happen. Every
-  number below is fetched from the raw JSON/JSONL files — nothing is
-  computed offline or hardcoded except the documented policy-era epochs.</p>
+  <div class="eyebrow">ledger valley · every book, auditable</div>
+  <h1>Evidence Explorer</h1>
+  <p class="sub small">the audit interface: summary first, rows on
+  demand, every trade traceable. Everything below is fetched from the
+  raw append-only JSONL books — nothing is computed offline except the
+  documented policy-era epochs.</p>
 </header>
 
+<!-- CARD 1 ─ LEDGER SUMMARY -->
 <section>
-  <div class="tabs" id="tabs" role="tablist"></div>
+  <div class="eyebrow">card 1 · ledger summary</div>
+  <h2>Pick a book</h2>
+  <div class="lgroups" id="lsel"></div>
+  <div id="summary"><p class="mini">loading…</p></div>
 </section>
 
-<section id="view">
-  <p class="mini">loading the book…</p>
+<!-- CARD 2 ─ DECISION TABLE -->
+<section>
+  <div class="eyebrow">card 2 · decision table</div>
+  <h2>Decisions, newest first</h2>
+  <p class="sub small">At most 60 rows render at a time — press
+  “show more” to page deeper. Click any row to open its full trace in
+  card 3. Flags are computed client-side from the raw row.</p>
+  <div class="fbar" id="fbar"></div>
+  <div id="dtable"><p class="mini">loading…</p></div>
+</section>
+
+<!-- CARD 3 ─ TRADE TRACE -->
+<section>
+  <div class="eyebrow">card 3 · trade trace</div>
+  <h2>Why this happened</h2>
+  <div id="trace"><p class="mini">click a row in card 2 to trace one
+  decision end to end.</p></div>
 </section>
 
 <footer>
-  <p>Prefer the old dense views? <a href="instrument.html">The
-  Instrument</a> · <a href="home_classic.html">Classic ledgers</a>.</p>
-  <p class="files" style="margin-top:6px">Raw books (fetch them yourself
-  from <code>results/</code>):
-  <code>pt_trades.jsonl</code> <code>pt2_trades.jsonl</code>
-  <code>pt3_trades.jsonl</code> <code>pt4_trades.jsonl</code>
-  <code>pt5_trades.jsonl</code> <code>pt6_trades.jsonl</code>
-  <code>pt7_trades.jsonl</code> <code>pt8_trades.jsonl</code>
-  <code>pb_bets.jsonl</code> <code>loss_reviews.jsonl</code>
-  <code>treatments.jsonl</code></p>
+  <details class="drawer">
+    <summary>Raw source ↓ — for technical reviewers</summary>
+    <p class="rawlist" style="margin-top:8px">
+      <a href="../results/pt_trades.jsonl"><code>pt_trades.jsonl</code></a> Follower ·
+      <a href="../results/pt2_trades.jsonl"><code>pt2_trades.jsonl</code></a> Ladder ·
+      <a href="../results/pt3_trades.jsonl"><code>pt3_trades.jsonl</code></a> Disciplined ·
+      <a href="../results/pt4_trades.jsonl"><code>pt4_trades.jsonl</code></a> Gambler ·
+      <a href="../results/pt5_trades.jsonl"><code>pt5_trades.jsonl</code></a> Saver ·
+      <a href="../results/pt6_trades.jsonl"><code>pt6_trades.jsonl</code></a> MLE ·
+      <a href="../results/pt7_trades.jsonl"><code>pt7_trades.jsonl</code></a> Patient ·
+      <a href="../results/pt8_trades.jsonl"><code>pt8_trades.jsonl</code></a> Ideal ·
+      <a href="../results/treatments.jsonl"><code>treatments.jsonl</code></a> per-window treatment EV ·
+      <a href="../results/incidents.jsonl"><code>incidents.jsonl</code></a> incident log.
+      Every number on this page is recomputed in your browser from these
+      files. Incident rows carry a single filed timestamp, not
+      start/end windows, so no per-trade “SEV-affected” flag is shown —
+      it would be a guess.</p>
+  </details>
 </footer>
 </main>
 
 <script>
 "use strict";
-/* fetch pattern shared with live_online.html / analyst.html:
-   cache-busted, no-store, line-parsed, null-safe */
-const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
-const jf = u => fetch(bust(u), { cache: "no-store" })
-  .then(r => r.ok ? r.json() : null).catch(() => null);
-const jl = u => fetch(bust(u), { cache: "no-store" })
-  .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
-    .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
-      catch { return null; } }).filter(Boolean)).catch(() => []);
-const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+/* ------------------------------------------------------------ fetch -- */
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
+  + Math.floor(Date.now() / 15000);
+const J = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? r.json() : null; } catch { return null; }
+};
+const JL = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.text()).split("\n").filter(l => l.trim())
+      .map(l => { try { return JSON.parse(l); } catch { return null; } })
+      .filter(Boolean);
+  } catch { return []; }
+};
 
-/* pt4 policy eras. v2 cutover is the documented epoch from
-   btc_rl/online.py (PT4_RESET_TS, same constant metrics_lab.html uses);
-   v3 cutover (PT4_RESET2_TS) is published in site_manifest.json .config
-   and fetched below — this value is only the fallback. */
-let PT4_V2_TS = 1787788353;
-let PT4_V3_TS = 1787994332;
-
-const R = "../results/";
-const BOOKS = [
-  { id: "pt",  emo: "🦊", label: "Follower",     file: "pt_trades.jsonl",  kind: "trader" },
-  { id: "pt2", emo: "🐢", label: "Ladder",       file: "pt2_trades.jsonl", kind: "trader" },
-  { id: "pt3", emo: "🦉", label: "Disciplined",  file: "pt3_trades.jsonl", kind: "trader" },
-  { id: "pt4", emo: "🐉", label: "Gambler",      file: "pt4_trades.jsonl", kind: "trader" },
-  { id: "pt5", emo: "🐿", label: "Saver",        file: "pt5_trades.jsonl", kind: "trader" },
-  { id: "pt6", emo: "🤖", label: "MLE",          file: "pt6_trades.jsonl", kind: "trader" },
-  { id: "pt7", emo: "🦩", label: "Patient",      file: "pt7_trades.jsonl", kind: "trader" },
-  { id: "pt8", emo: "👑", label: "Ideal",        file: "pt8_trades.jsonl", kind: "trader" },
-  { id: "pb",  emo: "📗", label: "Conviction",   file: "pb_bets.jsonl",    kind: "pb" },
-  { id: "lr",  emo: "🔍", label: "Loss reviews", file: "loss_reviews.jsonl", kind: "lr" },
-  { id: "tw",  emo: "⚖️", label: "Windows",      file: "treatments.jsonl", kind: "tw" }
-];
-
-const cacheRows = {};   // book id -> parsed rows
-let lrSummary = null;   // loss_reviews.json (by_sev)
-let expanded = false;   // "show all" state, reset per tab
-
-const fmtWhen = ts => ts == null ? "—" :
-  new Date(ts * 1000).toLocaleString("en-US",
-    { timeZone: "America/Los_Angeles", month: "short", day: "numeric",
-      hour: "2-digit", minute: "2-digit", hour12: false });
-const usd = c => c == null ? "—" :
+/* ------------------------------------------------------- formatting -- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;",
+  "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const usd = c => c == null || !isFinite(c) ? "—" :
   (c < 0 ? "−" : "") + "$" + (Math.abs(c) / 100).toLocaleString("en-US",
     { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const usdSigned = c => c == null ? "—" : (c >= 0 ? "+" : "−") + usd(Math.abs(c)).replace("−", "");
-const num = (v, d) => v == null ? "—" : Number(v).toFixed(d);
+const usdS = c => c == null || !isFinite(c) ? "—" :
+  (c >= 0 ? "+" : "−") + "$" + (Math.abs(c) / 100).toLocaleString("en-US",
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pc = v => v == null || !isFinite(v) ? "—" : (100 * v).toFixed(1) + "%";
+const cts = v => v == null || !isFinite(v) ? "—" :
+  (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢";
+const num = (v, d) => v == null || !isFinite(v) ? "—" : Number(v).toFixed(d);
+const fmtTZ = (ts, tz) => ts == null ? "—" :
+  new Date(ts * 1000).toLocaleString("en-US", { timeZone: tz,
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    hour12: false });
+const fmtET = ts => fmtTZ(ts, "America/New_York");
+const fmtIST = ts => fmtTZ(ts, "Asia/Kolkata");
+const fmtBoth = ts => ts == null ? "—" :
+  fmtET(ts) + " ET · " + fmtIST(ts) + " IST";
 
-function currentBook() {
-  const h = location.hash.replace("#", "");
-  if (BOOKS.some(b => b.id === h)) return h;
-  const s = localStorage.getItem("ledgers.tab");
-  if (BOOKS.some(b => b.id === s)) return s;
-  return "pt";
+/* ---------------------------------------------------------- ledgers -- */
+const R = "../results/";
+const LEDGERS = [
+  { id: "pt",  label: "Follower",    file: "pt_trades.jsonl",  kind: "trader",
+    policy: "Follower copies the current leader arm’s call at market every window, staking a flat slice of bankroll." },
+  { id: "pt2", label: "Ladder",      file: "pt2_trades.jsonl", kind: "trader",
+    policy: "Ladder follows the leader but sizes stakes by bankroll rung, banking gains as it climbs levels." },
+  { id: "pt3", label: "Disciplined", file: "pt3_trades.jsonl", kind: "trader",
+    policy: "Disciplined bets a fixed fraction only when model confidence clears the τ=0.62 gate, following the best source." },
+  { id: "pt4", label: "Gambler",     file: "pt4_trades.jsonl", kind: "trader",
+    policy: "Gambler bets roughly a third of bankroll on the leader’s call and (since v3) withdraws profits above the reset level — withdrawals are never re-staked." },
+  { id: "pt5", label: "Saver",       file: "pt5_trades.jsonl", kind: "trader",
+    policy: "Saver trades the leader’s call and skims a slice of every win into savings that are never re-staked." },
+  { id: "pt6", label: "MLE",         file: "pt6_trades.jsonl", kind: "trader",
+    policy: "MLE runs its own learned win-probability model over the window features and skips whenever its edge estimate is too small — it skips most windows." },
+  { id: "pt7", label: "Patient",     file: "pt7_trades.jsonl", kind: "trader",
+    policy: "Patient posts a limit below the quoted ask and only trades when that limit would have filled — otherwise the row is a recorded skip." },
+  { id: "pt8", label: "Ideal",       file: "pt8_trades.jsonl", kind: "trader",
+    policy: "Ideal combines Patient’s limit entry with stricter conviction requirements, so it trades rarely and records every pass." },
+  { id: "tw",  label: "Windows",     file: "treatments.jsonl", kind: "tw",
+    policy: "The system window ledger: one row per market window with the leader’s call, the settled outcome, and per-treatment EV — the same rows the SPRT judges." },
+];
+
+/* --------------------------------------------------------- state -- */
+const cache = {};          // id -> rows
+const fetchedAt = {};      // id -> Date.now()
+let sel = null;            // selected ledger id
+let shown = 60;            // rows rendered in card 2
+const RESULTF = new Set(); // won / lost / open
+const SIDEF = new Set();   // yes / no
+const BOOLF = new Set();   // hconf / lloss / flagged
+let traceKey = null;       // ticker|made_ts of traced row
+const TWF = new Set();     // helped / hurt / unchanged
+let FEE_FIX_TS = null;     // pt3 fee-floor incident ts (from incidents.jsonl)
+let treatCache = null;     // treatments rows (fetched on demand)
+
+function ledger() { return LEDGERS.find(l => l.id === sel) || LEDGERS[0]; }
+function rowKey(r) { return (r.ticker || "?") + "|" + (r.made_ts ?? "?"); }
+
+/* pt4 v3 epoch: first row that carries the wd_c withdrawal field (or
+   pv=3). Derived from the ledger itself, not hardcoded. */
+function pt4v3cut(rows) {
+  const f = rows.find(r => ("wd_c" in r) || r.pv === 3);
+  return f && f.made_ts != null ? f.made_ts : null;
 }
 
-function selectBook(id, push) {
-  localStorage.setItem("ledgers.tab", id);
-  if (push) history.replaceState(null, "", "#" + id);
-  expanded = false;
-  drawTabs(id);
-  render(id);
+/* -------------------------------------------------- per-row analysis -- */
+function stakeP90(rows) {
+  const s = rows.filter(r => !r.skipped && r.stake_c > 0)
+    .map(r => r.stake_c).sort((a, b) => a - b);
+  if (s.length < 10) return null;   // too few rows for a decile to mean much
+  return s[Math.floor(s.length * 0.9)];
+}
+function flagsFor(r, ctx) {
+  const f = [];
+  if (r.p_arm != null && r.p_arm >= 0.8 && r.win === 0)
+    f.push(["HIGH-CONF MISS", "crit"]);
+  if (r.pnl_c != null && r.pnl_c <= -1000)
+    f.push(["LARGE LOSS", "crit"]);
+  if (ctx.p90 != null && !r.skipped && r.stake_c != null
+      && r.stake_c >= ctx.p90)
+    f.push(["HIGH STAKE", "warn"]);
+  if (r.mins_left != null && r.mins_left > 12)
+    f.push(["STALE QUOTE", "warn"]);
+  if (ctx.id === "pt4" && ctx.v3cut != null && r.made_ts != null
+      && r.made_ts < ctx.v3cut)
+    f.push(["pre-v3", "era"]);
+  if (ctx.id === "pt3" && FEE_FIX_TS != null && r.made_ts != null
+      && r.made_ts < FEE_FIX_TS)
+    f.push(["pre-fee-fix", "era"]);
+  return f;
+}
+function ctxFor(rows) {
+  return { id: sel, p90: stakeP90(rows),
+    v3cut: sel === "pt4" ? pt4v3cut(rows) : null };
 }
 
-function drawTabs(sel) {
-  const t = document.getElementById("tabs");
-  t.innerHTML = BOOKS.map(b =>
-    `<button type="button" class="chip${b.id === sel ? " on" : ""}"` +
-    ` role="tab" aria-selected="${b.id === sel}" data-id="${b.id}">` +
-    `${b.emo} ${esc(b.label)}</button>`).join("");
-}
-document.getElementById("tabs").addEventListener("click", e => {
-  const btn = e.target.closest("button[data-id]");
-  if (btn) selectBook(btn.dataset.id, true);
-});
-window.addEventListener("hashchange", () => {
-  const h = location.hash.replace("#", "");
-  if (BOOKS.some(b => b.id === h)) selectBook(h, false);
-});
-
-async function rowsFor(book) {
-  if (!cacheRows[book.id]) cacheRows[book.id] = await jl(R + book.file);
-  return cacheRows[book.id];
-}
-
-const stat = (k, v, cls) =>
-  `<div class="stat"><span class="k">${k}</span>` +
-  `<span class="bignum${cls ? " " + cls : ""}">${v}</span></div>`;
-
-function resultCell(r) {
-  if (r.skipped) {
-    const why = r.limit_c != null
-      ? `<span class="skipnote">limit ${num(r.limit_c, 0)}¢ never filled</span>` : "";
-    return `<span class="pill miss">SKIPPED</span>${why}`;
-  }
-  if (r.win == null) return `<span class="pill pending">open</span>`;
-  return r.win
-    ? `<span class="pill ok">WON ${esc(usdSigned(r.pnl_c))}</span>`
-    : `<span class="pill bad">lost ${esc(usdSigned(r.pnl_c))}</span>`;
-}
-
-function eraChip(ts) {
-  if (ts >= PT4_V3_TS) return `<span class="era v3">v3</span>`;
-  if (ts >= PT4_V2_TS) return `<span class="era v2">v2</span>`;
-  return `<span class="era">v1</span>`;
-}
-
-function tableWrap(head, bodyRows, total) {
-  const shown = expanded ? bodyRows : bodyRows.slice(0, 50);
-  const more = !expanded && bodyRows.length > 50
-    ? `<div class="showall"><button type="button" class="btn" id="showall">` +
-      `show all ${total} rows</button></div>` : "";
-  return `<div class="scroll"><table><thead><tr>${head}</tr></thead>` +
-    `<tbody>${shown.join("")}</tbody></table></div>${more}`;
-}
-
-/* ------------------------------------------------ per-trader ledger -- */
-function renderTrader(book, rows) {
-  const settled = rows.filter(r => !r.skipped && r.win != null);
+/* -------------------------------------------------------- summaries -- */
+function traderStats(rows) {
+  const dec = rows.filter(r => !r.skipped);
+  const settled = dec.filter(r => r.win != null);
   const wins = settled.filter(r => r.win === 1).length;
   const pnl = settled.reduce((s, r) => s + (r.pnl_c || 0), 0);
-  const skipped = rows.filter(r => r.skipped).length;
-  const lastSettled = settled.length ? settled[settled.length - 1] : null;
-  const bank = lastSettled ? lastSettled.bankroll_c : null;
-
-  let extras = "";
-  if (book.id === "pt4") {
-    const wd = rows.reduce((s, r) => s + (r.wd_c || 0), 0);
-    extras += stat("💰 withdrawn", usd(wd));
+  const staked = settled.reduce((s, r) => s + (r.stake_c || 0), 0);
+  const conf = rows.filter(r => r.p_arm != null);
+  const asks = dec.filter(r => r.ask_c != null);
+  let peak = -Infinity, dd = 0;
+  const bank = [];
+  for (const r of rows) {
+    if (r.bankroll_c == null) continue;
+    bank.push({ ts: r.close_ts ?? r.made_ts, v: r.bankroll_c });
+    peak = Math.max(peak, r.bankroll_c);
+    dd = Math.max(dd, peak - r.bankroll_c);
   }
-  if (book.id === "pt5") {
-    const withSav = rows.filter(r => r.savings_c != null);
-    extras += stat("banked", usd(withSav.length
-      ? withSav[withSav.length - 1].savings_c : null));
+  const wdRows = rows.filter(r => r.withdrawn_c != null);
+  return {
+    decisions: rows.length, placed: dec.length,
+    skipped: rows.length - dec.length,
+    settled: settled.length, open: dec.length - settled.length,
+    winRate: settled.length ? wins / settled.length : null,
+    pnl, evPerDollar: staked > 0 ? 100 * pnl / staked : null,
+    maxDD: isFinite(dd) ? dd : null,
+    avgAsk: asks.length
+      ? asks.reduce((s, r) => s + r.ask_c, 0) / asks.length : null,
+    avgConf: conf.length
+      ? conf.reduce((s, r) => s + r.p_arm, 0) / conf.length : null,
+    bankroll: bank.length ? bank[bank.length - 1].v : null,
+    bankSeries: bank,
+    withdrawn: wdRows.length
+      ? wdRows[wdRows.length - 1].withdrawn_c
+      : rows.reduce((s, r) => s + (r.wd_c || 0), 0) || null,
+  };
+}
+function twStats(rows) {
+  const settled = rows.filter(r => r.outcome != null);
+  const above = settled.filter(r => r.outcome === 1).length;
+  const evs = rows.filter(r => r.ev && r.ev.champion != null)
+    .map(r => r.ev.champion);
+  const series = [];
+  let cum = 0;
+  for (const r of rows) {
+    if (!r.ev || r.ev.champion == null) continue;
+    cum += r.ev.champion;
+    series.push({ ts: r.close_ts, v: cum });
   }
-  if (book.id === "pt2") {
-    const withBank = rows.filter(r => r.banked_c != null);
-    extras += stat("rungs banked", usd(withBank.length
-      ? withBank[withBank.length - 1].banked_c : null));
-  }
-  if (["pt6", "pt7", "pt8"].includes(book.id))
-    extras += stat("skipped", skipped);
+  return { windows: rows.length, settled: settled.length,
+    aboveRate: settled.length ? above / settled.length : null,
+    meanEv: evs.length ? evs.reduce((s, v) => s + v, 0) / evs.length : null,
+    cumSeries: series };
+}
 
-  const strip = `<div class="strip">` +
-    stat("rows", rows.length) + stat("settled", settled.length) +
-    stat("wins – losses", wins + " – " + (settled.length - wins)) +
-    stat("total pnl", usdSigned(pnl), pnl >= 0 ? "pos" : "neg") +
-    stat("bankroll", usd(bank)) + extras + `</div>`;
-
-  const isPt4 = book.id === "pt4";
-  const hasWd = isPt4;
-  const hasSkim = book.id === "pt5";
-  const head =
-    `<th>when (PT)</th>` + (isPt4 ? `<th>era</th>` : "") +
-    `<th>side</th><th class="num">ask¢</th><th class="num">conf</th>` +
-    `<th class="num">stake</th><th>result</th>` +
-    (hasWd ? `<th class="num">💰 wd</th>` : "") +
-    (hasSkim ? `<th class="num">💰 skim</th>` : "") +
-    `<th class="num">bankroll</th>`;
-
-  const body = rows.slice().reverse().map(r => {
-    const side = r.side == null ? "—" :
-      `<span class="pill ${r.side === "yes" ? "yes" : "no"}">` +
-      `${esc(String(r.side).toUpperCase())}</span>`;
-    return `<tr><td>${fmtWhen(r.made_ts)}</td>` +
-      (isPt4 ? `<td>${r.made_ts != null ? eraChip(r.made_ts) : "—"}</td>` : "") +
-      `<td>${side}</td>` +
-      `<td class="num">${num(r.ask_c, 0)}</td>` +
-      `<td class="num">${r.p_arm != null ? (100 * r.p_arm).toFixed(1) + "%" : "—"}</td>` +
-      `<td class="num">${usd(r.stake_c)}</td>` +
-      `<td>${resultCell(r)}</td>` +
-      (hasWd ? `<td class="num">${r.wd_c ? usd(r.wd_c) : "—"}</td>` : "") +
-      (hasSkim ? `<td class="num">${r.skim_c ? usd(r.skim_c) : "—"}</td>` : "") +
-      `<td class="num">${usd(r.bankroll_c)}</td></tr>`;
+/* -------------------------------------------------- SVG line chart -- */
+/* single series → site palette --series-2; grid + axis labels from
+   theme tokens; direct end label; nearest-point hover, no libs */
+function lineSVG(series, unit) {
+  if (series.length < 2)
+    return '<p class="mini">not enough settled rows to chart yet.</p>';
+  const W = 720, H = 190, L = 62, Rp = 14, T = 14, B = 30;
+  const vs = series.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi === lo) { hi += 1; lo -= 1; }
+  const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+  const x = i => L + (W - L - Rp) * i / (series.length - 1);
+  const y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+  const fmtV = unit === "c"
+    ? v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢"
+    : v => "$" + Math.round(v / 100).toLocaleString("en-US");
+  const pts = series.map((p, i) =>
+    x(i).toFixed(1) + "," + y(p.v).toFixed(1)).join(" ");
+  const gridY = [lo + (hi - lo) * 0.5, hi - pad, lo + pad];
+  const grid = gridY.map(v =>
+    `<line class="gridline" x1="${L}" x2="${W - Rp}" y1="${y(v).toFixed(1)
+    }" y2="${y(v).toFixed(1)}"/>` +
+    `<text x="${L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end">${
+    esc(fmtV(v))}</text>`).join("");
+  const t0 = series[0].ts, t1 = series[series.length - 1].ts;
+  const last = series[series.length - 1];
+  const endY = Math.max(T + 8, Math.min(H - B - 2, y(last.v)));
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" data-n="${series.length
+    }" aria-label="line chart, ${series.length} points">` +
+    grid +
+    `<line class="axis" x1="${L}" x2="${W - Rp}" y1="${H - B}" y2="${H - B}"/>` +
+    `<text x="${L}" y="${H - 8}">${esc(fmtET(t0))} ET</text>` +
+    `<text x="${W - Rp}" y="${H - 8}" text-anchor="end">${esc(fmtET(t1))} ET</text>` +
+    `<polyline fill="none" stroke="var(--series-2)" stroke-width="2" ` +
+    `stroke-linejoin="round" points="${pts}"/>` +
+    `<circle cx="${x(series.length - 1).toFixed(1)}" cy="${y(last.v).toFixed(1)
+    }" r="3.5" fill="var(--series-2)"/>` +
+    `<text x="${(W - Rp - 6)}" y="${(endY - 7).toFixed(1)
+    }" text-anchor="end" font-weight="700" fill="var(--ink)">${
+    esc(fmtV(last.v))}</text>` +
+    `<g class="hov" style="display:none"><line y1="${T}" y2="${H - B
+    }" stroke="var(--axis)" stroke-dasharray="3 3"/>` +
+    `<circle r="4" fill="none" stroke="var(--series-2)" stroke-width="2"/>` +
+    `<text text-anchor="middle" font-weight="700" fill="var(--ink)"></text></g>` +
+    `<rect class="hit" x="${L}" y="${T}" width="${W - L - Rp}" height="${
+    H - T - B}" fill="transparent"/></svg>`;
+}
+function wireChart(host, series, unit) {
+  const svg = host.querySelector("svg");
+  if (!svg) return;
+  const hit = svg.querySelector(".hit"), hov = svg.querySelector(".hov");
+  const W = 720, H = 190, L = 62, Rp = 14, T = 14, B = 30;
+  const vs = series.map(p => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi === lo) { hi += 1; lo -= 1; }
+  const pad = (hi - lo) * 0.06; lo -= pad; hi += pad;
+  const fmtV = unit === "c"
+    ? v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢"
+    : v => "$" + (v / 100).toLocaleString("en-US",
+        { maximumFractionDigits: 0 });
+  hit.addEventListener("mousemove", e => {
+    const box = svg.getBoundingClientRect();
+    const px = (e.clientX - box.left) * W / box.width;
+    const i = Math.max(0, Math.min(series.length - 1,
+      Math.round((px - L) / (W - L - Rp) * (series.length - 1))));
+    const cx = L + (W - L - Rp) * i / (series.length - 1);
+    const cy = T + (H - T - B) * (1 - (series[i].v - lo) / (hi - lo));
+    hov.style.display = "";
+    const ln = hov.querySelector("line");
+    ln.setAttribute("x1", cx); ln.setAttribute("x2", cx);
+    const c = hov.querySelector("circle");
+    c.setAttribute("cx", cx); c.setAttribute("cy", cy);
+    const t = hov.querySelector("text");
+    t.setAttribute("x", Math.max(L + 40, Math.min(W - 60, cx)));
+    t.setAttribute("y", Math.max(T + 10, cy - 10));
+    t.textContent = fmtV(series[i].v) + " · " + fmtET(series[i].ts);
   });
-
-  return `<h2>${book.emo} ${esc(book.label)} — <code>${esc(book.file)}</code></h2>` +
-    strip + tableWrap(head, body, rows.length);
+  hit.addEventListener("mouseleave", () => { hov.style.display = "none"; });
 }
 
-/* --------------------------------------------------- conviction book -- */
-function renderPb(book, rows) {
-  const settled = rows.filter(r => r.win != null);
-  const wins = settled.filter(r => r.win === 1).length;
-  const pnl = settled.reduce((s, r) => s + (r.pnl_c || 0), 0);
-  const strip = `<div class="strip">` +
-    stat("rows", rows.length) + stat("settled", settled.length) +
-    stat("wins – losses", wins + " – " + (settled.length - wins)) +
-    stat("total pnl", (pnl >= 0 ? "+" : "−") + Math.abs(pnl).toFixed(1) + "¢",
-      pnl >= 0 ? "pos" : "neg") + `</div>`;
-
-  const head = `<th>ticker</th><th>when (PT)</th><th>side</th>` +
-    `<th class="num">price¢</th><th class="num">p(win)</th>` +
-    `<th>src</th><th>result</th>`;
-  const body = rows.slice().reverse().map(r => {
-    const side = r.side == null ? "—" :
-      `<span class="pill ${r.side === "yes" ? "yes" : "no"}">` +
-      `${esc(String(r.side).toUpperCase())}</span>`;
-    let res = `<span class="pill pending">open</span>`;
-    if (r.win != null) {
-      const p = r.pnl_c == null ? "" :
-        " " + (r.pnl_c >= 0 ? "+" : "−") + Math.abs(r.pnl_c).toFixed(1) + "¢";
-      res = r.win ? `<span class="pill ok">WON${p}</span>`
-                  : `<span class="pill bad">lost${p}</span>`;
-    }
-    return `<tr><td><code>${esc(r.ticker || "—")}</code></td>` +
-      `<td>${fmtWhen(r.made_ts)}</td><td>${side}</td>` +
-      `<td class="num">${num(r.price_c, 1)}</td>` +
-      `<td class="num">${r.p_win != null ? (100 * r.p_win).toFixed(1) + "%" : "—"}</td>` +
-      `<td>${esc(r.src || "—")}</td><td>${res}</td></tr>`;
-  });
-  return `<h2>${book.emo} Conviction Book — <code>${esc(book.file)}</code></h2>` +
-    `<p class="sub small">One paper contract per window at the quoted
-    price — the book of what the model believed, priced.</p>` +
-    strip + tableWrap(head, body, rows.length);
+/* --------------------------------------------- CARD 1 — summary -- */
+function drawSelector() {
+  const traders = LEDGERS.filter(l => l.kind === "trader");
+  const sys = LEDGERS.filter(l => l.kind === "tw");
+  const chip = l => `<button type="button" class="chip${l.id === sel
+    ? " on" : ""}" data-led="${l.id}">${esc(l.label)}</button>`;
+  document.getElementById("lsel").innerHTML =
+    `<span class="glab">traders</span><span class="lchips">${
+    traders.map(chip).join("")}</span>` +
+    `<span class="glab">system</span><span class="lchips">${
+    sys.map(chip).join("")}</span>`;
 }
+const hs = (k, v, cls) => `<div class="hs"><div class="k">${k}</div>` +
+  `<div class="v${cls ? " " + cls : ""}">${v}</div></div>`;
 
-/* ------------------------------------------------------ loss reviews -- */
-function sevChip(sev) {
-  if (sev == null) return "—";
-  const cls = sev <= 1 ? "s01" : sev <= 3 ? "s23" : sev === 4 ? "s4" : "s5";
-  return `<span class="sev-chip ${cls}">SEV-${sev}</span>`;
-}
-function renderLr(book, rows) {
-  const bySev = (lrSummary && lrSummary.by_sev) || null;
-  const strip = `<div class="strip">` + stat("reviews", rows.length) +
-    (bySev ? Object.keys(bySev).sort().map(k =>
-      stat(k, bySev[k])).join("") : "") + `</div>`;
-  const head = `<th>when (PT)</th><th>trader</th><th>sev</th>` +
-    `<th>grade</th><th>dominant</th><th class="num">pnl</th><th>response</th>`;
-  /* the file is appended in per-trader batches — sort, don't reverse */
-  const body = rows.slice()
-    .sort((a, b) => (b.close_ts || 0) - (a.close_ts || 0)).map(r =>
-    `<tr><td>${fmtWhen(r.close_ts)}</td>` +
-    `<td>${esc(r.label || r.trader || "—")}</td>` +
-    `<td>${sevChip(r.sev)}</td>` +
-    `<td class="small">${esc(r.grade || "—")}</td>` +
-    `<td>${esc(r.dominant || "—")}</td>` +
-    `<td class="num neg">${usd(r.pnl_c)}</td>` +
-    `<td><span class="resp" title="${esc(r.response || "")}">` +
-    `${esc(r.response || "—")}</span></td></tr>`);
-  return `<h2>${book.emo} Loss reviews — <code>${esc(book.file)}</code></h2>` +
-    `<p class="sub small">Every settled loss on the desk gets a filed
-    review: severity, grade, dominant factor, and the written response.
-    Severity counts come from <code>loss_reviews.json</code>.</p>` +
-    strip + tableWrap(head, body, rows.length);
-}
-
-/* ---------------------------------------------------- window ledger -- */
-function renderTw(book, rows) {
-  const strip = `<div class="strip">` + stat("windows", rows.length) + `</div>`;
-  const head = `<th>ticker</th><th>close (PT)</th><th>leader</th>` +
-    `<th>outcome</th><th class="num">regime acc</th>` +
-    `<th class="num">champion EV ¢/$1</th>`;
-  const body = rows.slice().reverse().slice(0, 50).map(r => {
-    const ev = r.ev && r.ev.champion != null ? r.ev.champion : null;
-    const out = r.outcome == null ? "—" : r.outcome
-      ? `<span class="pill yes">ABOVE</span>`
-      : `<span class="pill no">BELOW</span>`;
-    return `<tr><td><code>${esc(r.ticker || "—")}</code></td>` +
-      `<td>${fmtWhen(r.close_ts)}</td><td>${esc(r.leader || "—")}</td>` +
-      `<td>${out}</td><td class="num">${num(r.regime_acc, 2)}</td>` +
-      `<td class="num ${ev != null && ev >= 0 ? "pos" : "neg"}">` +
-      `${ev == null ? "—" : (ev >= 0 ? "+" : "−") + Math.abs(ev).toFixed(2) + "¢"}` +
-      `</td></tr>`;
-  });
-  return `<h2>${book.emo} Windows — <code>${esc(book.file)}</code></h2>` +
-    `<p class="sub small">the desk's paired window ledger — the same rows
-    the SPRT judges. Newest 50 windows shown.</p>` +
-    strip + `<div class="scroll"><table><thead><tr>${head}</tr></thead>` +
-    `<tbody>${body.join("")}</tbody></table></div>`;
-}
-
-/* ------------------------------------------------------------ render -- */
-async function render(id) {
-  const book = BOOKS.find(b => b.id === id) || BOOKS[0];
-  const view = document.getElementById("view");
-  view.innerHTML = `<p class="mini">reading ${esc(book.file)}…</p>`;
-  const rows = await rowsFor(book);
-  if (currentBook() !== book.id) return;   // user moved on mid-fetch
+function renderSummary(rows) {
+  const el = document.getElementById("summary");
+  const L = ledger();
   if (!rows.length) {
-    view.innerHTML = `<h2>${book.emo} ${esc(book.label)}</h2>` +
-      `<p class="mini">no rows in ${esc(book.file)} — nothing happened yet.</p>`;
+    el.innerHTML = `<p class="mini">no rows in ${esc(L.file)} yet.</p>`;
     return;
   }
-  view.innerHTML =
-    book.kind === "trader" ? renderTrader(book, rows) :
-    book.kind === "pb" ? renderPb(book, rows) :
-    book.kind === "lr" ? renderLr(book, rows) : renderTw(book, rows);
-  const btn = document.getElementById("showall");
-  if (btn) btn.addEventListener("click", () => { expanded = true; render(book.id); });
+  let tiles, series, unit, chartLab;
+  if (L.kind === "tw") {
+    const s = twStats(rows);
+    const evCols = new Set();
+    for (const r of rows)
+      for (const k of Object.keys(r.ev || {}))
+        if (k !== "champion" && k !== "champion_real") evCols.add(k);
+    tiles =
+      hs("windows", s.windows) +
+      hs("with outcome", s.settled) +
+      hs("ABOVE rate", pc(s.aboveRate)) +
+      hs("mean champion EV / $1", cts(s.meanEv),
+        s.meanEv == null ? "" : s.meanEv >= 0 ? "pos" : "neg") +
+      hs("treatment policies", evCols.size + " <small>ev columns</small>");
+    series = s.cumSeries; unit = "c";
+    chartLab = "cumulative champion EV (¢ per $1) across settled windows";
+  } else {
+    const s = traderStats(rows);
+    tiles =
+      hs("decisions", s.decisions + (s.skipped
+        ? ` <small>${s.skipped} skips</small>` : "")) +
+      hs("settled", s.settled + (s.open
+        ? ` <small>${s.open} open</small>` : "")) +
+      hs("win rate", pc(s.winRate)) +
+      hs("net P&L", usdS(s.pnl), s.pnl > 0 ? "pos" : s.pnl < 0 ? "neg" : "") +
+      hs("EV / $1 staked", cts(s.evPerDollar),
+        s.evPerDollar == null ? "" : s.evPerDollar >= 0 ? "pos" : "neg") +
+      hs("max drawdown", s.maxDD ? "−" + usd(s.maxDD).replace("−", "") : "—",
+        s.maxDD ? "neg" : "") +
+      hs("avg entry price", s.avgAsk == null ? "—"
+        : s.avgAsk.toFixed(1) + "¢") +
+      hs("avg confidence", pc(s.avgConf)) +
+      hs("current bankroll", usd(s.bankroll)) +
+      (sel === "pt4" ? hs("total withdrawn", usd(s.withdrawn),
+        s.withdrawn ? "pos" : "")
+        + `<div class="hs"><div class="k">withdrawal rule</div>` +
+        `<div class="v"><small>withdrawals are never re-staked</small>` +
+        `</div></div>` : "");
+    series = s.bankSeries; unit = "$";
+    chartLab = "bankroll ($) over rows that carry a bankroll mark" +
+      (sel === "pt4" ? " — withdrawals leave the bankroll and never return"
+        : "");
+  }
+  const age = fetchedAt[sel]
+    ? Math.round((Date.now() - fetchedAt[sel]) / 1000) : null;
+  el.innerHTML =
+    `<p class="sub small" style="margin-top:10px">${esc(L.policy)}</p>` +
+    `<div class="hstrip">${tiles}</div>` +
+    `<p class="mini" style="margin-bottom:-2px">${esc(chartLab)}</p>` +
+    `<div id="chart">${lineSVG(series, unit)}</div>` +
+    `<p class="mini provline">raw file: <code>${esc(R + L.file)
+    }</code> · ${rows.length} rows · fetched ${age == null ? "—"
+    : age + "s"} ago · shown ${fmtBoth(Math.floor(Date.now() / 1000))}</p>`;
+  wireChart(document.getElementById("chart"), series, unit);
 }
 
+/* ---------------------------------------------- CARD 2 — table -- */
+const FILTERS = [
+  ["result", "won", "Won"], ["result", "lost", "Lost"],
+  ["result", "open", "Open"],
+  ["side", "yes", "YES"], ["side", "no", "NO"],
+  ["bool", "hconf", "High confidence ≥0.8"],
+  ["bool", "lloss", "Large loss ≤ −$10"],
+  ["bool", "flagged", "Flagged"],
+];
+function drawFbar() {
+  const el = document.getElementById("fbar");
+  if (ledger().kind === "tw") {
+    el.innerHTML = `<span class="glab">windows ledger — outcome rows,` +
+      ` no per-trade filters</span>`;
+    return;
+  }
+  el.innerHTML = `<span class="glab">filter</span>` +
+    FILTERS.map(([g, k, lab]) => {
+      const on = g === "result" ? RESULTF.has(k)
+        : g === "side" ? SIDEF.has(k) : BOOLF.has(k);
+      return `<button type="button" class="chip sm${on ? " on" : ""}" ` +
+        `data-fg="${g}" data-fk="${k}">${esc(lab)}</button>`;
+    }).join("");
+}
+function passes(r, fl) {
+  if (RESULTF.size) {
+    const st = r.skipped ? "skip"
+      : r.win == null ? "open" : r.win === 1 ? "won" : "lost";
+    if (!RESULTF.has(st)) return false;
+  }
+  if (SIDEF.size && !SIDEF.has(String(r.side || ""))) return false;
+  if (BOOLF.has("hconf") && !(r.p_arm != null && r.p_arm >= 0.8))
+    return false;
+  if (BOOLF.has("lloss") && !(r.pnl_c != null && r.pnl_c <= -1000))
+    return false;
+  if (BOOLF.has("flagged") && !fl.length) return false;
+  return true;
+}
+function resultPill(r) {
+  if (r.skipped) return `<span class="pill miss">SKIP</span>`;
+  if (r.win == null) return `<span class="pill pending">OPEN</span>`;
+  return r.win === 1 ? `<span class="pill ok">WON</span>`
+    : `<span class="pill bad">LOST</span>`;
+}
+function renderTable(rows) {
+  const el = document.getElementById("dtable");
+  const L = ledger();
+  if (!rows.length) {
+    el.innerHTML = `<p class="mini">no rows in ${esc(L.file)} yet.</p>`;
+    return;
+  }
+  if (L.kind === "tw") { renderTwTable(rows, el); return; }
+  const ctx = ctxFor(rows);
+  const all = rows.slice().reverse()
+    .map(r => ({ r, fl: flagsFor(r, ctx) }))
+    .filter(x => passes(x.r, x.fl));
+  const page = all.slice(0, shown);
+  const head = `<tr><th>time (ET)</th><th>side</th>` +
+    `<th class="num">price¢</th><th class="num">conf</th>` +
+    `<th class="num">stake $</th><th>result</th>` +
+    `<th class="num">Δ P&L $</th><th>flags</th></tr>`;
+  const body = page.map(({ r, fl }) => {
+    const k = rowKey(r);
+    const side = r.side == null ? "—"
+      : `<span class="pill ${r.side === "yes" ? "yes" : "no"}">${
+        esc(String(r.side).toUpperCase())}</span>`;
+    const pnlCls = r.pnl_c == null || r.win == null ? ""
+      : r.pnl_c >= 0 ? "pos" : "neg";
+    return `<tr data-k="${esc(k)}"${k === traceKey ? ' class="sel"' : ""}>` +
+      `<td title="${esc(fmtIST(r.made_ts))} IST">${esc(fmtET(r.made_ts))}</td>` +
+      `<td>${side}</td>` +
+      `<td class="num">${num(r.ask_c, 0)}</td>` +
+      `<td class="num">${r.p_arm == null ? "—" : (100 * r.p_arm).toFixed(1) + "%"}</td>` +
+      `<td class="num">${r.skipped ? "—" : esc(usd(r.stake_c))}</td>` +
+      `<td>${resultPill(r)}</td>` +
+      `<td class="num ${pnlCls}">${r.skipped ? "—" : esc(usdS(r.pnl_c))}</td>` +
+      `<td>${fl.map(([t, c]) =>
+        `<span class="fl ${c}">${esc(t)}</span>`).join("") || ""}</td></tr>`;
+  }).join("");
+  const more = all.length > shown
+    ? `<div class="showmore"><button type="button" class="btn" ` +
+      `id="more">show more (${all.length - shown} hidden)</button></div>` : "";
+  el.innerHTML =
+    `<p class="mini">${all.length} of ${rows.length} rows match · ` +
+    `showing ${page.length}</p>` +
+    `<div class="scrollx"><table class="tt"><thead>${head}</thead>` +
+    `<tbody>${body}</tbody></table></div>` + more;
+}
+function renderTwTable(rows, el) {
+  const all = rows.slice().reverse();
+  const page = all.slice(0, shown);
+  const head = `<tr><th>close (ET)</th><th>leader</th><th>outcome</th>` +
+    `<th class="num">champion EV/$1</th><th class="num">treatments live</th></tr>`;
+  const body = page.map(r => {
+    const k = rowKey(r);
+    const ev = r.ev && r.ev.champion != null ? r.ev.champion : null;
+    const live = r.ev ? Object.keys(r.ev)
+      .filter(x => x !== "champion" && x !== "champion_real"
+        && r.ev[x] != null).length : 0;
+    const out = r.outcome == null ? `<span class="pill pending">OPEN</span>`
+      : r.outcome === 1 ? `<span class="pill yes">ABOVE</span>`
+      : `<span class="pill no">BELOW</span>`;
+    return `<tr data-k="${esc(k)}"${k === traceKey ? ' class="sel"' : ""}>` +
+      `<td title="${esc(fmtIST(r.close_ts))} IST">${esc(fmtET(r.close_ts))}</td>` +
+      `<td>${esc(r.leader || "—")}</td><td>${out}</td>` +
+      `<td class="num ${ev == null ? "" : ev >= 0 ? "pos" : "neg"}">${cts(ev)}</td>` +
+      `<td class="num">${live}</td></tr>`;
+  }).join("");
+  const more = all.length > shown
+    ? `<div class="showmore"><button type="button" class="btn" ` +
+      `id="more">show more (${all.length - shown} hidden)</button></div>` : "";
+  el.innerHTML =
+    `<p class="mini">${all.length} windows · showing ${page.length}</p>` +
+    `<div class="scrollx"><table class="tt"><thead>${head}</thead>` +
+    `<tbody>${body}</tbody></table></div>` + more;
+}
+
+/* ----------------------------------------------- CARD 3 — trace -- */
+function step(h, body, last) {
+  return `<div class="cstep${last ? " last" : ""}">` +
+    `<span class="rail"><span class="dotc"></span><span class="line">` +
+    `</span></span><div class="cbody"><div class="ch">${h}</div>${body
+    }</div></div>`;
+}
+async function loadTreatments() {
+  if (!treatCache) treatCache = await JL(R + "treatments.jsonl");
+  return treatCache;
+}
+function twCompareHTML(trow) {
+  if (!trow || !trow.ev)
+    return `<p class="mini">no treatments.jsonl row for this ticker — ` +
+      `the window predates the treatment ledger or was excluded.</p>`;
+  const champ = trow.ev.champion;
+  const keys = Object.keys(trow.ev)
+    .filter(k => k !== "champion" && k !== "champion_real");
+  const rows = keys.map(k => {
+    const v = trow.ev[k];
+    /* SKIP (null) is scored as 0¢ EV for the comparison — stated below */
+    const eff = (v == null ? 0 : v) - (champ == null ? 0 : champ);
+    const cls = eff > 1e-9 ? "helped" : eff < -1e-9 ? "hurt" : "unchanged";
+    return { k, v, eff, cls };
+  }).filter(x => !TWF.size || TWF.has(x.cls));
+  const chip = (k, lab) => `<button type="button" class="chip sm${
+    TWF.has(k) ? " on" : ""}" data-twf="${k}">${lab}</button>`;
+  const body = rows.map(x =>
+    `<tr><td>${esc(x.k)}</td>` +
+    `<td>${x.v == null ? '<span class="pill miss">SKIP</span>'
+      : '<span class="pill pending">BET</span>'}</td>` +
+    `<td class="${x.v == null ? "" : x.v >= 0 ? "pos" : "neg"}">${cts(x.v)}</td>` +
+    `<td class="${x.eff > 1e-9 ? "pos" : x.eff < -1e-9 ? "neg" : ""}">${
+      cts(x.eff)}</td></tr>`).join("");
+  return `<p class="mini">champion EV this window: <b>${cts(champ)
+    }</b> per $1${trow.ev.champion_real != null
+      ? ` · realized ${cts(trow.ev.champion_real)}` : ""
+    } · SKIP is scored as 0¢ for the Δ column</p>` +
+    `<div class="fbar" id="twfbar">${chip("helped", "Treatment helped")}${
+    chip("hurt", "Treatment hurt")}${chip("unchanged", "Unchanged")}</div>` +
+    `<div class="scrollx"><table class="twtbl"><thead><tr>` +
+    `<th>treatment</th><th>action</th><th>EV/$1</th><th>Δ vs champion</th>` +
+    `</tr></thead><tbody>${body ||
+    `<tr><td colspan="4">no treatments match the filter</td></tr>`
+    }</tbody></table></div>`;
+}
+function wireTwFilter(host, trow) {
+  const bar = host.querySelector("#twfbar");
+  if (!bar) return;
+  bar.addEventListener("click", e => {
+    const b = e.target.closest("button[data-twf]");
+    if (!b) return;
+    const k = b.dataset.twf;
+    if (TWF.has(k)) TWF.delete(k); else TWF.add(k);
+    const box = host.querySelector("#twcmp");
+    box.innerHTML = twCompareHTML(trow);
+    wireTwFilter(host, trow);
+  });
+}
+const USED_IN = `<div class="usedin"><span class="glab" style="font-size:10px;
+  font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--faint)">used in</span>
+  <a href="board.html">Research Command — experiment rows</a>
+  <a href="watchtower.html">Control Tower — incidents</a>
+  <a href="metrics_lab.html">Metrics Lab — analysis</a></div>`;
+
+async function renderTrace() {
+  const el = document.getElementById("trace");
+  const rows = cache[sel] || [];
+  const r = rows.find(x => rowKey(x) === traceKey);
+  if (!r) {
+    el.innerHTML = `<p class="mini">click a row in card 2 to trace one ` +
+      `decision end to end.</p>`;
+    return;
+  }
+  const L = ledger();
+  if (L.kind === "tw") { renderTwTrace(r, el); return; }
+  const fl = flagsFor(r, ctxFor(rows));
+  const feeTotal = r.fee_c != null && r.contracts != null
+    ? Math.round(r.fee_c * r.contracts) : null;
+  const be = r.ask_c != null
+    ? (r.ask_c + (r.fee_c || 0)) / 100 : null;
+  const outcomeTxt = r.actual === 1 ? "settled ABOVE the strike"
+    : r.actual === 0 ? "settled BELOW the strike"
+    : "not settled yet";
+  const head = `<div class="trhead"><code>${esc(r.ticker || "—")}</code>` +
+    `${resultPill(r)}<span class="ts">made ${esc(fmtBoth(r.made_ts))
+    }</span><span class="ts">closes ${esc(fmtBoth(r.close_ts))}</span>` +
+    `<span>${fl.map(([t, c]) =>
+      `<span class="fl ${c}">${esc(t)}</span>`).join("")}</span></div>`;
+  const tiles = `<div class="hstrip">` +
+    hs("side", r.side == null ? "—" : esc(String(r.side).toUpperCase())) +
+    hs("price", num(r.ask_c, 1) + "¢") +
+    hs("model confidence", pc(r.p_arm)) +
+    hs("break-even win prob", pc(be)) +
+    hs("stake", r.skipped ? "— (skipped)" : usd(r.stake_c)) +
+    hs("fees", feeTotal == null ? "—" : usd(feeTotal) +
+      ` <small>${num(r.fee_c, 2)}¢ × ${r.contracts}</small>`) +
+    hs("outcome P&L", r.skipped ? "—" : usdS(r.pnl_c),
+      r.pnl_c > 0 && r.win != null ? "pos"
+        : r.pnl_c < 0 ? "neg" : "") +
+    hs("bankroll after", usd(r.bankroll_c)) +
+    `</div>`;
+  const fillTxt = r.skipped
+    ? (r.limit_c != null
+      ? `<b>no fill</b> — limit ${num(r.limit_c, 0)}¢ posted below the ` +
+        `quoted ${num(r.quoted_c ?? r.ask_c, 0)}¢ never filled; the pass ` +
+        `is recorded.`
+      : `<b>no trade</b> — the policy skipped this window; the pass is ` +
+        `recorded.`)
+    : `<b>${r.contracts ?? "—"} contracts</b> at ${num(r.ask_c, 1)}¢ + ${
+      num(r.fee_c, 2)}¢ fee = ${esc(usd(r.stake_c))} staked` +
+      (r.limit_c != null ? ` (limit ${num(r.limit_c, 0)}¢ vs quoted ${
+        num(r.quoted_c, 0)}¢)` : "") + `.`;
+  const settleTxt = r.win == null && !r.skipped
+    ? `window closes ${esc(fmtBoth(r.close_ts))} — still open.`
+    : `at ${esc(fmtBoth(r.close_ts))} BTC ${esc(outcomeTxt)} — the ${
+      esc(String(r.side || "—").toUpperCase())} contract ${
+      r.skipped ? "was never held" : r.win === 1
+        ? `paid 100¢: <b>${esc(usdS(r.pnl_c))}</b>`
+        : `expired worthless: <b>${esc(usdS(r.pnl_c))}</b>`}` +
+      (r.bankroll_c != null ? ` · bankroll ${esc(usd(r.bankroll_c))}` : "") +
+      (r.wd_c ? ` · withdrew ${esc(usd(r.wd_c))}` : "") + `.`;
+  const chain = `<div class="chain">` +
+    step("1 · market data", `window <b>${esc(r.ticker || "—")}</b>, strike ` +
+      `<b>${r.strike == null ? "—" : "$" + Number(r.strike)
+        .toLocaleString("en-US", { maximumFractionDigits: 2 })}</b>, ask ${
+      num(r.ask_c, 1)}¢, ${num(r.mins_left, 1)} min left` +
+      (r.depth_cap_c != null ? `, book depth cap ${esc(usd(r.depth_cap_c))}`
+        : "") + `.`) +
+    step("2 · model predictions", `arm confidence <b>${pc(r.p_arm)
+      }</b>${r.rec10 ? ` · recent form ${esc(r.rec10)} over last 10`
+      : ""}${r.p_win != null ? ` · MLE p(win) ${pc(r.p_win)}` : ""}${
+      r.trained != null ? ` · model trained on ${r.trained} rows` : ""}.`) +
+    step("3 · leader", (r.leader || r.src)
+      ? `leader arm this window: <b>${esc(r.leader || r.src)}</b>${
+        r.src && r.leader && r.src !== r.leader
+          ? ` (source ${esc(r.src)})` : ""}.`
+      : `no leader field on this row.`) +
+    step("4 · policy rule", esc(L.policy)) +
+    step("5 · paper fill", fillTxt) +
+    step("6 · settlement", settleTxt, true) +
+    `</div>`;
+  el.innerHTML = head + tiles + chain + USED_IN +
+    `<details class="drawer" open><summary>What changed? (control vs ` +
+    `treatment) — same window in treatments.jsonl</summary>` +
+    `<div id="twcmp"><p class="mini">loading treatments.jsonl…</p></div>` +
+    `</details>`;
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  const treats = await loadTreatments();
+  const trow = treats.find(t => t.ticker === r.ticker) || null;
+  const box = document.getElementById("twcmp");
+  if (box) { box.innerHTML = twCompareHTML(trow); wireTwFilter(el, trow); }
+}
+function renderTwTrace(r, el) {
+  const out = r.outcome == null ? `<span class="pill pending">OPEN</span>`
+    : r.outcome === 1 ? `<span class="pill yes">ABOVE</span>`
+    : `<span class="pill no">BELOW</span>`;
+  const head = `<div class="trhead"><code>${esc(r.ticker || "—")}</code>` +
+    `${out}<span class="ts">closed ${esc(fmtBoth(r.close_ts))}</span></div>`;
+  const tiles = `<div class="hstrip">` +
+    hs("leader", esc(r.leader || "—")) +
+    hs("regime accuracy", num(r.regime_acc, 2)) +
+    hs("champion EV / $1", cts(r.ev && r.ev.champion),
+      r.ev && r.ev.champion != null
+        ? (r.ev.champion >= 0 ? "pos" : "neg") : "") +
+    `</div>`;
+  el.innerHTML = head + tiles + USED_IN +
+    `<div style="margin-top:12px" id="twcmp">${twCompareHTML(r)}</div>`;
+  wireTwFilter(el, r);
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/* ------------------------------------------------------ wiring -- */
+document.getElementById("lsel").addEventListener("click", e => {
+  const b = e.target.closest("button[data-led]");
+  if (b) selectLedger(b.dataset.led, true);
+});
+document.getElementById("fbar").addEventListener("click", e => {
+  const b = e.target.closest("button[data-fg]");
+  if (!b) return;
+  const set = b.dataset.fg === "result" ? RESULTF
+    : b.dataset.fg === "side" ? SIDEF : BOOLF;
+  if (set.has(b.dataset.fk)) set.delete(b.dataset.fk);
+  else set.add(b.dataset.fk);
+  shown = 60;
+  drawFbar();
+  renderTable(cache[sel] || []);
+});
+document.getElementById("dtable").addEventListener("click", e => {
+  const more = e.target.closest("#more");
+  if (more) { shown += 60; renderTable(cache[sel] || []); return; }
+  const tr = e.target.closest("tr[data-k]");
+  if (!tr) return;
+  traceKey = tr.dataset.k;
+  renderTable(cache[sel] || []);
+  renderTrace();
+});
+
+async function fetchSel(force) {
+  if (!cache[sel] || force) {
+    const rows = await JL(R + ledger().file);
+    if (rows.length || !cache[sel]) cache[sel] = rows;
+    fetchedAt[sel] = Date.now();
+  }
+  return cache[sel];
+}
+async function selectLedger(id, push) {
+  if (!LEDGERS.some(l => l.id === id)) id = "pt";
+  sel = id;
+  localStorage.setItem("evidence.ledger", id);
+  if (push) history.replaceState(null, "", "#" + id);
+  shown = 60; traceKey = null;
+  RESULTF.clear(); SIDEF.clear(); BOOLF.clear(); TWF.clear();
+  drawSelector(); drawFbar();
+  document.getElementById("summary").innerHTML =
+    `<p class="mini">reading ${esc(ledger().file)}…</p>`;
+  const rows = await fetchSel(false);
+  if (sel !== id) return;      // user moved on mid-fetch
+  renderSummary(rows); renderTable(rows); renderTrace();
+}
+window.addEventListener("hashchange", () => {
+  const h = location.hash.replace("#", "");
+  if (LEDGERS.some(l => l.id === h) && h !== sel) selectLedger(h, false);
+});
+
+/* poll only the selected ledger, every 15s */
+async function poll() {
+  if (!sel) return;
+  const id = sel;
+  const rows = await fetchSel(true);
+  if (sel !== id) return;
+  renderSummary(rows); renderTable(rows);
+  if (traceKey) renderTrace();
+}
+setInterval(poll, 15000);
+
 (async function init() {
-  const [manifest, lrs] = await Promise.all([
-    jf(R + "site_manifest.json"), jf(R + "loss_reviews.json")]);
-  const cfg = (manifest && manifest.config) || {};
-  if (cfg.PT4_RESET2_TS != null) PT4_V3_TS = cfg.PT4_RESET2_TS;
-  if (cfg.PT4_RESET_TS != null) PT4_V2_TS = cfg.PT4_RESET_TS;
-  lrSummary = lrs;
-  selectBook(currentBook(), false);
+  /* the pt3 fee-floor era cutoff comes from the incident ledger itself */
+  const inc = await JL(R + "incidents.jsonl");
+  const fee = inc.find(i =>
+    typeof i.id === "string" && i.id.includes("fee-floor")
+    && typeof i.ts === "number");
+  if (fee) FEE_FIX_TS = fee.ts;
+  const h = location.hash.replace("#", "");
+  const saved = localStorage.getItem("evidence.ledger");
+  const start = LEDGERS.some(l => l.id === h) ? h
+    : LEDGERS.some(l => l.id === saved) ? saved : "pt";
+  selectLedger(start, false);
 })();
 </script>
 <script src="glossary.js" defer></script>

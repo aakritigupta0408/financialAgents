@@ -117,19 +117,33 @@ META = {
 
 # Lifecycle rulings — OWNER decisions only (2026-08-29, "all 4"):
 # the analysis layer recommends; the human moves lifecycle (§33).
+# GREAT SIMPLIFICATION (PM 2026-08-29, docs/RETIREMENT_MANIFEST.md):
+# lifecycle vocabulary is now the 6-state machine — CONTROL /
+# TREATMENT / SHADOW / QUALIFIED / RETIRED / ARCHIVED. ONE legacy
+# experiment remains (M10 control vs M10+M8 treatment); retired
+# treatments stopped consuming runtime (no new ev rows) and their
+# paired history froze as evidence.
 LIFECYCLE = {
-    "t_limit": "RETIRED (standalone) — evidence keeps accruing for "
-               "the record; no promotion path",
-    "t_fshare": "RETIRED (branch)",
-    "t_fs_reg": "RETIRED (branch)",
-    "t_evlead": "REDESIGN — objective right, implementation losing",
-    "t_edgeband": "FROZEN (lean-machine 08-29) — LIVE — new challenger, collecting from zero",
+    "t_regime": "SHADOW (diagnostic) — standalone question folded "
+                "into M10+M8; single-factor evidence stream kept",
+    "t_exec": "CONTROL — the legacy experiment incumbent",
+    "t_exec_reg": "TREATMENT — the one legacy challenger (does "
+                  "regime filtering add value beyond the exec guard?)",
+    "t_limit_reg": "SHADOW (diagnostic only) — no promotion path",
+    "t_limit": "RETIRED (standalone) — history frozen 08-29; no "
+               "promotion path",
+    "t_fshare": "RETIRED (branch) — history frozen 08-29",
+    "t_fs_reg": "RETIRED (branch) — history frozen 08-29",
+    "t_evlead": "RETIRED (implementation) — objective right, "
+                "implementation losing; a redesign would be a NEW "
+                "experiment",
+    "t_edgeband": "SHADOW / HOLD — anti-signal research, collecting",
     # Phase-5 lean cleanup (master directive §5, 2026-08-29): max 3
     # active treatments per tier; dominated/stale/thin branches close.
     "t_knife": "RETIRED (lean) — dominated by M8, stale at 190 "
                "windows (+0.4c, LLR −0.07)",
-    "t_cheap": "RETIRED (lean) — 15% coverage: a different product; "
-               "cheap-price idea survives inside M13's band floor",
+    "t_cheap": "ARCHIVED — hypothesis retained inside M13's band "
+               "floor; 15% coverage made it a different product",
     "t_both": "RETIRED (lean) — adds nothing over M8 (−3.7c paired "
               "increment, P13%); dominated by M10+M8",
     "t_cal": "RETIRED (lean) — the M1 gate at 13% coverage; the "

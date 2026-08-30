@@ -72,6 +72,11 @@ def _load_treats():
     field-identical to what the daemon publishes."""
     treats = {}
     for k, lab, fn, why in O._treat_policies():
+        # Great Simplification (08-29): retired treatments leave the
+        # decision board — their SPRT state and paired history stay
+        # frozen in the artifacts, but no live analysis row remains
+        if k in getattr(O, "RETIRED_TREATMENTS", ()):
+            continue
         treats[k] = treatments.Treatment(
             k, lab, fn, why, edge=O.TREAT_EDGE, min_n=O.TREAT_MIN_N,
             alpha=getattr(O, "TREAT_ALPHA", 0.05),
