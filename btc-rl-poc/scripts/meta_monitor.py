@@ -31,6 +31,7 @@ WATCH = {
     "world.json": (600, 2, "world/clock emitter"),
     "model_internals.json": (3600, 2, "hourly introspection"),
     "metrics_history.jsonl": (3600, 3, "retrain history append"),
+    "event_capture.json": (10, 12, "Layer-A event capture heartbeat"),
 }
 
 
