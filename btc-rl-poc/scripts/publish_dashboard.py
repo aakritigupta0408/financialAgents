@@ -82,6 +82,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("execution_ledger.json", None),
     ("exec_sensitivity.json", None),
     ("build_manifest.json", None),
+    ("oracle_calls.json", None),
     ("reconciliation.json", None),
     ("meta_monitors.json", None),
     ("leakage_canaries.json", None),

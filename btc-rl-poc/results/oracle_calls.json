@@ -1,0 +1,41 @@
+{
+ "generated_ts": 1788048952,
+ "config": {
+  "conf_threshold": 0.8,
+  "envelope_mins_left": [
+   6.0,
+   13.0
+  ],
+  "primary_caller": "kb2",
+  "shadow_caller": "kb5",
+  "promise": "selective accuracy of calls >= 0.80"
+ },
+ "kb2": {
+  "windows_seen": 169,
+  "settled": 169,
+  "calls": 11,
+  "coverage": 0.065,
+  "hits": 10,
+  "selective_accuracy": 0.909,
+  "wilson_ci95": [
+   0.623,
+   0.984
+  ],
+  "promise_met": true,
+  "no_calls": 158
+ },
+ "kb5": {
+  "windows_seen": 168,
+  "settled": 168,
+  "calls": 43,
+  "coverage": 0.256,
+  "hits": 34,
+  "selective_accuracy": 0.791,
+  "wilson_ci95": [
+   0.648,
+   0.886
+  ],
+  "promise_met": false,
+  "no_calls": 125
+ }
+}

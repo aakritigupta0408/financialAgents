@@ -41,6 +41,8 @@ live-money policy terminates with them (PROGRAM.md §3).
 
 | 08-29 | Standard v1.0.3: execution plane R1→R2 — quote-age/delay sensitivity curves (Δ 0-5min) + E1/E2/E3 execution models live on the cron. Findings: champion edge SURVIVES the calibrated-conservative model E2 (+2.7¢/$1) and FAILS stress E3 (−3.8¢/$1); staleness curve rises with age (+42¢ at 5min stale) — the champion pays momentum-inflated asks, the adverse-selection signature confirmed by an independent method; sub-minute latency honestly UNAVAILABLE at per-minute granularity. System now R1 gated by security alone (dependency lock/SBOM) | scripts/emit_exec_sensitivity.py; spot-check exact; deterministic across runs | evidence + standing directive | live |
 
+| 08-29 | M14 "The Oracle Call" created (owner spec: 80-90% certainty, 2-9 min into the window): pre-registered selective-prediction product — kb2 calls only at claimed confidence ≥0.80 within mins_left∈[6,13], NO CALL otherwise; promise metric = selective accuracy ≥0.80 with Wilson CI + coverage, prequential from pre-settle-stamped rows; kb5 logged as shadow caller, never merged. Launch measurement: 11 calls / 169 windows — selective accuracy 90.9% (CI [62%, 98%]), coverage 6.5%, promise MET. Coverage-raising research (calibration variants, envelope timing, pooling) proceeds only as further treatments | owner directive; exploratory table showed the 0.8-0.9 claim band verifying 79-91% across arms; scripts/emit_oracle_calls.py on the 10-min chain | human (spec) + evidence | live, collecting |
+
 Proposal queue (PORTFOLIO team writes here; human ratifies):
 - **PROPOSE: retire or redesign M1 (Platt calibration layer).**
   Evidence (introspection wave, 08-29 snapshot): prequential log-loss
