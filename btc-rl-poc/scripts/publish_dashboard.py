@@ -155,6 +155,19 @@ def publish_ghpages() -> None:
 def sync_main() -> None:
     if STAMP.exists() and time.time() - STAMP.stat().st_mtime < MAIN_SYNC_S:
         return
+    # SELF-HEAL (INC-2026-08-29-stale-rebase, twice): a crashed rebase
+    # leaves .git/rebase-merge + a detached HEAD; every later sync then
+    # fails or commits into the void. Heal both conditions before
+    # touching anything.
+    gitdir = SITE_REPO / ".git"
+    if (gitdir / "rebase-merge").exists() or \
+            (gitdir / "rebase-apply").exists():
+        _git(SITE_REPO, "rebase", "--abort", check=False)
+    if _git(SITE_REPO, "symbolic-ref", "-q", "HEAD",
+            check=False).returncode != 0:      # detached HEAD
+        # re-attach main AT the current commit (keeps any sync
+        # commits made while detached; push targets refs/heads/main)
+        _git(SITE_REPO, "checkout", "-B", "main", check=False)
     # rebase first: the site's own workflows commit to origin/main (e.g.
     # weekly content refresh), and a plain push then non-fast-forwards
     # and wedges every hourly sync after it
