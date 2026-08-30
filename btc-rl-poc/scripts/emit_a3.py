@@ -40,6 +40,16 @@ ENV_LO, ENV_HI = 6.0, 13.0
 CUTOFF_S = 60
 FRESH_S = 10.0
 V11_REGISTERED_TS = 1788059100   # 2026-08-29 ~19:45 PT — v1.1 frozen
+# §53 A3-12: the spec file's hash at v1.1 freeze. If A3_SPEC.yaml
+# ever differs, the invariant fails — any change is a new experiment.
+SPEC_HASH_FROZEN = "2dbc2201416a296d"
+# Prospective shadows (TA order, registered 2026-08-29 20:00 PT):
+# identical machines at 5c / 15c dips, observing the SAME future
+# tape, placing nothing, unable to alter v1.1. Registered NOW so no
+# retrospective threshold selection is ever possible.
+SHADOWS = {"T05": 5.0, "T15": 15.0}
+SHADOW_REGISTERED_TS = 1788067225
+MARKOUT_H = (1, 5, 10, 30, 60)
 
 
 def fee(a):
@@ -73,6 +83,37 @@ def load_events():
 
 def side_ask(q, up):
     return q[1] if up else (q[2] if q[2] is not None else 100 - q[1])
+
+
+def markouts(q, up, t0, price):
+    """Executable side ask at t0+h minus fill price (buy convention);
+    nearest quote within ±2s else UNAVAILABLE (never interpolated)."""
+    out = {}
+    for h in MARKOUT_H:
+        near = None
+        for x in q:
+            if abs(x[0] - (t0 + h)) <= 2.0:
+                if near is None or abs(x[0] - (t0 + h)) < \
+                        abs(near[0] - (t0 + h)):
+                    near = x
+        out[f"markout_{h}s"] = (round(side_ask(near, up) - price, 1)
+                                if near else "UNAVAILABLE")
+    return out
+
+
+def run_shadow(dip_c, q, up, reg_ts, call_ask, conf_at, cutoff_ts):
+    """Same machine at a different dip threshold — observation only."""
+    for x in q:
+        if x[0] <= reg_ts or x[0] > cutoff_ts:
+            continue
+        if conf_at(x[0]) < FLOOR:
+            return {"state": "INVALIDATED"}
+        a = side_ask(x, up)
+        if call_ask - a >= dip_c:
+            return {"state": "FILLED", "entry_ask": round(a, 1),
+                    "entry_ts": x[0],
+                    "improvement_c": round(call_ask - a, 1)}
+    return {"state": "MISSED"}
 
 
 def main():
@@ -164,19 +205,48 @@ def main():
                 st["improvement_c"] = round(call_ask - a, 1)
                 st["entry_conf"] = round(c, 3)
                 break
+        # §17-19 diagnostics (research only, never decisions): best
+        # valid executable price before cutoff while thesis alive
+        valid_asks = [side_ask(x, up) for x in q
+                      if reg_ts < x[0] <= cutoff_ts
+                      and conf_at(x[0]) >= FLOOR]
+        if valid_asks:
+            bv = min(valid_asks)
+            st["best_valid_price"] = round(bv, 1)
+            st["best_valid_improvement_c"] = round(call_ask - bv, 1)
+        # prospective threshold shadows (observation only)
+        st["shadows"] = {name: run_shadow(dc, q, up, reg_ts,
+                                          call_ask, conf_at,
+                                          cutoff_ts)
+                         for name, dc in SHADOWS.items()}
         settled = [r for r in rs if r.get("actual") is not None]
         if settled:
             won = bool(settled[-1]["actual"]) == up
             st["won"] = won
             st["settled"] = True
             st["control_pnl"] = round(pnl(call_ask, won), 4)
+            st.update(**{f"c0_{k}": v for k, v in
+                         markouts(q, up, reg_ts, call_ask).items()})
             if st["state"] == "TRIGGERED":
                 st["state"] = "FILLED"      # v1 fill = take ask, qty 1
                 st["a3_pnl"] = round(pnl(st["entry_ask"], won), 4)
+                st.update(**markouts(q, up, st["entry_ts"],
+                                     st["entry_ask"]))
+                if st.get("best_valid_improvement_c", 0) > 0:
+                    st["ecr"] = round(st["improvement_c"]
+                                      / st["best_valid_improvement_c"],
+                                      3)
+                    st["wait_regret_c"] = round(
+                        st["best_valid_improvement_c"]
+                        - st["improvement_c"], 1)
             else:
                 if st["state"] == "REGISTERED":
                     st["state"] = "MISSED"
                 st["a3_pnl"] = 0.0
+            for name in SHADOWS:
+                sh = st["shadows"][name]
+                sh["pnl"] = (round(pnl(sh["entry_ask"], won), 4)
+                             if sh["state"] == "FILLED" else 0.0)
             ledger.append(st)
         else:
             if live is None or cts > (live.get("close_ts") or 0):
@@ -216,7 +286,47 @@ def main():
                sum(e["control_pnl"] for e in el
                    if e["state"] in ("MISSED", "INVALIDATED")), 3)
            if el else None}
+    # outlier-dependence view (fat-tail discipline)
+    deltas = sorted((e["a3_pnl"] - e["control_pnl"] for e in el),
+                    reverse=True)
+    outlier = None
+    if deltas:
+        tot = sum(deltas)
+        outlier = {"total_delta": round(tot, 3),
+                   "delta_ex_best1": round(tot - deltas[0], 3),
+                   "delta_ex_best3": round(tot - sum(deltas[:3]), 3),
+                   "top10pct_share": round(
+                       sum(deltas[:max(1, len(deltas) // 10)])
+                       / tot, 3) if tot > 0 else None}
+    # shadow aggregates on the same eligible set
+    shadow_agg = {}
+    for name in SHADOWS:
+        sf = [e["shadows"][name] for e in el if "shadows" in e]
+        if sf:
+            filled_s = [s for s in sf if s["state"] == "FILLED"]
+            shadow_agg[name] = {
+                "registered_ts": SHADOW_REGISTERED_TS,
+                "dip_c": SHADOWS[name], "eligible": len(sf),
+                "filled": len(filled_s),
+                "pnl_per_eligible": round(
+                    sum(s["pnl"] for s in sf) / len(sf), 4)}
+    # exclusion monitor
+    excl = [e for e in ledger if e["state"] == "SYSTEM_EXCLUDED"]
+    import hashlib
+    spec_hash = hashlib.sha256(
+        (ROOT / "A3_SPEC.yaml").read_bytes()).hexdigest()[:16]
     doc = {"generated_ts": now, "spec": "A3_SPEC.yaml v1.1",
+           "spec_hash": spec_hash,
+           "spec_hash_frozen": SPEC_HASH_FROZEN,
+           "spec_hash_ok": spec_hash == SPEC_HASH_FROZEN,
+           "exclusion_monitor": {
+               "potential_registrations": len(el) + len(excl),
+               "system_excluded": len(excl),
+               "reasons": {"QUOTE_MISSING": len(excl)},
+               "note": "high exclusion rate = operationally unable "
+                       "to capture the opportunity set"},
+           "outlier_dependence": outlier,
+           "shadows": shadow_agg,
            "registered_ts": V11_REGISTERED_TS,
            "price_source": "EXECUTABLE event-tape asks (1s) — "
            "modeled asks forbidden (spec §4); v0 ledger retained as "

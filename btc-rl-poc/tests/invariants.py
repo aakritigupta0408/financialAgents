@@ -179,6 +179,9 @@ def _a3():
         return True, ["a3_live.json not yet published"]
     reg = d.get("registered_ts", 0)
     bad = []
+    if d.get("spec_hash_ok") is False:      # §53 A3-12
+        bad.append("A3_SPEC.yaml hash drift — new experiment "
+                   "version required")
     for e in d.get("recent_settled", []):
         if e.get("state") == "SYSTEM_EXCLUDED":
             continue
