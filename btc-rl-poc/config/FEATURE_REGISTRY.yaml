@@ -1,0 +1,123 @@
+# FEATURE_REGISTRY.yaml v1.0.0 — 2026-08-30
+# The canonical feature contract (feature-discovery program Phase 2).
+#
+# LAW: no model may consume a feature that is not in this registry.
+# Lifecycle: CAPTURE_ONLY -> DERIVED -> OFFLINE_TESTING -> SHADOW ->
+#            ACTIVE | REJECTED
+# Research design (Phase 7): families are tested WHOLE against the
+# incumbent feature set — one family per experiment, same
+# architecture/training/folds/policy; no combinations until one
+# family demonstrates incremental value. Qualification (Phase 8) is
+# MARKET-RELATIVE (Δ median-fold BSS + fold stability + timing), and
+# a family that only helps at T-2m after Kalshi repriced is
+# REJECT_FOR_TRADING no matter how good its Brier (Phase 9 — the kbf
+# lesson, codified).
+#
+# GATE F1 (capture quality, before ANY research claim):
+#   >= 7 days capture · >= 95% expected-event coverage ·
+#   zero unresolved timestamp violations · zero unresolved schema
+#   drift. Started 2026-08-30 (F-XVENUE) — F1 eligible no earlier
+#   than 2026-09-06. Data Reliability agent owns the gate evidence.
+#
+# BLOCKED until a family proves an information gain: TA-indicator
+# sweeps, sentiment/LLM feeds, paid data, random/AutoML feature
+# search, architecture search, dynamic A3 thresholds, Value-of-Wait
+# ML, new live traders.
+
+version: 1.0.0
+defaults:
+  pit_rule: "availability_timestamp = receive_ts of the LAST source
+    event entering the computation; a feature is usable at decision
+    time t only if availability <= t; no silent forward-fill —
+    missing is missing"
+  missing_value_policy: explicit null + missingness counter
+  quality_gate: "Phase 6: missingness, freshness, distribution,
+    variance, outliers, timestamp validity, drift, duplicate-info —
+    ML never adjudicates bad data"
+
+sources:
+  coinbase_tape:  {feed: F-MICRO, capture: scripts/event_capture.py,
+                   status: CAPTURING, since: 2026-08-29}
+  kalshi_quotes:  {feed: F-MICRO, capture: scripts/event_capture.py,
+                   status: CAPTURING, since: 2026-08-29,
+                   note: 1s L1 poll; book deltas + trades feed = open
+                     capture gap, queued}
+  coinbase_l2:    {feed: F-MICRO, status: NOT_CAPTURED,
+                   note: queued — extend event_capture carefully}
+  binance_trades: {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: data-stream.binance.vision mirror
+                     (stream.binance.com is 451 geo-blocked here)}
+  okx_trades:     {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30}
+  kraken_trades:  {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30}
+  deribit_public: {feed: F-DERIV, status: NOT_CAPTURED,
+                   note: P2 per PM board}
+
+families:
+
+  F-MICRO:      # ~12 features · targets MODEL_RESOLUTION in fast moves
+    lifecycle: CAPTURE_ONLY
+    features:
+      - {feature_id: l1_imbalance,        lookback: instant}
+      - {feature_id: l5_imbalance,        lookback: instant,
+         blocked_by: coinbase_l2 capture}
+      - {feature_id: l10_imbalance,       lookback: instant,
+         blocked_by: coinbase_l2 capture}
+      - {feature_id: microprice_deviation, lookback: instant}
+      - {feature_id: ofi_1s,              lookback: 1s}
+      - {feature_id: ofi_5s,              lookback: 5s}
+      - {feature_id: ofi_30s,             lookback: 30s}
+      - {feature_id: trade_imbalance_5s,  lookback: 5s}
+      - {feature_id: trade_imbalance_30s, lookback: 30s}
+      - {feature_id: spread_change,       lookback: 5s}
+      - {feature_id: depth_change,        lookback: 5s}
+      - {feature_id: quote_velocity,      lookback: 5s}
+
+  F-XVENUE:     # ~8 · targets early-window residual resolution —
+                # the M5.4 candidate question's family
+    lifecycle: CAPTURE_ONLY
+    features:
+      - {feature_id: coinbase_return_1s,  lookback: 1s}
+      - {feature_id: kraken_return_1s,    lookback: 1s}
+      - {feature_id: binance_return_1s,   lookback: 1s}
+      - {feature_id: cross_venue_consensus_5s, lookback: 5s}
+      - {feature_id: cross_venue_dispersion_5s, lookback: 5s}
+      - {feature_id: coinbase_lead,       lookback: 30s}
+      - {feature_id: binance_lead,        lookback: 30s}
+      - {feature_id: kalshi_lag_vs_btc,   lookback: 30s}
+
+  F-PATH:       # ~8 · derivable from EXISTING data now
+    lifecycle: DERIVED
+    features:
+      - {feature_id: distance_to_strike,      lookback: instant}
+      - {feature_id: distance_to_strike_z,    lookback: instant}
+      - {feature_id: z_change_5s,             lookback: 5s}
+      - {feature_id: z_change_30s,            lookback: 30s}
+      - {feature_id: time_since_strike_cross, lookback: window}
+      - {feature_id: cross_count_3m,          lookback: 3m}
+      - {feature_id: max_favorable_excursion, lookback: window}
+      - {feature_id: max_adverse_excursion,   lookback: window}
+
+  F-THESIS:     # ~8 · the temporary-dislocation vs informative-
+                # repricing separator — future NEW registered
+                # experiment material; NEVER fed into frozen A3-v1.1
+    lifecycle: DERIVED
+    features:
+      - {feature_id: confidence_change_since_call, lookback: since_call}
+      - {feature_id: confidence_velocity,          lookback: 30s}
+      - {feature_id: market_prob_change_since_call, lookback: since_call}
+      - {feature_id: btc_return_since_call,        lookback: since_call}
+      - {feature_id: ofi_since_call,               lookback: since_call,
+         blocked_by: F-MICRO derivation}
+      - {feature_id: depth_change_since_call,      lookback: since_call}
+      - {feature_id: market_minus_structural_change, lookback: since_call}
+      - {feature_id: dip_velocity,                 lookback: 30s}
+
+dataset_contract:   # Phase 5
+  fields: [dataset_id, feature_version, source_versions, start_ts,
+           end_ts, window_count, git_sha]
+  row_semantics: "one row = one decision state at the timestamps the
+    live system actually had — never a reconstruction with
+    later-arriving data"

@@ -1,0 +1,311 @@
+{
+ "generated_ts": 1788093108,
+ "state": "DIAGNOSIS_COMPLETE",
+ "baseline_finding": "NO_MODEL_BEATS_MARKET \u2014 10/10 arms fail offline qualification",
+ "failure_decomposition": {
+  "calibration": {
+   "kb2": {
+    "ece": 0.1069,
+    "slope": 1.168,
+    "intercept": 0.078,
+    "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
+   },
+   "kb9": {
+    "ece": 0.0893,
+    "slope": 1.06,
+    "intercept": 0.252,
+    "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
+   }
+  },
+  "resolution": {
+   "kb2": {
+    "reliability": 0.00131,
+    "resolution": 0.08476,
+    "uncertainty": 0.2491,
+    "read": "well-calibrated, resolution-limited"
+   },
+   "kb9": {
+    "reliability": 0.0041,
+    "resolution": 0.08797,
+    "uncertainty": 0.24911,
+    "read": "well-calibrated, resolution-limited"
+   }
+  },
+  "timing": {
+   "kb2": {
+    "class": "NO_SKILL",
+    "by_bucket": {
+     "T-13": {
+      "n": 647,
+      "bss": -0.001
+     },
+     "T-10": {
+      "n": 340,
+      "bss": -0.0063
+     },
+     "T-8": {
+      "n": 340,
+      "bss": -0.0081
+     },
+     "T-6": {
+      "n": 340,
+      "bss": 0.0009
+     },
+     "T-4": {
+      "n": 340,
+      "bss": -0.005
+     },
+     "T-2": {
+      "n": 338,
+      "bss": -0.0058
+     }
+    }
+   },
+   "kb9": {
+    "class": "EARLY_SKILL",
+    "by_bucket": {
+     "T-13": {
+      "n": 648,
+      "bss": 0.0
+     },
+     "T-10": {
+      "n": 340,
+      "bss": 0.0049
+     },
+     "T-8": {
+      "n": 340,
+      "bss": -0.0094
+     },
+     "T-6": {
+      "n": 340,
+      "bss": 0.0065
+     },
+     "T-4": {
+      "n": 340,
+      "bss": -0.0036
+     },
+     "T-2": {
+      "n": 338,
+      "bss": -0.038
+     }
+    }
+   }
+  },
+  "regime": {
+   "note": "disagreement slices below double as the regime read; deeper slicing awaits more independent windows"
+  },
+  "market_redundancy": {
+   "kb2": {
+    "corr_model_market": 0.9984,
+    "r2": 0.9968,
+    "residual_variance": 0.00026,
+    "read": "HIGH MARKET REDUNDANCY"
+   },
+   "kb9": {
+    "corr_model_market": 0.9553,
+    "r2": 0.9126,
+    "residual_variance": 0.00752,
+    "read": "HIGH MARKET REDUNDANCY"
+   }
+  },
+  "feature_information": {
+   "status": "NOT_AVAILABLE",
+   "note": "family ablations require the artifact-mode offline evaluator (retrain-and-replay); F-MICRO/F-XVENUE arrive as CAPTURE_ONLY hypotheses first"
+  },
+  "capacity": {
+   "status": "UNKNOWN",
+   "note": "no evidence isolates model class as the bottleneck; capacity claims are inadmissible until information-level failures are excluded"
+  }
+ },
+ "models": {
+  "kb2": {
+   "n": 2345,
+   "murphy": {
+    "reliability": 0.00131,
+    "resolution": 0.08476,
+    "uncertainty": 0.2491,
+    "read": "well-calibrated, resolution-limited"
+   },
+   "market_redundancy": {
+    "corr_model_market": 0.9984,
+    "r2": 0.9968,
+    "residual_variance": 0.00026,
+    "read": "HIGH MARKET REDUNDANCY"
+   },
+   "timing": {
+    "T-13": {
+     "n": 647,
+     "bss": -0.001
+    },
+    "T-10": {
+     "n": 340,
+     "bss": -0.0063
+    },
+    "T-8": {
+     "n": 340,
+     "bss": -0.0081
+    },
+    "T-6": {
+     "n": 340,
+     "bss": 0.0009
+    },
+    "T-4": {
+     "n": 340,
+     "bss": -0.005
+    },
+    "T-2": {
+     "n": 338,
+     "bss": -0.0058
+    }
+   },
+   "timing_class": "NO_SKILL",
+   "disagreement": {
+    "ge5pp_all": {
+     "n": 54,
+     "mean_signed_market_error": -0.0365,
+     "se": 0.0573,
+     "t": -0.64
+    },
+    "ge5pp_early": {
+     "n": 21,
+     "state": "MUTED"
+    },
+    "ge10pp_all": {
+     "n": 8,
+     "state": "MUTED"
+    },
+    "ge10pp_early": {
+     "n": 3,
+     "state": "MUTED"
+    },
+    "ge20pp_all": {
+     "n": 0,
+     "state": "MUTED"
+    },
+    "ge20pp_early": {
+     "n": 0,
+     "state": "MUTED"
+    }
+   },
+   "calibration": {
+    "ece": 0.1069,
+    "slope": 1.168,
+    "intercept": 0.078,
+    "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
+   },
+   "median_fold_bss": 0.0
+  },
+  "kb9": {
+   "n": 2346,
+   "murphy": {
+    "reliability": 0.0041,
+    "resolution": 0.08797,
+    "uncertainty": 0.24911,
+    "read": "well-calibrated, resolution-limited"
+   },
+   "market_redundancy": {
+    "corr_model_market": 0.9553,
+    "r2": 0.9126,
+    "residual_variance": 0.00752,
+    "read": "HIGH MARKET REDUNDANCY"
+   },
+   "timing": {
+    "T-13": {
+     "n": 648,
+     "bss": 0.0
+    },
+    "T-10": {
+     "n": 340,
+     "bss": 0.0049
+    },
+    "T-8": {
+     "n": 340,
+     "bss": -0.0094
+    },
+    "T-6": {
+     "n": 340,
+     "bss": 0.0065
+    },
+    "T-4": {
+     "n": 340,
+     "bss": -0.0036
+    },
+    "T-2": {
+     "n": 338,
+     "bss": -0.038
+    }
+   },
+   "timing_class": "EARLY_SKILL",
+   "disagreement": {
+    "ge5pp_all": {
+     "n": 1141,
+     "mean_signed_market_error": 0.0534,
+     "se": 0.0132,
+     "t": 4.06
+    },
+    "ge5pp_early": {
+     "n": 519,
+     "mean_signed_market_error": 0.0714,
+     "se": 0.0205,
+     "t": 3.49
+    },
+    "ge10pp_all": {
+     "n": 488,
+     "mean_signed_market_error": 0.076,
+     "se": 0.0209,
+     "t": 3.64
+    },
+    "ge10pp_early": {
+     "n": 213,
+     "mean_signed_market_error": 0.0936,
+     "se": 0.0329,
+     "t": 2.85
+    },
+    "ge20pp_all": {
+     "n": 68,
+     "mean_signed_market_error": 0.0562,
+     "se": 0.0578,
+     "t": 0.97
+    },
+    "ge20pp_early": {
+     "n": 21,
+     "state": "MUTED"
+    }
+   },
+   "calibration": {
+    "ece": 0.0893,
+    "slope": 1.06,
+    "intercept": 0.252,
+    "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
+   },
+   "median_fold_bss": -0.0143
+  }
+ },
+ "strongest_supported_explanation": "kb2: well-calibrated, resolution-limited; redundancy HIGH MARKET REDUNDANCY; timing NO_SKILL; kb9: well-calibrated, resolution-limited; redundancy HIGH MARKET REDUNDANCY; timing EARLY_SKILL",
+ "slice_discipline": {
+  "min_n": 50,
+  "t_gate": 3.0,
+  "slices_examined": 36,
+  "passing": 3
+ },
+ "candidate_question": {
+  "count": 1,
+  "question": "Does kb9 disagreement (ge5pp_all) predict market error prospectively? (existing A2-style hypothesis \u2014 assess, not proof)",
+  "targeted_loss_term": "MODEL_RESOLUTION",
+  "evidence": {
+   "model": "kb9",
+   "slice": "ge5pp_all",
+   "n": 1141,
+   "mean_signed_market_error": 0.0534,
+   "se": 0.0132,
+   "t": 4.06
+  }
+ },
+ "recommended_action": "ONE_CANDIDATE_QUESTION",
+ "confidence": "diagnosis-grade; nothing here authorizes a model change",
+ "prohibited_interpretations": [
+  "BSS<0 does not imply 'need a bigger network' \u2014 capacity is UNKNOWN, not implicated",
+  "calibration improvement alone is not candidacy (the M1 lesson, kept)",
+  "no slice below n>=50 & |t|>=3 may become a hypothesis"
+ ]
+}

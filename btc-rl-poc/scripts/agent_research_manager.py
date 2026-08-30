@@ -51,18 +51,33 @@ def main():
          "owner": "market clock",
          "next_gate": "registered decision gate; watch flags "
          "informative from n>=10"},
-        {"priority": "P1",
-         "research_question": "Why does no model beat the market? "
-         "(all candidates OFFLINE_FAIL)",
-         "bottleneck": "diagnosis, not new model families",
-         "evidence": "model_qualification.json — "
-         f"{'confirmed' if no_challenger else 'partial'}: no "
-         "positive median-fold BSS anywhere",
-         "estimated_impact": "unlocks a legitimate challenger "
-         "pipeline",
+        {"priority": "P0",
+         "research_question": "Feature-discovery program Phase 1: "
+         "free-data CAPTURE_ONLY (F-MICRO existing tape; F-XVENUE "
+         "binance/okx/kraken live 08-30)",
+         "bottleneck": "Gate F1 — >=7 days capture, >=95% coverage, "
+         "zero unresolved ts/schema issues (eligible >= 09-06)",
+         "evidence": "xvenue_capture.json heartbeat; "
+         "config/FEATURE_REGISTRY.yaml sources",
+         "estimated_impact": "the one-sentence objective: one "
+         "compact free feature family with stable PIT "
+         "market-relative information early enough to monetize",
          "state": "ACTIVE", "blocked_by": None,
-         "owner": "model_researcher (M5.4, not yet active)",
-         "next_gate": "one candidate question max"},
+         "owner": "data_reliability", "next_gate": "Gate F1"},
+        {"priority": "P1",
+         "research_question": "M5.4 diagnosis follow-through: does "
+         "kb9 disagreement (>=5pp) predict market error "
+         "prospectively? (ONE candidate question; F-XVENUE is its "
+         "natural feature family)",
+         "bottleneck": "prospective registration + capture Gate F1",
+         "evidence": "model_research.json — kb9 EARLY_SKILL, "
+         "3/36 slices passed gates; kb2 redundancy 0.998 sanity-"
+         "confirmed" + ("" if no_challenger else " (partial)"),
+         "estimated_impact": "unlocks a legitimate challenger "
+         "pipeline (Phase 10: incumbent + winning family only)",
+         "state": "ACTIVE", "blocked_by": "Gate F1",
+         "owner": "model_researcher",
+         "next_gate": "family-level walk-forward ablation"},
         {"priority": "P2",
          "research_question": "Legacy M10 vs M10+M8 closure",
          "bottleneck": "paired increment P(Δ>0) 77% — unclear",

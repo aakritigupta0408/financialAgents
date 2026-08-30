@@ -239,6 +239,27 @@ def _firewall():
     return not bad, bad[:5]
 
 
+@check("model-researcher-discipline",
+       "M5.4 (PM 08-30) — one candidate question max, allowed "
+       "actions only, capacity claims inadmissible without evidence")
+def _mr_discipline():
+    ALLOWED = {"NO_ACTION", "NEEDS_MORE_DATA",
+               "ONE_CANDIDATE_QUESTION", "RETIRE_MODEL_FAMILY"}
+    try:
+        d = json.loads((RES / "model_research.json").read_text())
+    except Exception:
+        return True, ["model_research.json not yet published"]
+    bad = []
+    if (d.get("candidate_question") or {}).get("count", 0) > 1:
+        bad.append("candidate_question.count > 1")
+    if d.get("recommended_action") not in ALLOWED:
+        bad.append(f"action {d.get('recommended_action')} not allowed")
+    cq = d.get("candidate_question") or {}
+    if cq.get("count") and not cq.get("targeted_loss_term"):
+        bad.append("candidate without targeted_loss_term")
+    return not bad, bad
+
+
 @check("zombie-component-count",
        "M3 (PM 08-30) — registry says retired, nothing may still "
        "invoke it; a zombie is a red operational condition")

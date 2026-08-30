@@ -151,7 +151,16 @@ services:
      note: independent of primary evaluator; owns reconciliation/invariants}
   - {id: watchdog, lifecycle: ACTIVE, runtime: true,
      authority: restart stale daemon only}
-  - {id: capture+capture_watchdog, lifecycle: ACTIVE, runtime: true}
+  - {id: capture+capture_watchdog, lifecycle: ACTIVE, runtime: true,
+     note: F-MICRO — Coinbase trades/L1 + Kalshi 1s quotes (the
+       primary event tape)}
+  - {id: capture_xvenue, lifecycle: ACTIVE, runtime: true,
+     role: CAPTURE_ONLY, dependency_class: OBSERVABILITY_DEPENDENCY,
+     decision_impact: false,
+     note: F-XVENUE — Binance(mirror)+OKX BTC trade tape, prospective
+       recording only (PM 08-30); no model/policy/experiment reads
+       it; Model Researcher decides IF a feature family ever earns an
+       experiment}
   - {id: meta_monitor, lifecycle: ACTIVE, runtime: true}
   - {id: trainer_hourly, lifecycle: ACTIVE, runtime: true,
      note: evidence-gated retraining replaces blind hourly under M2/M6}
