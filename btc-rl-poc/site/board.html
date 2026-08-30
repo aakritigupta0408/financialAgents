@@ -184,6 +184,65 @@ details.fold > summary { cursor: pointer; font-size: 12.5px;
 .reg-h { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
   text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
 .secgap { margin-top: 6px; }
+/* ---------- A3-v1.1 live experiment (§43 dashboard block) ---------- */
+.a3wrap { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 14px 16px; margin-top: 12px; }
+.a3ns { display: flex; flex-wrap: wrap; gap: 6px 22px;
+  align-items: baseline; border-bottom: 1px solid var(--grid);
+  padding-bottom: 10px; }
+.a3ns .k { font-size: 10.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); flex-basis: 100%; }
+.a3ns .big { font-size: 40px; font-weight: 800; line-height: 1.1;
+  font-variant-numeric: tabular-nums; }
+.a3ns .ci { font-size: 12px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; }
+.a3grid { display: grid; gap: 10px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+.a3grid .ct .n { font-size: 20px; }
+.a3conc { margin-top: 10px; font: 11px ui-monospace, Menlo, monospace;
+  color: var(--ink-2); background: var(--surface-2); border-radius: 8px;
+  padding: 6px 10px; line-height: 1.6; }
+.a3conc b { font-weight: 800; letter-spacing: .07em; color: var(--muted); }
+details.a3drawer { margin-top: 10px; background: var(--surface-2);
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 8px 12px; }
+details.a3drawer > summary { cursor: pointer; font-size: 11px;
+  font-weight: 800; letter-spacing: .08em; color: var(--ink-2); }
+.a3warn { display: inline-block; margin-left: 8px; font-size: 9.5px;
+  font-weight: 800; letter-spacing: .06em; color: var(--down);
+  border: 1px solid var(--down); border-radius: 5px; padding: 1.5px 7px;
+  vertical-align: middle; }
+.a3tblwrap { overflow-x: auto; }
+.a3tbl { width: 100%; border-collapse: collapse; font-size: 12.5px;
+  margin-top: 8px; }
+.a3tbl th { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); text-align: right;
+  border-bottom: 1px solid var(--axis); padding: 4px 8px;
+  white-space: nowrap; }
+.a3tbl th:first-child, .a3tbl td:first-child { text-align: left; }
+.a3tbl td { padding: 5px 8px; border-bottom: 1px solid var(--grid);
+  text-align: right; font-variant-numeric: tabular-nums;
+  white-space: nowrap; }
+.a3tbl tr.livearm td { background: rgba(12,138,77,.06); }
+.a3livechip { font-size: 9px; font-weight: 800; letter-spacing: .08em;
+  color: var(--good-text); border: 1px solid var(--good-text);
+  border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+.a3shadowchip { font-size: 9px; font-weight: 800; letter-spacing: .08em;
+  color: var(--muted); border: 1px solid var(--axis);
+  border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
+.a3foot { display: flex; flex-wrap: wrap; gap: 6px 14px;
+  align-items: center; margin-top: 10px; padding-top: 9px;
+  border-top: 1px solid var(--grid); font-size: 11.5px;
+  color: var(--ink-2); }
+.a3foot code { font: 11px ui-monospace, Menlo, monospace;
+  background: var(--surface-2); border: 1px solid var(--grid);
+  border-radius: 4px; padding: 1px 5px; }
+.a3state { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; border-radius: 5px; padding: 2.5px 8px;
+  border: 1px solid var(--sc, var(--axis)); color: var(--sc, var(--ink-2));
+  white-space: nowrap; }
+.a3hashok { color: var(--good-text); font-weight: 800; }
+.a3hashbad { color: var(--down); font-weight: 800; }
 </style>
 </head>
 <body>
@@ -205,6 +264,17 @@ details.fold > summary { cursor: pointer; font-size: 12.5px;
   <span id="gov" class="mini" style="display:inline">the analysis
   recommendation never changes lifecycle — only the owner does</span>.</p>
 </header>
+
+<section>
+  <div class="eyebrow">entry timing vs the frozen control</div>
+  <h2>A3-v1.1 — the live experiment</h2>
+  <p class="sub small">One paired question per window: <b>C0</b> (control)
+  buys the moment the thesis fires; <b>T10</b> (treatment) waits for a
+  dip from that same call price. Same windows, same theses — only entry
+  timing differs. All numbers below are forward, post-registration, in
+  ¢ of P&amp;L per $1 staked per eligible window.</p>
+  <div id="a3"><p class="mini">loading a3_live.json…</p></div>
+</section>
 
 <section>
   <div class="counts" id="counts"><div class="ct"><div class="n">…</div>
@@ -339,6 +409,135 @@ const readMark = read =>
   : read === "no evidence of useful addition"
     ? '<span class="vr">→ redundant?</span>'
   : `→ ${esc(read || "unclear")}`;
+
+/* ---------------------------------------------- A3-v1.1 (§43 block) -- */
+function renderA3(a3) {
+  const el = document.getElementById("a3");
+  if (!a3) {
+    el.innerHTML = '<p class="mini">a3_live.json unavailable — the ' +
+      'dashboard shows nothing it cannot fetch</p>';
+    return;
+  }
+  const fwd = a3.forward || {};
+  /* value already in ¢ (improvement, markout) vs per-$1 (pnl → cS) */
+  const cC = v => v == null || !isFinite(v) ? "—"
+    : (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢";
+  const cD = v => v == null || !isFinite(v) ? "—" : cS(v);
+  const pD = v => v == null || !isFinite(v) ? "—" : pc(v);
+  const when = ts => ts == null ? "—"
+    : new Date(ts * 1000).toLocaleString("en-US", { month: "short",
+        day: "numeric", hour: "numeric", minute: "2-digit",
+        hour12: false, timeZone: "America/New_York" }) + " ET · "
+      + new Date(ts * 1000).toLocaleString("en-US", { month: "short",
+        day: "numeric", hour: "numeric", minute: "2-digit",
+        hour12: false, timeZone: "Asia/Kolkata" }) + " IST";
+  const rows = a3.recent_settled || [];
+  const filledRows = rows.filter(r => r && r.state === "FILLED");
+  const nums = a => a.filter(v => typeof v === "number" && isFinite(v));
+  const avg = a => a.length
+    ? a.reduce((s, v) => s + v, 0) / a.length : null;
+  const mMark = avg(nums(filledRows.map(r => r.markout_10s)));
+  const mEcr = avg(nums(filledRows.map(r => r.ecr)));
+  /* paired per-window deltas visible in recent_settled → normal CI */
+  const deltas = rows.filter(r => r && r.state !== "SYSTEM_EXCLUDED"
+      && typeof r.a3_pnl === "number" && typeof r.control_pnl === "number")
+    .map(r => r.a3_pnl - r.control_pnl);
+  let ci = '<span class="ci">95% CI: <b>collecting</b> (n&lt;2)</span>';
+  if ((fwd.eligible ?? 0) >= 2 && deltas.length >= 2) {
+    const m = avg(deltas);
+    const sd = Math.sqrt(deltas.reduce((s, v) =>
+      s + (v - m) * (v - m), 0) / (deltas.length - 1));
+    const h = 1.96 * sd / Math.sqrt(deltas.length);
+    ci = `<span class="ci">95% CI [${cD(m - h)}, ${cD(m + h)}]${
+      fwd.eligible > deltas.length
+        ? ` · last ${deltas.length} settled windows` : ""}</span>`;
+  }
+  const inc = fwd.incremental_per_eligible;
+  const incCol = inc == null ? "var(--muted)" : inc > 0
+    ? "var(--good-text)" : inc < 0 ? "var(--down)" : "var(--ink)";
+  const fillRate = fwd.eligible > 0 && fwd.filled != null
+    ? fwd.filled / fwd.eligible : null;
+  const tile = (v, l) => `<div class="ct"><div class="n">${v}</div>` +
+    `<div class="l">${l}</div></div>`;
+  const primary = `<div class="a3ns">` +
+      `<div class="k">paired Δ per eligible window — the North Star</div>` +
+      `<div class="big" style="color:${incCol}">${cD(inc)}</div>${ci}${
+        inc == null
+          ? '<span class="ci">· no eligible window has settled yet</span>'
+          : ""}` +
+    `</div>` +
+    `<div class="counts a3grid" style="margin-top:10px">` +
+      tile(fwd.eligible ?? "—", "eligible N") +
+      tile(cD(fwd.control_pnl_per_eligible), "C0 PnL / window") +
+      tile(cD(fwd.a3_pnl_per_eligible), "T10 PnL / window") +
+      tile(pD(fillRate), "T10 fill rate") +
+      tile(cC(fwd.mean_entry_improvement_c), "mean entry improvement") +
+      tile(cC(mMark), "mean 10s markout") +
+      tile(mEcr == null ? "—" : f2(mEcr), "mean ECR") +
+    `</div>`;
+  const od = a3.outlier_dependence;
+  const conc = `<div class="a3conc"><b>PROFIT CONCENTRATION</b> · ${od
+    ? `Δ total ${cD(od.total_delta)} · ex-best-1 ${cD(od.delta_ex_best1)
+      } · ex-best-3 ${cD(od.delta_ex_best3)} · top-10% share ${
+      od.top10pct_share == null ? "—" : pc(od.top10pct_share)}`
+    : "— (no eligible windows yet — nothing to concentrate)"}</div>`;
+  /* shadow drawer — T05/T15 observe the same tape, control nothing */
+  const sh = a3.shadows || {};
+  const shRow = (name, s, live) => {
+    const dip = parseInt(name.slice(1), 10);
+    const fr = s && s.eligible > 0 && s.filled != null
+      ? s.filled / s.eligible : null;
+    return `<tr${live ? ' class="livearm"' : ""}><td>${esc(name)}${live
+        ? '<span class="a3livechip">LIVE ARM</span>'
+        : '<span class="a3shadowchip">SHADOW</span>'}</td>` +
+      `<td>≥${isFinite(dip) ? dip : "?"}¢ dip</td>` +
+      `<td>${s && s.registered_ts != null
+        ? when(s.registered_ts) : "—"}</td>` +
+      `<td>${s && s.eligible != null ? s.eligible : "—"}</td>` +
+      `<td>${pD(fr)}</td>` +
+      `<td>${cD(s ? s.pnl_per_eligible : null)}</td></tr>`;
+  };
+  const t10 = { registered_ts: a3.registered_ts, eligible: fwd.eligible,
+    filled: fwd.filled, pnl_per_eligible: fwd.a3_pnl_per_eligible };
+  const drawer = `<details class="a3drawer" data-x="a3-shadow">` +
+    `<summary>THRESHOLD RESEARCH — FORWARD SHADOW ONLY` +
+    `<span class="a3warn">T05/T15 DO NOT CONTROL LIVE A3-v1.1</span>` +
+    `</summary><div class="a3tblwrap"><table class="a3tbl">` +
+    `<tr><th>arm</th><th>trigger</th><th>registered</th>` +
+    `<th>eligible</th><th>fill %</th><th>PnL / eligible</th></tr>` +
+    shRow("T05", sh.T05, false) + shRow("T10", t10, true) +
+    shRow("T15", sh.T15, false) + `</table></div>` +
+    `<p class="mini" style="margin-top:6px">Shadows watch the same
+    future tape and place nothing; aggregates appear with the first
+    eligible window. Any threshold change is a new experiment.</p>` +
+    `</details>`;
+  /* status footline */
+  const lv = a3.live || {};
+  const SC = { TRIGGERED: "var(--good-text)", FILLED: "var(--good-text)",
+    WATCHING: "var(--series-2)", MISSED: "var(--down)",
+    INVALIDATED: "var(--down)", SYSTEM_EXCLUDED: "var(--down)" };
+  const em = a3.exclusion_monitor || {};
+  const reasons = Object.entries(em.reasons || {})
+    .map(([k, v]) => `${esc(k)} ×${v}`).join(" · ");
+  const hash = a3.spec_hash_ok === true
+    ? `<span class="a3hashok">✓ frozen</span>`
+    : a3.spec_hash_ok === false
+      ? `<span class="a3hashbad">✗ HASH MISMATCH — new experiment</span>`
+      : "—";
+  const foot = `<div class="a3foot">` +
+    `<span class="a3state" style="--sc:${SC[lv.state] || "var(--muted)"
+      }">${esc(lv.state || "state unknown")}</span>` +
+    `<span>spec <code>${esc(a3.spec_hash || "—")}</code> ${hash}</span>` +
+    `<span>registered ${when(a3.registered_ts)}</span>` +
+    `<span>${em.system_excluded ?? "—"} excluded${
+      em.potential_registrations != null
+      ? " of " + em.potential_registrations + " potential" : ""}${reasons
+      ? " · " + reasons : ""}</span>` +
+    `<span><a href="home.html">watch it live →</a> · spec file ` +
+    `<code>A3_SPEC.yaml</code></span></div>`;
+  setHTML(el, `<div class="a3wrap">${primary}${conc}${drawer}${foot
+    }</div>`);
+}
 
 /* ------------------------------------------------------------ render -- */
 function renderCounts(prog, board, inc) {
@@ -593,11 +792,12 @@ function renderRegistry(board, inc) {
 
 /* -------------------------------------------------------------- poll -- */
 async function poll() {
-  const [prog, board, db, inc] = await Promise.all([
+  const [prog, board, db, inc, a3] = await Promise.all([
     J("../results/program.json"),
     J("../results/board.json"),
     J("../results/decision_board.json"),
     JL("../results/incidents.jsonl"),
+    J("../results/a3_live.json"),
   ]);
   const ageS = prog && prog.generated_ts
     ? Date.now() / 1000 - prog.generated_ts : 1e9;
@@ -612,6 +812,7 @@ async function poll() {
     const g2 = document.getElementById("gov2");
     if (g2) g2.textContent = prog.governance_note;
   }
+  renderA3(a3);
   renderCounts(prog, board, inc);
   renderInbox(prog);
   renderKillBoard(prog, db);
