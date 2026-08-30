@@ -35,7 +35,95 @@ WATCH = {
 }
 
 
+def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
+                   pat=r"-m btc_rl\.online$"):
+    """M6 independent-verification law: the repairing process
+    (watchdog) may never certify itself — THIS process verifies.
+
+    For each REPAIR_ATTEMPTED row without a later verification
+    outcome and older than min_age_s: check fresh heartbeat +
+    singleton + audit progress + SCIENTIFIC_UNCHANGED (A3 spec hash
+    ok AND the invariant suite green — which itself covers the frozen
+    constants, roster and treatment laws). PASS -> RESTORED;
+    FAIL -> FAILED_CLOSED (system stays contained)."""
+    import subprocess as _sp
+    res = Path(res_dir) if res_dir else RES
+    heal = res / "self_heal.jsonl"
+    if not heal.exists():
+        return []
+    rows = []
+    for l in heal.open():
+        if l.strip():
+            try:
+                rows.append(json.loads(l))
+            except Exception:
+                pass
+    verified_ts = {r.get("verifies_attempt_ts") for r in rows
+                   if r.get("state") in ("VERIFICATION_PASS",
+                                         "VERIFICATION_FAIL")}
+    out = []
+    now = time.time()
+    for r in rows:
+        if r.get("state") != "REPAIR_ATTEMPTED":
+            continue
+        if r["ts"] in verified_ts or now - r["ts"] < min_age_s:
+            continue
+        # independent checks
+        hb_ok = False
+        try:
+            hb_age = now - json.loads(
+                (res / "online_status.json").read_text())["alive_at"]
+            hb_ok = hb_age < hb_fresh_s
+        except Exception:
+            hb_age = None
+        pr = _sp.run(["pgrep", "-f", pat], capture_output=True,
+                     text=True)
+        n_proc = len([x for x in pr.stdout.splitlines() if x.strip()])
+        singleton = n_proc == 1
+        audit_p = res / "audit_report.json"
+        audit_progress = audit_p.exists() and \
+            audit_p.stat().st_mtime > r["ts"]
+        sci = False
+        try:
+            a3 = json.loads((res / "a3_live.json").read_text())
+            inv = json.loads((res / "invariants.json").read_text())
+            sci = a3.get("spec_hash_ok") is True \
+                and not inv.get("failed")
+        except Exception:
+            pass
+        ok = hb_ok and singleton
+        verdict = {"ts": round(now, 3),
+                   "repair_id": r.get("repair_id"),
+                   "verifies_attempt_ts": r["ts"],
+                   "state": "VERIFICATION_PASS" if ok
+                   else "VERIFICATION_FAIL",
+                   "verified_by": "meta_monitor (independent)",
+                   "heartbeat_fresh": hb_ok,
+                   "heartbeat_age_s": None if hb_age is None
+                   else round(hb_age),
+                   "singleton": singleton, "processes": n_proc,
+                   "audit_progress": audit_progress,
+                   "scientific_unchanged": sci}
+    # append verdict + terminal state
+        with heal.open("a") as f:
+            f.write(json.dumps(verdict) + "\n")
+            f.write(json.dumps({
+                "ts": round(now, 3), "repair_id": r.get("repair_id"),
+                "verifies_attempt_ts": r["ts"],
+                "state": "RESTORED" if ok and sci
+                else "FAILED_CLOSED",
+                "reason": None if ok and sci else
+                ("verification failed — system stays contained"
+                 if not ok else
+                 "recovered operationally but scientific-unchanged "
+                 "evidence incomplete — held FAILED_CLOSED")})
+                + "\n")
+        out.append(verdict)
+    return out
+
+
 def main():
+    verify_repairs()
     now = time.time()
     rows, worst = [], "HEALTHY"
     rank = {"HEALTHY": 0, "WARNING": 1, "STALE": 2, "UNKNOWN": 3}

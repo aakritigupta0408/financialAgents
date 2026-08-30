@@ -28,8 +28,8 @@ firewall_state: ALLOW_IF_REGISTERED_REPAIR
 
 class_a_allowlist:        # eligible after certification, launch set = 3
   - repair_id: M6-R1_RESTART_DEAD_DAEMON
-    enabled: false
-    certified: false
+    enabled: true          # M6.1 2026-08-30 — sole enabled repair
+    certified: true        # chaos matrix 12/12 (tests/test_m6_r1.py)
     trigger: "online_status.alive_at age > 600s"
     preconditions: ["pgrep singleton check", "no maintenance flag"]
     containment: "mark Data plane STALE in health"
@@ -115,10 +115,10 @@ rollout: [M6.0 registry+state-machine+monitor-of-monitors+incident
     schema, M6.1 R1 + soak, M6.2 R2 + soak, M6.3 R3 + soak]
 
 incident_schema:
-  [incident_id, severity, opened_at, detected_by, plane, symptom,
-   root_cause, decision_impact, economic_impact, research_impact,
-   containment, repair_id, repair_attempts, verification, closed_at,
-   regression_test]
+  fields: [incident_id, severity, opened_at, detected_by, plane,
+           symptom, root_cause, decision_impact, economic_impact,
+           research_impact, containment, repair_id, repair_attempts,
+           verification, closed_at, regression_test]
   law: "root_cause stays UNKNOWN until established — never invent a
     cause to close an incident; every material failure creates a new
     invariant/fixture/monitor/precondition or records why not"

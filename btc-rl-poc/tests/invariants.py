@@ -226,6 +226,39 @@ def _stale_never_proposes():
     return not bad, bad[:5]
 
 
+@check("repair-scientific-integrity",
+       "M6.1 (PM 08-30) — REPAIR_DID_NOT_CHANGE: a repair may only "
+       "reach RESTORED with scientific-unchanged evidence, verified "
+       "by a process other than the repairer")
+def _repair_integrity():
+    hr = rows("self_heal.jsonl")
+    bad = []
+    verd = {r.get("verifies_attempt_ts"): r for r in hr
+            if r.get("state") in ("VERIFICATION_PASS",
+                                  "VERIFICATION_FAIL")}
+    for r in hr:
+        st = r.get("state")
+        if st == "RESTORED":
+            v = verd.get(r.get("verifies_attempt_ts"))
+            if not v or v.get("state") != "VERIFICATION_PASS" \
+                    or not v.get("scientific_unchanged") \
+                    or "independent" not in str(
+                        v.get("verified_by", "")):
+                bad.append(f"RESTORED@{r.get('ts')} without "
+                           "independent scientific-unchanged proof")
+        if st == "REPAIR_ATTEMPTED" \
+                and time.time() - r.get("ts", 0) > 7200 \
+                and r.get("ts") not in verd:
+            bad.append(f"dangling repair attempt @{r.get('ts')}")
+    # retry law: never >2 attempts inside any 30-min window
+    at = sorted(r["ts"] for r in hr
+                if r.get("state") == "REPAIR_ATTEMPTED")
+    for i in range(len(at) - 2):
+        if at[i + 2] - at[i] < 1800:
+            bad.append(f"3 attempts within 30min @{round(at[i])}")
+    return not bad, bad[:5]
+
+
 @check("no-policy-mutation-by-self-healing",
        "M6 launch contract §12 — POLICY_MUTATIONS_CAUSED_BY_"
        "SELF_HEALING must equal 0, forever")
