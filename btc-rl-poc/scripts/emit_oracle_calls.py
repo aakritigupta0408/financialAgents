@@ -39,6 +39,15 @@ V2_CALLER = "kb5"
 V2_CONF = 0.72
 V2_REGISTERED_TS = 1788053460     # 2026-08-29 ~18:11 PT
 
+# M14-early (owner: "within the FIRST 2-3 minutes of the window"):
+# envelope mins_left in [12, 13.5]; rule = kb2>=0.75, else kb9>=0.75
+# (union scored 81% @ 22% coverage exploratory; kb2 alone 88% @ 14%).
+# Same selection-effect discipline: judged only on windows settling
+# after EARLY_REGISTERED_TS.
+EARLY_LO, EARLY_HI = 12.0, 13.5
+EARLY_RULES = (("kb2", 0.75), ("kb9", 0.75))
+EARLY_REGISTERED_TS = 1788054900   # 2026-08-29 ~18:35 PT
+
 
 def wilson(k, n):
     if not n:
@@ -115,6 +124,55 @@ def main():
         "wilson_ci95": wilson(v2_hits, len(v2_calls)),
         "promise_met": (v2_hits / len(v2_calls) >= 0.80)
         if v2_calls else None,
+    }
+    # ---- M14-early: first-2-3-minutes caller ------------------------
+    ef = {}
+    for r in sorted(rows, key=lambda r: -(r.get("mins_left") or 0)):
+        if r.get("mins_left") is None or r.get("p_up") is None:
+            continue
+        if not (EARLY_LO <= r["mins_left"] <= EARLY_HI):
+            continue
+        ef.setdefault((r["ticker"], r.get("variant") or "kb"), r)
+    eby = {}
+    for (tk, v), r in ef.items():
+        eby.setdefault(tk, {})[v] = r
+
+    def early_call(w):
+        for arm, th in EARLY_RULES:
+            r = w.get(arm)
+            if r is None:
+                continue
+            if max(r["p_up"], 1 - r["p_up"]) >= th:
+                return r["p_up"] >= 0.5, arm
+        return None, None
+
+    e_settled = {tk: w for tk, w in eby.items()
+                 if any(x.get("actual") is not None for x in w.values())
+                 and (max(x.get("close_ts") or 0
+                          for x in w.values()) >= EARLY_REGISTERED_TS)}
+    e_calls, e_hits = 0, 0
+    for tk, w in e_settled.items():
+        side, arm = early_call(w)
+        if side is None:
+            continue
+        e_calls += 1
+        outcome = bool(next(x for x in w.values()
+                            if x.get("actual") is not None)["actual"])
+        e_hits += 1 if side == outcome else 0
+    out["early"] = {
+        "envelope_mins_left": [EARLY_LO, EARLY_HI],
+        "rules": [list(x) for x in EARLY_RULES],
+        "registered_ts": EARLY_REGISTERED_TS,
+        "exploratory_basis": "union 81% @ 22% cov (n=37); kb2 alone "
+        "88% @ 14% — does not count toward the promise",
+        "settled_since_registration": len(e_settled),
+        "calls": e_calls, "hits": e_hits,
+        "coverage": round(e_calls / len(e_settled), 3)
+        if e_settled else None,
+        "selective_accuracy": round(e_hits / e_calls, 3)
+        if e_calls else None,
+        "wilson_ci95": wilson(e_hits, e_calls),
+        "promise_met": (e_hits / e_calls >= 0.80) if e_calls else None,
     }
     # live pending call, if any (most recent unsettled window)
     pend = [r for (tk, vv), r in first.items()

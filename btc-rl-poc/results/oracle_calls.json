@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788050811,
+ "generated_ts": 1788050909,
  "config": {
   "conf_threshold": 0.8,
   "envelope_mins_left": [
@@ -11,7 +11,7 @@
   "promise": "selective accuracy of calls >= 0.80"
  },
  "kb2": {
-  "windows_seen": 168,
+  "windows_seen": 169,
   "settled": 168,
   "calls": 10,
   "coverage": 0.06,
@@ -50,5 +50,36 @@
   "selective_accuracy": null,
   "wilson_ci95": null,
   "promise_met": null
+ },
+ "early": {
+  "envelope_mins_left": [
+   12.0,
+   13.5
+  ],
+  "rules": [
+   [
+    "kb2",
+    0.75
+   ],
+   [
+    "kb9",
+    0.75
+   ]
+  ],
+  "registered_ts": 1788054900,
+  "exploratory_basis": "union 81% @ 22% cov (n=37); kb2 alone 88% @ 14% \u2014 does not count toward the promise",
+  "settled_since_registration": 0,
+  "calls": 0,
+  "hits": 0,
+  "coverage": null,
+  "selective_accuracy": null,
+  "wilson_ci95": null,
+  "promise_met": null
+ },
+ "live": {
+  "ticker": "KXBTC15M-26AUG292100-00",
+  "call": "NO CALL",
+  "claimed_conf": 0.545,
+  "mins_left_at_read": 12.9
  }
 }
