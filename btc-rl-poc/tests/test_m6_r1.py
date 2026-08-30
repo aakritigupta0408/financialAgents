@@ -62,7 +62,7 @@ def heal_states(cfg):
 
 
 def kill_fakes():
-    subprocess.run(["pkill", "-f", PAT], check=False)
+    subprocess.run(["pkill", "-f", "--", PAT], check=False)
     time.sleep(0.5)
 
 

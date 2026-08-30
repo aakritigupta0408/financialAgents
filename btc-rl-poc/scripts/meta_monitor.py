@@ -76,7 +76,7 @@ def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
             hb_ok = hb_age < hb_fresh_s
         except Exception:
             hb_age = None
-        pr = _sp.run(["pgrep", "-f", pat], capture_output=True,
+        pr = _sp.run(["pgrep", "-f", "--", pat], capture_output=True,
                      text=True)
         n_proc = len([x for x in pr.stdout.splitlines() if x.strip()])
         singleton = n_proc == 1

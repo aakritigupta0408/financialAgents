@@ -114,7 +114,7 @@ def attempts_in_window(cfg):
 
 
 def proc_count(cfg):
-    r = subprocess.run(["pgrep", "-f", cfg["pat"]],
+    r = subprocess.run(["pgrep", "-f", "--", cfg["pat"]],
                        capture_output=True, text=True)
     return len([l for l in r.stdout.splitlines() if l.strip()])
 
@@ -127,13 +127,13 @@ def do_restart(cfg):
     escalate to SIGKILL, and never spawn while any old process
     survives."""
     if proc_count(cfg) > 0:
-        subprocess.run(["pkill", "-f", cfg["pat"]], check=False)
+        subprocess.run(["pkill", "-f", "--", cfg["pat"]], check=False)
         for i in range(7):
             time.sleep(2)
             if proc_count(cfg) == 0:
                 break
             if i == 3:                      # escalate
-                subprocess.run(["pkill", "-9", "-f", cfg["pat"]],
+                subprocess.run(["pkill", "-9", "-f", "--", cfg["pat"]],
                                check=False)
         if proc_count(cfg) > 0:
             return False                    # refuse to double-spawn
