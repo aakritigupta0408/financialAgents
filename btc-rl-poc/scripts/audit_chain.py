@@ -46,6 +46,7 @@ STEPS = [
     "scripts/emit_f1_gate.py",
     "scripts/agent_research_manager.py",
     "scripts/emit_monitor_health.py",
+    "scripts/emit_agent_performance.py",
     "scripts/check_m5_soak.py",
     "scripts/emit_pm_snapshot.py",
     "scripts/emit_readiness.py",
