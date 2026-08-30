@@ -211,6 +211,36 @@ def _one_ctl_one_treat():
     return not bad, bad[:5]
 
 
+@check("stale-input-never-proposes",
+       "M5 close contract §6 — stale evidence may never produce a "
+       "research conclusion")
+def _stale_never_proposes():
+    bad = []
+    for r in rows("agent_recommendations.jsonl"):
+        if r.get("kind") == "status_update":
+            continue
+        if "STALE_INPUT" in str(r.get("finding", "")) \
+                and r.get("action_class") in ("PROPOSE",
+                                              "SAFE_OPS_REPAIR"):
+            bad.append(r.get("recommendation_id"))
+    return not bad, bad[:5]
+
+
+@check("no-policy-mutation-by-self-healing",
+       "M6 launch contract §12 — POLICY_MUTATIONS_CAUSED_BY_"
+       "SELF_HEALING must equal 0, forever")
+def _no_heal_policy():
+    POLICY_WORDS = ("threshold", "floor", "cutoff", "sizing",
+                    "risk limit", "treatment", "denominator")
+    bad = []
+    for r in rows("system_change_log.jsonl"):
+        if r.get("change_type") == "SELF_HEAL_OCCURRED":
+            blob = json.dumps(r).lower()
+            if any(w in blob for w in POLICY_WORDS):
+                bad.append(f"{r.get('entity')}@{r.get('ts')}")
+    return not bad, bad
+
+
 @check("no-private-time-alignment",
        "M5 system validation (PM 08-30) — the temporal equivalent of "
        "no-private-formulas: two researchers aligning the same raw "

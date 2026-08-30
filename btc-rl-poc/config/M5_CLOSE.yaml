@@ -1,0 +1,80 @@
+# M5_CLOSE.yaml v1.0.0 — Agent Organization Acceptance Contract
+# (PM 08-30, frozen). M5 completion does NOT depend on producing a
+# profitable idea. Close is machine-adjudicated by
+# scripts/check_m5_soak.py -> results/m5_soak.json.
+
+version: 1.0.0
+milestone: M5
+
+criteria:
+  agents_active:            {required: 5, status: PASS,
+                             evidence: "5 script-backed roles on the
+                               10-min chain; no sixth without a new
+                               architecture decision"}
+  canonical_inputs_only:    {status: PASS,
+                             evidence: "agents read canonical
+                               artifacts only; no HTML scraping, no
+                               private formulas/alignment"}
+  firewall_green:           {status: PASS,
+                             evidence: "7/7 unit + end-to-end A3
+                               threshold-mutation rejection; spec
+                               hash unchanged; 0 forbidden
+                               executable rows"}
+  duplicate_collapse:       {status: PASS,
+                             evidence: "production cycles collapse
+                               identical findings to DUPLICATE; one
+                               OPEN row per distinct finding"}
+  do_nothing_behavior:      {status: PASS,
+                             evidence: "RM NO_NEW_RESEARCH_ACTION ·
+                               DR NO_ACTION_REQUIRED · EA COLLECT
+                               observed in production"}
+  stale_input_behavior:     {status: PASS,
+                             evidence: "fixture #4: STALE_INPUT, no
+                               artifact, no recommendation; invariant
+                               stale-input-never-proposes"}
+  disagreement_handling:    {status: PASS,
+                             evidence: "fixture #3: BOTH channels
+                               PRESENT, dominant BOTH — no forced
+                               narrative"}
+  cross_agent_hierarchy:    {status: PASS,
+                             evidence: "five complementary findings;
+                               RM synthesizes ONE queue (P0 A3, P1
+                               F-XVENUE, P2 legacy, P3 observability;
+                               blocked list intact)"}
+  lifecycle_validated:      {status: PASS,
+                             evidence: "DR capture-age observability:
+                               OPEN->ACCEPTED->IMPLEMENTED->
+                               VALIDATED_HELPFUL (prevented silent
+                               xvenue feed death at the 451 switch)"}
+  noise_budget_healthy:     {status: PASS,
+                             evidence: "cycle: 0 new / 6 duplicates /
+                               0 policy proposals"}
+  candidate_budget:         {required: "<=1", status: PASS,
+                             evidence: "model-researcher-discipline
+                               invariant"}
+  soak:                     {required: ">=6 consecutive clean audit
+                               cycles, all five agents",
+                             status: IN_PROGRESS,
+                             adjudicator: results/m5_soak.json,
+                             clean_cycle_means: "0 invariant fails ·
+                               0 unauthorized mutations · 0
+                               stale-driven recommendations · 0
+                               ledger explosions · 0 new unregistered
+                               candidates · 0 queue churn · 0 serving
+                               changes · 0 A3 changes; SOAK_RESET on
+                               any new material failure mode"}
+  invariants_green:         {status: PASS, evidence: "20/20"}
+  a3_unchanged:             {status: PASS,
+                             evidence: "spec hash frozen; n=22
+                               Δ −0.5c COLLECTING — the +16.7→−18.6→
+                               −0.5 path is why the gate is
+                               sovereign"}
+
+on_close:
+  governance_event: {event_type: MILESTONE_CLOSED, milestone: M5,
+                     status: COMPLETE,
+                     evidence: "agent organization passed
+                       system-level validation"}
+  then: "M6 ACTIVE — SAFE OPS ONLY. Operational maturity must never
+    be mistaken for strategy qualification: A3 COLLECTING · F-XVENUE
+    CAPTURE_ONLY awaiting F1 · MODEL ALPHA NOT ESTABLISHED."

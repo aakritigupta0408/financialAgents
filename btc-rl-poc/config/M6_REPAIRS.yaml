@@ -1,0 +1,128 @@
+# M6_REPAIRS.yaml v1.0.0 — Safe Self-Healing repair registry
+# (PM launch contract, 08-30). NO repair is executable merely by
+# being Class A: each needs certification (chaos tests below) AND
+# enabled: true AND the firewall transition (BLOCKED_UNTIL_M6 ->
+# ALLOW_IF_REGISTERED_REPAIR) which happens only after M5 closes.
+#
+# self-healing = detect operational fault -> contain -> pre-approved
+# deterministic repair -> INDEPENDENT verify -> restore -> record.
+# NOT: detect poor performance -> change strategy.
+#
+# State machine (no skipped states): DETECT -> CLASSIFY -> CONTAIN ->
+# REPAIR -> VERIFY -> RESTORE -> RECORD; states DETECTED / CONTAINED /
+# REPAIR_ATTEMPTED / VERIFICATION_PASS / VERIFICATION_FAIL /
+# RESTORED / FAILED_CLOSED.
+#
+# Independent-verification law: the repairing process may never
+# certify itself healthy. Retry law: max_attempts within
+# attempt_window else AUTO_REPAIR_EXHAUSTED -> FAILED_CLOSED ->
+# incident escalated. Hard invariant:
+# POLICY_MUTATIONS_CAUSED_BY_SELF_HEALING = 0.
+
+version: 1.0.0
+firewall_state: BLOCKED_UNTIL_M6     # flips at M6 launch, per-repair
+
+class_a_allowlist:        # eligible after certification, launch set = 3
+  - repair_id: M6-R1_RESTART_DEAD_DAEMON
+    enabled: false
+    certified: false
+    trigger: "online_status.alive_at age > 600s"
+    preconditions: ["pgrep singleton check", "no maintenance flag"]
+    containment: "mark Data plane STALE in health"
+    repair_action: "pkill pattern + spawn python3 -u -m btc_rl.online
+      (watchdog-equivalent)"
+    verification: "INDEPENDENT: meta_monitor confirms fresh heartbeat
+      + singleton + audit state progresses next cycle"
+    rollback: "kill duplicate process if created"
+    max_attempts: 2
+    attempt_window_min: 30
+    cooldown_min: 10
+    affected_components: [daemon]
+    forbidden_side_effects: [policy constants, ledgers, experiment
+      specs, model artifacts]
+
+  - repair_id: M6-R2_REBUILD_DERIVED_ARTIFACT
+    enabled: false
+    certified: false
+    trigger: "pm_snapshot.json / data_health.json /
+      information_timing.json missing, stale beyond SLO, or malformed"
+    preconditions: ["source artifacts fresh", "emitter unchanged
+      since last green run (git)"]
+    containment: "mark artifact STALE in monitor_health"
+    repair_action: "re-run the registered emitter for that artifact"
+    verification: "INDEPENDENT: schema-valid + fresh timestamp +
+      invariant suite green"
+    rollback: "none needed — derived artifacts are rebuildable by
+      definition (raw data append-only)"
+    max_attempts: 2
+    attempt_window_min: 30
+    cooldown_min: 10
+    affected_components: [derived_artifacts]
+    forbidden_side_effects: [raw ledgers, specs, configs]
+
+  - repair_id: M6-R3_RETRY_PUBLISHER
+    enabled: false
+    certified: false
+    trigger: "local canonical artifact fresh AND published copy
+      stale/missing"
+    preconditions: ["publisher not mid-run", "no rebase-merge state"]
+    containment: "site-sync failure counter (already exists)"
+    repair_action: "re-run publish_dashboard.py once"
+    verification: "INDEPENDENT: HTTPS probe of the published URL
+      confirms fresh content"
+    rollback: "none — publication is idempotent (amended marker
+      commit)"
+    max_attempts: 2
+    attempt_window_min: 30
+    cooldown_min: 15
+    affected_components: [publisher]
+    forbidden_side_effects: [main branch, source repo]
+
+future_candidates_after_soak:   # NOT in the launch set
+  - CLEAR_VERIFIED_STALE_LOCK
+  - ROLLBACK_FAILED_FRONTEND_OR_BACKEND_DEPLOY
+  - RESTORE_LAST_KNOWN_GOOD_MODEL_ARTIFACT
+  - RESTART_CAPTURE_PROCESS      # watchdog already does this; M6
+                                 # formalizes it with verify+record
+  - RETRY_IDEMPOTENT_FETCH
+
+class_b_fail_closed:      # diagnose + propose, never auto-repair
+  [MODEL_PARITY_FAIL, SCHEMA_DRIFT_ON_DECISION_INPUT,
+   MISSING_CRITICAL_QUOTE, CONFIG_HASH_MISMATCH,
+   RECONCILIATION_FAILURE, PIT_INTEGRITY_FAILURE,
+   FEATURE_SCHEMA_MISMATCH]
+
+class_c_never_autonomous:
+  [change A3 threshold, change confidence floor, change entry cutoff,
+   change treatment/control, change sizing, change risk limits,
+   promote model, retire live control dependency,
+   change model qualification gates, change feature qualification
+   gates, change experiment denominator, register new strategy,
+   change research priority due solely to PnL]
+
+chaos_test_matrix:        # every repair passes ALL before enabled
+  [detects target failure, no trigger while healthy,
+   containment works, repair works, independent verification works,
+   verification failure fails closed, retry exhaustion works,
+   incident recorded, governance event recorded,
+   no experiment mutation, no model-policy mutation]
+
+rollout: [M6.0 registry+state-machine+monitor-of-monitors+incident
+    schema, M6.1 R1 + soak, M6.2 R2 + soak, M6.3 R3 + soak]
+
+incident_schema:
+  [incident_id, severity, opened_at, detected_by, plane, symptom,
+   root_cause, decision_impact, economic_impact, research_impact,
+   containment, repair_id, repair_attempts, verification, closed_at,
+   regression_test]
+  law: "root_cause stays UNKNOWN until established — never invent a
+    cause to close an incident; every material failure creates a new
+    invariant/fixture/monitor/precondition or records why not"
+
+research_locks_during_m6:
+  A3: FROZEN COLLECTING — repairs may touch daemon/capture/publisher/
+    observability, never A3 semantics
+  F-XVENUE: CAPTURE_ONLY — may restore capture reliability; may not
+    mark F1 PASS early, change coverage/7-day gates, or train early
+  model_research: single candidate stands; no second candidate merely
+    because repair infrastructure exists

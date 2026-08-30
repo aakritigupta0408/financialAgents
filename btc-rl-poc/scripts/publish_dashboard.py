@@ -104,6 +104,8 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("information_timing.json", None),
     ("xvenue_state.jsonl", 500),
     ("f1_capture_qualification.json", None),
+    ("monitor_health.json", None),
+    ("m5_soak.json", None),
     ("reconciliation.json", None),
     ("meta_monitors.json", None),
     ("leakage_canaries.json", None),
