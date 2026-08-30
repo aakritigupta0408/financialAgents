@@ -1,6 +1,18 @@
 # Migration Manifest + Agent Execution Plan
 ## Master Build Contract → concrete mapping (2026-08-30)
 
+> **SUPERSEDED IN PART (08-30):** the PM issued the authoritative
+> 126-section Migration Manifest + Agent Execution Plan. Machine-
+> readable dispositions now live in `config/COMPONENT_REGISTRY.yaml`
+> (the §85 manifest) and metric contracts in `config/METRICS.yaml`
+> v1.1.0. Deltas adopted from the PM plan: M11+M8 → DIAGNOSTIC
+> ARCHIVE (runtime stopped, not shadow); M-branches M2/M2+M8/M3/
+> M3+M8/M9/M11 → ARCHIVED (not merely retired); kb3 flagged
+> INCUMBENT CANDIDATE pending the M2 evaluator; pt7 renamed
+> EXEC_BENCH_NAIVE_MAKER; daily PM snapshot (§111) emitted as
+> results/pm_snapshot.json on the audit chain. The section below
+> remains as the page/script mapping detail.
+
 Companion to docs/RETIREMENT_MANIFEST.md (M3 roster verdicts — already
 executing: TX-B runtime cut is LIVE) and docs/REDESIGN_PLAN.md.
 **IA supersession**: the master contract replaces the 5-page site with

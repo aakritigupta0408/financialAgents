@@ -33,7 +33,10 @@ STEPS = [
     "scripts/reconcile.py",
     "tests/leakage_canaries.py",
     "scripts/emit_oracle_calls.py",
+    "scripts/emit_a3.py",
     "scripts/emit_build_manifest.py",
+    "scripts/emit_model_observatory.py",
+    "scripts/emit_pm_snapshot.py",
     "scripts/emit_readiness.py",
 ]
 

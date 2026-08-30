@@ -447,13 +447,15 @@ ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
 RETIRED_TRADERS = frozenset({"pt2", "pt4", "pt5", "pt7", "pt8"})
 PT6_SHADOW = True
 # One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
-# t_exec_reg (M10+M8); t_regime kept as the single-factor diagnostic,
-# t_limit_reg + t_edgeband observe as shadows. Every other treatment
-# stops consuming runtime — the paired history in treatments.jsonl
-# stays frozen evidence.
+# t_exec_reg (M10+M8); t_regime kept as the legacy-control component
+# reference (PM plan §36), t_edgeband observes as shadow (§43).
+# M11+M8 (t_limit_reg) moved to DIAGNOSTIC ARCHIVE (§41) — its
+# causal-explanation purpose is served. Every other treatment stops
+# consuming runtime — the paired history in treatments.jsonl stays
+# frozen evidence.
 RETIRED_TREATMENTS = frozenset({
     "t_cal", "t_knife", "t_cheap", "t_both", "t_fshare",
-    "t_fs_reg", "t_limit", "t_evlead"})
+    "t_fs_reg", "t_limit", "t_evlead", "t_limit_reg"})
 
 
 def _pt6_features(conf: float, ask_c: float, k_pup: float | None,

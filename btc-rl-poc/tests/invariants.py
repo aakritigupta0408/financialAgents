@@ -195,12 +195,15 @@ def _one_ctl_one_treat():
     registered diagnostics/shadows. A retired key reappearing (or a
     new key arriving unregistered) is a roster violation."""
     ALLOWED = {"champion", "champion_real", "t_regime", "t_exec",
-               "t_exec_reg", "t_limit_reg", "t_edgeband"}
+               "t_exec_reg", "t_edgeband"}
+    # t_limit_reg rows written between the 08-29 freeze and the 08-30
+    # diagnostic-archive ruling (PM §41) are legitimate history
+    GRACE = {"t_limit_reg"}
     bad = []
     for r in rows("treatments.jsonl"):
         if r.get("close_ts", 0) <= O.ROSTER_FREEZE_TS:
             continue
-        extra = set((r.get("ev") or {})) - ALLOWED
+        extra = set((r.get("ev") or {})) - ALLOWED - GRACE
         if extra:
             bad.append(f"{r.get('ticker')}: {sorted(extra)}")
         if not {"t_exec", "t_exec_reg"} <= set(r.get("ev") or {}):

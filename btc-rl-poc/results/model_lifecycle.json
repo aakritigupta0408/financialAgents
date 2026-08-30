@@ -1,0 +1,311 @@
+{
+ "generated_ts": 1788073489,
+ "dictionary_version": "1.1.0",
+ "training_runs": {
+  "total": 4848,
+  "appended_this_emit": 4848,
+  "artifact": "training_runs.jsonl"
+ },
+ "t2_models": {
+  "kb2": {
+   "model_id": "kb2",
+   "role": "CONTROL (market-anchored)",
+   "tier": "T2",
+   "lifecycle": "CONTROL",
+   "offline": {
+    "status": "NOT_RECORDED",
+    "note": "arms are online-prequential; the offline block begins with the M2 walk-forward evaluator \u2014 absence is stated, never faked"
+   },
+   "launch": {
+    "note": "first 25 settled decision-time windows in the retained log",
+    "n": 25,
+    "brier": 0.2029,
+    "log_loss": 0.5858,
+    "selective_acc_75": 0.8571,
+    "selective_coverage_75": 0.28,
+    "selective_n_75": 7,
+    "market_brier": 0.2064,
+    "bss_vs_market": 0.0171,
+    "market_n": 25
+   },
+   "current": {
+    "n": 25,
+    "brier": 0.1788,
+    "log_loss": 0.5423,
+    "selective_acc_75": 1.0,
+    "selective_coverage_75": 0.08,
+    "selective_n_75": 2,
+    "market_brier": 0.1788,
+    "bss_vs_market": 0.0,
+    "market_n": 25
+   },
+   "lifetime": {
+    "n": 168,
+    "brier": 0.2064,
+    "log_loss": 0.5999,
+    "selective_acc_75": 0.7879,
+    "selective_coverage_75": 0.1964,
+    "selective_n_75": 33,
+    "market_brier": 0.2064,
+    "bss_vs_market": -0.0001,
+    "market_n": 168
+   },
+   "windows": {
+    "LIFETIME": {
+     "n": 168,
+     "brier": 0.2064,
+     "log_loss": 0.5999,
+     "selective_acc_75": 0.7879,
+     "selective_coverage_75": 0.1964,
+     "selective_n_75": 33,
+     "market_brier": 0.2064,
+     "bss_vs_market": -0.0001,
+     "market_n": 168
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.2055,
+     "log_loss": 0.5984,
+     "selective_acc_75": 0.8421,
+     "selective_coverage_75": 0.19,
+     "selective_n_75": 19,
+     "market_brier": 0.2052,
+     "bss_vs_market": -0.0016,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.2026,
+     "log_loss": 0.591,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.1,
+     "selective_n_75": 5,
+     "market_brier": 0.2026,
+     "bss_vs_market": 0.0,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1788,
+     "log_loss": 0.5423,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.08,
+     "selective_n_75": 2,
+     "market_brier": 0.1788,
+     "bss_vs_market": 0.0,
+     "market_n": 25
+    }
+   },
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1788,
+    "brier_prior_75": 0.2145,
+    "delta": -0.0357,
+    "why": "Brier last-25 0.1788 vs prior-75 0.2145 (\u0394 -0.0357, band \u00b10.01)"
+   },
+   "scoring_convention": "decision-time row (earliest settled row with mins_left <= 12) \u2014 one observation per window",
+   "min_n": {
+    "display": 10,
+    "compare": 25,
+    "gate": 50
+   }
+  },
+  "kb9": {
+   "model_id": "kb9",
+   "role": "CHALLENGER (TimesFM fusion)",
+   "tier": "T2",
+   "lifecycle": "TREATMENT",
+   "offline": {
+    "status": "NOT_RECORDED",
+    "note": "arms are online-prequential; the offline block begins with the M2 walk-forward evaluator \u2014 absence is stated, never faked"
+   },
+   "launch": {
+    "note": "first 25 settled decision-time windows in the retained log",
+    "n": 25,
+    "brier": 0.2233,
+    "log_loss": 0.6283,
+    "selective_acc_75": 0.7,
+    "selective_coverage_75": 0.4,
+    "selective_n_75": 10,
+    "market_brier": 0.2064,
+    "bss_vs_market": -0.0814,
+    "market_n": 25
+   },
+   "current": {
+    "n": 25,
+    "brier": 0.1806,
+    "log_loss": 0.5418,
+    "selective_acc_75": 1.0,
+    "selective_coverage_75": 0.16,
+    "selective_n_75": 4,
+    "market_brier": 0.1788,
+    "bss_vs_market": -0.0101,
+    "market_n": 25
+   },
+   "lifetime": {
+    "n": 168,
+    "brier": 0.2154,
+    "log_loss": 0.6228,
+    "selective_acc_75": 0.75,
+    "selective_coverage_75": 0.2381,
+    "selective_n_75": 40,
+    "market_brier": 0.2064,
+    "bss_vs_market": -0.0436,
+    "market_n": 168
+   },
+   "windows": {
+    "LIFETIME": {
+     "n": 168,
+     "brier": 0.2154,
+     "log_loss": 0.6228,
+     "selective_acc_75": 0.75,
+     "selective_coverage_75": 0.2381,
+     "selective_n_75": 40,
+     "market_brier": 0.2064,
+     "bss_vs_market": -0.0436,
+     "market_n": 168
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.211,
+     "log_loss": 0.6148,
+     "selective_acc_75": 0.8,
+     "selective_coverage_75": 0.2,
+     "selective_n_75": 20,
+     "market_brier": 0.2052,
+     "bss_vs_market": -0.0281,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.206,
+     "log_loss": 0.6126,
+     "selective_acc_75": 0.875,
+     "selective_coverage_75": 0.16,
+     "selective_n_75": 8,
+     "market_brier": 0.2026,
+     "bss_vs_market": -0.0165,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1806,
+     "log_loss": 0.5418,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.16,
+     "selective_n_75": 4,
+     "market_brier": 0.1788,
+     "bss_vs_market": -0.0101,
+     "market_n": 25
+    }
+   },
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1806,
+    "brier_prior_75": 0.2211,
+    "delta": -0.0405,
+    "why": "Brier last-25 0.1806 vs prior-75 0.2211 (\u0394 -0.0405, band \u00b10.01)"
+   },
+   "scoring_convention": "decision-time row (earliest settled row with mins_left <= 12) \u2014 one observation per window",
+   "min_n": {
+    "display": 10,
+    "compare": 25,
+    "gate": 50
+   }
+  }
+ },
+ "t1_serving": {
+  "h1": {
+   "model_id": "h1",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 183,
+   "kept": 62,
+   "keep_rate": 0.339,
+   "last_run_ts": 1788073245,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 232.19
+  },
+  "h5": {
+   "model_id": "h5",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 183,
+   "kept": 81,
+   "keep_rate": 0.443,
+   "last_run_ts": 1788073245,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 636.36
+  },
+  "h15": {
+   "model_id": "h15",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 183,
+   "kept": 83,
+   "keep_rate": 0.454,
+   "last_run_ts": 1788073245,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 1539.6
+  },
+  "h30": {
+   "model_id": "h30",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 183,
+   "kept": 88,
+   "keep_rate": 0.481,
+   "last_run_ts": 1788073245,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 4464.73
+  },
+  "t9-h1": {
+   "model_id": "t9-h1",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 183,
+   "kept": 66,
+   "keep_rate": 0.361,
+   "last_run_ts": 1788073245,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 212.78
+  },
+  "t10-h5": {
+   "model_id": "t10-h5",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 183,
+   "kept": 84,
+   "keep_rate": 0.459,
+   "last_run_ts": 1788073245,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 838.8
+  },
+  "t7-h15": {
+   "model_id": "t7-h15",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 183,
+   "kept": 54,
+   "keep_rate": 0.295,
+   "last_run_ts": 1788073245,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 1671.86
+  },
+  "t9-h30": {
+   "model_id": "t9-h30",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 183,
+   "kept": 86,
+   "keep_rate": 0.47,
+   "last_run_ts": 1788073245,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 4326.72
+  }
+ },
+ "provenance": {
+  "kb_source": "kalshi_binary_log.jsonl (retained tail)",
+  "runs_source": "metrics_history.jsonl"
+ }
+}

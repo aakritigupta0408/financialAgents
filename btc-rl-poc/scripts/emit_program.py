@@ -129,7 +129,8 @@ LIFECYCLE = {
     "t_exec": "CONTROL — the legacy experiment incumbent",
     "t_exec_reg": "TREATMENT — the one legacy challenger (does "
                   "regime filtering add value beyond the exec guard?)",
-    "t_limit_reg": "SHADOW (diagnostic only) — no promotion path",
+    "t_limit_reg": "ARCHIVED (diagnostic) — causal-explanation "
+                   "purpose served (PM §41); no promotion path",
     "t_limit": "RETIRED (standalone) — history frozen 08-29; no "
                "promotion path",
     "t_fshare": "RETIRED (branch) — history frozen 08-29",

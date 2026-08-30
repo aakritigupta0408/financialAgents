@@ -1,123 +1,74 @@
-# Reporting Overhaul: Themed Pages, Metric History, Industry-Standard Evaluation
+# kb8 + kb9: improve on kb7 without touching kb7
 
 ## Context
 
-The live page (`live_online.html`) was redesigned into the "ticker-desk" system
-(flat near-black, validated palette, Didot display serif, tabbed IA). The other
-three pages — `experiment_review.html`, `live_training.html`, `index.html` —
-still wear old skins, don't persist metric history across retrains (every
-retrain overwrites; no before/after comparison), and report a metric set that
-grew organically. The user wants: (1) all pages in theme, (2) metric history
-persisted at every retrain for comparison, (3) the metric set audited against
-industry standards for short-horizon financial forecasting, with an honest
-verdict on our problem formulation.
+kb7 (Chronos-Bolt-small, zero-shot, univariate, frozen) is our best decorrelated arm — the only one whose confidence survives biddability — but its audit exposed four measured weaknesses:
 
-## Industry-standards audit (research summary)
+1. **Univariate & blind to the market.** It sees only minute closes — no volume, perp lead, tape flow, and crucially not the Kalshi market price it must beat. Clustered t vs market = −1.02: not significant.
+2. **Zero-shot.** Never adapted to BTC minute dynamics; context ablation plateaus at 512 (more of the *same channel* adds nothing — new information must come from new channels or a learned readout).
+3. **Miscalibrated mid-buckets.** Stated 0.6 confidence delivers 52%; top bucket 84%. A learned calibration layer can harvest this.
+4. **Stateless.** No settle-time learning at all.
 
-| Category | Standard metrics | We have | Missing |
-|---|---|---|---|
-| Point forecast | MAE, RMSE, **MASE** (scaled to naive/random-walk), DM significance tests | MAE, MAE/floor ratio (≡ MASE vs persistence), DM w/ HAC lags | RMSE; the explicit "MASE" framing |
-| Direction | Directional accuracy + **Pesaran–Timmermann test** | dir% | PT significance test |
-| Probabilistic | **PICP** (interval coverage), **sharpness** (width), **pinball loss**, CRPS | 80% coverage | sharpness, pinball@10/90 (computable from stored lo/hi for every arm), CRPS (optional) |
-| Binary / market | **Brier**, **Brier skill score** vs market & climatology (0.25), reliability diagram | Brier, market Brier | BSS numbers, calibration curve (data already logged) |
-| Trading | PnL **after costs**, hit rate, profit factor, max drawdown | raw paper P&L | Kalshi fee model (≈7·P·(1−P)¢), drawdown, per-bet expectancy |
+Per the standing law (additive-only), kb7 stays byte-identical. Two new treatments:
 
-**Formulation verdict** (stated on the review page): literature agrees
-minute-scale crypto ≈ random walk — models rarely beat persistence on level at
-these horizons; direction is the partially-predictable component. Our design —
-persistence-scaled scoring, leakage guards, DM tests, live paper market — is
-more rigorous than typical published setups. Real gaps: no cost model in P&L,
-no direction significance test, unreported interval sharpness (all fixed by
-this plan); the legacy exact-integer hit is already replaced by the vol-scaled
-band.
+- **kb8 — calibrated decorrelation stack** (live within a day): an online BinaryLogit that fuses kb7's signal with the market anchor — the kb4 pattern applied to our best decorrelated source. Attacks weaknesses 1 (market-blindness), 3, 4.
+- **kb9 — Chronos-2 with covariates** (research-gated): `chronos-forecasting 2.3.1` is **already installed**, and the Chronos-2 generation accepts covariates natively — exactly the TA's "LLM time-series with more inputs" direction. Attacks weaknesses 1, 2. Goes live only if it beats the kb7 replay baseline on a window-clustered offline gauntlet.
 
-## Implementation plan
+All offline comparisons are **window-clustered** (the lesson from the 13/14 counting error — stream metrics by window, never by minute).
 
-### A. Metrics layer — new `btc_rl/metrics.py`
-Pure functions reused by evaluator + page builders:
-`mase(errs, naive_errs)`, `rmse`, `pinball(actual, lo, hi)` (q10/q90),
-`sharpness(lo, hi)`, `pt_test(preds, actuals)` (Pesaran–Timmermann z),
-`brier_skill(brier, ref)`, `calibration_bins(p, y, n_bins=10)`,
-`kalshi_fee_c(price_c)` ≈ 7·p·(1−p) cents, `max_drawdown(cum_series)`.
-Extend `scripts/evaluate_all.py` with the new columns (RMSE, MASE, PT z,
-sharpness, pinball, BSS, fee-adjusted bet P&L).
+## Phase 1 — Offline gauntlet (`tests/kb8_gauntlet.py`)
 
-### B. Metric-history persistence — `results/metrics_history.jsonl`
-Append-only, one JSON row per event, `kind` + `ts` + git sha; trim ~5k rows.
-- `kind:"retrain"` — written by `retrain_all()` (`btc_rl/online.py`) after the
-  gate: per arm×horizon `val_mae_before/after/reverted`, plus a trailing-6h
-  online snapshot (per arm×h: n, MAE, MASE, dir%, coverage, sharpness; kb:
-  brier, mkt_brier, BSS; bets: n, fee-adjusted pnl_c). Fixes the biggest
-  confirmed gap: gate outcomes currently live only in
-  `online_status.json["last_retrain"]` and are overwritten within one 30s poll.
-- `kind:"batch"` — appended by `btc_rl/train.py` (writer of metrics.json —
-  which also gains a `generated_at` field), `scripts/train_l2.py` (already
-  computes test/persistence MAE), and `scripts/train_l3.py`/`train_l4.py`
-  (currently print test MAE to stdout ONLY — capture into a dict and append,
-  so L3/L4 batch numbers finally survive somewhere machine-readable; today
-  they exist only in the hand-written OFFLINE_METRICS.md).
-No append-only metric history exists today (`learning_log.jsonl` is just
-session counters that reset per restart).
+Extend the replay mechanics of `tests/kb7_context_ablation.py` (fetch bars once, replay a mid-window decision per settled window) into a shared bench:
 
-### C. Shared theme — `site/theme.css`
-Extract ticker-desk tokens + components (palette incl. validated series
-colors, statusbar/stat/bignum, arm tags, chips/tabs, tables, pills,
-details/summary, legend, svg rules) from `live_online.html`; all four pages
-link it. `build_site.py` emits the `<link>` instead of its inline CSS.
+- Windows: settled kb2 rows at `6 <= mins_left <= 9`, one per ticker, last ~260 (same selection as the ablation, `tests/kb7_context_ablation.py:20-24`); bars via `fetch_range` (~64h → ~180–260 usable windows).
+- Candidates, all scored on the identical window set:
+  1. `kb7-replay` (bolt-small @512) — the baseline to beat. **Fix the stale unpack**: `_chronos_p_up` now returns a 4-tuple `(p, w80, lo, hi)`, but the ablation script does `p, _ = out` (`tests/kb7_context_ablation.py:42`) — kb8_gauntlet unpacks 4.
+  2. `bolt-base` — same readout, bigger checkpoint (cheap ablation).
+  3. `chronos-2 univariate` — new pipeline class from the installed package, same quantile readout at the strike.
+  4. `chronos-2 + covariates` — add minute volume (from bars) as the first covariate; perp/tape from `live_snapshots.jsonl` joined ±90s (the `tests/warmstart_kb6.py` join pattern) where coverage allows.
+- Report per candidate: n windows, acc, Brier, **window-clustered paired t vs kb7-replay and vs market**, and median CPU latency per predict (live budget: ≤2s per minute loop; try `device_map="mps"` if CPU is too slow — torch 2.7.0 on darwin supports it).
 
-### D. `experiment_review.html` — rebuild as the online evaluation lab
-1. Hero strip: experiment status one-liner (arms, spans, slots scored).
-2. **Scoreboard** (centerpiece): per arm×horizon — n, MAE, RMSE, MASE, dir%
-   (+PT flag), coverage%, sharpness, pinball — leader highlighted, DM markers.
-3. **Across retrains**: timeline from `metrics_history.jsonl` — kept/reverted
-   gate heat-strip per retrain, MASE-by-era sparkline, "vs previous retrain"
-   delta chips.
-4. **Binary & bets**: Brier / market Brier / BSS tiles, SVG reliability
-   diagram (10 bins), fee-adjusted bet P&L + max drawdown.
-5. **Formulation & methodology** (collapsed): the audit table above, arm
-   cards, architecture SVG restyled.
-Reuse existing render fns: `onlineStats` (extend with rmse/mase/pinball/
-sharpness — it already computes n/mae/rmse/dir/cov/width), `dmStat`,
-`groupedChart`, `pctChart`, `offlineBlock` (point it at batch history rows so
-L2–L4 stop showing "no batch backtest"); drop the purple hero/bg-fx.
+Decision rule (pre-registered): kb9 goes live only if `chronos-2` (either variant) beats `kb7-replay` on clustered Brier with |t| > 2. Otherwise kb9 is reported as a measured negative and only kb8 ships.
 
-Research sources for the audit: Diebold–Mariano usage and multi-horizon
-extensions (Journal of Forecasting 2026), MASE-as-standard (AutoGluon-TS,
-M-competitions practice), CRPS/pinball/PICP as probabilistic standards
-(energy-forecasting competition literature), crypto-specific evidence that
-hourly/minute models rarely beat random walk while direction is partially
-predictable (Financial Innovation 2024 crypto DL comparison), and
-trading-side standards (Sharpe/PnL-after-costs/max drawdown).
+## Phase 2 — kb8 live arm (`btc_rl/online.py`, additive)
 
-### E. `index.html` via `scripts/build_site.py` — batch report, themed
-- theme.css link + ticker-desk hero; MASE column added to per-agent tables
-  (agent MAE / persistence MAE — `mae` fields already in metrics.json).
-- Fix two confirmed bugs: the "Best exact-int/MAE" stat tiles hardcode the
-  persistence baseline (mislabeled as "Best"); `AGENT_LABELS` KeyErrors on any
-  new agent key — make labels fall back to the raw key.
-- New "previous runs" section from `kind:"batch"` history rows (date, agent,
-  per-horizon test MAE, delta vs prior run).
-- Batch numbers for L2–L4 (from history rows) join the tables, closing the
-  "two disjoint metric worlds" seam (metrics.json knows only L0/L1 today,
-  which is why the review page shows "no batch backtest" for most arms).
+New 12-dim online stack, template = kb4 (`_kb4_features` at online.py:539-556, commit at 1928-1950, settle at 2069-2114):
 
-### F. `live_training.html` — themed telemetry + retrain timeline
-- theme.css restyle (keeps epoch charts + EMA smoothing).
-- New "Hourly retrains (live)" section from `kind:"retrain"` rows: strip chart
-  of kept/reverted per arm over time + latest before→after val-MAE deltas —
-  the online-training counterpart to the batch curves above it.
+- `KB8_DIM = 12`, `_kb8_features(p7, w80, k_pup, bx, pf, mins_left)`:
+  `[1.0 (bias), p7−0.5 ×2, mkt−0.5 ×2, (p7−mkt) ×2 (disagreement — the decorrelation harvest term), agreement product, w80 normalized (band width = kb7's own uncertainty), market-presence flag, above-strike z (bx[3]), mins_left/15] + pf[4]` → trim to 12 by folding presence into the market term as kb4 does.
+- Commit: inside the existing kb7 block (online.py:1961-1977), immediately after `fm` unpacks — reuse the same `fm` result (one Chronos call per slot, no added latency), guarded by its own `("kb8", ticker, slot1)` key in `kb_made`. Emit row `{**common, variant:"kb8", p_up, call, b8x, trained}`. kb7's rows and Conviction Book logic are untouched; kb8 adds **no** pb_bets stream yet (pre-registration comes later, only after a live track record).
+- Settle: in the settle loop, `if r.get("b8x")` → `kb8_logit.update(b8x, outcome)` (label = outcome, like kb4/kb6). Checkpoint `results/kb8_logit.json` with a **unique `.tmp8` suffix** at the online.py:2102-2114 save block.
+- Startup load: kb4 pattern at online.py:1549-1556 (dim mismatch → fresh model).
+- Status JSON: add `"kb8"` to the arms tuple at online.py:2381.
 
-### G. Verification
-1. `pytest tests/` (new unit tests for metrics.py: MASE, pinball, PT, fee,
-   calibration edges).
-2. Headless-render page JS on real ledger dumps (node, as done for
-   live_online) + `node --check` each page.
-3. Retrain dry-run (tests/check_retrain.py pattern) → confirm a
-   `kind:"retrain"` row appends and pages render it.
-4. `python scripts/build_site.py` → verify index + history section.
-5. curl all four pages via the 8787 server; user eyeballs the theme.
-6. Daemon restart after online.py changes (watchdog as backstop).
+## Phase 3 — kb8 warm start (`tests/warmstart_kb8.py`)
 
-### Order of work
-A → B (daemon restart) → C → D → E → F → G — data layer first so pages have
-something to render, then theme, then pages heaviest-first.
+kb7's own log is too thin to train on (200 settled rows, **15 windows**). Instead, replay-generate the kb7 signal over history:
+
+- For each settled kb2 row (2,826 rows carry decision-time `strike, mins_left, mkt_p_up, bx, pf`), call `_chronos_p_up` on the bar-close prefix strictly before `made_ts` (the `upto[-512:]` mechanic from the ablation script — no leakage; unpack 4 values).
+- Build `b8x` from logged decision-time values only, sort by `close_ts` (settle order, the `tests/warmstart_kb4.py:36` discipline), prequential predict-then-update, report full and final-quarter prequential accuracy **and a window-clustered comparison vs kb7-replay and market on the same rows**, save `results/kb8_logit.json`.
+- Runtime note: ~2,000+ Chronos calls × 0.05s ≈ 2–3 min — fine. Bars from `fetch_range` limit warm start to ~64h of windows; that's ~180 windows ≈ 12× kb7's own log.
+
+## Phase 4 — kb9 live arm (only if Phase 1 gate passes)
+
+Same additive pattern as kb8: `_chronos2_p_up` with its own lazy singleton (kb7's `_CHRONOS` untouched), covariate assembly from `kbars` volume + `_flow_stats`/OKX fields already computed in the loop, `variant:"kb9"` rows, frozen zero-shot (no checkpoint). If MPS is needed for latency, set device only in the new singleton.
+
+## Phase 5 — Site registration (additive, `site/ab_dashboard.html`)
+
+Six touch-points per new arm (verified locations): `ARMS_META` (~line 449), `LCOL` (~480), `DL_TAU` (~705, start kb8 at 0.62), dlData loop list (~710), ledger chip markup (~line 89), chip wiring (~802-811). Add league-table row + decision-ledger chip for kb8 (and kb9 if promoted). Existing arms' cards/rows untouched. Home page: no change in this pass (kb8 earns a desk-chat mention only after live windows accrue).
+
+## Files
+
+- `tests/kb8_gauntlet.py` — new (offline bench, all candidates, clustered stats)
+- `tests/warmstart_kb8.py` — new (replay warm start, prequential report)
+- `btc_rl/online.py` — additive: KB8_DIM/`_kb8_features`/kb8 commit-settle-load-save + status tuple; Phase 4 adds `_chronos2_p_up` + kb9 block
+- `site/ab_dashboard.html` — additive: 6 registration points
+- `tests/kb7_context_ablation.py` — fix stale 2-tuple unpack (test hygiene; kb7 live path untouched)
+
+## Verification
+
+1. Gauntlet table prints with clustered t's; latency per candidate measured; gate decision recorded in the commit message.
+2. Warm start reports prequential accuracy (target: beats kb7-replay on the same windows — else ship kb8 cold and say so).
+3. Restart daemon; within one 15-min window confirm: kb7 rows byte-identical in shape, new kb8 rows appear with `b8x`/`trained`, settle updates increment `trained`, `kb8_logit.json` written via `.tmp8`.
+4. Dashboard: kb8 league row + ledger chip render; all existing rows unchanged; graphs keep titles/legends/axis labels.
+5. Report kb8's first live metrics window-counted, with Wilson CIs, in the league table like every other arm.

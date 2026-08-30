@@ -1,0 +1,121 @@
+# COMPONENT_REGISTRY.yaml v1.0.0 — 2026-08-30
+# Machine-readable migration manifest (PM plan §85). One row per
+# component; `runtime: false` means the daemon/crons do no live work
+# for it. History is NEVER deleted — see reopen_condition per row.
+# Enforced by tests/invariants.py (retired-roster-frozen,
+# one-control-one-treatment) and consumed by emitters/agents/UI.
+
+version: 1.0.0
+budgets:
+  max_active_traders: 5          # one slot deliberately EMPTY
+  max_serving_model_roles: 3     # end-state; horizon pairs interim
+  max_live_treatments_per_experiment: 1
+
+traders:
+  - {id: pt,  name: Follower,    lifecycle: CONTROL,  runtime: true,
+     role: TRADER_BASELINE, reason: frozen baseline execution}
+  - {id: pt3, name: Disciplined, lifecycle: CONTROL,  runtime: true,
+     role: TRADER_DISCIPLINED, reason: simple selective-thesis comparator}
+  - {id: pt6, name: MLE,         lifecycle: SHADOW,   runtime: true,
+     role: TRADER_META_CHALLENGER, stakes: false,
+     reason: zero-stake shadow; earns ACTIVE via offline+walk-forward+shadow+paired-forward}
+  - {id: a3,  name: A3-T10,      lifecycle: TREATMENT, runtime: true,
+     role: TRADER_ENTRY_TIMING, control: C0,
+     reason: frozen forward experiment A3-v1.1}
+  - {id: slot5, name: EMPTY, lifecycle: EMPTY, runtime: false,
+     reason: a future trader must earn admission by solving a measured bottleneck}
+  - {id: pt2, name: Ladder, lifecycle: RETIRED, runtime: false,
+     reason: control duplication + banking (not alpha),
+     consolidated_into: risk/capital engine (future),
+     reopen_condition: banking tested as a treatment vs frozen trader}
+  - {id: pt4, name: Gambler, lifecycle: ARCHIVED, runtime: false,
+     role: RISK_STRESS_EXHIBIT,
+     reason: sizing is risk-layer, not strategy; teaching exhibit}
+  - {id: pt5, name: Saver, lifecycle: RETIRED, runtime: false,
+     consolidated_into: risk/capital engine (stake fraction + skim)}
+  - {id: pt7, name: Patient, lifecycle: RETIRED, runtime: false,
+     role: EXEC_BENCH_NAIVE_MAKER, monitoring: benchmark_only,
+     reason: mechanism_falsified (adverse selection measured),
+     reopen_condition: fill/queue model changes}
+  - {id: pt8, name: Ideal, lifecycle: ARCHIVED, runtime: false,
+     reason: unattributable composite (6 simultaneous causal changes),
+     reopen_condition: ingredients re-enter one at a time as single treatments}
+
+models:
+  - {id: market_baseline, tier: T2, lifecycle: CONTROL, runtime: true,
+     role: MARKET_STRUCTURAL_CONTROL,
+     reason: the benchmark every model must beat (BSS vs market)}
+  - {id: kb2, tier: T2, lifecycle: CONTROL, runtime: true,
+     note: market-anchored — NOT an independent fair-value oracle;
+       serving because A3/product theses require it}
+  - {id: kb9, tier: T2, lifecycle: TREATMENT, runtime: true,
+     note: TimesFM fusion challenger; temporary — not proof of
+       long-term fair-value correctness}
+  - {id: kb3, tier: T2, lifecycle: SHADOW, runtime: false,
+     note: CANDIDATE FOR INCUMBENT pending M2 evaluator verdict}
+  - {id: kb4, tier: T2, lifecycle: RETIRED, runtime: false, note: offline only}
+  - {id: kb5, tier: T2, lifecycle: RETIRED, runtime: false,
+     note: edge anti-signal research benchmark}
+  - {id: kb6, tier: T2, lifecycle: ARCHIVED, runtime: false,
+     reason: falsified (coverage 37%, calibration ~noise)}
+  - {id: kb7, tier: T2, lifecycle: RETIRED, runtime: false,
+     note: Chronos zero-shot temporal baseline (offline)}
+  - {id: kb8, tier: T2, lifecycle: RETIRED, runtime: false,
+     note: market+temporal blend benchmark (offline/shadow)}
+  - {id: kbf, tier: T2, lifecycle: ARCHIVED, runtime: false,
+     reason: accuracy without monetizability — forecast arrives too late;
+       canonical teaching specimen}
+  - {id: t1_serving_pairs, tier: T1, lifecycle: CONTROL, runtime: true,
+     note: "h1/h5/h15/h30 ctl + t9-h1/t10-h5/t7-h15/t9-h30 treatment;
+       LEAN_RETRAIN enforces; all other t-arms FROZEN (serve nothing,
+       never retrain). max-3-roles end-state awaits owner call vs
+       keep-all-horizons order"}
+
+experiments:
+  - {id: A3-v1.1, lifecycle: TREATMENT, runtime: true, control: C0,
+     treatment: T10, shadows: [T05, T15], frozen: true}
+  - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
+     control: t_exec, treatment: t_exec_reg,
+     note: the ONE legacy pair; after verdict archive loser, close family}
+  - {id: M8,  key: t_regime, lifecycle: SHADOW, runtime: true,
+     note: legacy-control component reference only (§36)}
+  - {id: M13, key: t_edgeband, lifecycle: SHADOW, runtime: true,
+     note: shadow only while A3 + legacy unresolved}
+  - {id: M11+M8, key: t_limit_reg, lifecycle: ARCHIVED, runtime: false,
+     note: diagnostic archive — purpose was causal explanation, done}
+  - {id: M1,  key: t_cal,    lifecycle: RETIRED,  runtime: false,
+     consolidated_into: model observability (drift diagnostic)}
+  - {id: M2,  key: t_knife,  lifecycle: ARCHIVED, runtime: false}
+  - {id: M2+M8, key: t_both, lifecycle: ARCHIVED, runtime: false}
+  - {id: M3,  key: t_fshare, lifecycle: ARCHIVED, runtime: false}
+  - {id: M3+M8, key: t_fs_reg, lifecycle: ARCHIVED, runtime: false}
+  - {id: M9,  key: t_cheap,  lifecycle: ARCHIVED, runtime: false,
+     reopen_condition: registered cheap-contract product question}
+  - {id: M11, key: t_limit,  lifecycle: ARCHIVED, runtime: false,
+     role: execution benchmark}
+  - {id: M12, key: t_evlead, lifecycle: RETIRED, runtime: false,
+     reopen_condition: register M12-v2 as a fresh control/treatment}
+
+services:
+  - {id: daemon, lifecycle: ACTIVE, runtime: true,
+     note: refactor toward module boundaries under M6; no god-loop growth}
+  - {id: publisher, lifecycle: ACTIVE, runtime: true,
+     note: atomic publish + self-heal + visible failure (meta-monitor row)}
+  - {id: auditor_chain, lifecycle: ACTIVE, runtime: true,
+     note: independent of primary evaluator; owns reconciliation/invariants}
+  - {id: watchdog, lifecycle: ACTIVE, runtime: true,
+     authority: restart stale daemon only}
+  - {id: capture+capture_watchdog, lifecycle: ACTIVE, runtime: true}
+  - {id: meta_monitor, lifecycle: ACTIVE, runtime: true}
+  - {id: trainer_hourly, lifecycle: ACTIVE, runtime: true,
+     note: evidence-gated retraining replaces blind hourly under M2/M6}
+  - {id: introspection_hourly, lifecycle: ACTIVE, runtime: true,
+     consolidated_into: Model Researcher agent (M5)}
+
+agents:   # five durable roles (M5) — session builder agents excluded
+  - {id: data_reliability,     lifecycle: PLANNED}
+  - {id: model_researcher,     lifecycle: PLANNED}
+  - {id: experiment_analyst,   lifecycle: PLANNED}
+  - {id: execution_researcher, lifecycle: PLANNED}
+  - {id: research_manager,     lifecycle: PLANNED,
+     note: structure live in program.json research_manager since 08-29}

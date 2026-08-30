@@ -1,0 +1,65 @@
+{
+ "generated_ts": 1788073609,
+ "a3": {
+  "n": 3,
+  "paired_delta": 0.0316,
+  "state": "COLLECTING",
+  "note": "no statistical conclusion below n=25"
+ },
+ "models": {
+  "control": "kb2 (market-anchored)",
+  "challenger": "kb9 (TimesFM fusion)",
+  "challenger_bss_vs_market": -0.0436,
+  "challenger_trend": "IMPROVING",
+  "control_trend": "IMPROVING"
+ },
+ "system": {
+  "readiness": "R2",
+  "strategy": "NO QUALIFIED EDGE",
+  "invariants": "14/14",
+  "open_sevs": 2,
+  "weakest_planes": [
+   "execution",
+   "security"
+  ]
+ },
+ "migration": {
+  "M1_forward_platform": "COMPLETE (frozen, collecting)",
+  "M2_observatory": "IN PROGRESS \u2014 metrics v1.1.0 + training registry + lifecycle shipped; offline/walk-forward evaluator + parity next",
+  "M3_lean_cleanup": "runtime cut LIVE (roster frozen, 9 treatments retired); registry codified",
+  "M4_backend_ui": "PENDING (after M2 schemas)",
+  "M5_agents": "PENDING (contracts first)",
+  "M6_self_healing": "PARTIAL (watchdog/self-heal exist; formal loop pending)"
+ },
+ "complexity": {
+  "active_traders": 4,
+  "empty_slots": 1,
+  "serving_model_roles": "kb2+kb9 (T2) + 4 frozen T1 pairs",
+  "active_experiments": [
+   "M10",
+   "M10+M8"
+  ],
+  "shadows": [
+   "T05",
+   "T15",
+   "M8",
+   "M13",
+   "pt6"
+  ]
+ },
+ "top_bottleneck": "Accumulate A3 forward evidence \u2014 biggest current unknown",
+ "next_action": "Validate A3 execution quality",
+ "blocked": [
+  "Value-of-Wait ML",
+  "Sizing",
+  "Passive execution"
+ ],
+ "provenance": [
+  "a3_live.json",
+  "program.json",
+  "model_lifecycle.json",
+  "readiness.json",
+  "invariants.json",
+  "incidents.jsonl"
+ ]
+}
