@@ -36,6 +36,7 @@ STEPS = [
     "scripts/emit_a3.py",
     "scripts/emit_build_manifest.py",
     "scripts/emit_model_observatory.py",
+    "scripts/check_parity.py",
     "scripts/eval_engine.py",
     "scripts/emit_pm_snapshot.py",
     "scripts/emit_readiness.py",

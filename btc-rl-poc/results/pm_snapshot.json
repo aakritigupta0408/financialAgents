@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788076589,
+ "generated_ts": 1788076813,
  "a3": {
   "n": 6,
   "paired_delta": -0.1863,
@@ -9,7 +9,7 @@
  "models": {
   "control": "kb2 (market-anchored)",
   "challenger": "kb9 (TimesFM fusion)",
-  "challenger_bss_vs_market": -0.0354,
+  "challenger_bss_vs_market": -0.0351,
   "challenger_trend": "IMPROVING",
   "control_trend": "IMPROVING"
  },
@@ -63,7 +63,7 @@
   "incidents.jsonl"
  ],
  "changed_since_last_snapshot": {
-  "prev_ts": 1788076539,
+  "prev_ts": 1788076589,
   "changes": [
    "unchanged"
   ]

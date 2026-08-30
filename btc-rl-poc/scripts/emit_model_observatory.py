@@ -206,7 +206,18 @@ def main():
             "current": windows["LAST_25"],
             "lifetime": windows["LIFETIME"],
             "windows": windows,
-            "trend": _trend(drows),
+            # PM 08-30: SELF TREND and BASELINE STATUS are separate
+            # verdicts and must never collapse into one badge — a
+            # model can improve vs its own past while still failing
+            # to beat the market
+            "self_trend": _trend(drows),
+            "baseline_status": (
+                "NOT_ESTABLISHED — lifetime BSS vs market "
+                f"{windows['LIFETIME'].get('bss_vs_market')}"
+                if (windows["LIFETIME"].get("bss_vs_market") or 0) <= 0
+                else "ESTABLISHED — lifetime BSS "
+                f"{windows['LIFETIME'].get('bss_vs_market')}"),
+            "trend": _trend(drows),   # legacy alias of self_trend
             "scoring_convention": "decision-time row (earliest settled "
                                   "row with mins_left <= 12) — one "
                                   "observation per window",

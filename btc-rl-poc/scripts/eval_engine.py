@@ -366,6 +366,61 @@ def main():
            "metric_contract": "config/METRICS.yaml v1.1.0",
            "models": models}
     (RES / "model_offline.json").write_text(json.dumps(doc, indent=1))
+    # model_qualification.json — ONE verdict object per candidate
+    # (PM 08-30): backend code never interprets 20 fold metrics
+    # independently. Verdict ladder:
+    #   INVALID           falsification battery failed
+    #   OFFLINE_FAIL      battery passed, median-fold BSS <= 0
+    #   SHADOW_ELIGIBLE   median BSS > 0 AND worst fold > -0.05 AND
+    #                     >= 60% folds beat market
+    #   FORWARD_CANDIDATE shadow-eligible AND pit PASS AND parity PASS
+    #                     (both currently NOT_AVAILABLE -> capped)
+    qual = {}
+    par = {}
+    try:
+        pj = json.loads((RES / "parity.json").read_text())
+        for v, st in (pj.get("by_model") or {}).items():
+            par[v] = ("FAIL" if st.get("fail")
+                      else "PASS" if st.get("pass")
+                      else "DEFERRED" if st.get("deferred")
+                      else "NOT_AVAILABLE")
+    except Exception:
+        pass
+    for v, m in models.items():
+        s = m["fold_summary"]
+        life = m["lifetime"]
+        if m["falsification_status"] != "PASS":
+            verdict = "INVALID"
+        elif not s or (s.get("median_fold_bss") or 0) <= 0:
+            verdict = "OFFLINE_FAIL"
+        elif (s.get("worst_fold_bss") or -1) > -0.05 \
+                and (s.get("fraction_folds_beating_market") or 0) >= 0.6:
+            verdict = "SHADOW_ELIGIBLE"
+        else:
+            verdict = "OFFLINE_FAIL"
+        qual[v] = {
+            "model_id": v, "version": m["model_version"],
+            "walk_forward": {k: s.get(k) for k in
+                             ("median_fold_bss", "worst_fold_bss",
+                              "fold_bss_variance",
+                              "fraction_folds_beating_market")},
+            "calibration": {"ece": life.get("ece"),
+                            "slope": life.get("calibration_slope"),
+                            "intercept":
+                                life.get("calibration_intercept")},
+            "selective_75": (life.get("selective") or {}).get("75"),
+            "economics": life.get("economics"),
+            "falsification": m["falsification_status"],
+            "pit": "AVAILABLE" if v in par else "NOT_AVAILABLE",
+            "parity": par.get(v, "NOT_AVAILABLE"),
+            "verdict": "INVALID" if par.get(v) == "FAIL" else verdict,
+            "verdict_note": "FORWARD_CANDIDATE additionally requires "
+                            "PIT + parity PASS — both blocked on the "
+                            "feature-snapshot store (M2.5)",
+        }
+    (RES / "model_qualification.json").write_text(json.dumps(
+        {"generated_ts": now, "engine_version": ENGINE_VERSION,
+         "models": qual}, indent=1))
     for v, m in models.items():
         s = m["fold_summary"]
         print(f"{v}: {m['falsification_status']} · n={m['n']} · "

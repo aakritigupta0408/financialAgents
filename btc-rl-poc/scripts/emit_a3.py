@@ -302,6 +302,20 @@ def main():
                 sh = st["shadows"][name]
                 sh["pnl"] = (round(pnl(sh["entry_ask"], won), 4)
                              if sh["state"] == "FILLED" else 0.0)
+            # PM 08-30: canonical A-F economic class per eligible
+            # window (measurement only — no thresholds move)
+            if st["state"] == "FILLED":
+                st["econ_class"] = ("A_FILLED_GOOD"
+                                    if st["a3_pnl"] >= st["control_pnl"]
+                                    else "B_FILLED_BAD")
+            elif st["state"] == "MISSED":
+                st["econ_class"] = ("C_MISSED_WINNER"
+                                    if st["control_pnl"] > 0
+                                    else "D_MISSED_LOSER")
+            elif st["state"] == "INVALIDATED":
+                st["econ_class"] = ("E_INVALIDATED_WINNER"
+                                    if st["control_pnl"] > 0
+                                    else "F_INVALIDATED_LOSER")
             ledger.append(st)
         else:
             if live is None or cts > (live.get("close_ts") or 0):
@@ -341,6 +355,46 @@ def main():
                sum(e["control_pnl"] for e in el
                    if e["state"] in ("MISSED", "INVALIDATED")), 3)
            if el else None}
+    # PM 08-30 canonical economic decomposition — the identity
+    #   paired Δ (total) = fill-window incremental gain
+    #                      − opportunity cost of no-entry windows
+    # holds EXACTLY under the frozen convention (no-entry a3_pnl = 0),
+    # and the residual is emitted so any drift is self-evident.
+    gross_fill_gain = sum(e["a3_pnl"] - e["control_pnl"]
+                          for e in filled)
+    missed_rows = [e for e in el if e["state"] == "MISSED"]
+    inval_rows = [e for e in el if e["state"] == "INVALIDATED"]
+    timeout_pnl = sum(e["control_pnl"] for e in missed_rows
+                      if e.get("event_first") == "TIMEOUT")
+    missed_other_pnl = sum(e["control_pnl"] for e in missed_rows
+                           if e.get("event_first") != "TIMEOUT")
+    inval_pnl = sum(e["control_pnl"] for e in inval_rows)
+    total_delta_raw = sum(e["a3_pnl"] - e["control_pnl"] for e in el)
+    net_wait = gross_fill_gain - timeout_pnl - missed_other_pnl \
+        - inval_pnl
+    classes = {}
+    for e in el:
+        c = e.get("econ_class")
+        if c:
+            d = classes.setdefault(c, {"n": 0, "delta_contribution": 0.0})
+            d["n"] += 1
+            d["delta_contribution"] = round(
+                d["delta_contribution"]
+                + e["a3_pnl"] - e["control_pnl"], 4)
+    agg["decomposition"] = {
+        "gross_fill_gain": round(gross_fill_gain, 4),
+        "timeout_control_pnl": round(timeout_pnl, 4),
+        "missed_control_pnl": round(missed_other_pnl, 4),
+        "invalidation_control_pnl": round(inval_pnl, 4),
+        "net_waiting_value": round(net_wait, 4),
+        "identity_residual": round(total_delta_raw - net_wait, 6),
+        "note": "under A3-v1.1 MISSED ≡ timed-out (dip never arrived "
+                "by cutoff), so missed_control_pnl is 0 unless a new "
+                "state path appears; differential execution costs are "
+                "inside gross_fill_gain (both arms priced at their "
+                "own executable ask)",
+        "econ_classes": classes,
+    }
     # outlier-dependence view (fat-tail discipline)
     deltas = sorted((e["a3_pnl"] - e["control_pnl"] for e in el),
                     reverse=True)

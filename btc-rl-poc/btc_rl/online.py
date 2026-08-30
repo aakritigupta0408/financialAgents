@@ -457,6 +457,43 @@ RETIRED_TREATMENTS = frozenset({
     "t_cal", "t_knife", "t_cheap", "t_both", "t_fshare",
     "t_fs_reg", "t_limit", "t_evlead", "t_limit_reg"})
 
+# ---- PIT feature-snapshot store (M2.5, PM 08-30) --------------------
+# At every serving-pair inference (kb2 CONTROL, kb9 TREATMENT) the
+# EXACT inputs are persisted so "why did kb9 output 0.785 at this
+# decision?" is answerable months later without re-deriving features
+# from a possibly-changed pipeline. Append-only jsonl; parity replay
+# in scripts/check_parity.py. Lean scope: serving pair only.
+PIT_SNAP_NAME = "feature_snapshots.jsonl"
+PIT_SCHEMA_V = "pit-v1"
+
+
+def _pit_snapshot(variant, ticker, close_ts, decision_ts, receive_ts,
+                  model_desc, feature_obj, prediction, extra=None):
+    import hashlib as _hl
+    try:
+        fjson = json.dumps(feature_obj, sort_keys=True)
+        row = {
+            "prediction_id": f"{variant}-{ticker}-{decision_ts}",
+            "window_id": ticker, "variant": variant,
+            "event_ts": decision_ts, "receive_ts": receive_ts,
+            "decision_ts": decision_ts,
+            "persist_ts": round(time.time(), 3),
+            "close_ts": close_ts,
+            "model": model_desc,
+            "feature_schema_version": PIT_SCHEMA_V,
+            "features": feature_obj,
+            "feature_hash": _hl.sha256(
+                fjson.encode()).hexdigest()[:16],
+            "prediction": prediction,
+            "confidence": round(max(prediction, 1 - prediction), 4),
+        }
+        if extra:
+            row.update(extra)
+        with (RESULTS_DIR / PIT_SNAP_NAME).open("a") as f:
+            f.write(json.dumps(row) + "\n")
+    except Exception:
+        pass          # snapshotting must never break the trade loop
+
 
 def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
                   sy: bool, pf: list[float], mins_left: float
@@ -2916,6 +2953,19 @@ def run(once: bool = False) -> None:
                         row.update(extra)
                         kb.append(row)
                         kb_made.add((variant, pm_mkt["ticker"], slot1))
+                    # PIT store (M2.5): kb2 is the serving CONTROL —
+                    # its exact blend inputs make parity EXACTLY
+                    # replayable offline
+                    _pit_snapshot(
+                        "kb2", pm_mkt["ticker"], k_close_ts, slot1,
+                        now_ts,
+                        {"family": "blend-v1",
+                         "formula": "bw*p_cal + (1-bw)*k_pup "
+                                    "(p_cal alone when k_pup None), "
+                                    "clamped [0.01, 0.99]"},
+                        {"p_cal": p_cal, "k_pup": k_pup,
+                         "bw": round(bw, 6)},
+                        p_blend)
                     # kb6 — fast-information arm: perp lead, tape, whale
                     # flow, OI delta; the channels aimed at the EDGE
                     # column rather than the accuracy column
@@ -3008,6 +3058,23 @@ def run(once: bool = False) -> None:
                                                "q80_hi": qh9})
                                     kb_made.add(("kb9", pm_mkt["ticker"],
                                                  slot1))
+                                    # PIT store: the exact close
+                                    # series the frozen TimesFM saw
+                                    _pit_snapshot(
+                                        "kb9", pm_mkt["ticker"],
+                                        k_close_ts, slot1, now_ts,
+                                        {"family": "timesfm-2.5",
+                                         "artifact": "google/timesfm-"
+                                         "2.5-200m-pytorch (frozen "
+                                         "zero-shot)"},
+                                        {"closes": [b["close"]
+                                                    for b in kbars],
+                                         "strike": pm_mkt["strike"],
+                                         "horizon_min": int(max(1,
+                                             round(mins_left)))},
+                                        p9,
+                                        {"q80_w": w9, "q80_lo": ql9,
+                                         "q80_hi": qh9})
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the

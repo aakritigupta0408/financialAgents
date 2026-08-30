@@ -1,0 +1,336 @@
+{
+ "generated_ts": 1788077125,
+ "engine_version": "1.0.0",
+ "models": {
+  "kb": {
+   "model_id": "kb",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0849,
+    "worst_fold_bss": -0.1734,
+    "fold_bss_variance": 0.005782,
+    "fraction_folds_beating_market": 0.2
+   },
+   "calibration": {
+    "ece": 0.0378,
+    "slope": 1.005,
+    "intercept": 0.044
+   },
+   "selective_75": {
+    "coverage": 0.2202,
+    "n": 37,
+    "accuracy": 0.7568,
+    "brier": 0.1801
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb2": {
+   "model_id": "kb2",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0001,
+    "worst_fold_bss": -0.0073,
+    "fold_bss_variance": 5.7e-05,
+    "fraction_folds_beating_market": 0.2
+   },
+   "calibration": {
+    "ece": 0.0977,
+    "slope": 1.206,
+    "intercept": 0.006
+   },
+   "selective_75": {
+    "coverage": 0.2024,
+    "n": 34,
+    "accuracy": 0.7941,
+    "brier": 0.1564
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "AVAILABLE",
+   "parity": "PASS",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb3": {
+   "model_id": "kb3",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0511,
+    "worst_fold_bss": -0.0727,
+    "fold_bss_variance": 0.000734,
+    "fraction_folds_beating_market": 0.2
+   },
+   "calibration": {
+    "ece": 0.0492,
+    "slope": 0.833,
+    "intercept": 0.104
+   },
+   "selective_75": {
+    "coverage": 0.3214,
+    "n": 54,
+    "accuracy": 0.7778,
+    "brier": 0.1744
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb4": {
+   "model_id": "kb4",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0195,
+    "worst_fold_bss": -0.0355,
+    "fold_bss_variance": 0.000101,
+    "fraction_folds_beating_market": 0.0
+   },
+   "calibration": {
+    "ece": 0.1264,
+    "slope": 1.009,
+    "intercept": 0.14
+   },
+   "selective_75": {
+    "coverage": 0.2976,
+    "n": 50,
+    "accuracy": 0.82,
+    "brier": 0.1507
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb5": {
+   "model_id": "kb5",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0142,
+    "worst_fold_bss": -0.0351,
+    "fold_bss_variance": 0.000391,
+    "fraction_folds_beating_market": 0.4
+   },
+   "calibration": {
+    "ece": 0.0534,
+    "slope": 0.977,
+    "intercept": 0.03
+   },
+   "selective_75": {
+    "coverage": 0.3713,
+    "n": 62,
+    "accuracy": 0.8226,
+    "brier": 0.149
+   },
+   "economics": {
+    "ev_per_eligible": -0.0979,
+    "pnl_per_fill": -0.2636,
+    "fills": 62,
+    "coverage": 0.3713,
+    "max_drawdown": -17.505
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb6": {
+   "model_id": "kb6",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.085,
+    "worst_fold_bss": -0.1195,
+    "fold_bss_variance": 0.000685,
+    "fraction_folds_beating_market": 0.0
+   },
+   "calibration": {
+    "ece": 0.0859,
+    "slope": 0.749,
+    "intercept": 0.056
+   },
+   "selective_75": {
+    "coverage": 0.3333,
+    "n": 56,
+    "accuracy": 0.8036,
+    "brier": 0.1619
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb7": {
+   "model_id": "kb7",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0618,
+    "worst_fold_bss": -0.1606,
+    "fold_bss_variance": 0.002676,
+    "fraction_folds_beating_market": 0.0
+   },
+   "calibration": {
+    "ece": 0.1229,
+    "slope": 0.796,
+    "intercept": -0.017
+   },
+   "selective_75": {
+    "coverage": 0.3274,
+    "n": 55,
+    "accuracy": 0.7455,
+    "brier": 0.1944
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb8": {
+   "model_id": "kb8",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0227,
+    "worst_fold_bss": -0.0926,
+    "fold_bss_variance": 0.001003,
+    "fraction_folds_beating_market": 0.0
+   },
+   "calibration": {
+    "ece": 0.0854,
+    "slope": 0.947,
+    "intercept": 0.17
+   },
+   "selective_75": {
+    "coverage": 0.3095,
+    "n": 52,
+    "accuracy": 0.7692,
+    "brier": 0.1799
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kb9": {
+   "model_id": "kb9",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0095,
+    "worst_fold_bss": -0.0907,
+    "fold_bss_variance": 0.001667,
+    "fraction_folds_beating_market": 0.2
+   },
+   "calibration": {
+    "ece": 0.0847,
+    "slope": 1.009,
+    "intercept": 0.14
+   },
+   "selective_75": {
+    "coverage": 0.244,
+    "n": 41,
+    "accuracy": 0.7805,
+    "brier": 0.1706
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "AVAILABLE",
+   "parity": "PASS",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  },
+  "kbf": {
+   "model_id": "kbf",
+   "version": "prequential",
+   "walk_forward": {
+    "median_fold_bss": -0.0661,
+    "worst_fold_bss": -0.1855,
+    "fold_bss_variance": 0.008789,
+    "fraction_folds_beating_market": 0.2
+   },
+   "calibration": {
+    "ece": 0.0387,
+    "slope": 1.041,
+    "intercept": 0.086
+   },
+   "selective_75": {
+    "coverage": 0.7917,
+    "n": 133,
+    "accuracy": 0.9173,
+    "brier": 0.0675
+   },
+   "economics": {
+    "ev_per_eligible": 0.0,
+    "pnl_per_fill": null,
+    "fills": 0,
+    "coverage": 0.0,
+    "max_drawdown": 0.0
+   },
+   "falsification": "PASS",
+   "pit": "NOT_AVAILABLE",
+   "parity": "NOT_AVAILABLE",
+   "verdict": "OFFLINE_FAIL",
+   "verdict_note": "FORWARD_CANDIDATE additionally requires PIT + parity PASS \u2014 both blocked on the feature-snapshot store (M2.5)"
+  }
+ }
+}

@@ -1,0 +1,26 @@
+{
+ "generated_ts": 1788077116,
+ "tolerance": 0.0001,
+ "snapshots": 2,
+ "checked": 2,
+ "pass": 2,
+ "fail": 0,
+ "deferred": 0,
+ "by_model": {
+  "kb2": {
+   "checked": 1,
+   "pass": 1,
+   "fail": 0,
+   "deferred": 0
+  },
+  "kb9": {
+   "checked": 1,
+   "pass": 1,
+   "fail": 0,
+   "deferred": 0
+  }
+ },
+ "failures": [],
+ "parity_state": "PASS",
+ "policy": "FAIL blocks model promotion and reds the invariant wall; DEFERRED is declared, never treated as PASS; kb9 replay via check_parity.py --sample N"
+}

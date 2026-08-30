@@ -211,6 +211,22 @@ def _one_ctl_one_treat():
     return not bad, bad[:5]
 
 
+@check("model-parity", "M2.5 (PM 08-30) — live vs replay predictions "
+       "must match; a mismatch is silent model corruption")
+def _parity():
+    """parity.json FAIL = red wall + promotion freeze. NO_SNAPSHOTS /
+    ALL_DEFERRED are amber-by-honesty (reported, not failed) until
+    the store accumulates — but a FAIL is never survivable."""
+    try:
+        d = json.loads((RES / "parity.json").read_text())
+    except Exception:
+        return True, ["parity.json not yet published"]
+    if d.get("parity_state") == "FAIL":
+        return False, [f["prediction_id"] for f in
+                       d.get("failures", [])][:5]
+    return True, []
+
+
 @check("a3-experiment-integrity",
        "A3-v1.1 evaluator spec §53 (A3-02..06,10,11)")
 def _a3():
