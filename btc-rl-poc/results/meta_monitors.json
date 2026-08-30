@@ -1,82 +1,82 @@
 {
- "generated_ts": 1788047584,
- "overall": "HEALTHY",
+ "generated_ts": 1788048332,
+ "overall": "WARNING",
  "monitors": [
   {
    "artifact": "online_status.json",
    "source": "daemon heartbeat",
    "cadence_s": 30,
-   "age_s": 32,
+   "age_s": 1,
    "status": "HEALTHY"
   },
   {
    "artifact": "audit_report.json",
    "source": "audit chain step 1",
    "cadence_s": 600,
-   "age_s": 182,
+   "age_s": 330,
    "status": "HEALTHY"
   },
   {
    "artifact": "decision_board.json",
    "source": "audit chain (SRM gate)",
    "cadence_s": 600,
-   "age_s": 179,
+   "age_s": 326,
    "status": "HEALTHY"
   },
   {
    "artifact": "invariants.json",
    "source": "invariant wall",
    "cadence_s": 600,
-   "age_s": 131,
+   "age_s": 326,
    "status": "HEALTHY"
   },
   {
    "artifact": "reconciliation.json",
    "source": "independent reconciler",
    "cadence_s": 600,
-   "age_s": 131,
+   "age_s": 318,
    "status": "HEALTHY"
   },
   {
    "artifact": "readiness.json",
    "source": "readiness machine",
    "cadence_s": 600,
-   "age_s": 169,
+   "age_s": 315,
    "status": "HEALTHY"
   },
   {
    "artifact": "execution_ledger.json",
    "source": "markout ledger",
    "cadence_s": 600,
-   "age_s": 172,
+   "age_s": 318,
    "status": "HEALTHY"
   },
   {
    "artifact": "world.json",
    "source": "world/clock emitter",
    "cadence_s": 600,
-   "age_s": 177,
+   "age_s": 326,
    "status": "HEALTHY"
   },
   {
    "artifact": "model_internals.json",
    "source": "hourly introspection",
    "cadence_s": 3600,
-   "age_s": 1980,
+   "age_s": 2728,
    "status": "HEALTHY"
   },
   {
    "artifact": "metrics_history.jsonl",
    "source": "retrain history append",
    "cadence_s": 3600,
-   "age_s": 3105,
+   "age_s": 283,
    "status": "HEALTHY"
   },
   {
    "artifact": "online_status.alive_at",
    "source": "daemon inner heartbeat",
    "cadence_s": 30,
-   "age_s": 32,
+   "age_s": 1,
    "status": "HEALTHY"
   },
   {
@@ -86,6 +86,14 @@
    "age_s": null,
    "status": "HEALTHY",
    "detail": "1 process(es) \u2014 exactly 1 is healthy"
+  },
+  {
+   "artifact": "site main-repo sync",
+   "source": "publisher log",
+   "cadence_s": 3600,
+   "age_s": null,
+   "status": "WARNING",
+   "detail": "1 consecutive failures since last 'main: synced'"
   }
  ],
  "slo": {

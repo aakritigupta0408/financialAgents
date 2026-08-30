@@ -95,6 +95,37 @@ def main():
     if rank[st] > rank[worst]:
         worst = st
 
+    # ---- site-sync freshness (INC-2026-08-29-stale-rebase: a crashed
+    # rebase wedged the hourly main-repo sync for hours while
+    # "gh-pages: published" looked green; the DOMAIN serves from main
+    # builds, so the front end silently froze). Watch the last
+    # "main: synced" line's age in the publisher log. -----------------
+    try:
+        plog = Path("/tmp/btc_publish.log").read_text()[-20000:]
+        import re as _re
+        synced = [m for m in plog.splitlines() if "main: synced" in m]
+        # the log has no per-line timestamps; use the log file's mtime
+        # only if the LAST lines contain a synced marker — otherwise
+        # count attempts since last success
+        lines_since = 0
+        for l in reversed(plog.splitlines()):
+            if "main: synced" in l:
+                break
+            if "main sync failed" in l:
+                lines_since += 1
+        st = ("HEALTHY" if lines_since == 0 else
+              "WARNING" if lines_since <= 3 else "STALE")
+        rows.append({"artifact": "site main-repo sync",
+                     "source": "publisher log",
+                     "cadence_s": 3600, "age_s": None,
+                     "status": st,
+                     "detail": f"{lines_since} consecutive failures "
+                     "since last 'main: synced'"})
+        if rank[st] > rank[worst]:
+            worst = st
+    except Exception:
+        pass
+
     # ---- SLO snapshot (§65): current compliance, appended to a
     # history file so burn rates become computable over time. Values
     # read from the machine evidence, never asserted. -----------------
