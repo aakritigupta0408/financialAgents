@@ -1,82 +1,82 @@
 {
- "generated_ts": 1788048332,
+ "generated_ts": 1788054237,
  "overall": "WARNING",
  "monitors": [
   {
    "artifact": "online_status.json",
    "source": "daemon heartbeat",
    "cadence_s": 30,
-   "age_s": 1,
+   "age_s": 12,
    "status": "HEALTHY"
   },
   {
    "artifact": "audit_report.json",
    "source": "audit chain step 1",
    "cadence_s": 600,
-   "age_s": 330,
+   "age_s": 236,
    "status": "HEALTHY"
   },
   {
    "artifact": "decision_board.json",
    "source": "audit chain (SRM gate)",
    "cadence_s": 600,
-   "age_s": 326,
+   "age_s": 233,
    "status": "HEALTHY"
   },
   {
    "artifact": "invariants.json",
    "source": "invariant wall",
    "cadence_s": 600,
-   "age_s": 326,
+   "age_s": 233,
    "status": "HEALTHY"
   },
   {
    "artifact": "reconciliation.json",
    "source": "independent reconciler",
    "cadence_s": 600,
-   "age_s": 318,
+   "age_s": 228,
    "status": "HEALTHY"
   },
   {
    "artifact": "readiness.json",
    "source": "readiness machine",
    "cadence_s": 600,
-   "age_s": 315,
+   "age_s": 226,
    "status": "HEALTHY"
   },
   {
    "artifact": "execution_ledger.json",
    "source": "markout ledger",
    "cadence_s": 600,
-   "age_s": 318,
+   "age_s": 228,
    "status": "HEALTHY"
   },
   {
    "artifact": "world.json",
    "source": "world/clock emitter",
    "cadence_s": 600,
-   "age_s": 326,
+   "age_s": 232,
    "status": "HEALTHY"
   },
   {
    "artifact": "model_internals.json",
    "source": "hourly introspection",
    "cadence_s": 3600,
-   "age_s": 2728,
+   "age_s": 1433,
    "status": "HEALTHY"
   },
   {
    "artifact": "metrics_history.jsonl",
    "source": "retrain history append",
    "cadence_s": 3600,
-   "age_s": 283,
+   "age_s": 2603,
    "status": "HEALTHY"
   },
   {
    "artifact": "online_status.alive_at",
    "source": "daemon inner heartbeat",
    "cadence_s": 30,
-   "age_s": 1,
+   "age_s": 12,
    "status": "HEALTHY"
   },
   {
@@ -93,7 +93,7 @@
    "cadence_s": 3600,
    "age_s": null,
    "status": "WARNING",
-   "detail": "1 consecutive failures since last 'main: synced'"
+   "detail": "3 consecutive failures since last 'main: synced'"
   }
  ],
  "slo": {

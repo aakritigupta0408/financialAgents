@@ -242,7 +242,13 @@ def match_treatment_records(treat_recs, pt_trades, kb_rows):
             unmatchable += 1     # log rotation can outlive old windows
             continue
         row = max(cand, key=lambda r: r["mins_left"])
-        matched.append({"rec": rec, "trade": t, "row": row})
+        # rows tied at the max mins_left: the runtime keeps the
+        # first-seen on a strict > comparison, so a tie with differing
+        # quotes is selection-AMBIGUOUS, not evidence of a newer quote
+        # (observed once in 151 windows, 2026-08-29)
+        ties = [r for r in cand if r["mins_left"] == row["mins_left"]]
+        matched.append({"rec": rec, "trade": t, "row": row,
+                        "ties": ties})
     return matched, unmatchable
 
 
@@ -351,11 +357,15 @@ def check_quote_age(matched, unmatchable, n_recs):
             env_bad += 1
         if rec["outcome"] != t["actual"] or rec["outcome"] != row["actual"]:
             out_bad += 1
-        ask_yes, ask_no = modeled_asks(row["mkt_p_up"])
-        ask = ask_yes if t["side"] == "yes" else ask_no
-        want = bet_ev(t["side"], ask, rec["outcome"])
         got = rec["ev"].get("champion")
-        if got is None or abs(got - want) > EV_TOL:
+        wants = []
+        for tr in m.get("ties", [row]):
+            ay, an = modeled_asks(tr["mkt_p_up"])
+            wants.append(bet_ev(t["side"],
+                                ay if t["side"] == "yes" else an,
+                                rec["outcome"]))
+        want = wants[0]
+        if got is None or all(abs(got - w) > EV_TOL for w in wants):
             ev_bad += 1
             if len(examples) < 3:
                 examples.append(f"{rec['ticker']} champion logged "
