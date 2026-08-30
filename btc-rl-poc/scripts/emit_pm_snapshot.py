@@ -56,6 +56,26 @@ def main():
     n = fwd.get("eligible") or 0
     queue = rm.get("queue") or []
     prev = j("pm_snapshot.json", {}) or {}
+    # agent noise budget (M5 system validation #7): a healthy mature
+    # cycle is mostly duplicates — five agents producing constant new
+    # prose on unchanged evidence is an M5 FAILURE signal
+    recs = jl("agent_recommendations.jsonl")
+    cyc_cut = now - 660          # last audit cycle (10 min + slack)
+    cyc = [r for r in recs if r.get("ts", 0) >= cyc_cut
+           and r.get("kind") != "status_update"]
+    subs = [r for r in recs if r.get("kind") != "status_update"]
+    agent_noise = {
+        "new_findings_last_cycle": sum(
+            1 for r in cyc if r.get("status") == "OPEN"),
+        "duplicates_last_cycle": sum(
+            1 for r in cyc if r.get("status") == "DUPLICATE"),
+        "open_recommendations": sum(
+            1 for r in subs if r.get("status") == "OPEN"),
+        "total_submissions": len(subs),
+        "rejected_by_firewall": sum(
+            1 for r in subs
+            if r.get("status") == "REJECTED_BY_FIREWALL"),
+    }
     doc = {
         "generated_ts": now,
         "a3": {"n": n,
@@ -93,6 +113,7 @@ def main():
             "serving_model_roles": "kb2+kb9 (T2) + 4 frozen T1 pairs",
             "active_experiments": active_exp,
             "shadows": ["T05", "T15", "M8", "M13", "pt6"]},
+        "agent_noise_budget": agent_noise,
         "top_bottleneck": (queue[0]["title"] + " — " + queue[0]["why"])
         if queue else "unknown",
         "next_unblocked_action": queue[1]["title"]

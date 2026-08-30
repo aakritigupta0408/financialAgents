@@ -36,6 +36,16 @@ HORIZONS = ("markout_1s", "markout_5s", "markout_10s",
 
 
 def main():
+    age = fw.stale("a3_window_evaluation.jsonl", 3600)
+    if age is not None:
+        fw.submit(agent="execution_researcher",
+                  action_class="OBSERVE",
+                  finding=f"STALE_INPUT — a3_window_evaluation is "
+                          f"{age:.0f}s old",
+                  recommendation="no diagnosis until refresh",
+                  evidence=["a3_window_evaluation.jsonl mtime"])
+        print("execution_researcher: STALE_INPUT — no diagnosis")
+        return
     p = RES / "a3_window_evaluation.jsonl"
     rows = []
     if p.exists():

@@ -211,6 +211,32 @@ def _one_ctl_one_treat():
     return not bad, bad[:5]
 
 
+@check("no-private-time-alignment",
+       "M5 system validation (PM 08-30) — the temporal equivalent of "
+       "no-private-formulas: two researchers aligning the same raw "
+       "tape differently is a leakage vector")
+def _no_private_alignment():
+    """Only the sanctioned layers may touch the raw cross-venue
+    shards: capture_xvenue.py (writer) and xvenue_sync.py (the ONE
+    alignment layer). Any other code referencing events_xvenue is a
+    private-alignment violation."""
+    # writer, the ONE alignment layer, and the F1 quality auditor
+    # (coverage/gap measurement is not alignment)
+    ALLOWED = {"capture_xvenue.py", "xvenue_sync.py",
+               "emit_f1_gate.py"}
+    bad = []
+    for d in (ROOT / "scripts", ROOT / "btc_rl"):
+        for p in d.glob("*.py"):
+            if p.name in ALLOWED:
+                continue
+            try:
+                if "events_xvenue" in p.read_text():
+                    bad.append(p.name)
+            except Exception:
+                pass
+    return not bad, bad
+
+
 @check("agent-decision-firewall",
        "M5 (PM 08-30) — the firewall is code, not prompt: forbidden "
        "classes never execute, proposals name their loss term")
@@ -224,6 +250,8 @@ def _firewall():
              "RESEARCH_POLICY_CHANGE", "RISK_CHANGE"}
     bad = []
     for r in rows("agent_recommendations.jsonl"):
+        if r.get("kind") == "status_update":
+            continue                # governance lifecycle rows
         ac, st = r.get("action_class"), r.get("status")
         rid = r.get("recommendation_id", "?")
         if ac not in VALID:

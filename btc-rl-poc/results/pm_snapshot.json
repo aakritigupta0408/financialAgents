@@ -1,22 +1,22 @@
 {
- "generated_ts": 1788076813,
+ "generated_ts": 1788094731,
  "a3": {
-  "n": 6,
-  "paired_delta": -0.1863,
+  "n": 22,
+  "paired_delta": -0.0047,
   "state": "COLLECTING",
   "note": "no statistical conclusion below n=25"
  },
  "models": {
   "control": "kb2 (market-anchored)",
   "challenger": "kb9 (TimesFM fusion)",
-  "challenger_bss_vs_market": -0.0351,
+  "challenger_bss_vs_market": -0.0126,
   "challenger_trend": "IMPROVING",
   "control_trend": "IMPROVING"
  },
  "system": {
   "readiness": "R2",
   "strategy": "NO QUALIFIED EDGE",
-  "invariants": "14/14",
+  "invariants": "19/19",
   "open_sevs": 2,
   "weakest_planes": [
    "execution",
@@ -47,12 +47,20 @@
    "pt6"
   ]
  },
+ "agent_noise_budget": {
+  "new_findings_last_cycle": 0,
+  "duplicates_last_cycle": 6,
+  "open_recommendations": 6,
+  "total_submissions": 30,
+  "rejected_by_firewall": 1
+ },
  "top_bottleneck": "Accumulate A3 forward evidence \u2014 biggest current unknown",
  "next_unblocked_action": "Validate A3 execution quality",
  "blocked_work": [
   "Value-of-Wait ML",
   "Sizing",
-  "Passive execution"
+  "Passive execution",
+  "Champion simplification (CHAMPION-vLean)"
  ],
  "provenance": [
   "a3_live.json",
@@ -63,7 +71,7 @@
   "incidents.jsonl"
  ],
  "changed_since_last_snapshot": {
-  "prev_ts": 1788076589,
+  "prev_ts": 1788094215,
   "changes": [
    "unchanged"
   ]

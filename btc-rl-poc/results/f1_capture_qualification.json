@@ -1,0 +1,46 @@
+{
+ "generated_ts": 1788094731,
+ "capture_start": 1788090000,
+ "days_captured": 0.05,
+ "gate": {
+  "min_days": 7,
+  "min_coverage": 0.95,
+  "earliest_eligible": "2026-09-06"
+ },
+ "venues": {
+  "binance": {
+   "events": 48443,
+   "span_h": 0.4,
+   "coverage": 1.0,
+   "gaps_over_expected": 0,
+   "gap_time_s": 0,
+   "out_of_order": 0,
+   "state": "OK"
+  },
+  "okx": {
+   "events": 4841,
+   "span_h": 0.4,
+   "coverage": 1.0,
+   "gaps_over_expected": 0,
+   "gap_time_s": 0,
+   "out_of_order": 0,
+   "state": "OK"
+  },
+  "kraken": {
+   "events": 1055,
+   "span_h": 0.4,
+   "coverage": 1.0,
+   "gaps_over_expected": 0,
+   "gap_time_s": 0,
+   "out_of_order": 0,
+   "state": "OK"
+  }
+ },
+ "combined_tape": {
+  "decision_states": 17,
+  "states_all_venues_valid": 15,
+  "valid_fraction": 0.8824
+ },
+ "verdict": "EXTEND_CAPTURE",
+ "meaning": "PASS = allowed to EVALUATE (never = ready for model inclusion)"
+}

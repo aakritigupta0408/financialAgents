@@ -43,6 +43,40 @@ class FirewallRefusal(Exception):
     """Raised when a submission is malformed — nothing is persisted."""
 
 
+def stale(path_name: str, max_age_s: float) -> float | None:
+    """Shared staleness guard (M5 validation #4): agents must refuse
+    to reason from old state just because the JSON exists. Returns
+    the age in seconds if STALE, else None."""
+    p = ROOT / "results" / path_name
+    try:
+        import time as _t
+        age = _t.time() - p.stat().st_mtime
+        return age if age > max_age_s else None
+    except Exception:
+        return float("inf")
+
+
+def governance_update(recommendation_id: str, new_status: str,
+                      by: str, evidence: str) -> dict:
+    """Recommendation lifecycle transitions (M5 validation #6):
+    OPEN -> ACCEPTED -> IMPLEMENTED -> VALIDATED_HELPFUL |
+    VALIDATED_NOT_HELPFUL | REJECTED. Append-only status rows —
+    agents never call this; it is the human/governance path, and the
+    `by` field says who."""
+    ALLOWED = {"ACCEPTED", "REJECTED", "IMPLEMENTED",
+               "VALIDATED_HELPFUL", "VALIDATED_NOT_HELPFUL"}
+    if new_status not in ALLOWED:
+        raise FirewallRefusal(f"invalid lifecycle status {new_status}")
+    import time as _t
+    row = {"kind": "status_update",
+           "recommendation_id": recommendation_id,
+           "status": new_status, "by": by, "evidence": evidence,
+           "ts": int(_t.time())}
+    with LEDGER.open("a") as f:
+        f.write(json.dumps(row) + "\n")
+    return row
+
+
 def _open_keys():
     keys = set()
     if LEDGER.exists():
@@ -52,6 +86,8 @@ def _open_keys():
             try:
                 r = json.loads(l)
             except Exception:
+                continue
+            if r.get("kind") == "status_update":
                 continue
             if r.get("status") == "OPEN":
                 keys.add(r.get("dedupe_key"))

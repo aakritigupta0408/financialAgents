@@ -19,6 +19,17 @@ RES = ROOT / "results"
 
 
 def main():
+    age = fw.stale("a3_live.json", 3600)
+    if age is not None:
+        fw.submit(agent="experiment_analyst", action_class="OBSERVE",
+                  finding=f"STALE_INPUT — a3_live.json is "
+                          f"{age:.0f}s old; refusing to reason from "
+                          "old state",
+                  recommendation="no research recommendation until "
+                                 "the artifact refreshes",
+                  evidence=["a3_live.json mtime"])
+        print("experiment_analyst: STALE_INPUT — no analysis")
+        return
     try:
         a3 = json.loads((RES / "a3_live.json").read_text())
     except Exception:

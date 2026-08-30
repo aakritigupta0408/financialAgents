@@ -107,6 +107,17 @@ def resid_test(rows):
 
 def main():
     now = int(time.time())
+    age = fw.stale("kalshi_binary_log.jsonl", 3600)
+    if age is not None:
+        fw.submit(agent="model_researcher", action_class="OBSERVE",
+                  finding=f"STALE_INPUT — kalshi_binary_log is "
+                          f"{age:.0f}s old; refusing to diagnose "
+                          "from old state",
+                  recommendation="no research recommendation until "
+                                 "the tape refreshes",
+                  evidence=["kalshi_binary_log.jsonl mtime"])
+        print("model_researcher: STALE_INPUT — no diagnosis")
+        return
     kb = jl("kalshi_binary_log.jsonl")
     offline = (j("model_offline.json") or {}).get("models") or {}
     qual = (j("model_qualification.json") or {}).get("models") or {}
