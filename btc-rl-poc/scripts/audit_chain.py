@@ -41,6 +41,8 @@ STEPS = [
     "scripts/agent_experiment_analyst.py",
     "scripts/agent_data_reliability.py",
     "scripts/agent_model_researcher.py",
+    "scripts/agent_execution_researcher.py",
+    "scripts/xvenue_sync.py",
     "scripts/agent_research_manager.py",
     "scripts/emit_pm_snapshot.py",
     "scripts/emit_readiness.py",

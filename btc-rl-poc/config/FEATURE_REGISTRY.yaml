@@ -40,10 +40,20 @@ sources:
                    status: CAPTURING, since: 2026-08-29}
   kalshi_quotes:  {feed: F-MICRO, capture: scripts/event_capture.py,
                    status: CAPTURING, since: 2026-08-29,
-                   note: 1s L1 poll; book deltas + trades feed = open
-                     capture gap, queued}
-  coinbase_l2:    {feed: F-MICRO, status: NOT_CAPTURED,
-                   note: queued — extend event_capture carefully}
+                   note: 1s L1 poll}
+  kalshi_book:    {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: full public REST orderbook polled 1s, stored
+                     on change — no API key required (the WS delta
+                     channel needs a key; production key deleted by
+                     owner order)}
+  kalshi_trades:  {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: public REST trades with min_ts cursor}
+  coinbase_l2:    {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: public level2_batch WS, 25-level snapshots
+                     + batched deltas}
   binance_trades: {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
                    status: CAPTURING, since: 2026-08-30,
                    note: data-stream.binance.vision mirror
@@ -54,6 +64,12 @@ sources:
                    status: CAPTURING, since: 2026-08-30}
   deribit_public: {feed: F-DERIV, status: NOT_CAPTURED,
                    note: P2 per PM board}
+# CROSS-VENUE UNIVERSE FROZEN (PM 08-30): coinbase + binance + okx +
+# kraken. No additional exchanges without evidence that a missing
+# venue matters — consensus estimation, not an exchange census.
+# Synchronization: scripts/xvenue_sync.py is the ONE alignment layer
+# (latest at-or-before decision_ts, explicit age_ms, never a
+# future-nearest quote).
 
 families:
 

@@ -279,6 +279,26 @@ def main():
         ],
     }
     (RES / "model_research.json").write_text(json.dumps(doc, indent=1))
+    # information_timing.json — the canonical "was the information
+    # still tradable when it existed?" artifact (PM 08-30). Lead/lag
+    # fields await the synchronized xvenue tape past Gate F1 —
+    # declared, never guessed.
+    it = {"generated_ts": now,
+          "models": {v: {"by_horizon": m.get("timing"),
+                         "class": m.get("timing_class"),
+                         "disagreement": m.get("disagreement")}
+                     for v, m in models.items()
+                     if isinstance(m.get("timing"), dict)},
+          "lead_lag": {"market_move_started_at": "NOT_AVAILABLE",
+                       "kalshi_response_latency": "NOT_AVAILABLE",
+                       "economic_opportunity_remaining":
+                           "NOT_AVAILABLE",
+                       "blocked_by": "synchronized F-XVENUE tape "
+                       "(Gate F1, earliest 2026-09-06)"},
+          "provenance": ["kalshi_binary_log.jsonl",
+                         "model_offline.json"]}
+    (RES / "information_timing.json").write_text(
+        json.dumps(it, indent=1))
 
     fw.submit(agent="model_researcher", action_class="DIAGNOSE",
               finding=doc["baseline_finding"] + " — " +

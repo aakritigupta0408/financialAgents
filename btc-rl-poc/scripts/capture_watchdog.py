@@ -14,6 +14,7 @@ WATCH = [
     ("event_capture.py", "event_capture.json", "event_capture.log"),
     ("capture_xvenue.py", "xvenue_capture.json",
      "xvenue_capture.log"),
+    ("capture_micro.py", "micro_capture.json", "micro_capture.log"),
 ]
 
 for script, status, log in WATCH:

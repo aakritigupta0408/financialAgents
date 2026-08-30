@@ -1,33 +1,33 @@
 {
- "generated_ts": 1788093108,
+ "generated_ts": 1788093750,
  "state": "DIAGNOSIS_COMPLETE",
  "baseline_finding": "NO_MODEL_BEATS_MARKET \u2014 10/10 arms fail offline qualification",
  "failure_decomposition": {
   "calibration": {
    "kb2": {
-    "ece": 0.1069,
-    "slope": 1.168,
-    "intercept": 0.078,
+    "ece": 0.0863,
+    "slope": 1.187,
+    "intercept": 0.081,
     "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
    },
    "kb9": {
-    "ece": 0.0893,
-    "slope": 1.06,
-    "intercept": 0.252,
+    "ece": 0.097,
+    "slope": 1.085,
+    "intercept": 0.258,
     "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
    }
   },
   "resolution": {
    "kb2": {
-    "reliability": 0.00131,
-    "resolution": 0.08476,
-    "uncertainty": 0.2491,
+    "reliability": 0.00157,
+    "resolution": 0.08488,
+    "uncertainty": 0.24895,
     "read": "well-calibrated, resolution-limited"
    },
    "kb9": {
-    "reliability": 0.0041,
-    "resolution": 0.08797,
-    "uncertainty": 0.24911,
+    "reliability": 0.00437,
+    "resolution": 0.08823,
+    "uncertainty": 0.24897,
     "read": "well-calibrated, resolution-limited"
    }
   },
@@ -36,24 +36,24 @@
     "class": "NO_SKILL",
     "by_bucket": {
      "T-13": {
-      "n": 647,
-      "bss": -0.001
+      "n": 644,
+      "bss": -0.0009
      },
      "T-10": {
-      "n": 340,
-      "bss": -0.0063
+      "n": 338,
+      "bss": -0.0072
      },
      "T-8": {
-      "n": 340,
-      "bss": -0.0081
+      "n": 338,
+      "bss": -0.0093
      },
      "T-6": {
-      "n": 340,
-      "bss": 0.0009
+      "n": 338,
+      "bss": 0.0003
      },
      "T-4": {
-      "n": 340,
-      "bss": -0.005
+      "n": 339,
+      "bss": -0.0053
      },
      "T-2": {
       "n": 338,
@@ -65,20 +65,20 @@
     "class": "EARLY_SKILL",
     "by_bucket": {
      "T-13": {
-      "n": 648,
-      "bss": 0.0
+      "n": 644,
+      "bss": 0.0011
      },
      "T-10": {
-      "n": 340,
+      "n": 338,
       "bss": 0.0049
      },
      "T-8": {
-      "n": 340,
-      "bss": -0.0094
+      "n": 338,
+      "bss": -0.0112
      },
      "T-6": {
-      "n": 340,
-      "bss": 0.0065
+      "n": 338,
+      "bss": 0.0064
      },
      "T-4": {
       "n": 340,
@@ -103,8 +103,8 @@
    },
    "kb9": {
     "corr_model_market": 0.9553,
-    "r2": 0.9126,
-    "residual_variance": 0.00752,
+    "r2": 0.9127,
+    "residual_variance": 0.00754,
     "read": "HIGH MARKET REDUNDANCY"
    }
   },
@@ -119,11 +119,11 @@
  },
  "models": {
   "kb2": {
-   "n": 2345,
+   "n": 2335,
    "murphy": {
-    "reliability": 0.00131,
-    "resolution": 0.08476,
-    "uncertainty": 0.2491,
+    "reliability": 0.00157,
+    "resolution": 0.08488,
+    "uncertainty": 0.24895,
     "read": "well-calibrated, resolution-limited"
    },
    "market_redundancy": {
@@ -134,24 +134,24 @@
    },
    "timing": {
     "T-13": {
-     "n": 647,
-     "bss": -0.001
+     "n": 644,
+     "bss": -0.0009
     },
     "T-10": {
-     "n": 340,
-     "bss": -0.0063
+     "n": 338,
+     "bss": -0.0072
     },
     "T-8": {
-     "n": 340,
-     "bss": -0.0081
+     "n": 338,
+     "bss": -0.0093
     },
     "T-6": {
-     "n": 340,
-     "bss": 0.0009
+     "n": 338,
+     "bss": 0.0003
     },
     "T-4": {
-     "n": 340,
-     "bss": -0.005
+     "n": 339,
+     "bss": -0.0053
     },
     "T-2": {
      "n": 338,
@@ -161,13 +161,13 @@
    "timing_class": "NO_SKILL",
    "disagreement": {
     "ge5pp_all": {
-     "n": 54,
-     "mean_signed_market_error": -0.0365,
-     "se": 0.0573,
+     "n": 52,
+     "mean_signed_market_error": -0.0373,
+     "se": 0.0581,
      "t": -0.64
     },
     "ge5pp_early": {
-     "n": 21,
+     "n": 20,
      "state": "MUTED"
     },
     "ge10pp_all": {
@@ -188,43 +188,43 @@
     }
    },
    "calibration": {
-    "ece": 0.1069,
-    "slope": 1.168,
-    "intercept": 0.078,
+    "ece": 0.0863,
+    "slope": 1.187,
+    "intercept": 0.081,
     "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
    },
    "median_fold_bss": 0.0
   },
   "kb9": {
-   "n": 2346,
+   "n": 2336,
    "murphy": {
-    "reliability": 0.0041,
-    "resolution": 0.08797,
-    "uncertainty": 0.24911,
+    "reliability": 0.00437,
+    "resolution": 0.08823,
+    "uncertainty": 0.24897,
     "read": "well-calibrated, resolution-limited"
    },
    "market_redundancy": {
     "corr_model_market": 0.9553,
-    "r2": 0.9126,
-    "residual_variance": 0.00752,
+    "r2": 0.9127,
+    "residual_variance": 0.00754,
     "read": "HIGH MARKET REDUNDANCY"
    },
    "timing": {
     "T-13": {
-     "n": 648,
-     "bss": 0.0
+     "n": 644,
+     "bss": 0.0011
     },
     "T-10": {
-     "n": 340,
+     "n": 338,
      "bss": 0.0049
     },
     "T-8": {
-     "n": 340,
-     "bss": -0.0094
+     "n": 338,
+     "bss": -0.0112
     },
     "T-6": {
-     "n": 340,
-     "bss": 0.0065
+     "n": 338,
+     "bss": 0.0064
     },
     "T-4": {
      "n": 340,
@@ -238,16 +238,16 @@
    "timing_class": "EARLY_SKILL",
    "disagreement": {
     "ge5pp_all": {
-     "n": 1141,
-     "mean_signed_market_error": 0.0534,
+     "n": 1136,
+     "mean_signed_market_error": 0.0535,
      "se": 0.0132,
      "t": 4.06
     },
     "ge5pp_early": {
-     "n": 519,
-     "mean_signed_market_error": 0.0714,
+     "n": 516,
+     "mean_signed_market_error": 0.0727,
      "se": 0.0205,
-     "t": 3.49
+     "t": 3.54
     },
     "ge10pp_all": {
      "n": 488,
@@ -273,12 +273,12 @@
     }
    },
    "calibration": {
-    "ece": 0.0893,
-    "slope": 1.06,
-    "intercept": 0.252,
+    "ece": 0.097,
+    "slope": 1.085,
+    "intercept": 0.258,
     "law": "CALIBRATION CAN REPAIR PROBABILITIES BUT CANNOT CREATE RESOLUTION"
    },
-   "median_fold_bss": -0.0143
+   "median_fold_bss": 0.0184
   }
  },
  "strongest_supported_explanation": "kb2: well-calibrated, resolution-limited; redundancy HIGH MARKET REDUNDANCY; timing NO_SKILL; kb9: well-calibrated, resolution-limited; redundancy HIGH MARKET REDUNDANCY; timing EARLY_SKILL",
@@ -295,8 +295,8 @@
   "evidence": {
    "model": "kb9",
    "slice": "ge5pp_all",
-   "n": 1141,
-   "mean_signed_market_error": 0.0534,
+   "n": 1136,
+   "mean_signed_market_error": 0.0535,
    "se": 0.0132,
    "t": 4.06
   }
