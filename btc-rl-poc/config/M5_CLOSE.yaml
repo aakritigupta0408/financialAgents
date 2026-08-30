@@ -54,7 +54,11 @@ criteria:
                                invariant"}
   soak:                     {required: ">=6 consecutive clean audit
                                cycles, all five agents",
-                             status: IN_PROGRESS,
+                             status: PASS,
+                             closed_ts: 2026-08-30,
+                             evidence: "m5_soak.json SOAK_PASS — 6/6
+                               clean cycles, zero problems, all five
+                               agents reported in horizon",
                              adjudicator: results/m5_soak.json,
                              clean_cycle_means: "0 invariant fails ·
                                0 unauthorized mutations · 0

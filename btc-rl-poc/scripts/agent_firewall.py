@@ -99,7 +99,9 @@ def submit(agent: str, action_class: str, finding: str,
            targeted_loss_term: str | None = None,
            risk: str | None = None, n: int | None = None,
            effect: float | None = None,
-           priority: str | None = None) -> dict:
+           priority: str | None = None,
+           repair_id: str | None = None) -> dict:
+    kwargs_repair_id = repair_id
     if action_class not in VALID:
         raise FirewallRefusal(f"unknown action_class {action_class!r}")
     if not evidence:
@@ -113,7 +115,25 @@ def submit(agent: str, action_class: str, finding: str,
     if action_class in ALWAYS_BLOCKED:
         status = "REJECTED_BY_FIREWALL"
     elif action_class in M6_WHITELIST_PENDING:
-        status = "BLOCKED_UNTIL_M6"
+        # M6 launched (ALLOW_IF_REGISTERED_REPAIR): admissible only
+        # with a registered + enabled + certified repair_id from
+        # config/M6_REPAIRS.yaml; everything else stays blocked.
+        # No repair is enabled until its chaos matrix passes, so
+        # nothing is executable yet — by registry, not by prompt.
+        status = "BLOCKED_REPAIR_NOT_ENABLED"
+        rid = kwargs_repair_id
+        if rid:
+            try:
+                import yaml
+                reg = yaml.safe_load(
+                    (ROOT / "config" / "M6_REPAIRS.yaml").read_text())
+                for r in reg.get("class_a_allowlist") or []:
+                    if r.get("repair_id") == rid \
+                            and r.get("enabled") is True \
+                            and r.get("certified") is True:
+                        status = "APPROVED_FOR_EXECUTION"
+            except Exception:
+                status = "BLOCKED_REPAIR_NOT_ENABLED"
     else:
         status = "OPEN"
     dk = hashlib.sha256(
@@ -130,6 +150,7 @@ def submit(agent: str, action_class: str, finding: str,
            "targeted_loss_term": targeted_loss_term,
            "risk": risk, "n": n, "effect": effect,
            "priority": priority, "status": status,
+           "repair_id": repair_id,
            "dedupe_key": dk}
     with LEDGER.open("a") as f:
         f.write(json.dumps(row) + "\n")

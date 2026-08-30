@@ -290,8 +290,13 @@ def _firewall():
                 and st != "REJECTED_BY_FIREWALL":
             bad.append(f"{rid}: forbidden class escaped ({st})")
         if ac == "SAFE_OPS_REPAIR" and st not in (
-                "BLOCKED_UNTIL_M6",):
-            bad.append(f"{rid}: ops repair not blocked ({st})")
+                "BLOCKED_UNTIL_M6", "BLOCKED_REPAIR_NOT_ENABLED",
+                "APPROVED_FOR_EXECUTION"):
+            bad.append(f"{rid}: ops repair invalid status ({st})")
+        if ac == "SAFE_OPS_REPAIR" \
+                and st == "APPROVED_FOR_EXECUTION" \
+                and not r.get("repair_id"):
+            bad.append(f"{rid}: approved repair without repair_id")
         if ac == "PROPOSE" and not r.get("targeted_loss_term"):
             bad.append(f"{rid}: PROPOSE without loss term")
     return not bad, bad[:5]

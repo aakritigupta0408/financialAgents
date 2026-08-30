@@ -19,10 +19,16 @@ def run():
             r = fw.submit("test", cls, "f", f"change something {cls}",
                           ev, targeted_loss_term="x")
             assert r["status"] == "REJECTED_BY_FIREWALL", cls
-        # 2. SAFE_OPS_REPAIR blocked until M6
+        # 2. SAFE_OPS_REPAIR: blocked without a registered+enabled+
+        # certified repair_id (M6 ALLOW_IF_REGISTERED_REPAIR
+        # semantics; all repairs currently enabled:false)
         r = fw.submit("test", "SAFE_OPS_REPAIR", "f", "restart thing",
                       ev)
-        assert r["status"] == "BLOCKED_UNTIL_M6"
+        assert r["status"] == "BLOCKED_REPAIR_NOT_ENABLED"
+        r = fw.submit("test", "SAFE_OPS_REPAIR", "f", "restart d",
+                      ev, repair_id="M6-R1_RESTART_DEAD_DAEMON")
+        assert r["status"] == "BLOCKED_REPAIR_NOT_ENABLED", \
+            "uncertified repair must stay blocked"
         # 3. PROPOSE without loss term refused, nothing persisted
         n_before = len(fw.LEDGER.read_text().splitlines())
         try:

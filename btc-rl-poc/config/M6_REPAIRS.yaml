@@ -19,8 +19,12 @@
 # incident escalated. Hard invariant:
 # POLICY_MUTATIONS_CAUSED_BY_SELF_HEALING = 0.
 
-version: 1.0.0
-firewall_state: BLOCKED_UNTIL_M6     # flips at M6 launch, per-repair
+version: 1.1.0
+# M6 LAUNCHED 2026-08-30 (M5 closed on SOAK_PASS). Firewall semantics
+# now: SAFE_OPS_REPAIR is admissible ONLY with a registered+enabled+
+# certified repair_id — and every repair below remains enabled:false
+# until its chaos matrix passes (M6.1 starts with R1).
+firewall_state: ALLOW_IF_REGISTERED_REPAIR
 
 class_a_allowlist:        # eligible after certification, launch set = 3
   - repair_id: M6-R1_RESTART_DEAD_DAEMON

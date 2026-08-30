@@ -1,8 +1,8 @@
 {
- "generated_ts": 1788095721,
+ "generated_ts": 1788099019,
  "required_cycles": 6,
- "consecutive_clean_cycles": 1,
- "last_clean_ts": 1788095721,
+ "consecutive_clean_cycles": 6,
+ "last_clean_ts": 1788099019,
  "cycle_clean": true,
  "problems": [],
  "agents_reported_in_horizon": [
@@ -13,6 +13,6 @@
   "research_manager"
  ],
  "agents_missing_in_horizon": [],
- "status": "SOAKING",
+ "status": "SOAK_PASS",
  "contract": "config/M5_CLOSE.yaml"
 }
