@@ -19,8 +19,8 @@
     { label: "Home",        href: "home.html" },
     { label: "Map",         href: "universe.html" },
     { label: "Models",      href: "models.html" },
-    { label: "Experiments", href: "board.html" },
-    { label: "Watchtower",  href: "watchtower.html" }
+    { label: "Research",    href: "board.html" },
+    { label: "Control Tower", href: "watchtower.html" }
   ];
 
   var MORE = [
@@ -37,8 +37,8 @@
       kw: "world map, atlas, overview, navigation, all pages" },
     { title: "Live desk", href: "live_online.html",
       kw: "live, online learning, arms, ticker, snapshots" },
-    { title: "Experiment Program", href: "board.html",
-      kw: "program, hypothesis, retire, inbox, kill board, open decisions, workstreams, arms, mitigations" },
+    { title: "Research Command", href: "board.html",
+      kw: "research command, program, hypothesis, retire, queue, causal graph, portfolio, a3, graveyard" },
     { title: "Diagnosis", href: "diagnosis.html",
       kw: "diagnosis, tiers, failing, funnel, blind spots" },
     { title: "Models & Learning", href: "models.html",
@@ -47,8 +47,8 @@
       kw: "paper, research, abstract, methods, results, citations, writeup" },
     { title: "The Archive", href: "archive.html",
       kw: "archive, retired pages, deep views, legacy, documents" },
-    { title: "The Watchtower", href: "watchtower.html",
-      kw: "watchtower, health, monitors, sev, incidents, invariants, agents, costs, backend" },
+    { title: "Control Tower", href: "watchtower.html",
+      kw: "control tower, watchtower, health, monitors, sev, incidents, invariants, agents, costs, backend, readiness" },
     { title: "Metrics Lab", href: "metrics_lab.html",
       kw: "decision board, CI, power, MDE, promote, brier" },
     { title: "Agent HQ", href: "agents.html",

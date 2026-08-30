@@ -362,6 +362,66 @@ def main():
          "hypothesis"},
     ]
 
+    # Research Manager block (M2 / Research Command card 3) — the
+    # ranked "what should the team work on next" queue, machine-
+    # computed from live artifacts. A Research Manager agent will own
+    # this later; the page consumes this structure from day one.
+    a3 = jload("a3_live.json", {}) or {}
+    fwd = a3.get("forward") or {}
+    n_elig = fwd.get("eligible") or 0
+    mk = [r.get("markout_10s") for r in (a3.get("recent_settled") or [])
+          if r.get("state") == "FILLED"
+          and isinstance(r.get("markout_10s"), (int, float))]
+    mmk = sum(mk) / len(mk) if mk else None
+    best = max((e for e in exps if e["lifecycle"] == "LIVE"
+                and e.get("p_gt0") is not None),
+               key=lambda e: e["p_gt0"], default=None)
+    queue = [
+        {"rank": 1, "title": "Accumulate A3 forward evidence",
+         "why": "biggest current unknown",
+         "bottleneck": f"n={n_elig} eligible (compare gate 25, "
+                       "decision gate 50)",
+         "action": "no engineering — market clock only"},
+        {"rank": 2, "title": "Validate A3 execution quality",
+         "why": (f"mean 10s markout {mmk:+.1f}c on filled entries"
+                 if mmk is not None else "no markout sample yet"),
+         "metric": "markout_h / ECR",
+         "action": "collect"},
+    ]
+    if best:
+        queue.append(
+            {"rank": 3, "title": f"Continue {best['id']}",
+             "why": "strongest existing positive legacy branch "
+                    f"(P(Δ>0) {best['p_gt0']:.0%})",
+             "metric": "incremental paired PnL",
+             "action": "continue"})
+    queue.append(
+        {"rank": 4, "title": "A2 early divergence",
+         "why": "+14pp exploratory residual, early windows only (n=28)",
+         "metric": "early-window divergence hit rate",
+         "action": "shadow collection"})
+    research_manager = {
+        "what_changed": [
+            f"A3 forward: {n_elig} eligible window"
+            + ("s" if n_elig != 1 else "") + " settled",
+            (f"{best['id']} remains strongest legacy branch "
+             f"(P(Δ>0) {best['p_gt0']:.0%})" if best
+             else "no live legacy branch"),
+            "no new qualified alpha (best BSS ≤ 0 this sample)",
+        ],
+        "queue": queue,
+        "blocked": [
+            {"item": "Value-of-Wait ML",
+             "reason": "A3 has not demonstrated a timing loss yet "
+                       "(needs poor ECR at positive Δ per the frozen "
+                       "decision tree)"},
+            {"item": "Sizing",
+             "reason": "positive durable alpha not established"},
+            {"item": "Passive execution",
+             "reason": "standalone maker already failed (M11)"},
+        ],
+    }
+
     doc = {"generated_ts": now,
            "counts": {
                "live": len(exps),
@@ -376,6 +436,7 @@ def main():
            "experiments": exps,
            "incremental": inc_out,
            "decision_inbox": inbox,
+           "research_manager": research_manager,
            "system_knowledge": knowledge,
            "tombstones": tombstones}
     (RES / "program.json").write_text(json.dumps(doc, indent=1))

@@ -3,537 +3,278 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — The Watchtower</title>
+<title>BTC 7PM Oracle — Control Tower</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* watchtower-local status tokens — site convention: amber = the
-   series-4 hex, already used as the status amber by clock.html and
-   universe.html. Status colors are never used for data series here. */
-:root { --w-green: var(--good); --w-amber: #8f6000;
-  --w-red: var(--down); --w-none: var(--muted); }
-
-/* card tabs (persisted per card in localStorage) */
-.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 2px; }
-.tabpane { margin-top: 12px; }
-[hidden] { display: none !important; }
-
-/* system-health strip */
-.overall { display: flex; align-items: baseline; gap: 14px;
-  flex-wrap: wrap; margin: 6px 0 14px; }
-.overall .word { font: 650 30px/1 var(--display); letter-spacing: .04em; }
-.planes { display: flex; flex-direction: column; gap: 0; }
-.plane { display: grid; grid-template-columns: 14px 64px 170px 1fr;
-  gap: 12px; align-items: baseline; padding: 8px 0;
-  border-bottom: 1px solid var(--grid); }
-.plane:last-child { border-bottom: none; }
-.plane .pname { font-weight: 600; color: var(--ink); font-size: 13.5px; }
-.plane .pwhy { font-size: 13px; color: var(--ink-2); }
-.hdot { width: 10px; height: 10px; border-radius: 50%;
-  display: inline-block; vertical-align: -1px; align-self: center; }
-.hdot.green { background: var(--w-green); }
-.hdot.amber { background: var(--w-amber); }
-.hdot.red   { background: var(--w-red); }
-.hdot.none  { background: transparent;
-  border: 2px solid var(--w-none); }
-.stw { font-size: 10.5px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; }
-td .hdot { margin-right: 7px; }
-.stw.green { color: var(--w-green); } .stw.amber { color: var(--w-amber); }
-.stw.red { color: var(--w-red); }    .stw.none { color: var(--w-none); }
-
-/* invariant wall */
-.wall td.origin { color: var(--muted); font-size: 12.5px; }
-.wall td .fail-detail { display: block; font-size: 12px;
-  color: var(--down); margin-top: 2px; }
-.wall td.iname { font-weight: 600; color: var(--ink);
-  font-variant-numeric: tabular-nums; }
-
-/* monitors */
-.queued-chip { font-size: 10.5px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
-  background: var(--surface-2); border: 1px dashed var(--border);
-  border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
-tr.queued td { color: var(--muted); }
-
-/* sev ladder */
-.sevgrid { display: grid; gap: 12px; margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-.sevcard { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 12px 14px;
-  border-left-width: 3px; }
-.sevcard.s0 { border-left-color: var(--w-red); }
-.sevcard.s1 { border-left-color: #bc4514; }
-.sevcard.s2 { border-left-color: var(--w-amber); }
-.sevcard.s3 { border-left-color: var(--w-none); }
-.sevcard .lvl { font-size: 11px; font-weight: 700;
-  letter-spacing: .14em; text-transform: uppercase; }
-.sevcard.s0 .lvl { color: var(--w-red); }
-.sevcard.s1 .lvl { color: #bc4514; }
-.sevcard.s2 .lvl { color: var(--w-amber); }
-.sevcard.s3 .lvl { color: var(--w-none); }
-.sevcard .meaning { font: 500 15px var(--display); color: var(--ink);
-  margin: 3px 0 6px; }
-.sevcard .trig { font-size: 12.5px; line-height: 1.55;
-  color: var(--ink-2); }
-.sevchip { font-size: 11px; font-weight: 700; letter-spacing: .1em;
-  border-radius: 6px; padding: 2px 8px; white-space: nowrap; }
-.sevchip.s0 { color: var(--w-red); background: rgba(209,60,60,.1); }
-.sevchip.s1 { color: #bc4514; background: rgba(188,69,20,.1); }
-.sevchip.s2 { color: var(--w-amber); background: rgba(143,96,0,.1); }
-.sevchip.s3 { color: var(--w-none); background: rgba(124,134,149,.12); }
-
-/* routing flow */
-.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  margin-top: 14px; }
-.fstep { border: 1px solid var(--border); border-radius: 10px;
-  background: var(--surface-2); padding: 8px 12px; font-size: 12.5px;
-  font-weight: 600; color: var(--ink-2); text-align: center; }
-.fstep b { display: block; font-size: 11px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); font-weight: 700;
-  margin-bottom: 2px; }
-.fstep.final { border-color: var(--w-green); color: var(--ink); }
-.farrow { color: var(--faint); font-size: 15px; }
-
-/* decisions + tickets (program.json inbox · board.json books) */
-.kchip { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; border-radius: 6px; padding: 2px 8px;
-  white-space: nowrap; }
-.kchip.retire { color: var(--w-red); background: rgba(209,60,60,.1); }
-.kchip.redesign { color: var(--w-amber); background: rgba(143,96,0,.1); }
-.kchip.arch { color: var(--series-2); background: rgba(57,135,229,.12); }
-.kchip.other { color: var(--w-none); background: rgba(124,134,149,.12); }
-.kchip.ws { color: var(--series-5, var(--series-2));
-  background: rgba(11,125,138,.10); }
-.kchip.mit { color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--border); }
-.drow { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px;
-  padding: 10px 2px; border-bottom: 1px solid var(--grid);
-  align-items: baseline; }
-.drow:last-child { border-bottom: none; }
-.drow .did { font-weight: 650; color: var(--ink); font-size: 13.5px; }
-.drow .dq { grid-column: 2; font-size: 13px; color: var(--ink-2);
-  line-height: 1.55; max-width: 76ch; }
-.drow .dctx { grid-column: 2; font-size: 12px; color: var(--muted);
-  line-height: 1.5; max-width: 76ch; }
-.trow { display: grid; grid-template-columns: auto auto 1fr; gap: 10px;
-  padding: 9px 2px; border-bottom: 1px solid var(--grid);
-  align-items: baseline; }
-.trow:last-child { border-bottom: none; }
-.trow .tid { font-weight: 650; color: var(--ink); font-size: 13px;
-  white-space: nowrap; }
-.trow .tnote { font-size: 12.5px; color: var(--ink-2);
-  line-height: 1.55; }
-.trow .tnote .pill { margin-right: 8px; }
-details.folded { margin-top: 10px; }
-details.folded summary { cursor: pointer; font-size: 12.5px;
-  color: var(--muted); font-weight: 600; }
-details.folded .trow .tnote, details.folded .trow .tid {
-  color: var(--muted); }
-
-/* agents roster (ported from agents.html) */
-.cards { display: grid; gap: 14px; margin-top: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
-.acard { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 16px 18px; }
-.acard.human { border: 1.5px solid rgba(143,96,0,.55);
-  background: rgba(143,96,0,.05); }
-.acard h3 { font: 500 18px var(--display); color: var(--ink);
-  margin-bottom: 2px; }
-.acard .rolechip { font-size: 10.5px; font-weight: 700;
-  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2);
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 999px; padding: 2px 10px; }
-.acard.human .rolechip { color: var(--series-4);
-  border-color: rgba(143,96,0,.45); }
-.arow { display: grid; grid-template-columns: 84px 1fr; gap: 10px;
-  font-size: 12.5px; line-height: 1.55; margin-top: 9px; }
-.arow .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--faint); padding-top: 2px; }
-.arow .v { color: var(--ink-2); }
-.arow .v.cannot { color: var(--down); }
-.arow .v code { font-size: 11px; }
-.arow .v .age { font-weight: 650; color: var(--ink);
-  font-variant-numeric: tabular-nums; }
-.stream { max-width: 66rem; margin-top: 14px; }
-.sitem { display: grid; grid-template-columns: 1fr auto; gap: 4px 18px;
-  padding: 11px 2px; border-bottom: 1px solid var(--grid);
-  align-items: baseline; }
-.sitem:last-child { border-bottom: none; }
-.sitem .who { font-size: 13.5px; font-weight: 650; color: var(--ink); }
-.sitem .stime { font-size: 11.5px; color: var(--muted); text-align:
-  right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.sitem .sbody { grid-column: 1 / -1; font-size: 13px;
-  color: var(--ink-2); line-height: 1.55; max-width: 74ch; }
-.sitem .sev { grid-column: 1 / -1; font-size: 11px;
-  color: var(--muted); }
-.sitem .sev code { font-size: 10.5px; }
-
-/* backend cadences + bill (ported from clock.html) */
-.cadence { display: flex; flex-direction: column; }
-.crow { display: grid; grid-template-columns: 112px 1fr auto;
-  gap: 6px 18px; align-items: baseline; padding: 14px 2px;
-  border-bottom: 1px solid var(--grid); }
-.crow:last-child { border-bottom: none; }
-.crow.red { background: rgba(209,60,60,.06);
-  border-left: 3px solid var(--down); padding-left: 12px;
-  border-radius: 8px; }
-.cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
-  monospace; letter-spacing: .1em; text-transform: uppercase;
-  color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 6px;
-  padding: 3px 8px; text-align: center; align-self: start; }
-.cwhat { font-size: 14px; color: var(--ink); font-weight: 600; }
-.cmeta { grid-column: 2; font-size: 12.5px; color: var(--muted);
-  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
-.cmeta code { font-size: 11.5px; color: var(--ink-2); }
-.cdetail { grid-column: 2; font-size: 12px; color: var(--muted);
-  max-width: 62ch; line-height: 1.55; }
-.cright { text-align: right; font-variant-numeric: tabular-nums;
-  font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
-.owner-chip { font-size: 10.5px; font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase;
-  color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 999px;
-  padding: 2px 9px; }
-.age { font-weight: 650; color: var(--ink); }
-.warnline { grid-column: 2; font-size: 12px; color: var(--down);
-  font-weight: 600; }
-.bill td.amt { font-variant-numeric: tabular-nums; }
-.bill .pill { white-space: nowrap; }
-
-/* qualification tab (§77 readiness matrix + evidence) */
-.qhead { display: flex; flex-wrap: wrap; gap: 6px 24px;
-  align-items: baseline; margin: 8px 0 2px; }
-.qhead .qlevel { font: 650 42px/1 var(--display); }
-.qhead .qof { font-size: 12px; color: var(--muted); max-width: 22ch; }
-.qhead .qstrat { flex: 1 1 280px; }
-.qhead .qstrat .stw { font-size: 15px; letter-spacing: .06em; }
-.qhead .qstrat .mini { margin: 2px 0 0; }
-.qtagrow { display: flex; flex-wrap: wrap; gap: 8px;
-  align-items: baseline; margin: 8px 0 2px; flex-basis: 100%; }
-.qtag { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--ink-2);
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
-.qtag.red { color: var(--w-red); border-color: rgba(209,60,60,.4);
-  background: rgba(209,60,60,.07); }
-.qtag.green { color: var(--w-green); border-color: rgba(12,138,77,.4);
-  background: rgba(12,138,77,.07); }
-.qtag.amber { color: var(--w-amber); border-color: rgba(143,96,0,.4);
-  background: rgba(143,96,0,.07); }
-.qsec { margin-top: 18px; font-size: 11px; font-weight: 800;
-  letter-spacing: .16em; text-transform: uppercase;
-  color: var(--muted); }
-.rchip { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
-  monospace; letter-spacing: .08em; border-radius: 6px;
-  padding: 2px 8px; white-space: nowrap; }
-.rchip.r-red { color: var(--w-red); background: rgba(209,60,60,.12); }
-.rchip.r-amber { color: var(--w-amber); background: rgba(143,96,0,.12); }
-.rchip.r-blue { color: var(--series-2); background: rgba(57,135,229,.14); }
-.rchip.r-green { color: var(--w-green); background: rgba(12,138,77,.12); }
-#q-matrix td.qname { font-weight: 600; color: var(--ink);
-  white-space: nowrap; }
-#q-matrix td.qblk { font-size: 12px; color: var(--muted);
-  line-height: 1.5; min-width: 30ch; max-width: 52ch; }
-#q-matrix td.qdown { font-size: 12px; color: var(--w-red);
-  line-height: 1.5; }
-#q-matrix tr.q-weak td { background: rgba(209,60,60,.05); }
-.qgrid { display: grid; gap: 10px; margin-top: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.qt { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 10px 13px 9px; }
-.qt .qk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+/* ---------- header strip ---------- */
+.hstrip { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.hs { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 9px 13px; }
+.hs .k { font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
   text-transform: uppercase; color: var(--muted); }
-.qt .qv { font: 650 15px/1.35 var(--display); color: var(--ink);
-  margin-top: 3px; }
-.qt .qm { font-size: 12px; color: var(--ink-2); line-height: 1.5;
-  margin-top: 3px; font-variant-numeric: tabular-nums; }
-.qt .qf { font: 400 10.5px/1.4 ui-monospace, SFMono-Regular, Menlo,
-  monospace; color: var(--faint); margin-top: 7px; }
-.qslo { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+.hs .v { font-size: 14px; font-weight: 750; margin-top: 3px;
+  font-variant-numeric: tabular-nums; line-height: 1.35; }
+.weakline { margin-top: 12px; font-size: 13px; color: var(--ink-2);
+  border-left: 3px solid var(--w-amber, #8f6000); padding: 4px 12px; }
+:root { --w-green: #0c8a4d; --w-amber: #8f6000; --w-red: #d13c3c; }
+/* ---------- lights ---------- */
+.hdot { display: inline-block; width: 10px; height: 10px;
+  border-radius: 50%; background: var(--faint); vertical-align: -1px; }
+.hdot.green { background: var(--w-green); }
+.hdot.amber, .hdot.none { background: var(--w-amber); }
+.hdot.red { background: var(--w-red);
+  box-shadow: 0 0 0 4px rgba(209,60,60,.15); }
+.stw { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; }
+.stw.green { color: var(--w-green); } .stw.amber, .stw.none { color: var(--w-amber); }
+.stw.red { color: var(--w-red); }
+/* ---------- plane rows ---------- */
+.plane { display: grid; grid-template-columns: 14px 92px 130px 1fr;
+  gap: 4px 12px; align-items: baseline; padding: 7px 0;
+  border-bottom: 1px solid var(--grid); font-size: 13px; }
+.plane:last-child { border-bottom: 0; }
+.plane .pname { font-weight: 700; }
+.plane .pwhy { color: var(--muted); font-size: 12px; }
+/* ---------- change detection ---------- */
+.chg { margin-top: 12px; }
+.chg .h, .subh { font-size: 10.5px; font-weight: 800;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+  margin: 14px 0 6px; }
+.chgrow { display: flex; gap: 10px; align-items: baseline;
+  padding: 4px 0; font-size: 12.5px; border-bottom: 1px solid var(--grid);
+  font-variant-numeric: tabular-nums; }
+.chgrow:last-child { border-bottom: 0; }
+.chgrow b { min-width: 110px; }
+.chgrow.moved { background: rgba(143,96,0,.06); border-radius: 6px;
+  padding-left: 8px; }
+.evch { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.qtag { font-size: 10px; font-weight: 800; letter-spacing: .07em;
+  border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px;
+  color: var(--ink-2); background: var(--surface-2); }
+.qtag.green { color: var(--w-green); border-color: rgba(12,138,77,.4); }
+.qtag.red { color: var(--w-red); border-color: rgba(209,60,60,.45); }
+.qtag.amber { color: var(--w-amber); border-color: rgba(143,96,0,.4); }
+/* ---------- card 2 ---------- */
+.blkr { display: flex; gap: 10px; padding: 8px 0; align-items: baseline;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px;
+  line-height: 1.5; }
+.blkr:last-child { border-bottom: 0; }
+.blkr .r { font-size: 15px; font-weight: 800; color: var(--faint);
+  flex: none; width: 18px; font-variant-numeric: tabular-nums; }
+.blkr b { text-transform: uppercase; font-size: 12px;
+  letter-spacing: .04em; }
+.blkr .why { color: var(--muted); font-size: 12px; display: block; }
+.rchip { font-size: 10px; font-weight: 800; border-radius: 5px;
+  padding: 2px 7px; letter-spacing: .05em; }
+.r-red { color: var(--w-red); background: rgba(209,60,60,.1); }
+.r-amber { color: var(--w-amber); background: rgba(143,96,0,.12); }
+.r-blue { color: var(--series-2); background: rgba(36,97,184,.1); }
+.r-green { color: var(--w-green); background: rgba(12,138,77,.1); }
+.sevchip { font-size: 10px; font-weight: 800; border-radius: 5px;
+  padding: 2px 8px; color: #fff; }
+.sevchip.s0 { background: #7a1010; } .sevchip.s1 { background: var(--w-red); }
+.sevchip.s2 { background: var(--w-amber); } .sevchip.s3 { background: var(--series-1); }
+.increow { display: flex; gap: 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: 13px; }
+.increow:last-child { border-bottom: 0; }
+.increow .st { margin-left: auto; font-size: 11px; color: var(--muted); }
+.qualbox { display: grid; gap: 10px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.qb { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 11px 14px; }
+.qb .k { font-size: 10px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); }
+.qb .v { font-size: 22px; font-weight: 800; margin-top: 4px;
+  font-variant-numeric: tabular-nums; }
+.qb .m { font-size: 11.5px; color: var(--muted); margin-top: 3px;
+  line-height: 1.5; }
+details.drawer { margin-top: 12px; background: var(--surface-2);
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 9px 13px; }
+details.drawer > summary { cursor: pointer; font-size: 12px;
+  font-weight: 800; letter-spacing: .06em; color: var(--ink-2); }
+.qblk { font-size: 12px; color: var(--ink-2); max-width: 40ch; }
+/* ---------- card 3 ---------- */
+.act { display: flex; gap: 12px; padding: 9px 12px; margin-top: 8px;
+  border: 1px solid rgba(209,60,60,.4); background: rgba(209,60,60,.05);
+  border-radius: 10px; font-size: 13px; line-height: 1.55;
   align-items: baseline; }
-.qslo .qf { margin-top: 0; }
-
+.act.warn { border-color: rgba(143,96,0,.4);
+  background: rgba(143,96,0,.05); }
+.act .r { font-size: 15px; font-weight: 800; color: var(--faint);
+  flex: none; }
+.act .meta { color: var(--muted); font-size: 11.5px; display: block; }
+.okline { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+.okline b { color: var(--w-green); }
+.qrow { display: flex; gap: 10px; align-items: baseline; padding: 5px 0;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+.qrow:last-child { border-bottom: 0; }
+.qrow .why { color: var(--muted); font-size: 11.5px; }
+.qd { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  border-radius: 4px; padding: 2px 7px; color: var(--muted);
+  background: rgba(124,134,149,.14); flex: none; }
+/* roster */
+.roster { width: 100%; border-collapse: collapse; font-size: 12.5px;
+  margin-top: 8px; min-width: 640px; }
+.roster th { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--muted); text-align: left;
+  border-bottom: 1px solid var(--axis); padding: 4px 10px 4px 0; }
+.roster td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--grid);
+  vertical-align: top; }
+.canact { font-size: 9.5px; font-weight: 800; letter-spacing: .06em;
+  border-radius: 4px; padding: 1.5px 6px; }
+.canact.yes { color: var(--series-2); background: rgba(36,97,184,.1); }
+.canact.no { color: var(--muted); background: rgba(124,134,149,.14); }
+/* cadence clock */
+.crow2 { display: grid; gap: 4px 12px; align-items: baseline;
+  grid-template-columns: 64px 1fr auto; padding: 6px 0;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+.crow2:last-child { border-bottom: 0; }
+.crow2 .cb { font: 700 11px ui-monospace, Menlo, monospace;
+  color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--grid); border-radius: 6px; padding: 2px 6px;
+  text-align: center; }
+.crow2 .rt { color: var(--muted); font-size: 11.5px; text-align: right;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* events */
+.evrow { display: grid; grid-template-columns: 110px 1fr; gap: 10px;
+  padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+.evrow:last-child { border-bottom: 0; }
+.evrow .t { color: var(--muted); font-variant-numeric: tabular-nums;
+  font-size: 11.5px; }
+.evrow .b { color: var(--ink-2); }
+.evrow .b b { color: var(--ink); }
+.fchips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 2px; }
+.fchip { font-size: 10px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2);
+  border-radius: 999px; padding: 3px 10px; }
+.fchip.on { color: var(--ink); border-color: var(--series-2);
+  background: rgba(36,97,184,.10); }
+/* registry (evicted from Research per TA order) */
+.reg-row { display: flex; gap: 9px; align-items: baseline;
+  padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+.reg-row:last-child { border-bottom: 0; }
+.reg-row .why { color: var(--muted); font-size: 11.5px; }
+.reg-h { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
+.tchip { font-size: 9px; font-weight: 800; letter-spacing: .09em;
+  border-radius: 4px; padding: 1.5px 6px; white-space: nowrap;
+  flex: none; color: var(--ink-2); background: var(--surface-2);
+  border: 1px solid var(--grid); }
 @media (max-width: 640px) {
-  .qhead .qlevel { font-size: 32px; }
-  .plane { grid-template-columns: 14px 60px 1fr; }
-  .plane .pwhy { grid-column: 2 / -1; padding-left: 26px; }
-  .crow { grid-template-columns: 1fr; }
-  .cmeta, .cdetail, .warnline { grid-column: 1; }
-  .cright { text-align: left; }
-  .cbadge { justify-self: start; }
-  .sitem { grid-template-columns: 1fr; }
-  .sitem .stime { text-align: left; }
+  .plane { grid-template-columns: 14px 84px 1fr; }
+  .plane .pwhy { grid-column: 2 / -1; }
 }
 </style>
 </head>
 <body>
 
 <nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><a class="nav" href="universe.html">Map</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="board.html">Experiments</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="analyst.html">Analyst</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="watchtower.html">Watchtower</a><span class="spacer"></span><span class="tag">the ops room</span></nav>
+  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">control tower</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
-  <div class="eyebrow">the ops room</div>
-  <h1>The Watchtower</h1>
-  <p class="sub small">The single operations page: health, invariants
-  and incidents; monitors, tickets and decisions; the agent roster,
-  the backend clock and the bill. Every light and row is fetched live
-  from the published JSON (15-second poll); where a monitor does not
-  exist yet, it says so honestly rather than pretending. Nothing on
-  this page is invented.</p>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span>
+    operations · <span id="asof">reading…</span></div>
+  <h1>Control Tower</h1>
+  <p class="sub small">System health, incidents, readiness, agents, and
+  operational risk. What is broken, what is at risk, who owns it, and
+  what happens next — everything else lives in drawers. When this page
+  is nearly empty, operations are healthy; that is the goal.</p>
+  <div class="hstrip" id="hstrip"></div>
+  <div class="weakline" id="weakline">reading weakest plane…</div>
 </header>
 
-<!-- ============ CARD 1 · SYSTEM HEALTH & SEVS ============ -->
+<!-- CARD 1 ─ SYSTEM STATE -->
 <section>
-  <h2>System health &amp; SEVs
-    <span class="pill" id="hl-stamp">…</span></h2>
-  <p class="sub small">Seven planes, one light each, worst light wins.
-  Each reason is the actual measurement behind the light.</p>
-  <div class="overall"><span class="hdot none" id="ov-dot"></span>
-    <span class="word stw none" id="ov-word">READING…</span>
-    <span class="small muted" id="ov-note">fetching live signals</span></div>
-  <div class="planes" id="planes"><p class="mini">reading signals…</p></div>
-  <p class="mini">Ages quoted from inside a board file (decision
-  ledger, world clock) are as-of that file's last emit — the auditor
-  re-stamps them every 10 minutes.</p>
+  <div class="eyebrow">card 1 · system state</div>
+  <h2>Health</h2>
+  <div id="planes"><p class="mini">reading live signals…</p></div>
+  <div class="chg"><div class="h">changed since your last check
+    <span class="mini" id="chg-when" style="display:inline"></span></div>
+    <div id="changes"><p class="mini">first visit this browser — no
+      previous snapshot to diff against</p></div></div>
+  <div class="subh">evidence health</div>
+  <div class="evch" id="evch"><span class="mini">loading…</span></div>
+</section>
 
-  <div class="tabs" id="c1-tabs" role="tablist">
-    <button type="button" class="chip" role="tab" data-tab="qual">🏁
-      Qualification <span class="pill" id="qual-pill">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="wall">🧱
-      Invariant wall <span class="pill" id="inv-count">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="sevs">🚨
-      SEV ladder &amp; incidents</button>
-    <button type="button" class="chip" role="tab" data-tab="route">🧭
-      Routing</button>
-  </div>
-
-  <div class="tabpane" id="pane-qual" hidden>
-    <p class="sub small">Real-money-equivalent qualification — the
-    production standard graded plane by plane (§77). The system level
-    is the <b>MIN over all critical planes — never averaged</b> — and
-    strategy qualification is an independent verdict (§83). Every
-    value below is read live from the published artifacts; a missing
-    artifact reads "not yet published" — UNKNOWN is never green.</p>
-    <div class="qhead" id="q-head"><p class="mini">reading
-      readiness.json…</p></div>
-
-    <h3 class="qsec">The readiness matrix</h3>
+<!-- CARD 2 ─ INCIDENTS & READINESS -->
+<section>
+  <div class="eyebrow">card 2 · incidents &amp; readiness</div>
+  <h2>Risks &amp; blockers</h2>
+  <div class="subh">top readiness blockers</div>
+  <div id="blockers"><p class="mini">reading readiness.json…</p></div>
+  <div class="subh">open incidents</div>
+  <div id="incidents"><p class="mini">reading incidents.jsonl…</p></div>
+  <div class="subh">qualification — two independent verdicts</div>
+  <div class="qualbox" id="qual"><p class="mini">loading…</p></div>
+  <div class="evch" id="slo" style="margin-top:12px"></div>
+  <details class="drawer" data-x="matrix"><summary>Open full readiness
+    matrix →</summary>
     <div class="scroll"><table id="q-matrix">
       <thead><tr><th>plane</th><th>level</th><th>target</th>
-        <th>blocker to the next level</th>
-        <th>live downgrades</th></tr></thead>
-      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
-    </table></div>
-    <p class="mini">system = MIN over planes — never averaged ·
-    weakest planes highlighted · source <code>readiness.json</code></p>
-
-    <h3 class="qsec">Qualification evidence</h3>
-    <div class="qgrid" id="q-evidence"><p class="mini">loading
-      evidence artifacts…</p></div>
-
-    <h3 class="qsec">SLO snapshot</h3>
-    <div class="qslo" id="q-slo"><p class="mini">loading
-      meta_monitors.json…</p></div>
-  </div>
-
-  <div class="tabpane" id="pane-wall" hidden>
-    <p class="sub small" id="inv-sub">9 machine-checked promises,
-    re-verified every 10 minutes — each one exists because something
-    once broke. The "origin" column is the scar that created the
-    check.</p>
-    <div class="scroll"><table class="wall" id="inv-tbl">
+        <th>blocker to the next level</th><th>live downgrades</th></tr>
+      </thead><tbody><tr><td colspan="5" class="mini">loading…</td></tr>
+      </tbody></table></div>
+    <p class="mini">system = MIN over planes — never averaged · source
+      <code>readiness.json</code></p></details>
+  <details class="drawer" data-x="invwall"><summary>Invariant wall —
+    <span id="inv-sum">…</span></summary>
+    <div class="scroll"><table class="roster" id="inv-tbl">
       <thead><tr><th>status</th><th>invariant</th>
         <th>origin — the scar that created it</th></tr></thead>
-      <tbody><tr><td colspan="3" class="mini">loading…</td></tr></tbody>
-    </table></div>
-  </div>
-
-  <div class="tabpane" id="pane-sevs" hidden>
-    <p class="sub small">The four-level taxonomy adopted in the OS
-    blueprint (§7) — INCIDENTS.md grades on it. Below the ladder,
-    every incident currently on the books, in whatever state it is
-    in; closed or mitigating, it stays visible.</p>
-    <div class="sevgrid">
-      <div class="sevcard s0"><div class="lvl">SEV-0</div>
-        <div class="meaning">results cannot be trusted</div>
-        <div class="trig">leakage; eval sees future data; pairing
-        corrupted; wrong settlement; metric changed mid-experiment;
-        logged policy ≠ running policy; unreproducible result</div></div>
-      <div class="sevcard s1"><div class="lvl">SEV-1</div>
-        <div class="meaning">material performance/risk degradation</div>
-        <div class="trig">maxDD breach; EV collapse beyond threshold;
-        stake-cap breach; execution leak beyond bound</div></div>
-      <div class="sevcard s2"><div class="lvl">SEV-2</div>
-        <div class="meaning">degraded subsystem, safe fallback</div>
-        <div class="trig">stale feed within fallback; repeated retrain
-        failures; drift threshold; coverage collapse; missed monitor
-        run</div></div>
-      <div class="sevcard s3"><div class="lvl">SEV-3</div>
-        <div class="meaning">maintenance, no scientific impact</div>
-        <div class="trig">stale dashboard; publisher failure; delayed
-        non-critical report</div></div>
-    </div>
-    <div class="scroll"><table id="inc-tbl">
-      <thead><tr><th>severity</th><th>incident</th><th>opened</th>
-        <th>status</th><th>record</th></tr></thead>
-      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
-    </table></div>
-    <p class="mini" id="inc-note"></p>
-  </div>
-
-  <div class="tabpane" id="pane-route" hidden>
-    <p class="sub small">Observability routing: the fixed path a
-    firing monitor takes through the system. No step is skippable,
-    and the last step feeds the invariant wall.</p>
-    <div class="flow">
-      <div class="fstep"><b>1 · detect</b>monitor fires</div>
-      <span class="farrow">→</span>
-      <div class="fstep"><b>2 · route</b>watchdog / auditor</div>
-      <span class="farrow">→</span>
-      <div class="fstep"><b>3 · record</b>incident logged<br>(SEV graded)</div>
-      <span class="farrow">→</span>
-      <div class="fstep"><b>4 · mitigate</b>fix runs as a<br>TREATMENT arm</div>
-      <span class="farrow">→</span>
-      <div class="fstep"><b>5 · verify</b>SPRT verdict</div>
-      <span class="farrow">→</span>
-      <div class="fstep"><b>6 · decide</b>human decision<br>(owner sign-off)</div>
-      <span class="farrow">→</span>
-      <div class="fstep final"><b>7 · close the loop</b>regression test added<br>to the invariant wall</div>
-    </div>
-    <p class="mini">every incident ends as an invariant — the wall
-    tab is this diagram's output.</p>
-  </div>
+      <tbody></tbody></table></div></details>
 </section>
 
-<!-- ======== CARD 2 · MONITORS, TICKETS & DECISIONS ======== -->
+<!-- CARD 3 ─ OPERATIONS QUEUE -->
 <section>
-  <h2>Monitors, tickets &amp; decisions</h2>
-  <p class="sub small">The desk's working memory: every cadence it
-  actually runs, every open ticket, and every question waiting on the
-  human. Sourced from the world clock, <code>board.json</code> and
-  <code>program.json</code> — queued work is listed as queued, not
-  faked.</p>
-
-  <div class="tabs" id="c2-tabs" role="tablist">
-    <button type="button" class="chip" role="tab" data-tab="mon">📡
-      Monitors <span class="pill" id="mon-count">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="dec">🗳️
-      Decisions <span class="pill" id="dec-count">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="tix">🎫
-      Tickets <span class="pill" id="tix-count">…</span></button>
-  </div>
-
-  <div class="tabpane" id="pane-mon" hidden>
-    <p class="sub small">Every cadence the system actually runs (from
-    the world clock), plus the monitors the desk knows it still owes —
-    listed as queued, not faked.</p>
-    <div class="scroll"><table id="mon-tbl">
-      <thead><tr><th>status</th><th>monitor</th><th>cadence</th>
-        <th>owner</th><th class="num">last run</th></tr></thead>
-      <tbody><tr><td colspan="5" class="mini">loading…</td></tr></tbody>
-    </table></div>
-    <p class="mini" id="thresholds">governing thresholds: loading…</p>
-  </div>
-
-  <div class="tabpane" id="pane-dec" hidden>
-    <p class="sub small">The decision inbox — every question the
-    autonomous layer has queued for the owner (no agent can resolve
-    these), then the board's open decisions that are still
-    unresolved. Resolved decisions leave this tab but stay in
-    <code>board.json</code>.</p>
-    <div id="dec-inbox"><p class="mini">loading program.json…</p></div>
-    <p class="mini" id="dec-note"></p>
-  </div>
-
-  <div class="tabpane" id="pane-tix" hidden>
-    <p class="sub small">The ticket board: workstreams and mitigation
-    arms from <code>board.json</code>, active first. Dead, folded and
-    shipped tickets are collapsed below — kept visible, never
-    deleted.</p>
-    <div id="tix-open"><p class="mini">loading board.json…</p></div>
-    <details class="folded" id="tix-folded" hidden>
-      <summary id="tix-folded-sum">resolved / dead / shipped
-        tickets</summary>
-      <div id="tix-done"></div>
-    </details>
-  </div>
+  <div class="eyebrow">card 3 · operations queue</div>
+  <h2>What currently requires action?</h2>
+  <div id="actions"><p class="mini">computing…</p></div>
+  <div class="okline" id="okline"></div>
+  <div class="subh">observability backlog — queued, not faked</div>
+  <div id="backlog"></div>
+  <details class="drawer" data-x="agents"><summary>Agents →
+    <span id="a-sum">…</span></summary>
+    <p class="mini">The one rule above all contracts: <b>no agent can
+    change live policy</b> — every promotion, retirement or policy
+    change terminates with the human. Per-agent run/success counters
+    are queued (needs instrumentation), not faked.</p>
+    <div class="scroll"><table class="roster" id="roster">
+      <thead><tr><th>agent / service</th><th>mission</th><th>state</th>
+        <th>last</th><th>authority</th><th>can act?</th></tr></thead>
+      <tbody></tbody></table></div></details>
+  <details class="drawer" data-x="jobs"><summary>Jobs — the backend
+    clock → <span id="clk-sum">…</span></summary>
+    <p class="mini" id="clk-gen"></p>
+    <div id="cadence"></div>
+    <p class="mini" id="rt-line"></p></details>
+  <details class="drawer" data-x="tix"><summary>Tickets →
+    <span id="tix-sum">…</span></summary>
+    <div id="tickets"></div></details>
+  <details class="drawer" data-x="events"><summary>Recent events →
+    </summary>
+    <div class="fchips" id="fchips"></div>
+    <div id="events"></div></details>
+  <details class="drawer" data-x="registry"><summary>Registry —
+    <span id="reg-sum">…</span></summary>
+    <p class="mini">Everything the project contains — typed inventory
+    (moved here from the Research page: research is not inventory
+    management).</p>
+    <div id="registry"></div></details>
+  <details class="drawer" data-x="costs"><summary>Run cost →
+    <span id="bill-sum">…</span></summary>
+    <div class="scroll"><table class="roster" id="bill-tbl">
+      <thead><tr><th>item</th><th>amount</th><th>basis</th></tr></thead>
+      <tbody></tbody></table></div></details>
+  <p class="mini">deep dives: research →
+    <a href="board.html">Research Command</a> · models →
+    <a href="models.html">Models</a> · analyst log →
+    <a href="analyst.html">The Analyst</a> · raw evidence →
+    <a href="ledgers.html">Evidence Explorer</a></p>
 </section>
-
-<!-- ========= CARD 3 · AGENTS, BACKEND & COST ========= -->
-<section>
-  <h2>Agents, backend &amp; cost</h2>
-  <p class="sub small">Who acts, on what trigger, with what authority
-  — and the one thing none of them can do: <b>change live policy</b>.
-  Every promotion, retirement, or policy change terminates with the
-  human. Behind them, the clock face of everything that runs on a
-  timer, and the bill for all of it.</p>
-
-  <div class="tabs" id="c3-tabs" role="tablist">
-    <button type="button" class="chip" role="tab" data-tab="agents">🤝
-      Agents <span class="pill" id="a-count">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="backend">🕰️
-      Backend jobs <span class="pill" id="clk-count">…</span></button>
-    <button type="button" class="chip" role="tab" data-tab="costs">🧾
-      Costs <span class="pill" id="bill-total">…</span></button>
-  </div>
-
-  <div class="tabpane" id="pane-agents" hidden>
-    <p class="sub small">The roster is read from
-    <code>world.json</code>, which mirrors PROGRAM.md §3 and
-    DECISIONS.md; if a card and the repo ever disagree, the repo
-    wins. The activity stream below it is stitched client-side from
-    the same ledgers every other page uses — timestamps in both PT
-    and IST, because the owner is in India trading US markets.</p>
-    <div class="cards" id="cards"><p class="mini">loading
-    world.json…</p></div>
-    <h3 style="margin-top:18px">Activity stream
-      <span class="pill" id="s-count">…</span></h3>
-    <div class="stream" id="stream"><p class="mini">merging
-    ledgers…</p></div>
-  </div>
-
-  <div class="tabpane" id="pane-backend" hidden>
-    <p class="sub small">The whole backend as a clock face of
-    cadences — every process that fires on a timer, who owns it, and
-    the artifact that proves it ran. Ages are computed live against
-    your clock, not copied from a log; a row that can't prove itself
-    says so in plain text.</p>
-    <p class="mini" id="clk-gen">loading world.json…</p>
-    <div class="cadence" id="cadence"><p class="mini">reading the
-    clock…</p></div>
-    <p class="mini" id="rt-line">last retrain: loading
-    online_status.json…</p>
-  </div>
-
-  <div class="tabpane" id="pane-costs" hidden>
-    <p class="sub small">Running cost today is <b>$0 in marginal
-    spend</b> — the market data is public or demo-environment, the
-    compute is self-hosted, and the publishing is a free tier. The
-    one line that isn't metered is LLM tokens, and that row says
-    <i>not metered</i> instead of guessing a number.</p>
-    <div class="scroll"><table class="bill" id="bill-tbl">
-      <thead><tr><th>item</th><th class="num">amount</th>
-        <th>basis</th></tr></thead>
-      <tbody><tr><td colspan="3" class="mini">loading
-        world.json…</td></tr></tbody>
-    </table></div>
-  </div>
-</section>
-
-<footer>Watchtower reads only published artifacts:
-<code>invariants.json</code> · <code>world.json</code> ·
-<code>program.json</code> · <code>board.json</code> ·
-<code>decision_board.json</code> · <code>incidents.jsonl</code> ·
-<code>online_status.json</code> · <code>commentary.jsonl</code> ·
-<code>treatments.jsonl</code> · <code>audit_report.json</code> ·
-<code>site_manifest.json</code> · <code>readiness.json</code> ·
-<code>reconciliation.json</code> · <code>chaos_drills.json</code> ·
-<code>leakage_canaries.json</code> · <code>exec_sensitivity.json</code> ·
-<code>meta_monitors.json</code> · <code>execution_ledger.json</code> ·
-<code>build_manifest.json</code>. Re-polled every 15&nbsp;s.</footer>
 </main>
 
 <script>
@@ -545,298 +286,30 @@ const jl = u => fetch(bust(u), { cache: "no-store" })
   .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
     .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
       catch { return null; } }).filter(Boolean)).catch(() => []);
-const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const esc = s => String(s ?? "").replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;");
 const el = id => document.getElementById(id);
 const nowS = () => Date.now() / 1000;
 const ageMin = ts => (ts == null || !isFinite(ts)) ? null
   : Math.max(0, (nowS() - ts) / 60);
 const fmtAge = m => m == null ? "–"
-  : m < 1 ? "<1 min" : m < 90 ? m.toFixed(0) + " min"
-  : (m / 60).toFixed(1) + " h";
+  : m < 1 ? "<1m" : m < 90 ? m.toFixed(0) + "m"
+  : m < 48 * 60 ? (m / 60).toFixed(1) + "h"
+  : (m / 1440).toFixed(1) + "d";
 const RANK = { green: 0, amber: 1, none: 1, red: 2 };
 const WORD = { green: "GREEN", amber: "AMBER", red: "RED",
   none: "NO DATA" };
-const light = (st, w) => `<span class="hdot ${st}"></span>` +
+const light = (st, w) => `<span class="hdot ${st}"></span> ` +
   `<span class="stw ${st}">${w || WORD[st]}</span>`;
-
-/* ---- tab machinery: one persisted selection per card ---- */
-function wireTabs(card, fallback, storeKey) {
-  const bar = el(card + "-tabs");
-  if (!bar) return;
-  const ids = [...bar.querySelectorAll("button[data-tab]")]
-    .map(b => b.dataset.tab);
-  const key = storeKey || ("watchtower." + card);
-  const show = id => {
-    if (!ids.includes(id)) id = fallback;
-    for (const b of bar.querySelectorAll("button[data-tab]")) {
-      const on = b.dataset.tab === id;
-      b.classList.toggle("on", on);
-      b.setAttribute("aria-selected", String(on));
-    }
-    for (const t of ids) {
-      const p = el("pane-" + t);
-      if (p) p.hidden = t !== id;
-    }
-    try { localStorage.setItem(key, id); } catch {}
-  };
-  bar.addEventListener("click", e => {
-    const b = e.target.closest("button[data-tab]");
-    if (b) show(b.dataset.tab);
-  });
-  let saved = null;
-  try { saved = localStorage.getItem(key); } catch {}
-  show(saved || fallback);
-}
-/* c1 uses a fresh storage key so the new Qualification tab is the
-   default even for browsers that had "wall" saved under the old key */
-wireTabs("c1", "qual", "watchtower.c1.q");
-wireTabs("c2", "mon");
-wireTabs("c3", "agents");
-
-/* ========= CARD 1 · QUALIFICATION (§77 readiness) ========= */
-function rChipCls(lv) {
-  const m = /^R(\d+)/.exec(String(lv ?? "").trim().toUpperCase());
-  if (!m) return "r-amber";            /* UNKNOWN is never green */
-  const n = +m[1];
-  return n <= 1 ? "r-red" : n <= 3 ? "r-amber"
-    : n <= 6 ? "r-blue" : "r-green";
-}
-const R_COLOR = { "r-red": "var(--w-red)", "r-amber": "var(--w-amber)",
-  "r-blue": "var(--series-2)", "r-green": "var(--w-green)" };
-const rChip = lv => `<span class="rchip ${rChipCls(lv)}">${
-  esc(lv ?? "UNKNOWN")}</span>`;
-const evC = v => v == null ? "—"
-  : (v < 0 ? "−" : "+") + Math.abs(100 * v).toFixed(1) + "¢/$1";
-const ppF = v => v == null ? "—"
-  : (v < 0 ? "−" : "+") + Math.abs(v).toFixed(2) + "pp";
-
-function qTile(name, val, meta, file) {
-  return `<div class="qt"><div class="qk">${name}</div>` +
-    `<div class="qv">${val}</div><div class="qm">${meta}</div>` +
-    `<div class="qf">${esc(file)}</div></div>`;
-}
-const qMissing = (name, file) => qTile(name,
-  `<span class="stw amber">NOT YET PUBLISHED</span>`,
-  "artifact absent — nothing is shown as green without evidence",
-  file);
-
-function renderQualification(rdy, rec, chaos, leak, exs, mm, ledg, bld) {
-  /* --- headline strip + tab pill --- */
-  const head = el("q-head"), pill = el("qual-pill");
-  if (!rdy || !rdy.system) {
-    head.innerHTML = `<p class="mini">readiness.json not yet
-      published — no qualification level exists to show, and none is
-      claimed (UNKNOWN is never green)</p>`;
-    if (pill) { pill.textContent = "unpublished";
-      pill.className = "pill pending"; }
-  } else {
-    const sys = rdy.system, strat = rdy.strategy || {};
-    const cls = rChipCls(sys.level);
-    const frozen = sys.qualification_frozen === true;
-    const sev0 = Array.isArray(rdy.sev0_open)
-      ? rdy.sev0_open.length : null;
-    const stratTxt = strat.status || "STATUS UNPUBLISHED";
-    const stratSt = /qualified/i.test(stratTxt)
-      && !/\bno\b/i.test(stratTxt) ? "green" : "amber";
-    head.innerHTML =
-      `<span class="qlevel" style="color:${R_COLOR[cls]}">${
-        esc(sys.level ?? "UNKNOWN")}</span>` +
-      `<span class="qof">system level · MIN over planes · target R8</span>` +
-      `<div class="qstrat"><b class="stw ${stratSt}">${esc(stratTxt)
-        }</b>` + (strat.separation_note
-        ? `<div class="mini">${esc(strat.separation_note)}</div>` : "")
-      + `</div>` +
-      `<div class="qtagrow">` +
-        `<span class="qtag">standard v${esc(rdy.standard_version ?? "?")
-          }</span>` +
-        (frozen
-          ? `<span class="qtag red">QUALIFICATION FROZEN${
-              sys.frozen_reason ? " — " + esc(sys.frozen_reason) : ""
-            }</span>`
-          : `<span class="qtag">not frozen</span>`) +
-        (sev0 == null
-          ? `<span class="qtag amber">SEV-0 count unknown</span>`
-          : sev0
-          ? `<span class="qtag red">${sev0} SEV-0 OPEN</span>`
-          : `<span class="qtag green">0 SEV-0 open</span>`) +
-        (rdy.live_execution
-          ? `<span class="qtag">live execution: demo-only</span>` : "")
-      + `</div>` +
-      (sys.headline || rdy.live_execution
-        ? `<p class="mini" style="flex-basis:100%;margin:2px 0 0">${
-            [sys.headline, rdy.live_execution].filter(Boolean)
-              .map(esc).join(" · ")}</p>` : "");
-    if (pill) {
-      pill.textContent = String(sys.level ?? "?") +
-        (sev0 ? ` · ${sev0} SEV-0` : "");
-      pill.className = "pill " + (cls === "r-green" ? "ok"
-        : cls === "r-red" || frozen || sev0 ? "bad" : "pending");
-    }
-  }
-
-  /* --- the readiness matrix --- */
-  const mtb = el("q-matrix").tBodies[0];
-  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
-  if (!planes.length) {
-    mtb.innerHTML = `<tr><td colspan="5" class="mini">readiness.json
-      not yet published — the matrix cannot be shown</td></tr>`;
-  } else {
-    const weak = new Set((rdy.system && rdy.system.weakest_planes)
-      || []);
-    mtb.innerHTML = planes.map(([name, p]) => {
-      const downs = Array.isArray(p.live_downgrades)
-        && p.live_downgrades.length
-        ? p.live_downgrades.map(esc).join(" · ") : "";
-      return `<tr${weak.has(name) ? ' class="q-weak"' : ""}>` +
-        `<td class="qname">${esc(name)}${weak.has(name)
-          ? ' <span class="stw red">· weakest</span>' : ""}</td>` +
-        `<td>${rChip(p.level)}</td>` +
-        `<td>${rChip(p.target ?? "R8")}</td>` +
-        `<td class="qblk">${esc(p.blocker || "—")}</td>` +
-        `<td class="qdown">${downs
-          || '<span class="small muted">none</span>'}</td></tr>`;
-    }).join("");
-  }
-
-  /* --- evidence sub-grid: six tiles, each null-safe --- */
-  const tiles = [];
-  if (rec && Array.isArray(rec.checks) && rec.checks.length) {
-    const ok = rec.checks.filter(c => c.status === "OK").length;
-    const rows = rec.checks.reduce(
-      (a, c) => Math.max(a, c.rows_checked || 0), 0);
-    const st = rec.overall === "OK" ? "green"
-      : /sev/i.test(rec.overall || "") ? "red" : "amber";
-    tiles.push(qTile("Reconciliation",
-      `<span class="stw ${st}">${esc(rec.overall ?? "UNKNOWN")}</span>`,
-      `${ok}/${rec.checks.length} checks OK · ${rows.toLocaleString()
-        } rows recomputed to the cent, independently of btc_rl`,
-      "reconciliation.json"));
-  } else tiles.push(qMissing("Reconciliation", "reconciliation.json"));
-  if (chaos && Array.isArray(chaos.drills) && chaos.drills.length) {
-    const pass = chaos.drills
-      .filter(d => /^PASS/.test(d.result || "")).length;
-    const defer = chaos.drills
-      .filter(d => /DEFER/i.test(d.result || "")).length;
-    const st = chaos.overall === "PASS" ? "green"
-      : /fail/i.test(chaos.overall || "") ? "red" : "amber";
-    tiles.push(qTile("Chaos drills",
-      `<span class="stw ${st}">${esc(chaos.overall ?? "UNKNOWN")
-        }</span>`,
-      `${pass}/${chaos.drills.length} drills PASS${defer
-        ? ` (${defer} with an honest deferral)` : ""} — live
-        kill/recovery, write atomicity, malformed input, stale
-        heartbeat, fail-closed`,
-      "chaos_drills.json"));
-  } else tiles.push(qMissing("Chaos drills", "chaos_drills.json"));
-  if (leak && Array.isArray(leak.checks) && leak.checks.length) {
-    const pass = leak.checks.filter(c => c.result === "PASS").length;
-    const st = /^(ok|pass)$/i.test(leak.overall || "") ? "green"
-      : /sev|fail/i.test(leak.overall || "") ? "red" : "amber";
-    const failing = leak.checks.filter(c => c.result !== "PASS")
-      .map(c => esc(c.name)).join(", ");
-    tiles.push(qTile("Leakage canaries & placebos",
-      `<span class="stw ${st}">${esc(leak.overall ?? "UNKNOWN")
-        }</span>`,
-      `${pass}/${leak.checks.length} checks PASS${failing
-        ? ` — failing: ${failing}` : ""}`,
-      "leakage_canaries.json"));
-  } else tiles.push(qMissing("Leakage canaries & placebos",
-    "leakage_canaries.json"));
-  const em = exs && exs.execution_models;
-  if (em) {
-    const g = k => em[k] ? em[k].ev_per_dollar : null;
-    const v = exs.verdict || {};
-    const st = v.edge_survives_E2 === true
-      && v.edge_survives_E3 === true ? "green"
-      : v.edge_survives_E2 === true ? "amber"
-      : v.edge_survives_E2 === false ? "red" : "amber";
-    const verdictTxt = v.edge_survives_E2 == null
-      ? "VERDICT UNPUBLISHED"
-      : (v.edge_survives_E2 ? "SURVIVES E2" : "FAILS E2") + " · " +
-        (v.edge_survives_E3 == null ? "E3 —"
-          : v.edge_survives_E3 ? "SURVIVES E3"
-          : "FAILS E3 STRESS");
-    tiles.push(qTile("Execution models",
-      `<span class="stw ${st}">${verdictTxt}</span>`,
-      `E1 taker ${evC(g("E1_taker_at_book"))} · E2 calibrated ${
-        evC(g("E2_calibrated"))} · E3 stress ${evC(g("E3_stress"))}` +
-      (v.delay_crossing_min != null
-        ? ` · delay crossing at ${v.delay_crossing_min}m` : ""),
-      "exec_sensitivity.json"));
-  } else tiles.push(qMissing("Execution models",
-    "exec_sensitivity.json"));
-  const ms = ledg && ledg.markout_summary;
-  if (ms) {
-    const adv = ms.adverse_selection_signature;
-    const st = adv === true ? "red" : adv === false ? "green"
-      : "amber";
-    tiles.push(qTile("Markouts",
-      `<span class="stw ${st}">${adv === true ? "ADVERSE SELECTION"
-        : adv === false ? "NO ADVERSE-SELECTION SIGNATURE"
-        : "SIGNATURE UNKNOWN"}</span>`,
-      `mean markout +1m ${ppF(ms.mean_markout_1m_pp)} · +5m ${
-        ppF(ms.mean_markout_5m_pp)} · ${
-        ms.orders_with_derivable_markouts ?? "?"}/${ms.orders ?? "?"
-        } orders with derivable markouts`,
-      "execution_ledger.json"));
-  } else tiles.push(qMissing("Markouts", "execution_ledger.json"));
-  if (bld) {
-    const scan = bld.secret_scan;
-    const clean = scan ? scan.clean === true : null;
-    const st = clean === true ? "green"
-      : clean === false ? "red" : "amber";
-    const lock = bld.dependency_lock || {};
-    const nModels = bld.model_artifacts
-      ? Object.keys(bld.model_artifacts).length : null;
-    tiles.push(qTile("Build & supply chain",
-      `<span class="stw ${st}">${clean === true ? "SECRET SCAN CLEAN"
-        : clean === false ? "SECRET SCAN FLAGGED"
-        : "SECRET SCAN UNKNOWN"}</span>`,
-      `git ${esc(String(bld.git_sha || "").slice(0, 7) || "?")} · ${
-        lock.packages ?? "?"} packages locked` +
-      (nModels != null ? ` · ${nModels} model artifacts hashed` : "") +
-      (Array.isArray(bld.gaps) && bld.gaps.length
-        ? ` · ${bld.gaps.length} declared gaps` : ""),
-      "build_manifest.json"));
-  } else tiles.push(qMissing("Build & supply chain",
-    "build_manifest.json"));
-  el("q-evidence").innerHTML = tiles.join("");
-
-  /* --- SLO strip from the monitor-of-monitors --- */
-  const sbox = el("q-slo"), slo = mm && mm.slo;
-  if (!slo) {
-    sbox.innerHTML = `<span class="qtag amber">SLO snapshot not yet
-      published</span><span class="qf">meta_monitors.json</span>`;
-  } else {
-    const parts = [];
-    const nc = (slo.compliant || []).length;
-    parts.push(`<span class="qtag ${nc ? "green" : "amber"}">${nc
-      } SLO${nc === 1 ? "" : "s"} compliant</span>`);
-    for (const b of (slo.breached || []))
-      parts.push(`<span class="qtag red">BREACHED · ${esc(b)}</span>`);
-    for (const u of (slo.unknown || []))
-      parts.push(`<span class="qtag amber">UNKNOWN · ${esc(u)
-        }</span>`);
-    parts.push(`<span class="qf">meta_monitors.json${mm.overall
-      ? " · monitor-of-monitors " + esc(mm.overall) : ""}</span>`);
-    sbox.innerHTML = parts.join("");
-  }
+function setKeepOpen(elx, html) {
+  const open = new Set([...document.querySelectorAll("details[data-x]")]
+    .filter(d => d.open).map(d => d.dataset.x));
+  elx.innerHTML = html;
+  for (const d of document.querySelectorAll("details[data-x]"))
+    if (open.has(d.dataset.x)) d.open = true;
 }
 
-/* ================= CARD 1 · HEALTH & SEVS ================= */
-/* PLANE MAPPING (documented per the maintenance brief):
-   Data                 <- online_status.alive_at heartbeat age
-                           (<5 min green, <15 amber, else red)
-   Prediction           <- audit_report.generated_ts age
-                           (<30 min green, <90 amber, else red)
-   Probability          <- same audit age (kb calibrators are
-                           re-scored by the same 10-min audit chain)
-   Decision             <- decision_board.integrity.health as emitted
-   Execution            <- world.regions.execution_port.status/why
-   Risk & Capital       <- world.regions.decision_hq.status/why
-   Learning & Governance<- invariants.json health (passed/failed)
-   A plane whose source failed to fetch shows NO DATA and counts as
-   amber toward the overall light — absence of signal is never green. */
+/* ---------------- plane grading (same contracts as before) -------- */
 function planeRows(onl, aud, dec, wld, inv) {
   const hbAge = ageMin(onl && onl.alive_at);
   const auAge = ageMin(aud && aud.generated_ts);
@@ -845,470 +318,520 @@ function planeRows(onl, aud, dec, wld, inv) {
   const region = k => (wld && wld.regions && wld.regions[k]) || null;
   const ex = region("execution_port"), hq = region("decision_hq");
   const ig = dec && dec.integrity;
-  const rows = [
+  return [
     { name: "Data", st: grade(hbAge, 5, 15),
       why: hbAge == null ? "heartbeat not fetched"
-        : "daemon heartbeat " + fmtAge(hbAge) + " old (green < 5 min)" },
+        : "daemon heartbeat " + fmtAge(hbAge) + " (green < 5m)" },
     { name: "Prediction", st: grade(auAge, 30, 90),
       why: auAge == null ? "audit report not fetched"
-        : "audit re-scored the price arms " + fmtAge(auAge)
-          + " ago (green < 30 min)" },
+        : "audit " + fmtAge(auAge) + " ago (green < 30m)" },
     { name: "Probability", st: grade(auAge, 30, 90),
       why: auAge == null ? "audit report not fetched"
-        : "kb calibrators re-scored by the same audit, "
-          + fmtAge(auAge) + " ago" },
+        : "kb calibrators re-scored " + fmtAge(auAge) + " ago" },
     { name: "Decision", st: (ig && ig.health) || "none",
-      why: ig ? ig.rows + " paired windows; treatment ledger "
-          + fmtAge(ig.age_min) + " old at last board emit"
+      why: ig ? ig.rows + " paired windows in ledger"
         : "decision board not fetched" },
     { name: "Execution", st: (ex && ex.status) || "none",
       why: ex ? ex.why : "world map not fetched" },
-    { name: "Risk & Capital", st: (hq && hq.status) || "none",
+    { name: "Risk", st: (hq && hq.status) || "none",
       why: hq ? hq.why : "world map not fetched" },
-    { name: "Learning & Governance", st: (inv && inv.health) || "none",
+    { name: "Governance", st: (inv && inv.health) || "none",
       why: inv ? inv.passed + "/" + (inv.passed + inv.failed)
-          + " invariants passing; suite ran "
-          + fmtAge(ageMin(inv.generated_ts)) + " ago"
+          + " invariants, ran " + fmtAge(ageMin(inv.generated_ts))
+          + " ago"
         : "invariant suite not fetched" }];
-  return rows;
 }
 
-function renderHealth(rows) {
-  el("planes").innerHTML = rows.map(r =>
-    `<div class="plane">${light(r.st)}` +
-    `<span class="pname">${esc(r.name)}</span>` +
-    `<span class="pwhy">${esc(r.why)}</span></div>`).join("");
+/* ------------------------- header strip --------------------------- */
+function renderHeader(rows, rdy, inv, incs, aud, wld) {
   const worst = rows.reduce((w, r) =>
     (RANK[r.st] ?? 1) > (RANK[w] ?? 1) ? r.st : w, "green");
-  el("ov-dot").className = "hdot " + worst;
-  el("ov-word").className = "word stw " + worst;
-  el("ov-word").textContent = WORD[worst];
-  const bad = rows.filter(r => r.st !== "green").map(r => r.name);
-  el("ov-note").textContent = bad.length
-    ? "worst of seven planes — attention: " + bad.join(", ")
-    : "all seven planes green";
-  el("hl-stamp").textContent = "checked " +
+  el("dot").className = "live-dot" + (worst === "green" ? "" : " stale");
+  const sys = (rdy && rdy.system) || {};
+  const strat = (rdy && rdy.strategy) || {};
+  const open = incs.filter(i => !/closed/i.test(i.status || ""));
+  const costs = (wld && wld.costs) || [];
+  const metered = costs.filter(c => c.amount != null)
+    .reduce((a, c) => a + c.amount, 0);
+  const hs = (k, v) => `<div class="hs"><div class="k">${k}</div>` +
+    `<div class="v">${v}</div></div>`;
+  el("hstrip").innerHTML =
+    hs("system", light(worst)) +
+    hs("strategy", `<span class="stw ${/qualified/i.test(strat.status
+      || "") && !/\bno\b/i.test(strat.status || "") ? "green" : "amber"
+      }">${esc(strat.status || "UNPUBLISHED")}</span>`) +
+    hs("readiness", `${esc(sys.level || "?")} <span class="mini"
+      style="display:inline">/ R8</span>`) +
+    hs("open sev", `<span class="stw ${open.length ? "red" : "green"}">${
+      open.length}</span>`) +
+    hs("invariants", inv
+      ? `<span class="stw ${inv.failed ? "red" : "green"}">${inv.passed
+        } / ${inv.passed + inv.failed}</span>` : "—") +
+    hs("last audit", fmtAge(ageMin(aud && aud.generated_ts))) +
+    hs("run cost", `$${metered.toFixed(2)} <span class="mini"
+      style="display:inline">· ${costs.length - costs.filter(c =>
+        c.amount != null).length} not metered</span>`);
+  const weakest = rows.filter(r => r.st !== "green");
+  el("weakline").innerHTML = weakest.length
+    ? `<b>Weakest plane: ${esc(weakest.sort((a, b) =>
+        (RANK[b.st] ?? 1) - (RANK[a.st] ?? 1))[0].name)}</b> — ${
+        esc(weakest[0].why)}`
+    : `All seven planes green — nothing needs attention.`;
+  el("asof").textContent = "checked " +
     new Date().toLocaleTimeString("en-US", { hour12: false });
-  el("hl-stamp").className = "pill " +
-    (worst === "green" ? "ok" : worst === "red" ? "bad" : "pending");
+  return worst;
+}
+
+/* ------------------- card 1: planes + change diff ------------------ */
+function renderPlanes(rows) {
+  el("planes").innerHTML = rows.map(r =>
+    `<div class="plane"><span class="hdot ${r.st}"></span>` +
+    `<span class="pname">${esc(r.name)}</span>` +
+    `<span class="stw ${r.st}">${WORD[r.st]}</span>` +
+    `<span class="pwhy">${esc(r.why)}</span></div>`).join("");
+}
+
+const SNAP_KEY = "controltower.snapshot";
+function renderChanges(rows, inv, incs, rdy) {
+  const cur = {
+    ts: Date.now(),
+    planes: Object.fromEntries(rows.map(r => [r.name, r.st])),
+    inv: inv ? `${inv.passed}/${inv.passed + inv.failed}` : "?",
+    sev: incs.filter(i => !/closed/i.test(i.status || "")).length,
+    r: (rdy && rdy.system && rdy.system.level) || "?",
+  };
+  let prev = null;
+  try { prev = JSON.parse(localStorage.getItem(SNAP_KEY)); } catch {}
+  /* keep the previous snapshot for at least 5 minutes so a 15 s poll
+     doesn't immediately overwrite the baseline being diffed against */
+  if (!prev || Date.now() - prev.ts > 5 * 60 * 1000)
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(cur)); } catch {}
+  if (!prev) return;
+  el("chg-when").textContent = "· baseline " +
+    fmtAge((Date.now() - prev.ts) / 60000) + " ago";
+  const rowsH = [];
+  for (const r of rows) {
+    const was = (prev.planes || {})[r.name];
+    const moved = was && was !== r.st;
+    rowsH.push(`<div class="chgrow${moved ? " moved" : ""}"><b>${
+      esc(r.name)}</b><span>${was ? WORD[was] : "?"} → <span
+      class="stw ${r.st}">${WORD[r.st]}</span>${moved
+      ? " ⚠" : ""}</span></div>`);
+  }
+  const pair = (k, was, now) => `<div class="chgrow${was !== now
+    ? " moved" : ""}"><b>${k}</b><span>${esc(was)} → ${esc(now)
+    }</span></div>`;
+  rowsH.push(pair("Invariants", prev.inv, cur.inv));
+  rowsH.push(pair("Open SEVs", String(prev.sev), String(cur.sev)));
+  rowsH.push(pair("Readiness", prev.r, cur.r));
+  const anyMove = /moved/.test(rowsH.join(""));
+  el("changes").innerHTML = (anyMove ? ""
+    : `<p class="mini">no new degradation since baseline</p>`)
+    + rowsH.join("");
+}
+
+function renderEvidence(rec, chaos, leak, bld) {
+  const tag = (name, ok, detail) => `<span class="qtag ${ok === true
+    ? "green" : ok === false ? "red" : "amber"}">${name} · ${ok === true
+    ? "PASS" : ok === false ? "FAIL" : "UNPUBLISHED"}${detail
+    ? " · " + esc(detail) : ""}</span>`;
+  el("evch").innerHTML =
+    tag("reconciliation", rec ? rec.overall === "OK" : null,
+      rec && rec.checks ? rec.checks.filter(c => c.status === "OK")
+        .length + "/" + rec.checks.length : "") +
+    tag("chaos", chaos ? chaos.overall === "PASS" : null,
+      chaos && chaos.drills ? chaos.drills.filter(d =>
+        /^PASS/.test(d.result || "")).length + "/" +
+        chaos.drills.length : "") +
+    tag("leakage", leak ? /^(ok|pass)$/i.test(leak.overall || "")
+      : null, leak && leak.checks ? leak.checks.filter(c =>
+        c.result === "PASS").length + "/" + leak.checks.length : "") +
+    tag("build scan", bld && bld.secret_scan
+      ? bld.secret_scan.clean === true : null,
+      bld ? "git " + String(bld.git_sha || "").slice(0, 7) : "");
+}
+
+/* --------------- card 2: blockers, incidents, qual ----------------- */
+const rChipCls = lv => {
+  const m = /^R(\d+)/.exec(String(lv ?? "").trim().toUpperCase());
+  if (!m) return "r-amber";
+  const n = +m[1];
+  return n <= 1 ? "r-red" : n <= 3 ? "r-amber"
+    : n <= 6 ? "r-blue" : "r-green";
+};
+const rChip = lv => `<span class="rchip ${rChipCls(lv)}">${
+  esc(lv ?? "UNKNOWN")}</span>`;
+
+function renderBlockers(rdy) {
+  const box = el("blockers");
+  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
+  if (!planes.length) {
+    box.innerHTML = '<p class="mini">readiness.json not yet published' +
+      ' — no level is claimed (UNKNOWN is never green)</p>';
+    return;
+  }
+  const lvN = p => { const m = /^R(\d+)/.exec(String(p.level || ""));
+    return m ? +m[1] : -1; };
+  const top = planes.filter(([, p]) => p.blocker)
+    .sort((a, b) => lvN(a[1]) - lvN(b[1])).slice(0, 4);
+  box.innerHTML = top.map(([name, p], i) =>
+    `<div class="blkr"><span class="r">${i + 1}</span><span>` +
+    `<b>${esc(name)}</b> ${rChip(p.level)}` +
+    `<span class="why">blocker: ${esc(p.blocker)}</span>` +
+    `</span></div>`).join("") ||
+    '<p class="mini">no blockers recorded</p>';
+}
+
+function renderIncidents(incs) {
+  const open = incs.filter(i => !/closed/i.test(i.status || ""));
+  el("incidents").innerHTML = (open.length ? open : []).map(i =>
+    `<div class="increow"><span class="sevchip s${Math.min(3,
+      Math.max(0, i.sev ?? 3))}">SEV-${esc(i.sev ?? "?")}</span>` +
+    `<b>${esc(i.title || "untitled")}</b>` +
+    `<span class="st">${esc(i.status || "open")}${i.page
+      ? ` · <a href="${esc(String(i.page).replace(/^site\//, ""))
+        }">record</a>` : ""}</span></div>`).join("") ||
+    `<p class="mini">no open incidents — ${incs.length} closed stay in
+      the record</p>`;
+}
+
+function renderQual(rdy) {
+  const sys = (rdy && rdy.system) || {};
+  const strat = (rdy && rdy.strategy) || {};
+  const stratOk = /qualified/i.test(strat.status || "")
+    && !/\bno\b/i.test(strat.status || "");
+  el("qual").innerHTML =
+    `<div class="qb"><div class="k">system readiness</div>` +
+    `<div class="v">${rChip(sys.level)}</div>` +
+    `<div class="m">engineering ladder — MIN over planes, never
+      averaged · target R8</div></div>` +
+    `<div class="qb"><div class="k">strategy readiness</div>` +
+    `<div class="v"><span class="stw ${stratOk ? "green" : "amber"}"
+      style="font-size:15px">${esc(strat.status || "UNPUBLISHED")
+      }</span></div>` +
+    `<div class="m">${esc(strat.separation_note || "independent of "
+      + "system readiness — a perfect system can carry a worthless "
+      + "strategy")}</div></div>` +
+    `<div class="qb"><div class="k">deployment readiness</div>` +
+    `<div class="v" style="font-size:15px">MIN(system, strategy)</div>` +
+    `<div class="m">${sys.qualification_frozen
+      ? "QUALIFICATION FROZEN — " + esc(sys.frozen_reason || "")
+      : "both verdicts must pass before any capital discussion; "
+        + "live execution is demo-only by owner order"}</div></div>`;
+}
+
+function renderSLO(mm) {
+  const slo = mm && mm.slo;
+  if (!slo) { el("slo").innerHTML =
+    '<span class="qtag amber">SLO snapshot unpublished</span>'; return; }
+  const parts = [`<span class="qtag ${(slo.compliant || []).length
+    ? "green" : "amber"}">${(slo.compliant || []).length} SLOs
+    compliant</span>`];
+  for (const b of (slo.breached || []))
+    parts.push(`<span class="qtag red">BREACHED · ${esc(b)}</span>`);
+  for (const u of (slo.unknown || []))
+    parts.push(`<span class="qtag amber">UNKNOWN · ${esc(u)}</span>`);
+  el("slo").innerHTML = parts.join("");
+}
+
+function renderMatrix(rdy) {
+  const tb = el("q-matrix").tBodies[0];
+  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
+  if (!planes.length) { tb.innerHTML = `<tr><td colspan="5"
+    class="mini">readiness.json not yet published</td></tr>`; return; }
+  const weak = new Set((rdy.system && rdy.system.weakest_planes) || []);
+  tb.innerHTML = planes.map(([name, p]) =>
+    `<tr><td><b>${esc(name)}</b>${weak.has(name)
+      ? ' <span class="stw red">· weakest</span>' : ""}</td>` +
+    `<td>${rChip(p.level)}</td><td>${rChip(p.target ?? "R8")}</td>` +
+    `<td class="qblk">${esc(p.blocker || "—")}</td>` +
+    `<td class="qblk">${Array.isArray(p.live_downgrades)
+      && p.live_downgrades.length
+      ? p.live_downgrades.map(esc).join(" · ")
+      : '<span class="mini">none</span>'}</td></tr>`).join("");
 }
 
 function renderInvariants(inv) {
   const tb = el("inv-tbl").tBodies[0];
-  if (!inv || !Array.isArray(inv.checks) || !inv.checks.length) {
-    tb.innerHTML = `<tr><td colspan="3" class="mini">invariant suite
-      not yet published</td></tr>`;
-    el("inv-count").textContent = "unpublished";
-    el("inv-count").className = "pill pending";
-    return;
+  if (!inv || !Array.isArray(inv.checks)) {
+    el("inv-sum").textContent = "unpublished"; return;
   }
-  el("inv-count").textContent = inv.passed + " pass · " +
-    inv.failed + " fail";
-  el("inv-count").className = "pill " + (inv.failed ? "bad" : "ok");
-  el("inv-sub").textContent = inv.checks.length + " machine-checked " +
-    "promises, re-verified every 10 minutes — each one exists " +
-    "because something once broke. The origin column is the scar " +
-    "that created the check. Last run " +
-    fmtAge(ageMin(inv.generated_ts)) + " ago.";
-  tb.innerHTML = inv.checks.map(c => {
-    const st = c.ok ? "green" : "red";
-    const det = (!c.ok && c.detail && c.detail.length)
-      ? `<span class="fail-detail">${esc([].concat(c.detail)
-          .join(" · "))}</span>` : "";
-    return `<tr><td>${light(st, c.ok ? "PASS" : "FAIL")}</td>` +
-      `<td class="iname">${esc(c.name)}${det}</td>` +
-      `<td class="origin">${esc(c.origin || "–")}</td></tr>`;
-  }).join("");
+  el("inv-sum").textContent = `${inv.passed} pass · ${inv.failed} fail
+    · ran ${fmtAge(ageMin(inv.generated_ts))} ago`;
+  tb.innerHTML = inv.checks.map(c =>
+    `<tr><td>${light(c.ok ? "green" : "red", c.ok ? "PASS" : "FAIL")
+      }</td><td><b>${esc(c.name)}</b>${!c.ok && c.detail
+      && c.detail.length ? `<br><span class="mini">${esc([].concat(
+        c.detail).join(" · "))}</span>` : ""}</td>` +
+    `<td class="qblk">${esc(c.origin || "–")}</td></tr>`).join("");
 }
 
-function renderIncidents(inc) {
-  const tb = el("inc-tbl").tBodies[0];
-  if (!inc.length) {
-    tb.innerHTML = `<tr><td colspan="5" class="mini">no incident
-      records published</td></tr>`;
-    el("inc-note").textContent = "";
-    return;
-  }
-  tb.innerHTML = inc.map(i => {
-    const s = (i.sev == null) ? "?" : i.sev;
-    const cls = "s" + (s === "?" ? "3" : Math.min(3, Math.max(0, s)));
-    const doc = i.page ? `<a href="${esc(String(i.page)
-        .replace(/^site\//, ""))}">live page</a>`
-      : i.doc ? `<code>${esc(i.doc)}</code>` : "–";
-    return `<tr><td><span class="sevchip ${cls}">SEV-${esc(s)
-      }</span></td>` +
-      `<td><b>${esc(i.title || "untitled")}</b>` +
-      (i.rca ? `<span class="small muted"> — ${esc(i.rca)}</span>`
-        : "") + `</td>` +
-      `<td class="num">${esc(i.opened || "–")}</td>` +
-      `<td><span class="pill ${/closed/i.test(i.status || "")
-        ? "ok" : "pending"}">${esc(i.status || "open")}</span></td>` +
-      `<td>${doc}</td></tr>`;
-  }).join("");
-  const open = inc.filter(i => !/closed/i.test(i.status || ""));
-  el("inc-note").textContent = open.length
-    ? open.length + " of " + inc.length + " incidents not yet " +
-      "closed (" + open.map(i => "SEV-" + i.sev + " " +
-      (i.status || "open")).join(", ") + ") — they stay on this " +
-      "board until the regression test lands on the wall."
-    : "all " + inc.length + " recorded incidents are closed — " +
-      "kept visible here, never hidden.";
-}
-
-/* ============ CARD 2 · MONITORS, TICKETS, DECISIONS ============ */
+/* ------------------ card 3: the operations queue ------------------- */
 const QUEUED = [
-  ["Brier drift", "rolling Brier vs the frozen baseline window"],
-  ["feature PSI", "population-stability index on the live feature vector"],
-  ["markout", "post-fill price drift — execution quality after entry"],
-  ["SRM", "sample-ratio mismatch check on treatment pairing"]];
+  ["Brier drift", "rolling Brier vs frozen baseline", "NEEDS DATA"],
+  ["feature PSI", "population stability on the live feature vector",
+    "NOT IMPLEMENTED"],
+  ["markout monitor", "post-fill drift as a standing monitor (A3 "
+    + "computes it per-experiment today)", "NOT IMPLEMENTED"],
+  ["SRM", "sample-ratio mismatch on treatment pairing (decision "
+    + "board computes it per-emit)", "NEEDS PROMOTION"]];
 
-function renderMonitors(wld, man) {
-  const tb = el("mon-tbl").tBodies[0];
-  const clk = (wld && Array.isArray(wld.clock)) ? wld.clock : [];
-  const live = clk.map(c => {
-    const st = c.health || "none";
-    const det = c.detail ? `<span class="small muted"> — ${
-      esc(c.detail)}</span>` : "";
-    return `<tr><td>${light(st)}</td>` +
-      `<td>${esc(c.what || "–")}${det}</td>` +
-      `<td>${esc(c.every || "–")}</td>` +
-      `<td>${esc(c.owner || "–")}</td>` +
-      `<td class="num">${fmtAge(c.age_min)}</td></tr>`;
-  });
-  const queued = QUEUED.map(([n, why]) =>
-    `<tr class="queued"><td><span class="queued-chip">queued — needs
-      new capture</span></td>` +
-    `<td><b>${esc(n)}</b><span class="small muted"> — ${esc(why)
-      }</span></td><td>–</td><td>unassigned</td>` +
-    `<td class="num">never run</td></tr>`);
-  tb.innerHTML = (live.length
-    ? live : [`<tr><td colspan="5" class="mini">world clock not
-        fetched — live monitor list unavailable</td></tr>`])
-    .concat(queued).join("");
-  el("mon-count").textContent = live.length + " live · " +
-    queued.length + " queued";
-  el("mon-count").className = "pill " + (live.length ? "ok" : "pending");
-  const cfg = man && man.config;
-  el("thresholds").textContent = cfg
-    ? "governing thresholds (site_manifest.config): " +
-      ["REGIME_FLOOR", "KNIFE_BAND", "TREAT_EDGE", "TREAT_MIN_N",
-       "TREAT_ALPHA", "PT_TAU"].filter(k => cfg[k] != null)
-        .map(k => k + " = " + cfg[k]).join(" · ")
-    : "governing thresholds: site manifest not fetched";
+function renderActions(rows, inv, incs, wld, mm, rdy) {
+  const acts = [];
+  for (const r of rows.filter(r => r.st === "red"))
+    acts.push({ sev: 0, t: `${r.name} plane RED`, m: r.why,
+      own: "operations" });
+  if (inv && inv.failed)
+    acts.push({ sev: 0, t: `${inv.failed} invariant${inv.failed > 1
+      ? "s" : ""} FAILING`, m: inv.checks.filter(c => !c.ok)
+      .map(c => c.name).join(", "), own: "auditor" });
+  for (const c of ((wld && wld.clock) || [])
+      .filter(c => c.health === "red"))
+    acts.push({ sev: 0, t: `cadence RED — ${c.what}`,
+      m: `every ${c.every || "?"} · last ${fmtAge(c.age_min)
+        } · owner ${c.owner || "?"}`, own: c.owner || "ops" });
+  if (mm && /warn|red|fail/i.test(mm.overall || ""))
+    acts.push({ sev: 1, t: "monitor-of-monitors " + mm.overall,
+      m: "inspect freshness SLOs in meta_monitors.json",
+      own: "observability" });
+  for (const b of ((mm && mm.slo && mm.slo.breached) || []))
+    acts.push({ sev: 1, t: "SLO breached", m: b, own: "observability" });
+  for (const r of rows.filter(r => r.st === "amber" || r.st === "none"))
+    acts.push({ sev: 1, t: `${r.name} plane ${WORD[r.st]}`, m: r.why,
+      own: "operations" });
+  const openSev = incs.filter(i => !/closed/i.test(i.status || ""));
+  for (const i of openSev)
+    acts.push({ sev: 1, t: `SEV-${i.sev} open — ${i.title}`,
+      m: i.status || "open", own: "owner + auditor" });
+  acts.sort((a, b) => a.sev - b.sev);
+  el("actions").innerHTML = acts.length
+    ? acts.map((a, i) => `<div class="act${a.sev ? " warn" : ""}">` +
+      `<span class="r">${i + 1}</span><span><b>${esc(a.t)}</b>` +
+      `<span class="meta">${esc(a.m)} · owner: ${esc(a.own)}</span>` +
+      `</span></div>`).join("")
+    : '<p class="mini" style="font-size:14px">🟢 nothing requires ' +
+      'action — healthy operations are boring</p>';
+  /* running-normally summary */
+  const clk = (wld && wld.clock) || [];
+  const okClk = clk.filter(c => c.health === "green").length;
+  const agents = (wld && wld.agents) || [];
+  el("okline").innerHTML = `<b>running normally:</b> ${okClk}/${
+    clk.length} cadences green · ${agents.length} agents on roster · ${
+    QUEUED.length} monitors queued`;
+  el("backlog").innerHTML = QUEUED.map(([n, why, st]) =>
+    `<div class="qrow"><span class="qd">${st}</span><b>${n}</b>` +
+    `<span class="why">${why}</span></div>`).join("");
 }
 
-const kindCls = k => /retire/i.test(k) ? "retire"
-  : /redesign/i.test(k) ? "redesign"
-  : /arch/i.test(k) ? "arch" : "other";
-
-function renderDecisions(prog, brd) {
-  const box = el("dec-inbox");
-  const inbox = (prog && Array.isArray(prog.decision_inbox))
-    ? prog.decision_inbox : [];
-  const allOpen = (brd && Array.isArray(brd.open_decisions))
-    ? brd.open_decisions : [];
-  const unresolved = allOpen.filter(d =>
-    !/resolved|closed/i.test(d.status || ""));
-  const resolved = allOpen.length - unresolved.length;
-  const rows = [];
-  for (const d of inbox) {
-    rows.push(`<div class="drow">` +
-      `<span class="kchip ${kindCls(d.kind || "")}">${
-        esc(d.kind || "ASK")}</span>` +
-      `<span class="did">${esc(d.id || "–")}</span>` +
-      `<span class="dq">${esc(d.ask || "–")}</span></div>`);
-  }
-  for (const d of unresolved) {
-    rows.push(`<div class="drow">` +
-      `<span class="kchip other">OPEN · ${esc(d.owner || "human")
-        }</span>` +
-      `<span class="did">${esc(d.id || "–")}</span>` +
-      `<span class="dq">${esc(d.q || "–")}</span>` +
-      (d.context ? `<span class="dctx">context: ${esc(d.context)
-        }</span>` : "") + `</div>`);
-  }
-  box.innerHTML = rows.join("") ||
-    `<p class="mini">${(prog || brd)
-      ? "decision inbox empty — nothing is waiting on the owner"
-      : "program.json / board.json not fetched"}</p>`;
-  el("dec-count").textContent = (inbox.length + unresolved.length) +
-    " waiting";
-  el("dec-count").className = "pill " +
-    ((inbox.length + unresolved.length) ? "pending" : "ok");
-  el("dec-note").textContent = resolved
-    ? resolved + " earlier open decision" + (resolved === 1 ? "" : "s") +
-      " already resolved by the owner — resolutions stay in " +
-      "board.json, quoted verbatim on the experiment pages."
-    : "";
+/* agents roster */
+const ageText = ts => ts == null ? null : fmtAge(ageMin(ts)) + " ago";
+function renderRoster(wld) {
+  const agents = (wld && wld.agents) || [];
+  el("a-sum").textContent = agents.length + " on roster";
+  const can = a => !/read|observe|propose|advis/i.test(a.authority
+    || "") || /write|restart|publish|execute/i.test(a.authority || "");
+  el("roster").tBodies[0].innerHTML = agents.map(a =>
+    `<tr><td><b>${esc(a.name)}</b></td>` +
+    `<td class="qblk">${esc(a.role || "—")}${a.cannot
+      ? `<br><span class="mini">cannot: ${esc(a.cannot)}</span>`
+      : ""}</td>` +
+    `<td>${a.last_ts != null ? light(ageMin(a.last_ts) < 60
+      ? "green" : "amber") : '<span class="mini">session</span>'}</td>` +
+    `<td class="mini">${ageText(a.last_ts) || "—"}</td>` +
+    `<td class="qblk">${esc(a.authority || "—")}</td>` +
+    `<td><span class="canact ${can(a) ? "yes" : "no"}">${can(a)
+      ? "CAN ACT" : "CANNOT ACT"}</span></td></tr>`).join("");
 }
 
-const DONE_RE = /dead|done|shipped|folded|resolved|retired/i;
-
-function ticketRow(t, chip, chipCls) {
-  return `<div class="trow">` +
-    `<span class="kchip ${chipCls}">${chip}</span>` +
-    `<span class="tid">${esc(t.id || "–")}</span>` +
-    `<span class="tnote"><span class="pill ${
-      DONE_RE.test(t.status || "") ? "miss" : "pending"}">${
-      esc(t.status || "–")}</span>${esc(t.note || "")}</span></div>`;
+/* backend clock */
+function parseEvery(s) {
+  const m = /([\d.]+)\s*(s|sec|m|min|h|hr)/i.exec(String(s || ""));
+  if (!m) return 9e9;
+  const v = parseFloat(m[1]);
+  return /^s/i.test(m[2]) ? v : /^m/i.test(m[2]) ? v * 60 : v * 3600;
 }
-
-function renderTickets(brd) {
-  const boxA = el("tix-open"), boxD = el("tix-done");
-  if (!brd) {
-    boxA.innerHTML = `<p class="mini">board.json not fetched</p>`;
-    el("tix-count").textContent = "–";
-    return;
-  }
-  const ws = Array.isArray(brd.workstreams) ? brd.workstreams : [];
-  const mit = Array.isArray(brd.mitigations) ? brd.mitigations : [];
-  const all = ws.map(t => ({ t, chip: "WORKSTREAM", cls: "ws" }))
-    .concat(mit.map(t => ({ t, chip: "MITIGATION", cls: "mit" })));
-  const active = all.filter(x => !DONE_RE.test(x.t.status || ""));
-  const done = all.filter(x => DONE_RE.test(x.t.status || ""));
-  boxA.innerHTML = active.map(x => ticketRow(x.t, x.chip, x.cls))
-    .join("") || `<p class="mini">no active tickets</p>`;
-  const folded = el("tix-folded");
-  if (done.length) {
-    folded.hidden = false;
-    el("tix-folded-sum").textContent = done.length +
-      " resolved / dead / shipped tickets — click to unfold";
-    boxD.innerHTML = done.map(x => ticketRow(x.t, x.chip, x.cls))
-      .join("");
-  } else { folded.hidden = true; }
-  el("tix-count").textContent = active.length + " active · " +
-    done.length + " closed";
-  el("tix-count").className = "pill " +
-    (active.length ? "pending" : "ok");
-}
-
-/* ============= CARD 3 · AGENTS, BACKEND, COST ============= */
-const fmtZone = (ts, tz) => new Intl.DateTimeFormat("en-US",
-  { timeZone: tz, month: "short", day: "numeric",
-    hour: "2-digit", minute: "2-digit" }).format(new Date(ts * 1000));
-const both = ts => ts == null ? "—"
-  : fmtZone(ts, "America/Los_Angeles") + " PT · " +
-    fmtZone(ts, "Asia/Kolkata") + " IST";
-
-function ageText(ts) {
-  if (ts == null) return null;
-  const s = Date.now() / 1000 - ts;
-  if (s < 0) return "just now";
-  if (s < 60) return "<1 min ago";
-  const m = s / 60;
-  if (m < 90) return m.toFixed(m < 10 ? 1 : 0) + " min ago";
-  const h = m / 60;
-  if (h < 48) return h.toFixed(1) + " h ago";
-  return (h / 24).toFixed(1) + " d ago";
-}
-
-function renderCards(w) {
-  if (!w || !Array.isArray(w.agents)) return;
-  el("a-count").textContent = w.agents.length + " agents";
-  el("a-count").className = "pill ok";
-  el("cards").innerHTML = w.agents.map(a => {
-    const human = /human|owner/i.test(a.name || "") ||
-      a.role === "governance";
-    const age = ageText(a.last_ts);
-    return `<div class="acard${human ? " human" : ""}">` +
-      `<h3>${esc(a.name ?? "—")}</h3>` +
-      `<span class="rolechip">${esc(a.role ?? "—")}</span>` +
-      `<div class="arow"><span class="k">trigger</span>` +
-      `<span class="v">${esc(a.trigger ?? "—")}</span></div>` +
-      `<div class="arow"><span class="k">authority</span>` +
-      `<span class="v">${esc(a.authority ?? "—")}</span></div>` +
-      `<div class="arow"><span class="k">cannot</span>` +
-      `<span class="v cannot">${esc(a.cannot ?? "—")}</span></div>` +
-      `<div class="arow"><span class="k">last seen</span>` +
-      `<span class="v">${age ? `<span class="age">${age}</span>`
-        : "session-based"}</span></div>` +
-      `<div class="arow"><span class="k">evidence</span>` +
-      `<span class="v"><code>${esc(a.evidence ?? "—")}</code>` +
-      `</span></div></div>`;
-  }).join("");
-}
-
-function renderStream(notes, treats, os, db) {
-  const items = [];
-  for (const n of notes) {
-    if (n.ts == null) continue;
-    items.push({ ts: n.ts,
-      who: "🔭 Fable — " + (n.topic || "analyst note"),
-      body: n.text || "", ev: n.evidence || null });
-  }
-  for (const t of treats.slice(-8)) {
-    if (t.close_ts == null) continue;
-    items.push({ ts: t.close_ts,
-      who: "⚖️ Evaluator — settled " + (t.ticker || "window"),
-      body: "leader " + (t.leader ?? "—") + ", outcome " +
-        (t.outcome === 1 ? "ABOVE" : t.outcome === 0 ? "BELOW" : "—") +
-        " the strike; window scored and appended to the treatment" +
-        " ledger.", ev: "treatments.jsonl" });
-  }
+function renderClock(wld, os) {
+  const clk = (wld && wld.clock) || [];
+  el("clk-sum").textContent = clk.length + " cadences";
+  el("clk-gen").textContent = wld ? "snapshot " +
+    (ageText(wld.generated_ts) || "—") : "world.json not fetched";
+  const sorted = clk.slice().sort((a, b) =>
+    parseEvery(a.every) - parseEvery(b.every));
+  el("cadence").innerHTML = sorted.map(c => {
+    const missed = c.health === "red";
+    return `<div class="crow2"><span class="cb">${esc(c.every || "—")
+      }</span><span>${light(c.health || "amber")} <b>${esc(c.what || "—")
+      }</b>${missed ? ' <span class="stw red">· MISSED SLA</span>' : ""
+      }<br><span class="mini">${esc(c.owner || "—")} · <code>${
+      esc(c.source || "—")}</code>${c.in_crontab === false
+      ? ' · <span class="stw red">NOT IN CRONTAB</span>' : ""
+      }</span></span>` +
+    `<span class="rt">last ${fmtAge(c.age_min)}</span></div>`;
+  }).join("") || '<p class="mini">world clock not fetched</p>';
   const rt = os && os.last_retrain;
   if (rt && rt.arms) {
-    let kept = 0, rev = 0, tot = 0;
+    let kept = 0, rev = 0;
     for (const hs of Object.values(rt.arms))
-      for (const v of Object.values(hs)) {
-        tot++; v && v.reverted ? rev++ : kept++;
-      }
-    const ts = rt.at ? Date.parse(rt.at) / 1000 : null;
-    if (ts) items.push({ ts,
-      who: "🏭 Trainer — kept " + kept + ", reverted " + rev +
-        " of " + tot + " arms",
-      body: "Hourly gated retrain: each candidate scored on the" +
-        " incumbent's holdout; only improvements shipped." +
-        (os.retrains_this_session != null ? " " +
-          os.retrains_this_session + " retrains this session." : ""),
-      ev: "online_status.last_retrain" });
+      for (const v of Object.values(hs)) v && v.reverted ? rev++ : kept++;
+    el("rt-line").innerHTML = `last gated retrain: <b>${kept} kept · ${
+      rev} reverted</b> — dissection on
+      <a href="models.html">Models</a>.`;
   }
-  const states = db && db.summary && db.summary.states;
-  if (states && db.generated_ts != null) {
-    items.push({ ts: db.generated_ts,
-      who: "🧪 Experimenter — states: " + Object.entries(states)
-        .map(([k, v]) => v + " " + k).join(", "),
-      body: "Decision board refreshed" +
-        (db.summary.best_candidate ? "; best candidate " +
-          db.summary.best_candidate : "") + ".",
-      ev: "decision_board.json" });
-  }
-  items.sort((a, b) => b.ts - a.ts);
-  el("s-count").textContent = items.length + " events";
-  el("stream").innerHTML = items.map(i =>
-    `<div class="sitem"><span class="who">${esc(i.who)}</span>` +
-    `<span class="stime">${both(i.ts)}</span>` +
-    `<span class="sbody">${esc(i.body)}</span>` +
-    (i.ev ? `<span class="sev">evidence: <code>${esc(i.ev)}` +
-      `</code></span>` : "") + `</div>`).join("") ||
-    `<p class="mini">no events yet</p>`;
 }
 
-let lastWorld = null;
-
-function renderClock() {
-  const w = lastWorld;
-  if (!w || !Array.isArray(w.clock)) return;
-  el("clk-count").textContent = w.clock.length + " cadences";
-  el("clk-count").className = "pill ok";
-  const f = w.facts || {};
-  el("clk-gen").textContent =
-    "snapshot written " + (ageText(w.generated_ts) || "—") +
-    (f.poll_seconds != null ? " · daemon poll " + f.poll_seconds + "s"
-      : "") +
-    (f.retrain_every_s != null ? " · retrain every " +
-      Math.round(f.retrain_every_s / 60) + " min" : "") +
-    (f.windows_scored != null ? " · " + f.windows_scored +
-      " windows scored" : "");
-  el("cadence").innerHTML = w.clock.map(r => {
-    const red = r.health === "red";
-    const age = ageText(r.last_run_ts);
-    const dot = `<span class="hdot ${esc(r.health || "amber")}"></span>`;
-    const cron = r.in_crontab === true ? " · in crontab"
-      : r.in_crontab === false ? " · NOT in crontab" : "";
-    return `<div class="crow${red ? " red" : ""}">` +
-      `<span class="cbadge">${esc(r.every ?? "—")}</span>` +
-      `<span class="cwhat">${esc(r.what ?? "—")}</span>` +
-      `<span class="cright">${dot}${esc(r.health ?? "unknown")}` +
-      ` · <span class="age">${age ?? "—"}</span></span>` +
-      `<span class="cmeta"><span class="owner-chip">` +
-      `${esc(r.owner ?? "—")}</span>` +
-      `<code>${esc(r.source ?? "—")}</code>` +
-      `<span>${cron.slice(3)}</span></span>` +
-      (red ? `<span class="warnline">⚠ this cadence reports` +
-        ` unhealthy — check its source above</span>` : "") +
-      (r.detail ? `<span class="cdetail">${esc(r.detail)}</span>`
-        : "") +
-      `</div>`;
-  }).join("");
+/* tickets */
+const DONE_RE = /dead|done|shipped|folded|resolved|retired/i;
+function renderTickets(brd) {
+  if (!brd) { el("tix-sum").textContent = "—"; return; }
+  const all = (brd.workstreams || []).map(t => ({ t, c: "WORKSTREAM" }))
+    .concat((brd.mitigations || []).map(t => ({ t, c: "MITIGATION" })));
+  const act = all.filter(x => !DONE_RE.test(x.t.status || ""));
+  const done = all.length - act.length;
+  el("tix-sum").textContent = `${act.length} active · ${done} closed`;
+  el("tickets").innerHTML = act.map(x =>
+    `<div class="qrow"><span class="qd">${x.c}</span><b>${esc(x.t.id)
+      }</b><span class="why">${esc(x.t.status || "")} — ${
+      esc(x.t.note || "")}</span></div>`).join("")
+    || '<p class="mini">no active tickets</p>';
 }
 
-function renderRetrainLine(os) {
+/* events — 5 by default, category filters */
+let EVFILTER = "ALL";
+let EVITEMS = [];
+function buildEvents(notes, treats, os, dec) {
+  const items = [];
+  for (const n of notes.slice(-10))
+    if (n.ts != null) items.push({ ts: n.ts, cat: "RESEARCH",
+      who: "Fable · " + (n.topic || "analyst note"),
+      body: String(n.text || "").slice(0, 180) });
+  for (const t of treats.slice(-8))
+    if (t.close_ts != null) items.push({ ts: t.close_ts,
+      cat: "SYSTEM", who: "Evaluator · " + (t.ticker || "window"),
+      body: "settled — leader " + (t.leader ?? "—") + ", outcome " +
+        (t.outcome === 1 ? "ABOVE" : t.outcome === 0 ? "BELOW" : "—") });
   const rt = os && os.last_retrain;
-  const line = el("rt-line");
-  if (!rt || !rt.arms) {
-    line.textContent = "last retrain: not yet reported in " +
-      "online_status.json";
-    return;
+  if (rt && rt.at) {
+    let kept = 0, rev = 0;
+    for (const hs of Object.values(rt.arms || {}))
+      for (const v of Object.values(hs)) v && v.reverted ? rev++ : kept++;
+    items.push({ ts: Date.parse(rt.at) / 1000, cat: "TRAINING",
+      who: "Trainer", body: `gated retrain: ${kept} kept, ${rev
+        } reverted` });
   }
-  let kept = 0, rev = 0;
-  for (const hs of Object.values(rt.arms))
-    for (const v of Object.values(hs)) {
-      if (!v) continue;
-      v.reverted ? rev++ : kept++;
-    }
-  const when = rt.at ? new Date(rt.at) : null;
-  line.innerHTML = "last hourly gated retrain: <b>" + kept +
-    " kept · " + rev + " reverted</b>" +
-    (when ? " · " + esc(when.toLocaleString("en-US",
-      { timeZone: "America/Los_Angeles", month: "short",
-        day: "numeric", hour: "2-digit", minute: "2-digit" })) + " PT"
-      : "") +
-    (os.retrains_this_session != null ? " · " +
-      os.retrains_this_session + " retrains this session" : "") +
-    ` — full dissection on <a href="models.html">the models page</a>.`;
+  if (dec && dec.generated_ts != null)
+    items.push({ ts: dec.generated_ts, cat: "EXPERIMENT",
+      who: "Experimenter", body: "decision board refreshed" });
+  items.sort((a, b) => b.ts - a.ts);
+  return items;
+}
+function renderEvents() {
+  const cats = ["ALL", "SYSTEM", "RESEARCH", "TRAINING", "EXPERIMENT"];
+  el("fchips").innerHTML = cats.map(c =>
+    `<button class="fchip${c === EVFILTER ? " on" : ""}"
+      data-c="${c}">${c}</button>`).join("");
+  el("fchips").querySelectorAll(".fchip").forEach(b =>
+    b.addEventListener("click", () => {
+      EVFILTER = b.dataset.c; renderEvents(); }));
+  const items = EVITEMS.filter(i => EVFILTER === "ALL"
+    || i.cat === EVFILTER).slice(0, EVFILTER === "ALL" ? 5 : 12);
+  const t = ts => new Date(ts * 1000).toLocaleString("en-US",
+    { month: "short", day: "numeric", hour: "2-digit",
+      minute: "2-digit", hour12: false, timeZone: "America/New_York" });
+  el("events").innerHTML = items.map(i =>
+    `<div class="evrow"><span class="t">${t(i.ts)} ET</span>` +
+    `<span class="b"><b>${esc(i.who)}</b> — ${esc(i.body)}</span>` +
+    `</div>`).join("") || '<p class="mini">no events</p>';
 }
 
-function renderBill() {
-  const w = lastWorld;
-  if (!w || !Array.isArray(w.costs)) return;
-  const metered = w.costs.filter(c => c.amount != null);
-  const total = metered.reduce((a, c) => a + c.amount, 0);
-  el("bill-total").textContent =
-    "$" + total.toFixed(2) + " metered · " +
-    (w.costs.length - metered.length) + " not metered";
-  el("bill-total").className = "pill ok";
-  document.querySelector("#bill-tbl tbody").innerHTML =
-    w.costs.map(c => {
-      const amt = c.amount == null
-        ? `<span class="pill miss">not metered</span>`
-        : `<b>$${c.amount.toFixed(c.amount === 0 ? 0 : 2)}</b>`;
-      return `<tr><td>${esc(c.item ?? "—")}</td>` +
-        `<td class="num amt">${amt}</td>` +
-        `<td class="small muted">${esc(c.basis ?? "—")}</td></tr>`;
-    }).join("");
+/* registry — evicted here from the Research page */
+function renderRegistry(brd, incs) {
+  const elx = el("registry");
+  if (!brd) { elx.innerHTML = '<p class="mini">board.json not ' +
+    'fetched</p>'; return; }
+  const row = (t, name, why) => `<div class="reg-row">` +
+    `<span class="tchip">${t}</span><span><b>${esc(name)}</b>${why
+      ? ` <span class="why">— ${esc(why)}</span>` : ""}</span></div>`;
+  let h = "", n = 0;
+  const sec = (title, items, fn) => {
+    if (!items || !items.length) return;
+    h += `<div class="reg-h">${title}</div>` + items.map(fn).join("");
+    n += items.length;
+  };
+  sec("decisions", brd.open_decisions, d => row("DECISION",
+    d.q, d.status === "resolved" ? "✓ " + (d.resolution || "resolved")
+      : (d.context || "") + " · id " + d.id));
+  sec("incidents", incs, i => row("INCIDENT",
+    `SEV-${i.sev} · ${i.title}`, i.status || ""));
+  sec("models (arms)", brd.arms, a => row("MODEL", "arm " + a.id,
+    a.status === "retired" ? "retired — " + (a.why || "")
+      : (a.role || "")));
+  sec("policies (traders)", brd.traders, t => row("POLICY", t.id,
+    t.role || ""));
+  sec("experiments (mitigations)", brd.mitigations, m =>
+    row("EXPERIMENT", m.id + " · " + m.status, m.note));
+  sec("workstreams", brd.workstreams, w => row("WORKSTREAM",
+    w.id + " · " + w.status, w.note));
+  sec("services", brd.infrastructure, i => row("SERVICE", i.id,
+    i.note));
+  elx.innerHTML = h || '<p class="mini">registry empty</p>';
+  el("reg-sum").textContent = n + " entities";
 }
 
-/* ======================= poll loop ======================= */
+function renderBill(wld) {
+  const costs = (wld && wld.costs) || [];
+  const metered = costs.filter(c => c.amount != null);
+  el("bill-sum").textContent = "$" + metered.reduce((a, c) =>
+    a + c.amount, 0).toFixed(2) + " metered · " +
+    (costs.length - metered.length) + " not metered";
+  el("bill-tbl").tBodies[0].innerHTML = costs.map(c =>
+    `<tr><td>${esc(c.item ?? "—")}</td><td>${c.amount == null
+      ? '<span class="mini">not metered</span>'
+      : "$" + c.amount.toFixed(2)}</td>` +
+    `<td class="qblk">${esc(c.basis ?? "—")}</td></tr>`).join("");
+}
+
+/* ============================ poll loop ============================ */
 async function poll() {
-  const [inv, wld, dec, onl, aud, man, inc, prog, brd, notes, treats,
-    rdy, recon, chaos, leak, exs, mmon, eledg, bld]
-    = await Promise.all([
-      jf("../results/invariants.json"),
-      jf("../results/world.json"),
-      jf("../results/decision_board.json"),
-      jf("../results/online_status.json"),
-      jf("../results/audit_report.json"),
-      jf("../results/site_manifest.json"),
-      jl("../results/incidents.jsonl"),
-      jf("../results/program.json"),
-      jf("../results/board.json"),
-      jl("../results/commentary.jsonl"),
-      jl("../results/treatments.jsonl"),
-      jf("../results/readiness.json"),
-      jf("../results/reconciliation.json"),
-      jf("../results/chaos_drills.json"),
-      jf("../results/leakage_canaries.json"),
-      jf("../results/exec_sensitivity.json"),
-      jf("../results/meta_monitors.json"),
-      jf("../results/execution_ledger.json"),
-      jf("../results/build_manifest.json")]);
-  if (wld) lastWorld = wld;
-  renderQualification(rdy, recon, chaos, leak, exs, mmon, eledg, bld);
-  renderHealth(planeRows(onl, aud, dec, wld, inv));
+  const [inv, wld, dec, onl, aud, incs, brd, notes, treats, rdy,
+    recon, chaos, leak, mm, os2] = await Promise.all([
+    jf("../results/invariants.json"),
+    jf("../results/world.json"),
+    jf("../results/decision_board.json"),
+    jf("../results/online_status.json"),
+    jf("../results/audit_report.json"),
+    jl("../results/incidents.jsonl"),
+    jf("../results/board.json"),
+    jl("../results/commentary.jsonl"),
+    jl("../results/treatments.jsonl"),
+    jf("../results/readiness.json"),
+    jf("../results/reconciliation.json"),
+    jf("../results/chaos_drills.json"),
+    jf("../results/leakage_canaries.json"),
+    jf("../results/meta_monitors.json"),
+    jf("../results/build_manifest.json"),
+  ]);
+  const rows = planeRows(onl, aud, dec, wld, inv);
+  renderHeader(rows, rdy, inv, incs, aud, wld);
+  renderPlanes(rows);
+  renderChanges(rows, inv, incs, rdy);
+  renderEvidence(recon, chaos, leak, os2);
+  renderBlockers(rdy);
+  renderIncidents(incs);
+  renderQual(rdy);
+  renderSLO(mm);
+  renderMatrix(rdy);
   renderInvariants(inv);
-  renderIncidents(inc);
-  renderMonitors(wld, man);
-  renderDecisions(prog, brd);
+  renderActions(rows, inv, incs, wld, mm, rdy);
+  renderRoster(wld);
+  renderClock(wld, onl);
   renderTickets(brd);
-  renderCards(wld);
-  renderStream(notes || [], treats || [], onl, dec);
-  renderClock();
-  renderRetrainLine(onl);
-  renderBill();
+  EVITEMS = buildEvents(notes || [], treats || [], onl, dec);
+  renderEvents();
+  renderRegistry(brd, incs);
+  renderBill(wld);
 }
 poll();
 setInterval(poll, 15000);
-setInterval(renderClock, 10000); // ages tick between polls
 </script>
 <script src="glossary.js" defer></script>
 <script src="nav.js" defer></script>

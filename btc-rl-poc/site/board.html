@@ -3,27 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — Experiment Program</title>
+<title>BTC 7PM Oracle — Research Command</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---------- counts strip ---------- */
-.counts { display: grid; gap: 10px; margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.ct { background: var(--surface); border: 1px solid var(--border);
+/* ---------- header strip ---------- */
+.hstrip { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.hs { background: var(--surface); border: 1px solid var(--border);
   border-radius: 12px; padding: 10px 14px; }
-.ct .n { font-size: 24px; font-weight: 800; line-height: 1.2;
-  font-variant-numeric: tabular-nums; }
-.ct .l { font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); margin-top: 2px; }
-.ct.red .n { color: var(--down); }
-.ct.green .n { color: var(--good-text); }
-.ct.amber .n { color: var(--series-4); }
-.ct .ids { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; }
-/* ---------- chips ---------- */
-.lc { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
-  text-transform: uppercase; border-radius: 5px; padding: 2px 7px;
-  white-space: nowrap; color: var(--ink-2);
-  border: 1px solid var(--axis); background: transparent; }
+.hs .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); }
+.hs .v { font-size: 15px; font-weight: 750; margin-top: 3px;
+  font-variant-numeric: tabular-nums; line-height: 1.35; }
+.hs .v small { font-weight: 600; color: var(--ink-2); font-size: 12px; }
+/* ---------- decision-state chips (green=validated amber=collecting
+   red=kill gray=frozen — semantic colors carry STATE, not effect) --- */
+.state { display: inline-block; font-size: 10.5px; font-weight: 800;
+  letter-spacing: .09em; text-transform: uppercase; border-radius: 6px;
+  padding: 3px 10px; white-space: nowrap; }
+.st-collect { color: var(--series-4); background: rgba(143,96,0,.12); }
+.st-good { color: var(--good-text); background: rgba(12,138,77,.12); }
+.st-kill { color: var(--down); background: rgba(209,60,60,.12); }
+.st-frozen { color: var(--muted); background: rgba(124,134,149,.14); }
+.st-live { color: var(--series-2); background: rgba(36,97,184,.10); }
 .rc { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
   text-transform: uppercase; border-radius: 5px; padding: 2.5px 7px;
   white-space: nowrap; color: #fff; background: var(--muted); }
@@ -33,188 +35,49 @@
 .rc-diagnose { background: var(--series-4); }
 .rc-retire { background: var(--down); }
 .rc-redesign { background: var(--series-9); }
-.rc-invalid { background: transparent; color: var(--muted);
-  border: 1px solid var(--border); }
-.tp { font-size: 9.5px; font-weight: 700; border-radius: 4px;
-  padding: 1.5px 6px; background: var(--surface-2);
-  border: 1px solid var(--grid); color: var(--ink-2); white-space: nowrap; }
-.tp-arrow { color: var(--faint); font-size: 10px; }
-.att { font-size: 10px; font-weight: 600; border-radius: 4px;
-  padding: 1.5px 7px; color: var(--series-4);
-  background: rgba(143,96,0,.10); }
-.mid { font-size: 10.5px; font-weight: 800; border-radius: 4px;
-  padding: 1.5px 6px; color: var(--good-text);
-  background: rgba(12,138,77,.10); }
-/* entity-type chips (§31) */
-.tchip { font-size: 9px; font-weight: 800; letter-spacing: .09em;
-  border-radius: 4px; padding: 1.5px 6px; white-space: nowrap; flex: none; }
-.t-model { color: var(--series-2); background: rgba(36,97,184,.10); }
-.t-policy { color: var(--series-5); background: rgba(11,125,138,.10); }
-.t-experiment { color: var(--series-9); background: rgba(95,80,199,.10); }
-.t-service { color: var(--series-1); background: rgba(102,114,131,.12); }
-.t-incident { color: var(--down); background: rgba(209,60,60,.10); }
-.t-decision { color: var(--series-4); background: rgba(143,96,0,.12); }
-.t-capability { color: var(--series-7); background: rgba(13,122,78,.10); }
-.t-workstream { color: var(--series-3); background: rgba(180,58,110,.10); }
-/* ---------- decision inbox ---------- */
-.inbox { background: var(--surface); border: 1px solid var(--border);
-  border-left: 4px solid var(--series-4); border-radius: 12px;
-  padding: 4px 14px; margin-top: 10px; }
-.inbox .item { display: flex; gap: 10px; align-items: baseline;
-  padding: 9px 0; border-bottom: 1px solid var(--grid);
-  font-size: 13px; line-height: 1.5; }
-.inbox .item:last-child { border-bottom: 0; }
-.kchip { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
-  border-radius: 5px; padding: 2.5px 7px; color: #fff; flex: none; }
-.k-retire { background: var(--down); }
-.k-redesign { background: var(--series-9); }
-.k-architecture { background: var(--series-2); }
-/* ---------- kill board tree ---------- */
-.kb { margin-top: 14px; overflow-x: auto; padding-bottom: 4px; }
-.kb-champ { width: max-content; margin: 0 auto; text-align: center;
-  background: var(--ink); color: #fff; border-radius: 10px;
-  padding: 8px 18px; font-weight: 800; font-size: 13px;
-  letter-spacing: .06em; }
-.kb-champ span { display: block; font-weight: 500; font-size: 10.5px;
-  opacity: .75; letter-spacing: 0; }
-.kb-stub { width: 1.5px; height: 14px; background: var(--axis);
-  margin: 0 auto; }
-.kb-bar { height: 1.5px; background: var(--axis);
-  margin: 0 24px; }
-.kb-roots { display: flex; flex-wrap: wrap; gap: 12px;
-  justify-content: center; align-items: flex-start; margin-top: 0; }
-.kb-branch { flex: 0 1 150px; min-width: 128px; }
-.kb-branch::before { content: ""; display: block; width: 1.5px;
-  height: 12px; background: var(--axis); margin: 0 auto; }
-.kb-node { border: 1px solid var(--border); border-top: 3px solid
-  var(--bc, var(--muted)); border-radius: 9px; padding: 6px 9px;
-  background: var(--surface); font-size: 12px; text-align: center; }
-.kb-node b { font-size: 13px; }
-.kb-node .eff { font-size: 11px; font-variant-numeric: tabular-nums;
-  color: var(--ink-2); margin-left: 4px; }
-.kb-node .nm { display: block; font-size: 9.5px; color: var(--muted);
-  margin: 1px 0 3px; }
-.kb-kid::before { content: ""; display: block; width: 1.5px; height: 10px;
-  background: var(--bc, var(--axis)); margin: 0 auto; }
-.kb-verdict { margin-top: 6px; font: 10px ui-monospace, Menlo, monospace;
-  color: var(--ink-2); text-align: center; line-height: 1.5;
-  background: var(--surface-2); border-radius: 6px; padding: 4px 6px; }
-.kb-verdict .vg { color: var(--good-text); font-weight: 700; }
-.kb-verdict .vr { color: var(--down); font-weight: 700; }
-/* ---------- hypothesis cards ---------- */
-.hgrid { display: grid; gap: 12px; margin-top: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr)); }
-.hc { background: var(--surface); border: 1px solid var(--border);
-  border-left: 4px solid var(--bc, var(--muted)); border-radius: 12px;
-  padding: 12px 14px; font-size: 12.5px; line-height: 1.55; }
-.hc .head { display: flex; justify-content: space-between; gap: 8px;
-  align-items: baseline; flex-wrap: wrap; }
-.hc .head b { font-size: 13.5px; }
-.hc .chips { display: flex; gap: 5px; flex-wrap: wrap; }
-.hc .tier { display: flex; gap: 4px; align-items: center;
-  flex-wrap: wrap; margin-top: 6px; }
-.hc .prob { margin-top: 7px; font-weight: 650; color: var(--ink); }
-.hc .hyp { color: var(--ink-2); font-style: italic; margin-top: 2px; }
-.hc .ev { margin-top: 7px; font: 11px ui-monospace, Menlo, monospace;
-  color: var(--ink-2); }
-.hc .inc { margin-top: 4px; font: 10.5px ui-monospace, Menlo, monospace;
-  color: var(--muted); }
-.hc .inc .vg { color: var(--good-text); }
-.hc .inc .vr { color: var(--down); }
-.hc .atts { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
-.hc .acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 9px;
-  align-items: baseline; border-top: 1px solid var(--grid);
-  padding-top: 8px; }
-.hc .acts a { font-size: 12px; font-weight: 700; }
-.hc details { display: inline; }
-.hc details summary { display: inline; cursor: pointer; font-size: 12px;
-  font-weight: 700; color: var(--series-2); list-style: none; }
-.hc details summary::-webkit-details-marker { display: none; }
-.hc details[open] summary { color: var(--muted); }
-.hc details .body { display: block; margin-top: 6px; font-size: 12px;
-  color: var(--ink-2); background: var(--surface-2); border-radius: 8px;
-  padding: 8px 10px; }
-.mstat { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
-  border-radius: 4px; padding: 1.5px 6px; }
-.m-supported { color: var(--good-text); background: rgba(12,138,77,.10); }
-.m-contradicted { color: var(--down); background: rgba(209,60,60,.10); }
-.m-none { color: var(--muted); background: rgba(124,134,149,.12); }
-h3.dom { font-size: 11px; font-weight: 800; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); margin: 18px 0 0; }
-details.fold { margin-top: 14px; background: var(--surface-2);
-  border: 1px dashed var(--border); border-radius: 12px;
-  padding: 10px 14px; }
-details.fold > summary { cursor: pointer; font-size: 12.5px;
-  font-weight: 700; color: var(--ink-2); }
-/* ---------- system knowledge ---------- */
-.know { margin-top: 10px; }
-.know .row { border-left: 4px solid var(--bc, var(--muted));
-  background: var(--surface); border-radius: 0 10px 10px 0;
-  border-top: 1px solid var(--grid); border-right: 1px solid var(--grid);
-  border-bottom: 1px solid var(--grid);
-  padding: 9px 13px; margin-bottom: 8px; font-size: 13px;
-  line-height: 1.55; }
-.know .st { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
-  text-transform: uppercase; margin-right: 8px; }
-.know .evd { display: block; font: 11px ui-monospace, Menlo, monospace;
-  color: var(--muted); margin-top: 3px; }
-/* ---------- graveyard ---------- */
-.grave { display: grid; gap: 12px; margin-top: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-.tomb { background: var(--surface); border: 1px solid var(--border);
-  border-top: 4px solid var(--series-1); border-radius: 12px;
-  padding: 12px 14px; font-size: 12.5px; line-height: 1.55; }
-.tomb .head { display: flex; gap: 8px; align-items: baseline; }
-.tomb .head b { font-size: 14px; }
-.tomb .rd { margin-left: auto; font-size: 11px; color: var(--muted); }
-.tomb .k { font-size: 10px; font-weight: 800; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); margin-top: 8px; }
-.tomb .lesson { margin-top: 8px; padding: 7px 10px; border-radius: 8px;
-  background: rgba(143,96,0,.07); color: var(--ink);
-  font-weight: 600; }
-/* ---------- registry ---------- */
-.reg-row { display: flex; gap: 9px; align-items: baseline;
-  padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px;
-  line-height: 1.5; }
-.reg-row:last-child { border-bottom: 0; }
-.reg-row .why { color: var(--muted); font-size: 11.5px; }
-.reg-row.resolved b, .reg-row.resolved .q { text-decoration: line-through;
-  text-decoration-color: var(--faint); opacity: .65; }
-.reg-row .res { color: var(--ink-2); font-size: 11.5px; }
-.reg-h { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
-.secgap { margin-top: 6px; }
-/* ---------- A3-v1.1 live experiment (§43 dashboard block) ---------- */
-.a3wrap { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 14px 16px; margin-top: 12px; }
-.a3ns { display: flex; flex-wrap: wrap; gap: 6px 22px;
-  align-items: baseline; border-bottom: 1px solid var(--grid);
-  padding-bottom: 10px; }
+.rc-collect { background: var(--series-4); }
+.lc { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; border-radius: 5px; padding: 2px 7px;
+  white-space: nowrap; color: var(--ink-2);
+  border: 1px solid var(--axis); background: transparent; }
+/* ---------- CARD 1 — live priority ---------- */
+.a3top { display: flex; flex-wrap: wrap; gap: 8px 16px;
+  align-items: center; }
+.a3top .exp { font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+.a3top .q { color: var(--ink-2); font-size: 13px; }
+.a3verdict { margin-top: 14px; border-radius: 12px; padding: 12px 16px;
+  background: var(--surface-2); border: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 10px 26px; align-items: center; }
+.a3verdict .bigstate { font-size: 17px; font-weight: 800;
+  letter-spacing: .05em; }
+.a3verdict .ev { font-size: 12.5px; color: var(--ink-2);
+  font-variant-numeric: tabular-nums; line-height: 1.6; }
+.a3ns { margin-top: 14px; }
 .a3ns .k { font-size: 10.5px; font-weight: 800; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); flex-basis: 100%; }
-.a3ns .big { font-size: 40px; font-weight: 800; line-height: 1.1;
+  text-transform: uppercase; color: var(--muted); }
+.a3ns .big { font-size: 38px; font-weight: 800; line-height: 1.15;
   font-variant-numeric: tabular-nums; }
-.a3ns .ci { font-size: 12px; color: var(--ink-2);
+.a3ns .sub2 { font-size: 12px; color: var(--muted); }
+.a3grid { display: grid; gap: 10px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.a3cell { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 13px; font-size: 12.5px;
+  line-height: 1.55; }
+.a3cell .h { font-size: 10px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.a3cell .n { font-size: 19px; font-weight: 800;
   font-variant-numeric: tabular-nums; }
-.a3grid { display: grid; gap: 10px; margin-top: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
-.a3grid .ct .n { font-size: 20px; }
-.a3conc { margin-top: 10px; font: 11px ui-monospace, Menlo, monospace;
-  color: var(--ink-2); background: var(--surface-2); border-radius: 8px;
-  padding: 6px 10px; line-height: 1.6; }
-.a3conc b { font-weight: 800; letter-spacing: .07em; color: var(--muted); }
-details.a3drawer { margin-top: 10px; background: var(--surface-2);
+.a3cell .d { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.gateline { margin-top: 12px; font-size: 12.5px; color: var(--ink-2);
+  border-left: 3px solid var(--series-4); padding: 4px 12px; }
+details.drawer { margin-top: 12px; background: var(--surface-2);
   border: 1px dashed var(--border); border-radius: 10px;
-  padding: 8px 12px; }
-details.a3drawer > summary { cursor: pointer; font-size: 11px;
-  font-weight: 800; letter-spacing: .08em; color: var(--ink-2); }
-.a3warn { display: inline-block; margin-left: 8px; font-size: 9.5px;
-  font-weight: 800; letter-spacing: .06em; color: var(--down);
-  border: 1px solid var(--down); border-radius: 5px; padding: 1.5px 7px;
-  vertical-align: middle; }
+  padding: 9px 13px; }
+details.drawer > summary { cursor: pointer; font-size: 12px;
+  font-weight: 800; letter-spacing: .06em; color: var(--ink-2); }
 .a3tblwrap { overflow-x: auto; }
 .a3tbl { width: 100%; border-collapse: collapse; font-size: 12.5px;
-  margin-top: 8px; }
+  margin-top: 8px; min-width: 0; }
 .a3tbl th { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
   text-transform: uppercase; color: var(--muted); text-align: right;
   border-bottom: 1px solid var(--axis); padding: 4px 8px;
@@ -223,126 +86,196 @@ details.a3drawer > summary { cursor: pointer; font-size: 11px;
 .a3tbl td { padding: 5px 8px; border-bottom: 1px solid var(--grid);
   text-align: right; font-variant-numeric: tabular-nums;
   white-space: nowrap; }
-.a3tbl tr.livearm td { background: rgba(12,138,77,.06); }
+.a3tbl tr.shadowarm td { color: var(--muted); }
 .a3livechip { font-size: 9px; font-weight: 800; letter-spacing: .08em;
   color: var(--good-text); border: 1px solid var(--good-text);
   border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
 .a3shadowchip { font-size: 9px; font-weight: 800; letter-spacing: .08em;
-  color: var(--muted); border: 1px solid var(--axis);
+  color: var(--faint); border: 1px solid var(--faint);
   border-radius: 4px; padding: 1px 5px; margin-left: 6px; }
 .a3foot { display: flex; flex-wrap: wrap; gap: 6px 14px;
-  align-items: center; margin-top: 10px; padding-top: 9px;
+  align-items: center; margin-top: 12px; padding-top: 9px;
   border-top: 1px solid var(--grid); font-size: 11.5px;
   color: var(--ink-2); }
 .a3foot code { font: 11px ui-monospace, Menlo, monospace;
   background: var(--surface-2); border: 1px solid var(--grid);
   border-radius: 4px; padding: 1px 5px; }
-.a3state { font-size: 9.5px; font-weight: 800; letter-spacing: .08em;
-  text-transform: uppercase; border-radius: 5px; padding: 2.5px 8px;
-  border: 1px solid var(--sc, var(--axis)); color: var(--sc, var(--ink-2));
-  white-space: nowrap; }
 .a3hashok { color: var(--good-text); font-weight: 800; }
 .a3hashbad { color: var(--down); font-weight: 800; }
+/* ---------- CARD 2 — portfolio ---------- */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.tab { font-size: 11px; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--muted); cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2);
+  border-radius: 999px; padding: 5px 14px; }
+.tab.on { color: var(--ink); border-color: var(--series-2);
+  background: rgba(36,97,184,.10); }
+.prow { border-bottom: 1px solid var(--grid); }
+.prow > summary { display: grid; list-style: none; cursor: pointer;
+  grid-template-columns: minmax(120px,1.1fr) minmax(180px,2fr)
+    72px minmax(110px,1fr) 100px 84px;
+  gap: 8px; align-items: baseline; padding: 9px 2px; font-size: 12.5px; }
+.prow > summary::-webkit-details-marker { display: none; }
+.prow > summary:hover { background: var(--surface-2); }
+.prow .nm b { font-size: 13px; }
+.prow .nm span { color: var(--muted); font-size: 11px; display: block; }
+.prow .qq { color: var(--ink-2); }
+.prow .dd { font-weight: 750; font-variant-numeric: tabular-nums;
+  text-align: right; }
+.prow .ee { color: var(--ink-2); font-variant-numeric: tabular-nums;
+  font-size: 11.5px; }
+.prow .body { padding: 4px 10px 12px; font-size: 12.5px;
+  line-height: 1.6; color: var(--ink-2); background: var(--surface-2);
+  border-radius: 8px; margin: 0 0 10px; }
+.prow .body .k { font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+.prow .body .inc { font: 11px ui-monospace, Menlo, monospace; }
+.prow .body .inc .vg { color: var(--good-text); }
+.prow .body .inc .vr { color: var(--down); }
+.phead { display: grid; gap: 8px; padding: 4px 2px; margin-top: 6px;
+  grid-template-columns: minmax(120px,1.1fr) minmax(180px,2fr)
+    72px minmax(110px,1fr) 100px 84px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+  border-bottom: 1px solid var(--axis); }
+.phead :nth-child(3) { text-align: right; }
+.pwrap { overflow-x: auto; }
+.pwrap > div { min-width: 700px; }
+.branch3 { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.b3 { background: var(--surface-2); border: 1px solid var(--border);
+  border-left: 4px solid var(--bc, var(--muted)); border-radius: 10px;
+  padding: 9px 12px; font-size: 12px; line-height: 1.55; }
+.b3 .h { font-size: 9.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); }
+.b3 b { font-size: 13.5px; }
+.b3 .m { font: 11px ui-monospace, Menlo, monospace; color: var(--ink-2); }
+/* causal tree (drawer) */
+.kb { margin-top: 10px; overflow-x: auto; padding-bottom: 4px; }
+.kb-champ { width: max-content; margin: 0 auto; text-align: center;
+  background: var(--ink); color: #fff; border-radius: 10px;
+  padding: 7px 16px; font-weight: 800; font-size: 12.5px;
+  letter-spacing: .06em; }
+.kb-champ span { display: block; font-weight: 500; font-size: 10px;
+  opacity: .75; letter-spacing: 0; }
+.kb-stub { width: 1.5px; height: 12px; background: var(--axis);
+  margin: 0 auto; }
+.kb-bar { height: 1.5px; background: var(--axis); margin: 0 24px; }
+.kb-roots { display: flex; flex-wrap: wrap; gap: 12px;
+  justify-content: center; align-items: flex-start; }
+.kb-branch { flex: 0 1 148px; min-width: 126px; }
+.kb-branch::before { content: ""; display: block; width: 1.5px;
+  height: 12px; background: var(--axis); margin: 0 auto; }
+.kb-node { border: 1px solid var(--border); border-top: 3px solid
+  var(--bc, var(--muted)); border-radius: 9px; padding: 6px 9px;
+  background: var(--surface); font-size: 12px; text-align: center; }
+.kb-node b { font-size: 13px; }
+.kb-node .eff { font-size: 11px; font-variant-numeric: tabular-nums;
+  color: var(--ink-2); margin-left: 4px; }
+.kb-kid::before { content: ""; display: block; width: 1.5px; height: 10px;
+  background: var(--bc, var(--axis)); margin: 0 auto; }
+.kb-verdict { margin-top: 6px; font: 10px ui-monospace, Menlo, monospace;
+  color: var(--ink-2); text-align: center; line-height: 1.5;
+  background: var(--surface-2); border-radius: 6px; padding: 4px 6px; }
+.kb-verdict .vg { color: var(--good-text); font-weight: 700; }
+.kb-verdict .vr { color: var(--down); font-weight: 700; }
+/* ---------- CARD 3 — research manager ---------- */
+.rm3 { display: grid; gap: 14px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+.rmcol .h { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.qitem { display: flex; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px;
+  line-height: 1.55; }
+.qitem:last-child { border-bottom: 0; }
+.qitem .r { font-size: 15px; font-weight: 800; color: var(--faint);
+  font-variant-numeric: tabular-nums; flex: none; width: 18px; }
+.qitem b { display: block; }
+.qitem .w { color: var(--ink-2); }
+.qitem .a { font-size: 11px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.chg { font-size: 12.5px; line-height: 1.7; color: var(--ink-2);
+  border-left: 3px solid var(--series-2); padding: 2px 12px; }
+.blocked { margin-top: 14px; }
+.blk { display: flex; gap: 10px; align-items: baseline; padding: 6px 0;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px; }
+.blk:last-child { border-bottom: 0; }
+.blk .why { color: var(--muted); font-size: 11.5px; }
+.belief { border-left: 4px solid var(--bc, var(--muted));
+  background: var(--surface-2); border-radius: 0 10px 10px 0;
+  padding: 8px 12px; margin-bottom: 8px; font-size: 13px;
+  line-height: 1.55; }
+.belief .st { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
+  text-transform: uppercase; margin-right: 8px; }
+.belief .evd { display: block; font: 11px ui-monospace, Menlo, monospace;
+  color: var(--muted); margin-top: 3px; }
+/* graveyard drawer */
+.grave { display: grid; gap: 12px; margin-top: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+.tomb { background: var(--surface); border: 1px solid var(--border);
+  border-top: 4px solid var(--series-1); border-radius: 12px;
+  padding: 11px 13px; font-size: 12.5px; line-height: 1.55; }
+.tomb b { font-size: 13.5px; }
+.tomb .k { font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-top: 7px; }
+.tomb .lesson { margin-top: 7px; padding: 6px 9px; border-radius: 8px;
+  background: rgba(143,96,0,.07); font-weight: 600; }
+.inboxrow { display: flex; gap: 10px; align-items: baseline;
+  padding: 8px 12px; border-radius: 10px; margin-top: 12px;
+  border: 1px solid rgba(143,96,0,.4); background: rgba(143,96,0,.06);
+  font-size: 13px; }
 </style>
 </head>
 <body>
 
 <nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav here" href="board.html">Program</a><a class="nav" href="analyst.html">Analyst</a><span class="spacer"></span><span class="tag">experiment program</span></nav>
+  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">research command</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
-    the experiment operating system · <span id="asof">loading…</span></div>
-  <h1>Experiment Program</h1>
-  <p class="sub small">What are we testing, what problem does each
-  treatment attack, what have we learned, and what should die next?
-  This page is the <b>lifecycle + causality</b> view of the experiment
-  graph; the statistical evidence behind every number lives in
-  <a href="metrics_lab.html">Experiment Analysis</a>. Governance:
-  <span id="gov" class="mini" style="display:inline">the analysis
-  recommendation never changes lifecycle — only the owner does</span>.</p>
+    the research operating system · <span id="asof">loading…</span></div>
+  <h1>Research Command</h1>
+  <p class="sub small">What is live, what is winning, what is dying,
+  and what should we do next? Statistical evidence behind every number:
+  <a href="metrics_lab.html">Analysis</a>. Governance:
+  <span id="gov">the analysis recommendation never changes lifecycle —
+  only the owner does</span>.</p>
+  <div class="hstrip" id="hstrip"></div>
 </header>
 
+<!-- CARD 1 ─ LIVE RESEARCH PRIORITY -->
 <section>
-  <div class="eyebrow">entry timing vs the frozen control</div>
-  <h2>A3-v1.1 — the live experiment</h2>
-  <p class="sub small">One paired question per window: <b>C0</b> (control)
-  buys the moment the thesis fires; <b>T10</b> (treatment) waits for a
-  dip from that same call price. Same windows, same theses — only entry
-  timing differs. All numbers below are forward, post-registration, in
-  ¢ of P&amp;L per $1 staked per eligible window.</p>
+  <div class="eyebrow">card 1 · live research priority</div>
+  <h2>A3-v1.1 — entry timing vs frozen control</h2>
+  <p class="sub small">One paired question per window: <b>C0</b> buys
+  the moment the thesis fires; <b>T10</b> waits for a ≥10¢ valid dip
+  from the same call. Same windows, same theses — only entry timing
+  differs. Forward, post-registration, ¢ per $1 per eligible window.</p>
   <div id="a3"><p class="mini">loading a3_live.json…</p></div>
 </section>
 
+<!-- CARD 2 ─ RESEARCH PORTFOLIO -->
 <section>
-  <div class="counts" id="counts"><div class="ct"><div class="n">…</div>
-    <div class="l">loading program.json</div></div></div>
+  <div class="eyebrow">card 2 · research portfolio</div>
+  <h2>Active experiments that still matter</h2>
+  <p class="sub small">Every row answers one question with one Δ and a
+  recommendation. Click a row for the problem, hypothesis and paired
+  incremental evidence. The full causal graph and the retired set live
+  in drawers.</p>
+  <div id="portfolio"><p class="mini">loading program.json…</p></div>
 </section>
 
+<!-- CARD 3 ─ RESEARCH MANAGER -->
 <section>
-  <h2>Decision inbox <span class="pill pending" id="inbox-n">…</span></h2>
-  <p class="sub small">Only items where an owner action is useful —
-  everything collecting normally is collapsed below.</p>
-  <div class="inbox" id="inbox"><div class="item"><span class="mini">loading…</span></div></div>
-</section>
-
-<section>
-  <h2>Branch kill board</h2>
-  <p class="sub small">The experiment graph as a tree: champion at the
-  root, treatments as branches, combos under their parents. Each branch
-  carries its <b>incremental read</b> — does the branch add anything
-  beyond what the strongest parent already delivers? Branch color =
-  analysis recommendation (<span class="rc rc-priority">priority</span>
-  <span class="rc rc-continue">continue</span>
-  <span class="rc rc-hold">hold</span>
-  <span class="rc rc-diagnose">diagnose</span>
-  <span class="rc rc-redesign">redesign</span>
-  <span class="rc rc-retire">retire</span>).</p>
-  <div class="kb" id="killboard"><p class="mini">loading…</p></div>
-</section>
-
-<section>
-  <h2>Hypothesis cards</h2>
-  <p class="sub small">One card per experiment, grouped by the problem
-  domain it attacks. Two chips per card, deliberately distinct:
-  the <span class="lc">lifecycle</span> chip (outline) is
-  <b>owner-controlled</b>; the <span class="rc rc-continue">recommendation</span>
-  chip (filled) is what the analysis layer would do —
-  <span id="gov2">it never moves lifecycle by itself</span>.</p>
-  <div id="hypo"><p class="mini">loading…</p></div>
-</section>
-
-<section>
-  <h2>System knowledge</h2>
-  <p class="sub small">What the program believes it has learned so far —
-  each claim pinned to the evidence that supports (or pressures) it.</p>
-  <div class="know" id="know"><p class="mini">loading…</p></div>
-</section>
-
-<section>
-  <h2>Graveyard</h2>
-  <p class="sub small">Retired with cause of death on the stone — why it
-  looked good, why it failed, and what it taught. Full exhibits:
-  <a href="museum.html">Museum of Failed Ideas</a>.</p>
-  <div class="grave" id="grave"><p class="mini">loading…</p></div>
-</section>
-
-<section>
-  <h2>Registry</h2>
-  <p class="sub small">Everything else the project contains — models,
-  policies, services, workstreams, incidents and resolved decisions —
-  typed and collapsed so the program view stays about experiments.</p>
-  <details class="fold" data-x="registry"><summary id="reg-sum">registry —
-    expand</summary>
-    <div id="registry" class="secgap"></div>
-  </details>
-  <p class="mini">where is the system failing? →
-  <a href="diagnosis.html">Diagnosis</a> · statistical evidence →
-  <a href="metrics_lab.html">Experiment Analysis</a> · the dead →
-  <a href="museum.html">Museum</a> · decision ledger →
-  <a href="home_classic.html">DECISIONS</a></p>
+  <div class="eyebrow">card 3 · research manager</div>
+  <h2>What should we work on next?</h2>
+  <p class="sub small">Machine-computed ranked queue (a Research
+  Manager agent will own this later — the structure is live now).
+  Blocked items stay blocked until the frozen decision tree unlocks
+  them.</p>
+  <div id="manager"><p class="mini">loading…</p></div>
 </section>
 </main>
 
@@ -364,31 +297,29 @@ const JL = async u => {
   } catch { return []; }
 };
 
-/* ------------------------------------------------------- formatting -- */
+/* ------------------------------------------------------ formatting -- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;",
   "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const cS = v => v == null || !isFinite(v) ? "–"
   : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
+const cC = v => v == null || !isFinite(v) ? "—"
+  : (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢";
 const pc = v => v == null || !isFinite(v) ? "–"
   : (100 * v).toFixed(0) + "%";
 const f2 = v => v == null || !isFinite(v) ? "–" : v.toFixed(2);
 
 const RC = { PRIORITY: "rc-priority", PROMOTE: "rc-promote",
   CONTINUE: "rc-continue", HOLD: "rc-hold", DIAGNOSE: "rc-diagnose",
-  RETIRE: "rc-retire", REDESIGN: "rc-redesign", INVALID: "rc-invalid" };
+  RETIRE: "rc-retire", REDESIGN: "rc-redesign", COLLECT: "rc-collect" };
 const BC = { PRIORITY: "var(--good-text)", PROMOTE: "var(--good-text)",
   CONTINUE: "var(--series-2)", HOLD: "var(--series-1)",
   DIAGNOSE: "var(--series-4)", RETIRE: "var(--down)",
-  REDESIGN: "var(--series-9)", INVALID: "var(--muted)" };
+  REDESIGN: "var(--series-9)", COLLECT: "var(--series-4)" };
 const recChip = r =>
-  `<span class="rc ${RC[r] || "rc-invalid"}">${esc(r || "?")}</span>`;
-const lcChip = l => `<span class="lc">${esc(l || "?")}</span>`;
-const tierChips = tp => String(tp || "").split("→").map(t =>
-  `<span class="tp">${esc(t.trim())}</span>`)
-  .join('<span class="tp-arrow">→</span>');
-const MS = { SUPPORTED: "m-supported", CONTRADICTED: "m-contradicted" };
+  `<span class="rc ${RC[r] || "rc-hold"}">${esc(r || "?")}</span>`;
+const lcChip = l => `<span class="lc">${esc(String(l || "?")
+  .split(" ")[0].split("(")[0] || "?")}</span>`;
 
-/* preserve <details data-x> open state across the 15 s re-render */
 function setHTML(el, html) {
   const open = new Set([...el.querySelectorAll("details[data-x]")]
     .filter(d => d.open).map(d => d.dataset.x));
@@ -396,8 +327,6 @@ function setHTML(el, html) {
   for (const d of el.querySelectorAll("details[data-x]"))
     if (open.has(d.dataset.x)) d.open = true;
 }
-
-/* incremental reads for one combo id, informative parent first */
 function incRows(prog, comboId, rootId) {
   const rows = ((prog && prog.incremental) || [])
     .filter(r => r && r.combo === comboId);
@@ -409,8 +338,38 @@ const readMark = read =>
   : read === "no evidence of useful addition"
     ? '<span class="vr">→ redundant?</span>'
   : `→ ${esc(read || "unclear")}`;
+const when = ts => ts == null ? "—"
+  : new Date(ts * 1000).toLocaleString("en-US", { month: "short",
+      day: "numeric", hour: "numeric", minute: "2-digit",
+      hour12: false, timeZone: "America/New_York" }) + " ET";
 
-/* ---------------------------------------------- A3-v1.1 (§43 block) -- */
+/* ----------------------------------------------------- header strip -- */
+function renderStrip(prog, a3, inc) {
+  const fwd = (a3 && a3.forward) || {};
+  const n = fwd.eligible ?? 0;
+  const rm = (prog && prog.research_manager) || {};
+  const best = ((prog && prog.experiments) || [])
+    .filter(e => e.lifecycle === "LIVE" && e.p_gt0 != null)
+    .sort((a, b) => b.p_gt0 - a.p_gt0)[0];
+  const openDec = ((prog && prog.decision_inbox) || [])
+    .filter(d => d.kind !== "RESOLVED").length;
+  const openInc = inc.filter(i =>
+    !/closed|resolved/.test(String(i.status || ""))).length;
+  const hs = (k, v) => `<div class="hs"><div class="k">${k}</div>` +
+    `<div class="v">${v}</div></div>`;
+  document.getElementById("hstrip").innerHTML =
+    hs("forward strategy", `A3-v1.1 <span class="state st-collect">` +
+      `COLLECTING</span><br><small>n = ${n} eligible</small>`) +
+    hs("legacy best", best
+      ? `${esc(best.id)} <small>${cS(best.effect)} · P(Δ>0) ${
+          pc(best.p_gt0)}</small>` : "—") +
+    hs("open decisions", `${openDec}${openDec === 0
+      ? ' <small>inbox empty</small>' : ""}`) +
+    hs("open incidents", `${openInc} <small><a href="watchtower.html">` +
+      `Control Tower →</a></small>`);
+}
+
+/* ------------------------------------------- CARD 1 — live priority -- */
 function renderA3(a3) {
   const el = document.getElementById("a3");
   if (!a3) {
@@ -419,407 +378,347 @@ function renderA3(a3) {
     return;
   }
   const fwd = a3.forward || {};
-  /* value already in ¢ (improvement, markout) vs per-$1 (pnl → cS) */
-  const cC = v => v == null || !isFinite(v) ? "—"
-    : (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "¢";
-  const cD = v => v == null || !isFinite(v) ? "—" : cS(v);
-  const pD = v => v == null || !isFinite(v) ? "—" : pc(v);
-  const when = ts => ts == null ? "—"
-    : new Date(ts * 1000).toLocaleString("en-US", { month: "short",
-        day: "numeric", hour: "numeric", minute: "2-digit",
-        hour12: false, timeZone: "America/New_York" }) + " ET · "
-      + new Date(ts * 1000).toLocaleString("en-US", { month: "short",
-        day: "numeric", hour: "numeric", minute: "2-digit",
-        hour12: false, timeZone: "Asia/Kolkata" }) + " IST";
+  const n = fwd.eligible ?? 0;
   const rows = a3.recent_settled || [];
-  const filledRows = rows.filter(r => r && r.state === "FILLED");
+  const filled = rows.filter(r => r && r.state === "FILLED");
   const nums = a => a.filter(v => typeof v === "number" && isFinite(v));
   const avg = a => a.length
     ? a.reduce((s, v) => s + v, 0) / a.length : null;
-  const mMark = avg(nums(filledRows.map(r => r.markout_10s)));
-  const mEcr = avg(nums(filledRows.map(r => r.ecr)));
-  /* paired per-window deltas visible in recent_settled → normal CI */
+  const mMark = avg(nums(filled.map(r => r.markout_10s)));
+  const mEcr = avg(nums(filled.map(r => r.ecr)));
   const deltas = rows.filter(r => r && r.state !== "SYSTEM_EXCLUDED"
       && typeof r.a3_pnl === "number" && typeof r.control_pnl === "number")
     .map(r => r.a3_pnl - r.control_pnl);
-  let ci = '<span class="ci">95% CI: <b>collecting</b> (n&lt;2)</span>';
-  if ((fwd.eligible ?? 0) >= 2 && deltas.length >= 2) {
+  let ciTxt = "collecting (n < 2)";
+  if (n >= 2 && deltas.length >= 2) {
     const m = avg(deltas);
     const sd = Math.sqrt(deltas.reduce((s, v) =>
       s + (v - m) * (v - m), 0) / (deltas.length - 1));
     const h = 1.96 * sd / Math.sqrt(deltas.length);
-    ci = `<span class="ci">95% CI [${cD(m - h)}, ${cD(m + h)}]${
-      fwd.eligible > deltas.length
-        ? ` · last ${deltas.length} settled windows` : ""}</span>`;
+    ciTxt = `[${cS(m - h)}, ${cS(m + h)}]`;
   }
   const inc = fwd.incremental_per_eligible;
-  const incCol = inc == null ? "var(--muted)" : inc > 0
-    ? "var(--good-text)" : inc < 0 ? "var(--down)" : "var(--ink)";
-  const fillRate = fwd.eligible > 0 && fwd.filled != null
-    ? fwd.filled / fwd.eligible : null;
-  const tile = (v, l) => `<div class="ct"><div class="n">${v}</div>` +
-    `<div class="l">${l}</div></div>`;
-  const primary = `<div class="a3ns">` +
-      `<div class="k">paired Δ per eligible window — the North Star</div>` +
-      `<div class="big" style="color:${incCol}">${cD(inc)}</div>${ci}${
-        inc == null
-          ? '<span class="ci">· no eligible window has settled yet</span>'
-          : ""}` +
+  /* evidence state dominates effect size: the Δ only takes a
+     semantic color once n reaches the compare gate (25) */
+  const COMPARE_N = 25;
+  const mature = n >= COMPARE_N;
+  const incCol = !mature ? "var(--ink)" : inc == null ? "var(--muted)"
+    : inc > 0 ? "var(--good-text)" : inc < 0 ? "var(--down)"
+    : "var(--ink)";
+  const verdict = n === 0 ? "REGISTERED — no eligible window yet"
+    : !mature ? "COLLECT — n too small" : "EVALUATE";
+  const fillRate = n > 0 && fwd.filled != null ? fwd.filled / n : null;
+  const od = a3.outlier_dependence || {};
+  const cell = (h, body) => `<div class="a3cell"><div class="h">${h
+    }</div>${body}</div>`;
+  const top =
+    `<div class="a3verdict">` +
+      `<span class="state st-collect bigstate">${esc(verdict)}</span>` +
+      `<span class="ev">n = <b>${n}</b> eligible · 95% CI ${ciTxt
+        } · verdict <b>${mature ? "evaluating" : "COLLECTING"}</b>` +
+      `<br>no statistical conclusion until n ≥ ${COMPARE_N
+        } (compare gate); decision gate n ≥ 50</span>` +
     `</div>` +
-    `<div class="counts a3grid" style="margin-top:10px">` +
-      tile(fwd.eligible ?? "—", "eligible N") +
-      tile(cD(fwd.control_pnl_per_eligible), "C0 PnL / window") +
-      tile(cD(fwd.a3_pnl_per_eligible), "T10 PnL / window") +
-      tile(pD(fillRate), "T10 fill rate") +
-      tile(cC(fwd.mean_entry_improvement_c), "mean entry improvement") +
-      tile(cC(mMark), "mean 10s markout") +
-      tile(mEcr == null ? "—" : f2(mEcr), "mean ECR") +
+    `<div class="a3ns"><div class="k">north star — paired Δ (T10 − C0)
+      per eligible window</div>` +
+      `<div class="big" style="color:${incCol}">${cS(inc)}</div>` +
+      `<div class="sub2">${inc == null
+        ? "no eligible window has settled yet"
+        : mature ? "sample at compare gate — color reflects sign"
+        : `shown neutral on purpose — n=${n} proves nothing yet`
+      }</div></div>`;
+  const grid = `<div class="a3grid">` +
+    cell("control · C0 buy-at-call",
+      `<div class="n">${cS(fwd.control_pnl_per_eligible)}</div>` +
+      `<div class="d">per eligible window</div>`) +
+    cell("treatment · T10 wait ≥10¢ dip",
+      `<div class="n">${cS(fwd.a3_pnl_per_eligible)}</div>` +
+      `<div class="d">per eligible window</div>`) +
+    cell("entry quality",
+      `<div class="d">${cC(fwd.mean_entry_improvement_c)
+        } better entry<br>ECR ${mEcr == null ? "—" : f2(mEcr)
+        }<br>10s markout ${cC(mMark)}</div>`) +
+    cell("risk",
+      `<div class="d">fill rate ${pc(fillRate)
+        }<br>top-10% Δ share ${od.top10pct_share == null ? "—"
+          : pc(od.top10pct_share)
+        }<br>Δ ex-best-1 ${cS(od.delta_ex_best1)}</div>`) +
     `</div>`;
-  const od = a3.outlier_dependence;
-  const conc = `<div class="a3conc"><b>PROFIT CONCENTRATION</b> · ${od
-    ? `Δ total ${cD(od.total_delta)} · ex-best-1 ${cD(od.delta_ex_best1)
-      } · ex-best-3 ${cD(od.delta_ex_best3)} · top-10% share ${
-      od.top10pct_share == null ? "—" : pc(od.top10pct_share)}`
-    : "— (no eligible windows yet — nothing to concentrate)"}</div>`;
-  /* shadow drawer — T05/T15 observe the same tape, control nothing */
+  const gate = `<div class="gateline"><b>Next decision gate:</b>
+    sufficient forward windows (n ≥ 50); no policy changes allowed —
+    any threshold change is a new registered experiment.</div>`;
+  /* shadow drawer — visually muted: shadows are not decision arms */
   const sh = a3.shadows || {};
   const shRow = (name, s, live) => {
-    const dip = parseInt(name.slice(1), 10);
     const fr = s && s.eligible > 0 && s.filled != null
       ? s.filled / s.eligible : null;
-    return `<tr${live ? ' class="livearm"' : ""}><td>${esc(name)}${live
-        ? '<span class="a3livechip">LIVE ARM</span>'
+    return `<tr${live ? "" : ' class="shadowarm"'}><td>${esc(name)}${live
+        ? '<span class="a3livechip">LIVE</span>'
         : '<span class="a3shadowchip">SHADOW</span>'}</td>` +
-      `<td>≥${isFinite(dip) ? dip : "?"}¢ dip</td>` +
-      `<td>${s && s.registered_ts != null
-        ? when(s.registered_ts) : "—"}</td>` +
+      `<td>≥${parseInt(name.slice(1), 10)}¢ dip</td>` +
       `<td>${s && s.eligible != null ? s.eligible : "—"}</td>` +
-      `<td>${pD(fr)}</td>` +
-      `<td>${cD(s ? s.pnl_per_eligible : null)}</td></tr>`;
+      `<td>${pc(fr)}</td>` +
+      `<td>${cS(s ? s.pnl_per_eligible : null)}</td></tr>`;
   };
-  const t10 = { registered_ts: a3.registered_ts, eligible: fwd.eligible,
-    filled: fwd.filled, pnl_per_eligible: fwd.a3_pnl_per_eligible };
-  const drawer = `<details class="a3drawer" data-x="a3-shadow">` +
-    `<summary>THRESHOLD RESEARCH — FORWARD SHADOW ONLY` +
-    `<span class="a3warn">T05/T15 DO NOT CONTROL LIVE A3-v1.1</span>` +
-    `</summary><div class="a3tblwrap"><table class="a3tbl">` +
-    `<tr><th>arm</th><th>trigger</th><th>registered</th>` +
-    `<th>eligible</th><th>fill %</th><th>PnL / eligible</th></tr>` +
+  const t10 = { eligible: fwd.eligible, filled: fwd.filled,
+    pnl_per_eligible: fwd.a3_pnl_per_eligible };
+  const drawer = `<details class="drawer" data-x="a3-shadow">` +
+    `<summary>Threshold shadows — T05/T15 do not control A3-v1.1
+    </summary><div class="a3tblwrap"><table class="a3tbl">` +
+    `<tr><th>arm</th><th>trigger</th><th>eligible</th><th>fill %</th>` +
+    `<th>PnL / eligible</th></tr>` +
     shRow("T05", sh.T05, false) + shRow("T10", t10, true) +
     shRow("T15", sh.T15, false) + `</table></div>` +
-    `<p class="mini" style="margin-top:6px">Shadows watch the same
-    future tape and place nothing; aggregates appear with the first
-    eligible window. Any threshold change is a new experiment.</p>` +
+    `<p class="mini">Shadows watch the same tape and place nothing.
+    A single window cannot rank thresholds — muted on purpose.</p>` +
     `</details>`;
-  /* status footline */
   const lv = a3.live || {};
-  const SC = { TRIGGERED: "var(--good-text)", FILLED: "var(--good-text)",
-    WATCHING: "var(--series-2)", MISSED: "var(--down)",
-    INVALIDATED: "var(--down)", SYSTEM_EXCLUDED: "var(--down)" };
   const em = a3.exclusion_monitor || {};
-  const reasons = Object.entries(em.reasons || {})
-    .map(([k, v]) => `${esc(k)} ×${v}`).join(" · ");
   const hash = a3.spec_hash_ok === true
     ? `<span class="a3hashok">✓ frozen</span>`
     : a3.spec_hash_ok === false
-      ? `<span class="a3hashbad">✗ HASH MISMATCH — new experiment</span>`
-      : "—";
+      ? `<span class="a3hashbad">✗ HASH MISMATCH</span>` : "—";
   const foot = `<div class="a3foot">` +
-    `<span class="a3state" style="--sc:${SC[lv.state] || "var(--muted)"
-      }">${esc(lv.state || "state unknown")}</span>` +
+    `<span class="state st-live">${esc(lv.state || "state unknown")
+      }</span>` +
     `<span>spec <code>${esc(a3.spec_hash || "—")}</code> ${hash}</span>` +
     `<span>registered ${when(a3.registered_ts)}</span>` +
-    `<span>${em.system_excluded ?? "—"} excluded${
-      em.potential_registrations != null
-      ? " of " + em.potential_registrations + " potential" : ""}${reasons
-      ? " · " + reasons : ""}</span>` +
-    `<span><a href="home.html">watch it live →</a> · spec file ` +
-    `<code>A3_SPEC.yaml</code></span></div>`;
-  setHTML(el, `<div class="a3wrap">${primary}${conc}${drawer}${foot
-    }</div>`);
+    `<span>${em.system_excluded ?? "—"} excluded of ${
+      em.potential_registrations ?? "—"} potential</span>` +
+    `<span><a href="home.html">watch live →</a></span></div>`;
+  setHTML(el, top + grid + gate + drawer + foot);
 }
 
-/* ------------------------------------------------------------ render -- */
-function renderCounts(prog, board, inc) {
-  const c = (prog && prog.counts) || {};
-  const openInc = inc.filter(i =>
-    !/closed|resolved/.test(String(i.status || ""))).length;
-  const prio = (c.priority || []).map(id =>
-    `<span class="mid">${esc(id)}</span>`).join("") ||
-    '<span class="mini">none</span>';
-  document.getElementById("counts").innerHTML =
-    `<div class="ct"><div class="n">${c.live ?? "–"}</div>` +
-      `<div class="l">live experiments</div></div>` +
-    `<div class="ct red"><div class="n">${c.retire_candidates ?? "–"}` +
-      `</div><div class="l">retire candidates</div></div>` +
-    `<div class="ct green"><div class="n">${(c.priority || []).length}` +
-      `</div><div class="l">priority</div><div class="ids">${prio}` +
-      `</div></div>` +
-    `<div class="ct amber"><div class="n">${c.decisions_waiting ?? "–"}` +
-      `</div><div class="l">decisions waiting</div></div>` +
-    `<div class="ct${openInc ? " red" : ""}"><div class="n">${openInc}` +
-      `</div><div class="l">open incidents</div></div>`;
-}
-
-function renderInbox(prog) {
-  const items = (prog && prog.decision_inbox) || [];
-  document.getElementById("inbox-n").textContent = items.length + " open";
-  const K = { "RETIRE?": "k-retire", "REDESIGN?": "k-redesign",
-    ARCHITECTURE: "k-architecture" };
-  document.getElementById("inbox").innerHTML = items.map(d =>
-    `<div class="item"><span class="kchip ${K[d.kind] || "k-architecture"
-      }">${esc(d.kind)}</span><b>${esc(d.id)}</b><span>${esc(d.ask)
-      }</span></div>`).join("") ||
-    '<div class="item"><span class="mini">inbox empty — nothing needs an owner</span></div>';
-}
-
-function renderKillBoard(prog, db) {
-  const el = document.getElementById("killboard");
-  const exps = (prog && prog.experiments) || [];
-  if (!exps.length) {
-    el.innerHTML = '<p class="mini">program.json not available yet</p>';
-    return;
-  }
-  const byId = new Map(exps.map(e => [e.id, e]));
-  const roots = exps.filter(e => !(e.parents || []).length)
-    .sort((a, b) => parseInt(a.id.slice(1)) - parseInt(b.id.slice(1)));
-  // ★ the strongest PRIORITY experiment (data-driven)
-  const star = exps.filter(e => e.analysis_recommendation === "PRIORITY")
-    .sort((a, b) => (b.effect ?? -9) - (a.effect ?? -9))[0];
-  const champ = db && (db.treatments || []).find(t => t.state === "BASELINE");
-  const node = e => {
-    const bc = BC[e.analysis_recommendation] || "var(--muted)";
-    return `<div class="kb-node" style="--bc:${bc}"><b>${esc(e.id)}${
-      star && e.id === star.id ? " ★" : ""}</b><span class="eff">${
-      cS(e.effect)}</span><span class="nm">${esc(e.name)}</span>${
-      recChip(e.analysis_recommendation)}</div>`;
-  };
-  const branches = roots.map(root => {
-    // combos are attached under their non-M8 parent (parents[0]);
-    // under M8 itself we note the hub role instead of duplicating nodes
-    const kids = exps.filter(e => (e.parents || [])[0] === root.id);
-    const hub = exps.filter(e => (e.parents || []).includes(root.id)
-      && (e.parents || [])[0] !== root.id);
-    const kidHtml = kids.map(k => {
-      const bc = BC[k.analysis_recommendation] || "var(--muted)";
-      return `<div class="kb-kid" style="--bc:${bc}">${node(k)}</div>`;
-    }).join("");
-    // branch verdict: what does this branch add beyond the OTHER parent?
-    const verdicts = kids.map(k => {
-      const rows = incRows(prog, k.id, root.id);
-      const r = rows.find(x => x.valid) || rows[0];
-      if (!r) return "";
-      if (!r.valid) return `<div class="kb-verdict">${esc(k.id)}−${
-        esc(r.parent)}: ${esc(r.note || "not comparable")}</div>`;
-      return `<div class="kb-verdict">${esc(k.id)}−${esc(r.parent)} ${
-        cS(r.mean)} P${pc(r.p_gt0_boot)} ${readMark(r.read)}</div>`;
-    }).join("");
-    const hubNote = hub.length ? `<div class="kb-verdict">parent of ${
-      hub.map(h => esc(h.id)).join(" · ")}</div>` : "";
-    return `<div class="kb-branch">${node(root)}${kidHtml}${verdicts}${
-      hubNote}</div>`;
-  }).join("");
-  el.innerHTML =
-    `<div class="kb-champ">CHAMPION<span>${esc((champ && champ.label) ||
-      "the live desk policy — every Δ measured against it")
-      }</span></div>` +
-    `<div class="kb-stub"></div><div class="kb-bar"></div>` +
-    `<div class="kb-roots">${branches}</div>`;
-}
-
-const DOMAINS = [
-  ["Probability quality", e => e.family === "calibration"],
-  ["Decision quality", e => e.family === "decision-selection"
-    && !(e.parents || []).length],
-  ["Execution quality", e => e.family === "execution"],
-  ["Cross-tier interactions", e => (e.parents || []).length > 0],
-];
-
-function hypoCard(prog, db, e) {
-  const bc = BC[e.analysis_recommendation] || "var(--muted)";
-  const dbt = db && (db.treatments || []).find(t => t.key === e.key);
-  const llr = "LLR " + f2(e.llr) +
-    (dbt && dbt.upper != null ? "/" + f2(dbt.upper) : "");
-  const ev = `Δ ${cS(e.effect)} · P(Δ&gt;0) ${pc(e.p_gt0)} · ${llr
-    } · cov ${pc(e.coverage)} · n ${e.n ?? "–"}`;
+/* --------------------------------------------- CARD 2 — portfolio -- */
+let TAB = "ACTIVE";
+function prow(prog, e) {
+  const evTxt = `P(Δ>0) ${pc(e.p_gt0)} · n ${e.n ?? "–"}`;
   const incs = incRows(prog, e.id, null).map(r => r.valid
     ? `<div class="inc">vs ${esc(r.parent)}: ${cS(r.mean)} (P ${
         pc(r.p_gt0_boot)}) ${readMark(r.read)}</div>`
     : `<div class="inc">vs ${esc(r.parent)}: ${esc(r.note ||
-        "cross-basis — not comparable")}</div>`).join("");
-  const atts = (e.attention || []).map(a =>
-    `<span class="att">${esc(a)}</span>`).join("");
-  const mc = e.mechanism_check || {};
-  const mcls = MS[mc.status] || "m-none";
-  return `<div class="hc" style="--bc:${bc}">` +
-    `<div class="head"><b>${esc(e.id)} · ${esc(e.name)}</b>` +
-    `<span class="chips">${lcChip(e.lifecycle)}${
-      recChip(e.analysis_recommendation)}</span></div>` +
-    `<div class="tier">${tierChips(e.tier_path)}<span class="tp" ` +
-      `style="margin-left:4px">basis: ${esc(e.basis)}</span></div>` +
-    `<div class="prob">${esc(e.problem)}</div>` +
-    `<div class="hyp">H: ${esc(e.hypothesis)}</div>` +
-    `<div class="ev">${ev}</div>` + incs +
-    (atts ? `<div class="atts">${atts}</div>` : "") +
-    `<div class="acts"><a href="metrics_lab.html#exp-${
-      encodeURIComponent(e.key)}">Open analysis →</a>` +
-    `<details data-x="mech-${esc(e.id)}"><summary>Mechanism</summary>` +
-      `<span class="body">${esc(e.mechanism)} · ` +
-      `<span class="mstat ${mcls}">${esc(mc.status || "?")}</span>${
-      mc.note ? " — " + esc(mc.note) : ""}</span></details>` +
-    `<details data-x="why-${esc(e.id)}"><summary>Why</summary>` +
-      `<span class="body">${(e.recommendation_why || [])
-        .map(esc).join("<br>") || "—"}</span></details>` +
-    `</div></div>`;
+        "not comparable")}</div>`).join("");
+  return `<details class="prow" data-x="p-${esc(e.id)}"><summary>` +
+    `<span class="nm"><b>${esc(e.id)}</b><span>${esc(e.name)}</span>` +
+    `</span>` +
+    `<span class="qq">${esc(e.problem || "")}</span>` +
+    `<span class="dd">${cS(e.effect)}</span>` +
+    `<span class="ee">${evTxt}</span>` +
+    `<span>${recChip(e.analysis_recommendation)}</span>` +
+    `<span>${lcChip(e.lifecycle)}</span></summary>` +
+    `<div class="body">` +
+    `<div class="k">problem</div>${esc(e.problem)}` +
+    `<div class="k">hypothesis</div>${esc(e.hypothesis)}` +
+    `<div class="k">result</div>Δ ${cS(e.effect)} · P(Δ>0) ${
+      pc(e.p_gt0)} · LLR ${f2(e.llr)} · coverage ${pc(e.coverage)
+      } · n ${e.n ?? "–"}` +
+    (incs ? `<div class="k">paired incrementals</div>${incs}` : "") +
+    `<div class="k">links</div><a href="metrics_lab.html#exp-${
+      encodeURIComponent(e.key)}">open analysis →</a>` +
+    `</div></details>`;
 }
-
-function renderHypo(prog, db) {
-  const el = document.getElementById("hypo");
+function a3row() {
+  return `<details class="prow" data-x="p-A3"><summary>` +
+    `<span class="nm"><b>A3-v1.1</b><span>entry timing</span></span>` +
+    `<span class="qq">does waiting improve entry economics?</span>` +
+    `<span class="dd" id="a3rowd">–</span>` +
+    `<span class="ee" id="a3rowe">collecting</span>` +
+    `<span>${recChip("COLLECT")}</span>` +
+    `<span><span class="lc">LIVE</span></span></summary>` +
+    `<div class="body">The live forward test — full detail in
+    Card 1 above. No conclusions before the compare gate.</div>` +
+    `</details>`;
+}
+function renderPortfolio(prog, db, a3) {
+  const el = document.getElementById("portfolio");
   const exps = (prog && prog.experiments) || [];
   if (!exps.length) {
     el.innerHTML = '<p class="mini">program.json not available yet</p>';
     return;
   }
-  const normal = e => e.analysis_recommendation === "CONTINUE"
-    && !(e.attention || []).length;
-  let html = "", folded = [];
-  for (const [label, test] of DOMAINS) {
-    const grp = exps.filter(test);
-    if (!grp.length) continue;
-    const show = grp.filter(e => !normal(e));
-    folded = folded.concat(grp.filter(normal)
-      .map(e => ({ label, e })));
-    if (show.length) html += `<h3 class="dom">${label}</h3>` +
-      `<div class="hgrid">${show.map(e =>
-        hypoCard(prog, db, e)).join("")}</div>`;
-  }
-  if (folded.length)
-    html += `<details class="fold" data-x="fold-normal"><summary>${
-      folded.length} experiment${folded.length > 1 ? "s" : ""
-      } collecting normally — expand</summary><div class="hgrid" ` +
-      `style="margin-top:10px">${folded.map(f =>
-        hypoCard(prog, db, f.e)).join("")}</div></details>`;
-  setHTML(el, html || '<p class="mini">no experiments</p>');
+  const retired = e => String(e.lifecycle || "").startsWith("RETIRED");
+  const needsDecision = e => !retired(e) &&
+    ["RETIRE", "REDESIGN", "DIAGNOSE"].includes(e.analysis_recommendation);
+  const active = exps.filter(e => !retired(e));
+  const order = { PRIORITY: 0, CONTINUE: 1, DIAGNOSE: 2, HOLD: 3,
+    REDESIGN: 4, RETIRE: 5 };
+  const sortRec = (a, b) =>
+    (order[a.analysis_recommendation] ?? 9)
+    - (order[b.analysis_recommendation] ?? 9)
+    || (b.p_gt0 ?? 0) - (a.p_gt0 ?? 0);
+  const sets = {
+    ACTIVE: active.slice().sort(sortRec),
+    "DECISION NEEDED": exps.filter(needsDecision).sort(sortRec),
+    RETIRED: exps.filter(retired).sort(sortRec),
+  };
+  const tabs = `<div class="tabs">` + Object.keys(sets).map(k =>
+    `<button class="tab${k === TAB ? " on" : ""}" data-tab="${k}">${k
+      } · ${sets[k].length + (k === "ACTIVE" ? 1 : 0)}</button>`)
+    .join("") + `</div>`;
+  const head = `<div class="phead"><span>experiment</span>` +
+    `<span>question</span><span>Δ</span><span>evidence</span>` +
+    `<span>recommendation</span><span>state</span></div>`;
+  const rows = (TAB === "ACTIVE" ? a3row() : "")
+    + sets[TAB].map(e => prow(prog, e)).join("");
+  /* branch highlights: strongest / weakest / most uncertain */
+  const inc = ((prog && prog.incremental) || []).filter(r => r.valid);
+  const byMean = inc.slice().sort((a, b) => b.mean - a.mean);
+  const topPos = byMean[0], topNeg = byMean[byMean.length - 1];
+  const unclear = inc.filter(r => r.read === "unclear")
+    .sort((a, b) => Math.abs(a.p_gt0_boot - .5)
+      - Math.abs(b.p_gt0_boot - .5))[0];
+  const b3 = (h, r, col) => r ? `<div class="b3" style="--bc:${col}">` +
+    `<div class="h">${h}</div><b>${esc(r.combo)} − ${esc(r.parent)
+    }</b><div class="m">${cS(r.mean)} · P(Δ>0) ${pc(r.p_gt0_boot)
+    }</div></div>` : "";
+  const hi = `<div class="branch3">` +
+    b3("top positive branch", topPos, "var(--good-text)") +
+    b3("top negative branch", topNeg, "var(--down)") +
+    b3("most uncertain", unclear, "var(--series-4)") + `</div>`;
+  /* causal graph drawer */
+  const graph = `<details class="drawer" data-x="tree">` +
+    `<summary>Open causal graph →</summary>` +
+    `<div class="kb">${treeHTML(prog, db)}</div></details>`;
+  setHTML(el, tabs + `<div class="pwrap"><div>` + head + rows +
+    `</div></div>` + hi + graph);
+  el.querySelectorAll(".tab").forEach(b =>
+    b.addEventListener("click", () => {
+      TAB = b.dataset.tab; renderPortfolio(prog, db, a3);
+    }));
+}
+function treeHTML(prog, db) {
+  const exps = (prog && prog.experiments) || [];
+  if (!exps.length) return '<p class="mini">no data</p>';
+  const roots = exps.filter(e => !(e.parents || []).length)
+    .sort((a, b) => parseInt(a.id.slice(1)) - parseInt(b.id.slice(1)));
+  const star = exps.filter(e => e.analysis_recommendation === "PRIORITY")
+    .sort((a, b) => (b.effect ?? -9) - (a.effect ?? -9))[0];
+  const champ = db && (db.treatments || []).find(t =>
+    t.state === "BASELINE");
+  const node = e => {
+    const bc = BC[e.analysis_recommendation] || "var(--muted)";
+    return `<div class="kb-node" style="--bc:${bc}"><b>${esc(e.id)}${
+      star && e.id === star.id ? " ★" : ""}</b><span class="eff">${
+      cS(e.effect)}</span><br>${recChip(e.analysis_recommendation)
+      }</div>`;
+  };
+  const branches = roots.map(root => {
+    const kids = exps.filter(e => (e.parents || [])[0] === root.id);
+    const kidHtml = kids.map(k => {
+      const bc = BC[k.analysis_recommendation] || "var(--muted)";
+      return `<div class="kb-kid" style="--bc:${bc}">${node(k)}</div>`;
+    }).join("");
+    const verdicts = kids.map(k => {
+      const rowsK = incRows(prog, k.id, root.id);
+      const r = rowsK.find(x => x.valid) || rowsK[0];
+      if (!r || !r.valid) return "";
+      return `<div class="kb-verdict">${esc(k.id)}−${esc(r.parent)} ${
+        cS(r.mean)} P${pc(r.p_gt0_boot)} ${readMark(r.read)}</div>`;
+    }).join("");
+    return `<div class="kb-branch">${node(root)}${kidHtml}${verdicts
+      }</div>`;
+  }).join("");
+  return `<div class="kb-champ">CHAMPION<span>${esc((champ &&
+    champ.label) || "the live desk policy")}</span></div>` +
+    `<div class="kb-stub"></div><div class="kb-bar"></div>` +
+    `<div class="kb-roots">${branches}</div>`;
 }
 
-function renderKnowledge(prog) {
-  const rows = (prog && prog.system_knowledge) || [];
-  const C = { supported: ["var(--good-text)", "supported"],
-    developing: ["var(--series-2)", "developing"],
-    "under pressure": ["var(--series-4)", "under pressure"],
-    "rejected implementation": ["var(--down)", "rejected implementation"],
-    unknown: ["var(--muted)", "unknown"] };
-  const order = Object.keys(C);
-  const sorted = rows.slice().sort((a, b) =>
-    order.indexOf(a.status) - order.indexOf(b.status));
-  document.getElementById("know").innerHTML = sorted.map(r => {
-    const [col, lab] = C[r.status] || C.unknown;
-    return `<div class="row" style="--bc:${col}"><span class="st" ` +
-      `style="color:${col}">${esc(lab)}</span>${esc(r.claim)}` +
-      `<span class="evd">${esc(r.evidence)}</span></div>`;
-  }).join("") || '<p class="mini">no claims yet</p>';
-}
-
-function renderGrave(prog) {
-  const t = (prog && prog.tombstones) || [];
-  document.getElementById("grave").innerHTML = t.map(x =>
-    `<div class="tomb"><div class="head"><b>${esc(x.id)}</b>` +
-    `<span class="tchip t-${esc(String(x.type || "").toLowerCase())}">${
-      esc(x.type)}</span><span class="rd">† ${esc(x.retired)}</span></div>` +
-    `<div class="k">why it looked good</div><div>${esc(x.looked_good)
-      }</div>` +
-    `<div class="k">why it failed</div><div>${esc(x.failed)}</div>` +
-    (x.root_cause ? `<div class="k">root cause</div><div>${
-      esc(x.root_cause)}</div>` : "") +
-    `<div class="lesson">${esc(x.lesson)}</div>` +
-    (x.do_not_revisit_unless ? `<div class="k">do not revisit unless` +
-      `</div><div>${esc(x.do_not_revisit_unless)}</div>` : "") +
-    `</div>`).join("") || '<p class="mini">no tombstones</p>';
-}
-
-function renderRegistry(board, inc) {
-  const el = document.getElementById("registry");
-  if (!board) {
-    el.innerHTML = '<p class="mini">board.json not available</p>';
-    return;
-  }
-  const chip = t =>
-    `<span class="tchip t-${t.toLowerCase()}">${t}</span>`;
-  const row = (t, name, why, extra) =>
-    `<div class="reg-row${extra && extra.resolved ? " resolved" : ""}">${
-      chip(t)}<span>${extra && extra.resolved
-        ? `<span class="q">${esc(name)}</span> <span class="res">✓ ${
-            esc(extra.resolution)}</span>`
-        : `<b>${esc(name)}</b>${why
-          ? ` <span class="why">— ${esc(why)}</span>` : ""}`
-      }</span></div>`;
-  let h = "";
-  const dec = board.open_decisions || [];
-  if (dec.length) h += `<div class="reg-h">decisions</div>` +
-    dec.map(d => d.status === "resolved"
-      ? row("DECISION", d.q, "", { resolved: true,
-          resolution: d.resolution || "resolved" })
-      : row("DECISION", d.q, (d.context || "") + " · id " + d.id))
-      .join("");
-  if (inc.length) h += `<div class="reg-h">incidents</div>` +
-    inc.map(i => row("INCIDENT", `SEV-${i.sev} · ${i.title}`,
-      (i.status || "") + " — " + (i.rca || ""))).join("");
-  const arms = board.arms || [];
-  if (arms.length) h += `<div class="reg-h">models (arms)</div>` +
-    arms.map(a => row("MODEL", "arm " + a.id, a.status === "retired"
-      ? "retired " + (a.date || "") + " — " + (a.why || "")
-      : (a.role || "") + (a.note ? " · " + a.note : ""))).join("");
-  const tr = board.traders || [];
-  if (tr.length) h += `<div class="reg-h">policies (traders)</div>` +
-    tr.map(t => row("POLICY", t.id,
-      (t.role || "") + (t.flag ? " · ⚑ " + t.flag : ""))).join("");
-  const mit = board.mitigations || [];
-  if (mit.length) h += `<div class="reg-h">experiments (mitigations)` +
-    `</div>` + mit.map(m => row("EXPERIMENT",
-      m.id + " · " + m.status, m.note)).join("");
-  const ws = board.workstreams || [];
-  if (ws.length) h += `<div class="reg-h">workstreams</div>` +
-    ws.map(w => row("WORKSTREAM", w.id + " · " + w.status, w.note))
-      .join("");
-  const infra = board.infrastructure || [];
-  if (infra.length) h += `<div class="reg-h">services</div>` +
-    infra.map(i => row("SERVICE", i.id, i.note)).join("");
-  el.innerHTML = h || '<p class="mini">registry empty</p>';
-  document.getElementById("reg-sum").textContent =
-    (dec.length + inc.length + arms.length + tr.length + mit.length +
-     ws.length + infra.length) + " registry entities — expand";
+/* --------------------------------------- CARD 3 — research manager -- */
+function renderManager(prog) {
+  const el = document.getElementById("manager");
+  const rm = (prog && prog.research_manager) || {};
+  const know = (prog && prog.system_knowledge) || [];
+  const tombs = (prog && prog.tombstones) || [];
+  const inbox = ((prog && prog.decision_inbox) || [])
+    .filter(d => d.kind !== "RESOLVED");
+  const changed = `<div class="rmcol"><div class="h">what changed?</div>
+    <div class="chg">${(rm.what_changed || [])
+      .map(esc).join("<br>") || "—"}</div>
+    <div class="blocked"><div class="h">blocked — until evidence
+      unlocks</div>${(rm.blocked || []).map(b =>
+      `<div class="blk"><span class="state st-frozen">BLOCKED</span>` +
+      `<span><b>${esc(b.item)}</b><br><span class="why">${esc(b.reason)
+      }</span></span></div>`).join("")}</div></div>`;
+  const queue = `<div class="rmcol"><div class="h">next best work</div>${
+    (rm.queue || []).map(q =>
+      `<div class="qitem"><span class="r">${q.rank}</span><span>` +
+      `<b>${esc(q.title)}</b><span class="w">${esc(q.why)}</span><br>` +
+      `<span class="a">${esc(q.bottleneck || q.metric || "")
+        } · action: ${esc(q.action)}</span></span></div>`).join("")
+    || '<p class="mini">queue empty</p>'}</div>`;
+  const MAP = { supported: ["SUPPORTED", "var(--good-text)"],
+    developing: ["DEVELOPING", "var(--series-2)"],
+    "rejected implementation": ["REJECTED", "var(--down)"],
+    unknown: ["UNKNOWN", "var(--muted)"],
+    "under pressure": ["UNDER PRESSURE", "var(--series-4)"] };
+  const core = ["supported", "developing", "rejected implementation",
+    "unknown"];
+  const four = core.map(s => know.find(k => k.status === s))
+    .filter(Boolean);
+  const rest = know.filter(k => !four.includes(k));
+  const belief = k => {
+    const [lab, col] = MAP[k.status] || MAP.unknown;
+    return `<div class="belief" style="--bc:${col}"><span class="st"
+      style="color:${col}">${lab}</span>${esc(k.claim)}
+      <span class="evd">${esc(k.evidence)}</span></div>`;
+  };
+  const beliefs = `<div class="rmcol"><div class="h">what do we
+    believe?</div>${four.map(belief).join("")}${rest.length
+      ? `<details class="drawer" data-x="claims"><summary>all claims ·
+        ${know.length}</summary>${rest.map(belief).join("")}</details>`
+      : ""}</div>`;
+  const grave = `<details class="drawer" data-x="grave"><summary>Failed
+    ideas · ${tombs.length} → (institutional memory)</summary>
+    <div class="grave">${tombs.map(x =>
+      `<div class="tomb"><b>${esc(x.id)}</b> <span class="mini">† ${
+        esc(x.retired)}</span>` +
+      `<div class="k">looked good</div>${esc(x.looked_good)}` +
+      `<div class="k">failed</div>${esc(x.failed)}` +
+      `<div class="lesson">${esc(x.lesson)}</div></div>`).join("")
+    }</div><p class="mini">full exhibits →
+    <a href="museum.html">Museum</a></p></details>`;
+  const links = `<p class="mini">decision ledger →
+    <a href="home_classic.html">DECISIONS</a> · research archive →
+    <a href="archive.html">Archive</a> · registry + operations →
+    <a href="watchtower.html">Control Tower</a></p>`;
+  const owner = inbox.length ? inbox.map(d =>
+    `<div class="inboxrow"><span class="state st-collect">OWNER</span>` +
+    `<b>${esc(d.id)}</b><span>${esc(d.ask)}</span></div>`).join("") : "";
+  setHTML(el, owner +
+    `<div class="rm3">${changed}${queue}${beliefs}</div>` +
+    grave + links);
 }
 
 /* -------------------------------------------------------------- poll -- */
+let PROG = null, DB = null, A3 = null;
 async function poll() {
-  const [prog, board, db, inc, a3] = await Promise.all([
+  const [prog, db, inc, a3] = await Promise.all([
     J("../results/program.json"),
-    J("../results/board.json"),
     J("../results/decision_board.json"),
     JL("../results/incidents.jsonl"),
     J("../results/a3_live.json"),
   ]);
+  PROG = prog; DB = db; A3 = a3;
   const ageS = prog && prog.generated_ts
     ? Date.now() / 1000 - prog.generated_ts : 1e9;
   document.getElementById("dot").className =
     "live-dot" + (ageS > 7200 ? " stale" : "");
   document.getElementById("asof").textContent =
-    (board && board.updated ? "registry " + board.updated + " · " : "") +
-    (prog ? "program " + (ageS > 7200 ? "stale" : "fresh")
-      : "program.json missing");
-  if (prog && prog.governance_note) {
+    prog ? "program " + (ageS > 7200 ? "stale" : "fresh")
+      : "program.json missing";
+  if (prog && prog.governance_note)
     document.getElementById("gov").textContent = prog.governance_note;
-    const g2 = document.getElementById("gov2");
-    if (g2) g2.textContent = prog.governance_note;
-  }
+  renderStrip(prog, a3, inc);
   renderA3(a3);
-  renderCounts(prog, board, inc);
-  renderInbox(prog);
-  renderKillBoard(prog, db);
-  renderHypo(prog, db);
-  renderKnowledge(prog);
-  renderGrave(prog);
-  renderRegistry(board, inc);
+  renderPortfolio(prog, db, a3);
+  renderManager(prog);
+  /* fill the A3 row in the portfolio (rendered after portfolio) */
+  const fwd = (a3 && a3.forward) || {};
+  const d = document.getElementById("a3rowd");
+  const e = document.getElementById("a3rowe");
+  if (d) d.textContent = cS(fwd.incremental_per_eligible);
+  if (e) e.textContent = `n=${fwd.eligible ?? 0} · collecting`;
 }
 poll();
 setInterval(poll, 15000);
