@@ -349,7 +349,8 @@ function renderStrip(prog, a3, inc) {
   const n = fwd.eligible ?? 0;
   const rm = (prog && prog.research_manager) || {};
   const best = ((prog && prog.experiments) || [])
-    .filter(e => e.lifecycle === "LIVE" && e.p_gt0 != null)
+    .filter(e => /^(CONTROL|TREATMENT|LIVE)/.test(
+      String(e.lifecycle || "")) && e.p_gt0 != null)
     .sort((a, b) => b.p_gt0 - a.p_gt0)[0];
   const openDec = ((prog && prog.decision_inbox) || [])
     .filter(d => d.kind !== "RESOLVED").length;
@@ -536,7 +537,8 @@ function renderPortfolio(prog, db, a3) {
     el.innerHTML = '<p class="mini">program.json not available yet</p>';
     return;
   }
-  const retired = e => String(e.lifecycle || "").startsWith("RETIRED");
+  const retired = e => /^(RETIRED|ARCHIVED)/.test(
+    String(e.lifecycle || ""));
   const needsDecision = e => !retired(e) &&
     ["RETIRE", "REDESIGN", "DIAGNOSE"].includes(e.analysis_recommendation);
   const active = exps.filter(e => !retired(e));

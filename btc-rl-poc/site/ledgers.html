@@ -432,13 +432,23 @@ function wireChart(host, series, unit) {
 
 /* --------------------------------------------- CARD 1 — summary -- */
 function drawSelector() {
-  const traders = LEDGERS.filter(l => l.kind === "trader");
+  /* Great Simplification (08-29): active roster is Follower,
+     Disciplined, MLE (shadow); Ladder/Gambler/Saver/Patient/Ideal
+     are frozen archives — fully browsable, no new rows */
+  const ACTIVE = new Set(["pt", "pt3", "pt6"]);
+  const act = LEDGERS.filter(l => l.kind === "trader"
+    && ACTIVE.has(l.id));
+  const arch = LEDGERS.filter(l => l.kind === "trader"
+    && !ACTIVE.has(l.id));
   const sys = LEDGERS.filter(l => l.kind === "tw");
   const chip = l => `<button type="button" class="chip${l.id === sel
-    ? " on" : ""}" data-led="${l.id}">${esc(l.label)}</button>`;
+    ? " on" : ""}" data-led="${l.id}">${esc(l.label)}${
+    l.id === "pt6" ? " · shadow" : ""}</button>`;
   document.getElementById("lsel").innerHTML =
-    `<span class="glab">traders</span><span class="lchips">${
-    traders.map(chip).join("")}</span>` +
+    `<span class="glab">active</span><span class="lchips">${
+    act.map(chip).join("")}</span>` +
+    `<span class="glab">archived</span><span class="lchips">${
+    arch.map(chip).join("")}</span>` +
     `<span class="glab">system</span><span class="lchips">${
     sys.map(chip).join("")}</span>`;
 }

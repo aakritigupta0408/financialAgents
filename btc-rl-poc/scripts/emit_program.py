@@ -387,7 +387,10 @@ def main():
           if r.get("state") == "FILLED"
           and isinstance(r.get("markout_10s"), (int, float))]
     mmk = sum(mk) / len(mk) if mk else None
-    best = max((e for e in exps if e["lifecycle"] == "LIVE"
+    def _active(e):
+        w = str(e["lifecycle"]).split(" ")[0]
+        return w in ("CONTROL", "TREATMENT", "LIVE")
+    best = max((e for e in exps if _active(e)
                 and e.get("p_gt0") is not None),
                key=lambda e: e["p_gt0"], default=None)
     queue = [
@@ -438,7 +441,9 @@ def main():
 
     doc = {"generated_ts": now,
            "counts": {
-               "live": len(exps),
+               "live": len([e for e in exps
+                            if not str(e["lifecycle"]).startswith(
+                                ("RETIRED", "ARCHIVED"))]),
                "retire_candidates": len([e for e in exps if
                                          e["analysis_recommendation"]
                                          == "RETIRE"]),
