@@ -38,6 +38,7 @@ main > section { padding: 18px 22px; }
 .ws .wv { font: 650 21px/1.25 var(--display); color: var(--ink);
   font-variant-numeric: tabular-nums; margin-top: 2px; }
 .ws .wv.yes { color: var(--good-text); } .ws .wv.no { color: var(--down); }
+.ws .wv.mut { color: var(--muted); }
 .ws .wm { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
 .playq { font: 400 clamp(19px, 2.6vw, 26px)/1.25 var(--display); color: var(--ink);
   margin-top: 16px; }
@@ -63,6 +64,7 @@ main > section { padding: 18px 22px; }
 .compare .say { font: 650 22px/1.25 var(--display); color: var(--ink);
   font-variant-numeric: tabular-nums; }
 .compare .say.yes { color: var(--good-text); } .compare .say.no { color: var(--down); }
+.compare .say.mut { color: var(--muted); }
 .lasttime { margin-top: 12px; border-left: 3px solid var(--series-2);
   padding: 6px 14px; font-size: 13.5px; color: var(--ink-2);
   background: var(--surface-2); border-radius: 0 10px 10px 0; }
@@ -211,7 +213,9 @@ a.mus:hover { border-color: var(--series-2) !important; }
   <p class="hero-sub">A real research desk trading <b>fake money</b> on a
   <b>real market</b> — Bitcoin, every 15 minutes, around the clock. Robot
   traders predict, bet paper money, get graded, and failed ideas are killed in
-  public. Everything below is fetched live; nothing is made up.</p>
+  public. Everything below is fetched live; nothing is made up.
+  The product: a selective caller that speaks only when it can promise
+  80–90% — and says NO CALL otherwise.</p>
   <div class="badges">
     <span class="badge b-live">● Live data</span>
     <span class="badge b-fake">Fake money</span>
@@ -225,8 +229,8 @@ a.mus:hover { border-color: var(--series-2) !important; }
     <div class="ws"><div class="wk">The line (strike)</div><div class="wv" id="ws-strike">—</div><div class="wm">finish above = YES</div></div>
     <div class="ws"><div class="wk">Window closes in</div><div class="wv" id="ws-left">—</div><div class="wm">15-minute contract</div></div>
     <div class="ws"><div class="wk">Market says</div><div class="wv" id="ws-mkt">—</div><div class="wm" id="ws-mkt-m">mid of yes bid/ask</div></div>
-    <div class="ws"><div class="wk">Model says</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">leader arm</div></div>
-    <div class="ws"><div class="wk">Desk policy</div><div class="wv" id="ws-pol">—</div><div class="wm" id="ws-pol-m">gate τ vs break-even</div></div>
+    <div class="ws"><div class="wk">Control vs Treatment</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">kb2 primary caller</div></div>
+    <div class="ws"><div class="wk">🔮 The Oracle Call</div><div class="wv" id="ws-orc">—</div><div class="wm" id="ws-orc-m">reading the tape…</div></div>
   </div>
 
   <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
@@ -440,35 +444,38 @@ function drawStrip() {
   em.className = "wv" + (mkt == null ? "" : mkt >= 0.5 ? " yes" : " no");
   $id("ws-mkt-m").textContent = mkt == null ? "yes bid/ask absent" : "mid of yes bid/ask";
   const eo = $id("ws-mod");
-  eo.textContent = p == null ? "—" : (100 * p).toFixed(0) + "% YES";
+  eo.textContent = p == null ? "—" : "kb2 " + (100 * p).toFixed(0) + "% YES";
   eo.className = "wv" + (p == null ? "" : p >= 0.5 ? " yes" : " no");
-  const ld = leaderArm();
-  $id("ws-mod-m").textContent = ld
-    ? `leader ${ld.arm} (w ${(100 * ld.w).toFixed(0)}%)` : "leader arm";
-  /* policy: gate τ + break-even on the desk's side */
-  const ep = $id("ws-pol"), epm = $id("ws-pol-m");
-  if (p == null) { ep.textContent = "—"; ep.className = "wv";
-    epm.textContent = "no live model probability"; }
-  else {
-    const conf = Math.max(p, 1 - p);
-    const side = p >= 0.5 ? "YES" : "NO";
-    const be = pm == null ? null : side === "YES"
-      ? (pm.yes_ask != null ? pm.yes_ask / 100 : null)
-      : (pm.yes_bid != null ? (100 - pm.yes_bid) / 100 : null);
-    const pSide = side === "YES" ? p : 1 - p;
-    if (TAU == null) { ep.textContent = "GATE?"; ep.className = "wv";
-      epm.textContent = "τ missing from manifest"; }
-    else if (conf >= TAU) {
-      ep.textContent = "BET " + side;
-      ep.className = "wv " + (side === "YES" ? "yes" : "no");
-      epm.textContent = `conf ${(100 * conf).toFixed(0)}% ≥ τ ${TAU}` +
-        (be == null ? " · no quote for break-even"
-          : ` · pays if ${side} > ${(100 * be).toFixed(0)}¢ break-even (model: ${(100 * pSide).toFixed(0)}¢)`);
-    } else {
-      ep.textContent = "ABSTAIN"; ep.className = "wv";
-      epm.textContent = `conf ${(100 * conf).toFixed(0)}% < gate τ ${TAU} — do nothing`;
-    }
+  $id("ws-mod-m").textContent = ctLine();
+  /* 🔮 the product: the Oracle Call from oracle_calls.json */
+  const ov = $id("ws-orc"), om = $id("ws-orc-m");
+  const oc = S.oracle, lv = oc && oc.live;
+  if (!lv || !lv.call) {
+    ov.textContent = "—"; ov.className = "wv mut";
+    om.textContent = "reading the tape…";
+  } else {
+    const call = lv.call;
+    ov.textContent = call;
+    ov.className = "wv " + (call === "UP" ? "yes" : call === "DOWN" ? "no" : "mut");
+    const kb2 = oc.kb2 || {};
+    const stats = kb2.selective_accuracy != null && kb2.coverage != null
+      ? `right ${(100 * kb2.selective_accuracy).toFixed(0)}% of the time when it speaks · ` +
+        `speaks on ${(100 * kb2.coverage).toFixed(0)}% of windows (n=${kb2.calls != null ? kb2.calls : "—"})`
+      : "track record still settling";
+    om.textContent = (call !== "NO CALL" && lv.claimed_conf != null
+      ? `claimed conf ${(100 * lv.claimed_conf).toFixed(0)}% · ` : "") + stats;
   }
+}
+
+/* control-vs-treatment subline from oracle_calls.json .early_ct */
+function ctLine() {
+  const ct = S.oracle && S.oracle.early_ct;
+  const sa = x => x && x.selective_accuracy != null
+    ? (100 * x.selective_accuracy).toFixed(0) + "%" : "—";
+  const tArm = ct && ct.treatment && ct.treatment.arm ? ct.treatment.arm : "kb9";
+  return ct
+    ? `treatment ${tArm} tracked — early_ct: C ${sa(ct.control)} vs T ${sa(ct.treatment)} (collecting)`
+    : "treatment kb9 tracked — early_ct (collecting)";
 }
 
 function drawPlay() {
@@ -542,6 +549,16 @@ function drawCompare() {
       mkt == null ? "yes_bid/ask absent" : "mid of yes bid/ask") +
     cell("Model says", (100 * p).toFixed(0) + "% YES", p >= 0.5 ? "yes" : "no",
       "leader arm, this window") +
+    (() => {
+      const lv = S.oracle && S.oracle.live;
+      const call = lv && lv.call ? lv.call : "NO CALL";
+      return cell("🔮 Oracle", call,
+        call === "UP" ? "yes" : call === "DOWN" ? "no" : "mut",
+        call === "NO CALL" ? "not confident enough — the product stays silent"
+          : lv && lv.claimed_conf != null
+            ? `claimed conf ${(100 * lv.claimed_conf).toFixed(0)}%`
+            : "the product's call this window");
+    })() +
     cell("The desk", TAU == null ? "GATE?" : gated ? "TRADE " + deskSide : "ABSTAIN",
       TAU == null ? "" : gated ? (deskSide === "YES" ? "yes" : "no") : "",
       TAU == null ? "τ missing from manifest"
@@ -1249,7 +1266,8 @@ function drawAsOf() {
 /* ---------- boot ---------- */
 async function boot() {
   const [st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r, readiness] =
+    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r, readiness,
+    oracle] =
     await Promise.all([
       jget("../results/online_status.json"),
       jget("../results/site_manifest.json"),
@@ -1271,13 +1289,14 @@ async function boot() {
       jsonl("../results/pt7_trades.jsonl"),
       jsonl("../results/pt8_trades.jsonl"),
       jget("../results/readiness.json"),
+      jget("../results/oracle_calls.json"),
     ]);
   const cfg = man && man.config ? man.config : {};
   if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
   else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
   else { TAU = null; TAU_SRC = ""; }
   S = { st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, readiness,
+    commentary, readiness, oracle,
     ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
       pt6: pt6r, pt7: pt7r, pt8: pt8r } };
   try { drawAsOf(); } catch (e) {}
