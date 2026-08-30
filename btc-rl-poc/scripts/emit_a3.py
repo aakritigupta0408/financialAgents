@@ -75,7 +75,8 @@ def load_events():
                 continue
             ev.setdefault(r["ticker"], []).append(
                 (r["receive_ts"], r["yes_ask"], r.get("no_ask"),
-                 r.get("close_time")))
+                 r.get("close_time"), r.get("yes_bid"),
+                 r.get("no_bid"), r.get("yes_ask_sz")))
     for tk in ev:
         ev[tk].sort()
     return ev
@@ -85,18 +86,23 @@ def side_ask(q, up):
     return q[1] if up else (q[2] if q[2] is not None else 100 - q[1])
 
 
+def side_bid(q, up):
+    b = q[4] if up else q[5]
+    return b
+
+
 def markouts(q, up, t0, price):
-    """Executable side ask at t0+h minus fill price (buy convention);
-    nearest quote within ±2s else UNAVAILABLE (never interpolated)."""
+    """§9-10: conservative convention — mark against the EXECUTABLE
+    SIDE BID at t0+h (if we had to exit, what would the market pay);
+    lookup = first quote AT OR AFTER target within MARKOUT_MAX_DELAY
+    (2s); never forward-filled; UNAVAILABLE otherwise."""
     out = {}
     for h in MARKOUT_H:
-        near = None
-        for x in q:
-            if abs(x[0] - (t0 + h)) <= 2.0:
-                if near is None or abs(x[0] - (t0 + h)) < \
-                        abs(near[0] - (t0 + h)):
-                    near = x
-        out[f"markout_{h}s"] = (round(side_ask(near, up) - price, 1)
+        tgt = t0 + h
+        near = next((x for x in q
+                     if tgt <= x[0] <= tgt + 2.0
+                     and side_bid(x, up) is not None), None)
+        out[f"markout_{h}s"] = (round(side_bid(near, up) - price, 1)
                                 if near else "UNAVAILABLE")
     return out
 
@@ -219,6 +225,31 @@ def main():
                                           call_ask, conf_at,
                                           cutoff_ts)
                          for name, dc in SHADOWS.items()}
+        # §35-37 dip ladder + competing risks (DERIVED_EX_POST)
+        ladder = {}
+        for d in (5, 10, 15, 20):
+            hit = next((x for x in q
+                        if reg_ts < x[0] <= cutoff_ts
+                        and conf_at(x[0]) >= FLOOR
+                        and call_ask - side_ask(x, up) >= d), None)
+            ladder[f"first_{d:02d}"] = (
+                {"ts": round(hit[0], 1),
+                 "price": round(side_ask(hit, up), 1),
+                 "conf": round(conf_at(hit[0]), 3)} if hit else None)
+        st["dip_ladder"] = ladder
+        inval = next((x[0] for x in q
+                      if reg_ts < x[0] <= cutoff_ts
+                      and conf_at(x[0]) < FLOOR), None)
+        first10 = (ladder["first_10"] or {}).get("ts")
+        if first10 and (inval is None or first10 < inval):
+            st["event_first"] = "DIP"
+            st["time_to_first_event_s"] = round(first10 - reg_ts, 1)
+        elif inval is not None:
+            st["event_first"] = "INVALIDATION"
+            st["time_to_first_event_s"] = round(inval - reg_ts, 1)
+        else:
+            st["event_first"] = "TIMEOUT"
+            st["time_to_first_event_s"] = round(cutoff_ts - reg_ts, 1)
         settled = [r for r in rs if r.get("actual") is not None]
         if settled:
             won = bool(settled[-1]["actual"]) == up
@@ -337,6 +368,27 @@ def main():
            "forward": agg,
            "recent_settled": sorted(
                ledger, key=lambda e: -e["close_ts"])[:10]}
+    # §2 derived artifacts (reproducible; DERIVED_EX_POST provenance)
+    import hashlib as _h
+    sh_hash = _h.sha256((ROOT / "A3_SHADOW_SPEC.yaml").read_bytes()
+                        ).hexdigest()[:16] \
+        if (ROOT / "A3_SHADOW_SPEC.yaml").exists() else None
+    common = {"a3_version": "1.1", "a3_config_hash": spec_hash,
+              "shadow_config_hash": sh_hash,
+              "provenance": "DERIVED_EX_POST",
+              "fill_source": "V1_TAKE_ASK_CONVENTION"}
+    with (RES / "a3_window_evaluation.jsonl").open("w") as f:
+        for e in ledger:
+            row = {**common, **{k: v for k, v in e.items()
+                                if k != "shadows"}}
+            for name in SHADOWS:
+                sh = e.get("shadows", {}).get(name, {})
+                row[f"{name}_state"] = sh.get("state")
+                row[f"{name}_net_pnl"] = sh.get("pnl")
+            if "a3_pnl" in row and "control_pnl" in row:
+                row["delta_pnl"] = round(
+                    row["a3_pnl"] - row["control_pnl"], 4)
+            f.write(json.dumps(row) + "\n")
     (RES / "a3_live.json").write_text(json.dumps(doc, indent=1))
     print(f"a3-v1.1: live={doc['live']['state']} · eligible "
           f"{agg['eligible']} filled {agg['filled']} excluded "

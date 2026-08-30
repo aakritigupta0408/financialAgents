@@ -1,0 +1,33 @@
+# A3 threshold shadows — prospective registration (§23-24)
+# Registered 2026-08-29 20:00 PT (ts 1788067225), BEFORE any forward
+# evidence. T05/T15 observe the same tape, place nothing, cannot
+# influence A3-v1.1 or its promotion. Only the dip threshold differs.
+registration_version: "shadow-threshold-v1"
+
+shared:
+  initial_call_threshold: 0.75
+  thesis_floor: 0.65
+  eligible_minutes_left_min: 6
+  eligible_minutes_left_max: 13
+  entry_cutoff_seconds: 60
+  quote_freshness_seconds: 10
+  permanent_invalidation: true
+  one_entry: true
+  side_price: executable_ask
+  shadow_fill_convention: take executable ask, qty 1; SHADOW_UNFILLED
+    if visible ask size < 1 (NO-side depth not yet captured — such
+    triggers carry depth_unknown, never an imagined fill)
+
+policies:
+  T05:
+    dip_threshold_cents: 5
+    mode: SHADOW
+  T10:
+    dip_threshold_cents: 10
+    mode: LIVE_A3_V1_1
+  T15:
+    dip_threshold_cents: 15
+    mode: SHADOW
+
+gate: T05/T15 remain SHADOW_COLLECTING until T10 reaches its
+  registered verdict vs C0 (§34); no interim threshold promotion.
