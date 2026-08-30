@@ -242,6 +242,22 @@ def _a3_indep():
             if t.get("src") in ("T05", "T15", "T05_SHADOW",
                                 "T15_SHADOW"):
                 bad.append(f"{n}: shadow order leaked (A3-19)")
+    # paired-Δ attribution audit: recompute BOTH arms' pnl from the
+    # stored prices + outcome with independent math; the reported Δ
+    # must reconcile exactly with entry improvement through the
+    # cost basis — any drift means money-math corruption
+    def _pnl(ask, won):
+        cost = ask + 7 * (ask / 100.0) * (1 - ask / 100.0)
+        return (100 - cost) / cost if won else -1.0
+    for l in p.open():
+        e = json.loads(l)
+        if e.get("state") == "FILLED" and e.get("settled"):
+            want_c0 = round(_pnl(e["call_ask"], e["won"]), 4)
+            want_a3 = round(_pnl(e["entry_ask"], e["won"]), 4)
+            if abs(want_c0 - e["control_pnl"]) > 1e-3 \
+                    or abs(want_a3 - e["a3_pnl"]) > 1e-3:
+                bad.append(f"{e.get('ticker')}: attribution drift "
+                           f"(recomputed {want_a3}/{want_c0})")
     return not bad, bad[:5]
 
 

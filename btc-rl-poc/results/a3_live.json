@@ -1,6 +1,18 @@
 {
- "generated_ts": 1788068968,
+ "generated_ts": 1788069438,
  "spec": "A3_SPEC.yaml v1.1",
+ "failure_watch": {
+  "paired_delta_negative": false,
+  "miss_cost_overwhelms": false,
+  "thesis_integrity": {
+   "a3_fill_win": 1.0,
+   "eligible_win": 1.0,
+   "flag": false
+  },
+  "toxic_markouts": null,
+  "outlier_concentration": 1.0,
+  "note": "WATCH flags only \u2014 thresholds informative at n>=10; no automatic action"
+ },
  "spec_hash": "2dbc2201416a296d",
  "spec_hash_frozen": "2dbc2201416a296d",
  "spec_hash_ok": true,

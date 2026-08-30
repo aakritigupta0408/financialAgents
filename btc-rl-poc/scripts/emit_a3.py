@@ -370,7 +370,39 @@ def main():
     import hashlib
     spec_hash = hashlib.sha256(
         (ROOT / "A3_SPEC.yaml").read_bytes()).hexdigest()[:16]
+    # the five failure modes the research manager watches (TA order);
+    # thresholds are WATCH flags, never actions
+    fw = None
+    if el:
+        inc = sum(e["a3_pnl"] - e["control_pnl"] for e in el) / len(el)
+        missed_cost = sum(e["control_pnl"] for e in el
+                          if e["state"] in ("MISSED", "INVALIDATED"))
+        fill_gain = sum(e["a3_pnl"] - e["control_pnl"] for e in el
+                        if e["state"] == "FILLED")
+        mo10 = [e["markout_10s"] for e in el
+                if e["state"] == "FILLED"
+                and isinstance(e.get("markout_10s"), (int, float))]
+        fw = {
+            "paired_delta_negative": inc < 0,
+            "miss_cost_overwhelms": (missed_cost > fill_gain
+                                     and len(el) >= 10),
+            "thesis_integrity": {
+                "a3_fill_win": agg.get("a3_fill_win_rate"),
+                "eligible_win": agg.get("control_win_rate"),
+                "flag": (agg.get("a3_fill_win_rate") is not None
+                         and agg.get("control_win_rate") is not None
+                         and agg["a3_fill_win_rate"]
+                         < agg["control_win_rate"] - 0.10
+                         and len(el) >= 10)},
+            "toxic_markouts": (sum(1 for m in mo10 if m < 0)
+                               / len(mo10) > 0.7
+                               if len(mo10) >= 10 else None),
+            "outlier_concentration": (outlier or {}).get(
+                "top10pct_share"),
+            "note": "WATCH flags only — thresholds informative at "
+                    "n>=10; no automatic action"}
     doc = {"generated_ts": now, "spec": "A3_SPEC.yaml v1.1",
+           "failure_watch": fw,
            "spec_hash": spec_hash,
            "spec_hash_frozen": SPEC_HASH_FROZEN,
            "spec_hash_ok": spec_hash == SPEC_HASH_FROZEN,
