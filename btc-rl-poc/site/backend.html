@@ -224,6 +224,32 @@ a.snav .mk { font-size: 10px; color: var(--muted); display: block;
 .chgrow:last-child { border-bottom: 0; }
 .chgrow .t { color: var(--muted); font-variant-numeric: tabular-nums;
   font-size: 11.5px; }
+/* ---------- econ class expandable rows ---------- */
+.eclwrap { overflow-x: auto; }
+.eclwrap > div { min-width: 560px; }
+.echead { display: grid; gap: 8px; padding: 4px 2px;
+  grid-template-columns: minmax(140px, 1.1fr) minmax(180px, 2fr)
+    50px 110px;
+  font-size: 9.5px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--faint);
+  border-bottom: 1px solid var(--axis); }
+.echead :nth-child(3), .echead :nth-child(4) { text-align: right; }
+details.ecl { border-bottom: 1px solid var(--grid); }
+details.ecl > summary { display: grid; gap: 8px; list-style: none;
+  cursor: pointer; align-items: baseline; padding: 7px 2px;
+  grid-template-columns: minmax(140px, 1.1fr) minmax(180px, 2fr)
+    50px 110px;
+  font-size: 12.5px; }
+details.ecl > summary::-webkit-details-marker { display: none; }
+details.ecl > summary:hover { background: var(--surface-2); }
+details.ecl .num2 { text-align: right;
+  font-variant-numeric: tabular-nums; }
+details.ecl .mean2 { color: var(--muted); font-size: 11.5px; }
+details.ecl .body { padding: 5px 10px 10px; font-size: 12px;
+  line-height: 1.6; color: var(--ink-2); background: var(--surface-2);
+  border-radius: 8px; margin: 0 0 8px;
+  font-variant-numeric: tabular-nums; }
+.ecl-zero, .ecl-zero .mean2 { color: var(--faint); }
 /* ---------- drawers ---------- */
 details.drawer { margin-top: 12px; background: var(--surface-2);
   border: 1px dashed var(--border); border-radius: 10px;
@@ -325,6 +351,11 @@ details.drawer > summary { cursor: pointer; font-size: 12px;
   <p class="mini">research blockers (Value-of-Wait ML, Sizing, Passive
   execution) are strategy state, not operational exceptions — they live
   in <a href="#experiments">Experiments</a>.</p>
+</section>
+<section>
+  <div class="eyebrow">what changed</div>
+  <div id="ov-chg"><p class="mini">reading
+    system_change_log.jsonl…</p></div>
 </section>
 </div>
 
@@ -802,6 +833,23 @@ function renderOvAttn(D, rows) {
       are boring.</p>`);
 }
 
+function renderOvChg(D) {
+  const box = el("ov-chg");
+  const log = D.chg || [];
+  if (!log.length) {
+    setHTML(box, `<p class="mini">no entries yet —
+      system_change_log.jsonl has not been published</p>`);
+    return;
+  }
+  setHTML(box, log.slice().reverse().slice(0, 5).map(r =>
+    `<div class="chgrow"><span class="t">${whenET(r.ts)}</span>` +
+    `<span><span class="qd">${esc(r.change_type || "CHANGE")}</span>
+      <b>${esc(r.entity || "?")}</b> ${esc(r.before ?? "—")} →
+      ${esc(r.after ?? "—")}</span></div>`).join("") +
+    `<p class="mini">newest 5 of ${log.length} · full feed →
+    <a href="#registry">Registry</a></p>`);
+}
+
 /* =========================== module: models ======================== */
 function roleCol(title, sub, col, rows) {
   return `<div class="rolecol" style="--bc:${col}">` +
@@ -867,21 +915,46 @@ function renderMdRoles(D) {
     ["self trend", `<span class="stw gray">N/A</span>`],
     ["vs market", `<span class="stw gray">N/A — it IS the market</span>`],
   ];
+  /* champion internal dependencies — frozen leader pool */
+  const intRow = id => {
+    const m = moff[id] || null;
+    const fs = (m && m.fold_summary) || null;
+    const lt = (m && m.lifetime) || null;
+    return `<div class="qrow"><span class="qd">CONTROL_INTERNAL</span>` +
+      `<b>${id}</b><span class="why">parent PT_CHAMPION · cannot
+      retire without a new champion registration${fs
+        ? ` · fold BSS md ${f4(fs.median_fold_bss)} / worst ${
+          f4(fs.worst_fold_bss)} · ${pc(
+          fs.fraction_folds_beating_market)} folds beat market`
+        : " · offline stats unpublished"}${lt
+        ? ` · lifetime brier ${f4(lt.brier)} (n ${lt.n})` : ""
+      }</span></div>`;
+  };
   setHTML(box, `<div class="rolegrid">` +
-    roleCol("Market", "structural control — the market probability "
+    roleCol("Market / Structural", "ROLE 1 — the market probability "
       + "itself; every model must beat this", "var(--series-1)",
       marketRows) +
-    roleCol("kb2 — Incumbent", esc((ml.kb2 && ml.kb2.role) ||
-      "CONTROL (market-anchored)"), "var(--series-2)",
-      modelRows("kb2")) +
-    roleCol("kb9 — Challenger", esc((ml.kb9 && ml.kb9.role) ||
-      "CHALLENGER (TimesFM fusion)"), "var(--series-3)",
-      modelRows("kb9")) +
+    roleCol("Champion policy model system", "ROLE 2 — frozen leader "
+      + "pool kb3 · kb4 · kb7 · kb8 + inputs kb, kb2; stats shown are "
+      + "kb2, the champion system's market-anchored input",
+      "var(--series-2)", modelRows("kb2")) +
+    roleCol("Challenger (kb9)", "ROLE 3 — " + esc((ml.kb9
+      && ml.kb9.role) || "CHALLENGER (TimesFM fusion)"),
+      "var(--series-3)", modelRows("kb9")) +
     `</div>` +
-    `<p class="mini">Self trend and vs-market are separate verdicts by
-    design: both arms are improving against their own history while
-    kb9 has not established a baseline against the market. One badge
-    would lie.</p>`);
+    `<details class="drawer" data-x="champ-int"><summary>Champion
+      internal dependencies — kb3 · kb4 · kb7 · kb8 →</summary>` +
+    ["kb3", "kb4", "kb7", "kb8"].map(intRow).join("") +
+    `<p class="mini">Frozen leader-pool members serving inside
+      PT_CHAMPION — CONTROL_DEPENDENCY per the registry: retiring any
+      of them requires registering a NEW champion. They are not
+      independent serving roles and do not count against the 3-role
+      budget.</p></details>` +
+    `<p class="mini">kb5 — EXPERIMENT_DEPENDENCY of M14-v2, promotion
+    via M14-v2 only; not a serving role. Self trend and vs-market are
+    separate verdicts by design: both arms are improving against their
+    own history while kb9 has not established a baseline against the
+    market. One badge would lie.</p>`);
 }
 
 function renderMdRuns(D) {
@@ -1026,23 +1099,58 @@ function renderExA3(D) {
       · fills ${fwd.filled ?? "–"}/${n}</span></div>`;
   h += `<div class="subh">why — the economic decomposition leads</div>`;
   h += decompCells(a3, false);
-  /* six outcome classes — zero-count classes render gray, honestly 0 */
+  /* six outcome classes — zero-count classes render gray, honestly 0;
+     each row expands to its constituent windows from recent_settled */
   const cls = (fwd.decomposition && fwd.decomposition.econ_classes)
     || {};
-  h += `<div class="subh">outcome classes A–F</div>` +
-    `<div class="scroll"><table class="roster"><thead><tr>
-      <th>class</th><th>meaning</th><th class="num">n</th>
-      <th class="num">Δ contribution</th></tr></thead><tbody>` +
-    ECON_CLASSES.map(([k, why]) => {
-      const c = cls[k];
-      const zero = !c || !c.n;
-      return `<tr${zero ? ' style="color:var(--faint)"' : ""}>` +
-        `<td><b${zero ? ' style="color:var(--faint)"' : ""}>${k[0]
-        }</b> ${esc(k.slice(2))}</td><td>${esc(why)}</td>` +
-        `<td class="num">${c ? c.n : 0}</td>` +
-        `<td class="num">${c ? cS(c.delta_contribution) : "0"}</td>` +
-        `</tr>`;
-    }).join("") + `</tbody></table></div>`;
+  const settled = (a3.recent_settled || []).filter(r => r
+    && r.state !== "SYSTEM_EXCLUDED" && r.settled !== false);
+  const byClass = {};
+  for (const r of settled) {
+    const k = r.econ_class || "PRECLASS";
+    (byClass[k] = byClass[k] || []).push(r);
+  }
+  const winLine = r => {
+    const d = (typeof r.a3_pnl === "number"
+      && typeof r.control_pnl === "number")
+      ? r.a3_pnl - r.control_pnl : null;
+    return `<div>${esc(r.ticker || "?")} · ${esc(r.state || "?")
+      } · Δ ${cS(d)}</div>`;
+  };
+  const eclRow = ([k, why]) => {
+    const c = cls[k];
+    const wins = byClass[k] || [];
+    const zero = (!c || !c.n) && !wins.length;
+    const partial = c && c.n > wins.length;
+    const body = wins.length
+      ? wins.map(winLine).join("") + (partial
+        ? `<div class="mini">showing ${wins.length} of ${c.n} — older
+          windows have rolled out of the recent_settled tail</div>`
+        : "")
+      : `<div class="mini">no windows in this class yet</div>`;
+    return `<details class="ecl${zero ? " ecl-zero" : ""}"
+        data-x="ec-${k}"><summary>` +
+      `<span><b>${k[0]}</b> ${esc(k.slice(2))}</span>` +
+      `<span class="mean2">${esc(why)}</span>` +
+      `<span class="num2">${c ? c.n : 0}</span>` +
+      `<span class="num2">${c ? cS(c.delta_contribution) : "0"}</span>` +
+      `</summary><div class="body">${body}</div></details>`;
+  };
+  h += `<div class="subh">outcome classes A–F — click a row for its
+    windows</div><div class="eclwrap"><div>` +
+    `<div class="echead"><span>class</span><span>meaning</span>
+      <span>n</span><span>Δ contribution</span></div>` +
+    ECON_CLASSES.map(eclRow).join("");
+  if (byClass.PRECLASS)
+    h += `<details class="ecl ecl-zero" data-x="ec-pre"><summary>` +
+      `<span><b>–</b> PRE-CLASSIFICATION</span>` +
+      `<span class="mean2">settled before econ_class instrumentation
+        — not classified, not hidden</span>` +
+      `<span class="num2">${byClass.PRECLASS.length}</span>` +
+      `<span class="num2">–</span></summary>` +
+      `<div class="body">${byClass.PRECLASS.map(winLine).join("")
+      }</div></details>`;
+  h += `</div></div>`;
   /* estimate path — cumulative paired Δ from recent_settled */
   const ordered = (a3.recent_settled || [])
     .filter(r => r && r.state !== "SYSTEM_EXCLUDED"
@@ -1122,26 +1230,63 @@ function renderExLegacy(D) {
   setHTML(box, h);
 }
 
+/* research_queue.json is the canonical queue; program.json's
+   research_manager block is the fallback (same data, older shape) */
+function queueItemsHTML(D) {
+  const rq = D.rq;
+  if (rq && Array.isArray(rq.queue) && rq.queue.length) {
+    return rq.queue.map(q => {
+      const st = String(q.state || "");
+      const stCls = /COLLECT/i.test(st) ? "amber"
+        : /ACTIVE|LIVE/i.test(st) ? "blue"
+        : /BLOCK/i.test(st) ? "red" : "gray";
+      return `<div class="qitem"><span class="r"
+          style="font-size:11.5px;width:24px">${esc(q.priority || "–")
+        }</span><span><b>${esc(q.research_question || "?")}</b>` +
+        `<span class="w">${esc(q.evidence || "")}</span><br>` +
+        `<span class="a">${esc(q.bottleneck || "")} ·
+          <span class="stw ${stCls}">${esc(st || "?")}</span> ·
+          owner ${esc(q.owner || "–")}${q.next_gate
+          ? ` · next gate: ${esc(q.next_gate)}` : ""}${q.blocked_by
+          ? ` · blocked by: ${esc(q.blocked_by)}` : ""
+          }</span></span></div>`;
+    }).join("") + `<p class="mini">source:
+      <code>research_queue.json</code> (canonical)${rq.provenance
+      ? " · " + esc(rq.provenance) : ""}</p>`;
+  }
+  const rm = (D.prog && D.prog.research_manager) || {};
+  const fb = (rm.queue || []).map(q => `<div class="qitem">` +
+    `<span class="r">${q.rank}</span><span><b>${esc(q.title)}</b>` +
+    `<span class="w">${esc(q.why)}</span><br><span class="a">${
+    esc(q.bottleneck || q.metric || "")} · action: ${esc(q.action)
+    }</span></span></div>`).join("");
+  return fb ? fb + `<p class="mini">research_queue.json not yet
+      published — showing the program.json fallback</p>`
+    : `<p class="mini">research_queue.json and program.json queue both
+      unpublished</p>`;
+}
+function queueBlockedHTML(D) {
+  const blocked = (D.rq && Array.isArray(D.rq.blocked)
+      && D.rq.blocked.length) ? D.rq.blocked
+    : ((D.prog && D.prog.research_manager)
+      || {}).blocked || [];
+  return blocked.map(b => `<div class="qrow">` +
+    `<span class="qd">BLOCKED</span><b>${esc(b.item)}</b>` +
+    `<span class="why">${esc(b.reason)}</span></div>`).join("")
+    || `<p class="mini">nothing blocked</p>`;
+}
+
 function renderExQueue(D) {
   const box = el("ex-queue");
-  const prog = D.prog;
-  if (!prog) {
-    setHTML(box, `<p class="mini">program.json not yet published</p>`);
+  if (!D.prog && !D.rq) {
+    setHTML(box, `<p class="mini">program.json and research_queue.json
+      not yet published</p>`);
     return;
   }
-  const rm = prog.research_manager || {};
-  let h = `<div class="subh">ranked queue</div>` +
-    ((rm.queue || []).map(q => `<div class="qitem"><span class="r">${
-      q.rank}</span><span><b>${esc(q.title)}</b>` +
-      `<span class="w">${esc(q.why)}</span><br><span class="a">${
-      esc(q.bottleneck || q.metric || "")} · action: ${esc(q.action)
-      }</span></span></div>`).join("")
-      || `<p class="mini">queue empty</p>`);
+  const prog = D.prog || {};
+  let h = `<div class="subh">ranked queue</div>` + queueItemsHTML(D);
   h += `<div class="subh">blocked — until evidence unlocks</div>` +
-    ((rm.blocked || []).map(b => `<div class="qrow">` +
-      `<span class="qd">BLOCKED</span><b>${esc(b.item)}</b>` +
-      `<span class="why">${esc(b.reason)}</span></div>`).join("")
-      || `<p class="mini">nothing blocked</p>`);
+    queueBlockedHTML(D);
   const MAP = { supported: ["SUPPORTED", "var(--good-text)"],
     developing: ["DEVELOPING", "var(--series-2)"],
     "rejected implementation": ["REJECTED", "var(--down)"],
@@ -1419,17 +1564,15 @@ function renderAgRoster() {
     retirement, or policy change terminates with the human.</p>`);
 }
 function renderAgRecs(D) {
-  const rm = (D.prog && D.prog.research_manager) || null;
-  setHTML(el("ag-recs"), rm
-    ? ((rm.queue || []).map(q => `<div class="qitem"><span class="r">${
-        q.rank}</span><span><b>${esc(q.title)}</b>` +
-        `<span class="w">${esc(q.why)}</span><br><span class="a">${
-        esc(q.bottleneck || q.metric || "")} · action: ${esc(q.action)
-        }</span></span></div>`).join("")
-        || `<p class="mini">queue empty</p>`)
-      + `<p class="mini">this queue is the Research Manager script's
-        live output (program.json) — the future agent inherits it</p>`
-    : `<p class="mini">program.json not yet published</p>`);
+  if (!D.rq && !D.prog) {
+    setHTML(el("ag-recs"), `<p class="mini">research_queue.json and
+      program.json not yet published</p>`);
+    return;
+  }
+  setHTML(el("ag-recs"), queueItemsHTML(D) +
+    `<div class="subh">blocked</div>` + queueBlockedHTML(D) +
+    `<p class="mini">this queue is the Research Manager script's live
+    output — the future M5 agent inherits it</p>`);
 }
 function renderAgPerf() {
   setHTML(el("ag-perf"),
@@ -1492,9 +1635,9 @@ function registryRows(D) {
     if (it._type === "experiments") continue; /* program wins below */
     rows.push({ type: it._type, id: it.id, name: it.name || "",
       lifecycle: String(it.lifecycle || "?").toUpperCase(),
-      why: [it.role, it.note, it.reason].filter(Boolean).join(" · "),
+      why: [it.note, it.reason].filter(Boolean).join(" · "),
       reopen: it.reopen_condition || null,
-      tomb: tombs[it.id] || null });
+      tomb: tombs[it.id] || null, raw: it });
   }
   const progExp = (prog && prog.experiments) || [];
   const seen = new Set();
@@ -1507,15 +1650,40 @@ function registryRows(D) {
         .toUpperCase(),
       why: String(e.lifecycle || ""),
       reopen: (yam && yam.reopen_condition) || null,
-      tomb: tombs[e.id] || null });
+      tomb: tombs[e.id] || null, raw: yam || null });
   }
   if (reg) for (const it of reg.items)
     if (it._type === "experiments" && !seen.has(it.id))
       rows.push({ type: "experiments", id: it.id, name: it.name || "",
         lifecycle: String(it.lifecycle || "?").toUpperCase(),
         why: [it.note, it.reason].filter(Boolean).join(" · "),
-        reopen: it.reopen_condition || null, tomb: null });
+        reopen: it.reopen_condition || null, tomb: null, raw: it });
   return rows;
+}
+/* dependency detail line — every structured field the YAML carries */
+function depDetail(it) {
+  if (!it) return "";
+  const yes = v => String(v) === "true" ? "YES" : "NO";
+  const bits = [];
+  if (it.role) bits.push(`Role ${esc(it.role)}`);
+  if (it.parent) bits.push(`Parent ${esc(it.parent)}`);
+  if (it.dependency_class && it.dependency_class !== it.role)
+    bits.push(esc(it.dependency_class));
+  if (it.experiment) bits.push(`Experiment ${esc(it.experiment)}${
+    it.promotion_path ? ` (promotion ${esc(it.promotion_path)})` : ""}`);
+  if (it.independent_serving_role != null)
+    bits.push(`Independent challenger? ${
+      yes(it.independent_serving_role)}`);
+  if (it.dependency_class === "CONTROL_DEPENDENCY")
+    bits.push("Can retire without new champion registration? NO");
+  if (it.decision_impact != null)
+    bits.push(`Decision impact ${yes(it.decision_impact)}`);
+  if (it.runtime != null) bits.push(`Runtime ${yes(it.runtime)}`);
+  if (it.control) bits.push(`Control ${esc(it.control)}`);
+  if (it.treatment) bits.push(`Treatment ${esc(it.treatment)}`);
+  if (it.consolidated_into)
+    bits.push(`Consolidated into ${esc(it.consolidated_into)}`);
+  return bits.join(" · ");
 }
 function renderRgInv(D) {
   const box = el("rg-inv");
@@ -1542,12 +1710,18 @@ function renderRgInv(D) {
   const body = vis.map(r => {
     const b = lcBucket(r.lifecycle);
     const dead = b === "RETIRED" || b === "ARCHIVED";
+    const dep = depDetail(r.raw);
     return `<div class="reg-row">` +
       `<span class="tchip">${esc(r.type.replace(/s$/, ""))}</span>` +
       `<span class="lchip ${b}">${esc(r.lifecycle)}</span>` +
       `<span><b>${esc(r.id)}</b>${r.name && r.name !== "EMPTY"
         ? " · " + esc(r.name) : ""}` +
+      (dep ? `<span class="why" style="color:var(--ink-2)">${dep
+        }</span>` : "") +
       (r.why ? `<span class="why">${esc(r.why)}</span>` : "") +
+      (dead && (r.raw && r.raw.reason) && r.why.indexOf(r.raw.reason)
+        < 0 ? `<span class="why">retired because: ${esc(r.raw.reason)
+        }</span>` : "") +
       (dead && r.reopen ? `<span class="why">reopen when: ${
         esc(r.reopen)}</span>` : "") +
       (dead && r.tomb ? `<span class="why">lesson: ${
@@ -1590,7 +1764,7 @@ function renderRgChg(D) {
 /* ============================== poll loop ========================== */
 async function poll() {
   const [pm, a3, ml, moff, mq, par, prog, dec, rdy, inv, wld, onl,
-    aud, mm, incs, snaps, chg, regTxt, runs] = await Promise.all([
+    aud, mm, incs, snaps, chg, regTxt, runs, rq] = await Promise.all([
     J("../results/pm_snapshot.json"),
     J("../results/a3_live.json"),
     J("../results/model_lifecycle.json"),
@@ -1610,9 +1784,10 @@ async function poll() {
     JL("../results/system_change_log.jsonl"),
     JT("../config/COMPONENT_REGISTRY.yaml"),
     fetchRuns(),
+    J("../results/research_queue.json"),
   ]);
   const D = { pm, a3, ml, moff, mq, par, prog, dec, rdy, inv, wld,
-    onl, aud, mm, incs, snaps, chg, runs,
+    onl, aud, mm, incs, snaps, chg, runs, rq,
     reg: parseRegistryYaml(regTxt) };
   const rows = planeRows(onl, aud, dec, wld, inv);
   const worst = rows.reduce((w, r) =>
@@ -1624,6 +1799,7 @@ async function poll() {
   renderOvDesk(D);
   renderOvResearch(D);
   renderOvAttn(D, rows);
+  renderOvChg(D);
   renderMdRoles(D);
   renderMdRuns(D);
   renderMdRepro(D);
