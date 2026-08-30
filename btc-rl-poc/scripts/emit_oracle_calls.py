@@ -30,6 +30,15 @@ CONF = 0.80
 LO_MIN, HI_MIN = 6.0, 13.0
 CALLERS = ("kb2", "kb5")
 
+# M14-v2 (owner: "more frequency — 1 in 4"): caller kb5 at 0.72,
+# which scored 81% at 47% coverage on the exploratory sample.
+# SELECTION-EFFECT DISCIPLINE: that threshold was CHOSEN on the same
+# sample, so v2's promise is judged prequentially ONLY on windows
+# settling after V2_REGISTERED_TS. v1 keeps running unchanged.
+V2_CALLER = "kb5"
+V2_CONF = 0.72
+V2_REGISTERED_TS = 1788053460     # 2026-08-29 ~18:11 PT
+
 
 def wilson(k, n):
     if not n:
@@ -82,6 +91,31 @@ def main():
             else None,
             "no_calls": len(settled) - len(calls),
         }
+    # ---- M14-v2: kb5@0.72, prequential from registration ------------
+    v2_wins = [r for (tk, vv), r in first.items() if vv == V2_CALLER]
+    v2_eval = [r for r in v2_wins if r.get("actual") is not None
+               and (r.get("close_ts") or 0) >= V2_REGISTERED_TS]
+    v2_calls = [r for r in v2_eval
+                if max(r["p_up"], 1 - r["p_up"]) >= V2_CONF]
+    v2_hits = sum(1 for r in v2_calls
+                  if (r["p_up"] >= 0.5) == bool(r["actual"]))
+    out["v2"] = {
+        "caller": V2_CALLER, "conf_threshold": V2_CONF,
+        "registered_ts": V2_REGISTERED_TS,
+        "exploratory_basis": "81% acc @ 47% coverage, n=80 — "
+        "threshold chosen on that sample, so it does NOT count "
+        "toward the promise",
+        "settled_since_registration": len(v2_eval),
+        "calls": len(v2_calls),
+        "coverage": round(len(v2_calls) / len(v2_eval), 3)
+        if v2_eval else None,
+        "hits": v2_hits,
+        "selective_accuracy": round(v2_hits / len(v2_calls), 3)
+        if v2_calls else None,
+        "wilson_ci95": wilson(v2_hits, len(v2_calls)),
+        "promise_met": (v2_hits / len(v2_calls) >= 0.80)
+        if v2_calls else None,
+    }
     # live pending call, if any (most recent unsettled window)
     pend = [r for (tk, vv), r in first.items()
             if vv == "kb2" and r.get("actual") is None]

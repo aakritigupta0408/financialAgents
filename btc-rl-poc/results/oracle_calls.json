@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788048952,
+ "generated_ts": 1788050811,
  "config": {
   "conf_threshold": 0.8,
   "envelope_mins_left": [
@@ -11,24 +11,24 @@
   "promise": "selective accuracy of calls >= 0.80"
  },
  "kb2": {
-  "windows_seen": 169,
-  "settled": 169,
-  "calls": 11,
-  "coverage": 0.065,
-  "hits": 10,
-  "selective_accuracy": 0.909,
+  "windows_seen": 168,
+  "settled": 168,
+  "calls": 10,
+  "coverage": 0.06,
+  "hits": 9,
+  "selective_accuracy": 0.9,
   "wilson_ci95": [
-   0.623,
-   0.984
+   0.596,
+   0.982
   ],
   "promise_met": true,
   "no_calls": 158
  },
  "kb5": {
-  "windows_seen": 168,
-  "settled": 168,
+  "windows_seen": 167,
+  "settled": 167,
   "calls": 43,
-  "coverage": 0.256,
+  "coverage": 0.257,
   "hits": 34,
   "selective_accuracy": 0.791,
   "wilson_ci95": [
@@ -36,6 +36,19 @@
    0.886
   ],
   "promise_met": false,
-  "no_calls": 125
+  "no_calls": 124
+ },
+ "v2": {
+  "caller": "kb5",
+  "conf_threshold": 0.72,
+  "registered_ts": 1788053460,
+  "exploratory_basis": "81% acc @ 47% coverage, n=80 \u2014 threshold chosen on that sample, so it does NOT count toward the promise",
+  "settled_since_registration": 0,
+  "calls": 0,
+  "coverage": null,
+  "hits": 0,
+  "selective_accuracy": null,
+  "wilson_ci95": null,
+  "promise_met": null
  }
 }
