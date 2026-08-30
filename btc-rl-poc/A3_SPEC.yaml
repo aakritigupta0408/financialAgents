@@ -1,0 +1,31 @@
+# A3 OVERREACTION HARVEST — pre-registration v1 (2026-08-29)
+# Frozen before forward data. Changes = governance events (DECISIONS).
+thesis_gate:            # Gate 1 — registered thesis
+  caller: kb2
+  min_conf: 0.75
+  envelope_mins_left: [6, 13]
+validity_floor:         # thesis must remain alive at entry
+  caller: kb2
+  min_conf: 0.65
+dip_gate:               # Gate 2 — material repricing against thesis
+  min_drop_c: 10        # entry ask at least 10c below call ask
+stability_gate:         # Gate 3 — COUNTERINDICATED by legacy surface
+  status: WATCH_ONLY    # kb9-stable deep dips scored n=10, -7.9%/$1;
+                        # the elegant O_t primitive FAILED first data
+                        # contact — logged as a watch, never a gate
+policy:
+  action_space: [BUY_DIP, WAIT, PASS]
+  v1_rule: BUY at first observation satisfying thesis+validity+dip
+scorecard:              # frozen metrics — A3 vs incumbent, paired
+  primary: delta_net_pnl_per_eligible_window
+  entry_quality: [valid_wait_gain_c, ECR_when_tape_v2_exists]
+  opportunity_cost: miss_rate
+  thesis_integrity: post_entry_win_rate_vs_incumbent_win_rate
+  economics: net_edge_per_fill_after_fees
+legacy_basis:           # exploratory — does NOT count toward promotion
+  dip_entries_net_ev_per_$1: "0.109 (all dips>=10c, n=35) to 0.184
+    (dips with kb9-det>=5pp, n=25)"
+  buy_at_call_baseline_per_$1: "0.085 (n=126)"
+  deepest_valid_dip_win_rate: "0.714-0.78"
+promotion: beats the frozen incumbent prequentially after costs on
+  the primary metric under SPRT with the registered family-wise alpha
