@@ -30,7 +30,37 @@ main > section { padding: 18px 22px; }
 .badge.b-nfa { color: var(--down); border-color: rgba(209,60,60,.35);
   background: rgba(209,60,60,.06); }
 .winstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
-  gap: 10px; margin: 16px 0 4px; }
+  gap: 10px; margin: 8px 0 4px; }
+.strip-label { font-size: 10px; font-weight: 800; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); margin: 16px 0 0; }
+.thesis-chip { display: inline-block; font: 800 15px/1 ui-sans-serif, system-ui;
+  letter-spacing: .07em; padding: 8px 13px; border-radius: 999px;
+  border: 2px solid var(--border); color: var(--muted); margin-top: 4px; }
+.deskrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  gap: 10px; margin-top: 12px; }
+.dtile { border: 1px solid var(--border); border-radius: 14px;
+  background: var(--surface-2); padding: 12px 15px 11px; }
+.dtile .dk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted); line-height: 1.6; }
+.action-word { font: 800 30px/1.15 var(--display); letter-spacing: .05em;
+  margin-top: 4px; }
+.action-sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.watchkv { display: grid; grid-template-columns: 1fr auto; gap: 3px 16px;
+  font-size: 12.5px; margin-top: 9px; border-top: 1px dashed var(--border);
+  padding-top: 8px; }
+.watchkv .k { color: var(--muted); }
+.watchkv .v { font-weight: 700; color: var(--ink);
+  font-variant-numeric: tabular-nums; text-align: right; }
+.dtile .dnote { font-size: 11px; color: var(--muted); margin-top: 8px;
+  line-height: 1.55; }
+.hl3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  margin-top: 9px; }
+.hl3 .hv { font: 700 clamp(19px, 2.4vw, 25px)/1.1 var(--display);
+  font-variant-numeric: tabular-nums; color: var(--ink); }
+.hl3 .hv.big { font-size: clamp(23px, 3vw, 30px); }
+.hl3 .hk { font-size: 9px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin-top: 3px;
+  line-height: 1.45; }
 .ws { border: 1px solid var(--border); border-radius: 12px;
   background: var(--surface-2); padding: 9px 13px; }
 .ws .wk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
@@ -209,13 +239,13 @@ a.mus:hover { border-color: var(--series-2) !important; }
 <section>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
     The Quant Universe · <span id="asof">loading…</span></div>
-  <h1 class="hero-q">Can AI learn when to predict, when to act — and when to do nothing?</h1>
+  <h1 class="hero-q">Can AI learn when to predict — and when to wait for a better price?</h1>
   <p class="hero-sub">A real research desk trading <b>fake money</b> on a
-  <b>real market</b> — Bitcoin, every 15 minutes, around the clock. Robot
-  traders predict, bet paper money, get graded, and failed ideas are killed in
-  public. Everything below is fetched live; nothing is made up.
-  The product: a selective caller that speaks only when it can promise
-  80–90% — and says NO CALL otherwise.</p>
+  <b>real market</b> — Bitcoin, every 15 minutes, around the clock.
+  The machine first decides whether it has a strong view; then comes the harder
+  call — <b>buy now, wait for a better price, or do nothing</b>. Every decision
+  is logged before the outcome is known, and every strategy races a frozen
+  control. Everything below is fetched live; nothing is made up.</p>
   <div class="badges">
     <span class="badge b-live">● Live data</span>
     <span class="badge b-fake">Fake money</span>
@@ -224,14 +254,43 @@ a.mus:hover { border-color: var(--series-2) !important; }
     <span class="badge b-nfa">Not financial advice</span>
   </div>
 
+  <div class="strip-label">This window</div>
   <div class="winstrip" id="winstrip">
     <div class="ws"><div class="wk">BTC now</div><div class="wv" id="ws-px">—</div><div class="wm">Coinbase spot</div></div>
     <div class="ws"><div class="wk">The line (strike)</div><div class="wv" id="ws-strike">—</div><div class="wm">finish above = YES</div></div>
     <div class="ws"><div class="wk">Window closes in</div><div class="wv" id="ws-left">—</div><div class="wm">15-minute contract</div></div>
-    <div class="ws"><div class="wk">Market says</div><div class="wv" id="ws-mkt">—</div><div class="wm" id="ws-mkt-m">mid of yes bid/ask</div></div>
-    <div class="ws"><div class="wk">Control vs Treatment</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">kb2 primary caller</div></div>
-    <div class="ws"><div class="wk">🔮 The Oracle Call</div><div class="wv" id="ws-orc">—</div><div class="wm" id="ws-orc-m">reading the tape…</div></div>
   </div>
+
+  <div class="strip-label">The thesis — does the machine have a strong view?</div>
+  <div class="winstrip">
+    <div class="ws"><div class="wk">Model view</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">kb2 primary caller · <code>online_status.json .pm</code></div></div>
+    <div class="ws"><div class="wk">Market view</div><div class="wv" id="ws-mkt">—</div><div class="wm" id="ws-mkt-m">mid of yes bid/ask</div></div>
+    <div class="ws"><div class="wk">Thesis state</div><div><span class="thesis-chip" id="ws-thesis">—</span></div><div class="wm" id="ws-thesis-m">reading a3_live.json…</div></div>
+  </div>
+
+  <div class="deskrow">
+    <div class="dtile" id="desk-tile">
+      <div class="dk">🎯 The desk — what A3 is doing right now</div>
+      <p class="mini">reading a3_live.json…</p>
+    </div>
+    <div class="dtile" id="ab-tile">
+      <div class="dk">Control vs Treatment — CONTROL buy-at-call vs TREATMENT A3 wait-for-dip</div>
+      <p class="mini">reading a3_live.json…</p>
+    </div>
+  </div>
+
+  <details class="drawer" id="whywait">
+    <summary>🤔 Why wait for a better price? — the research behind A3</summary>
+    <p class="sub small" style="margin-top:8px">In replay research, <b>33% of
+    confident 0.75–0.80 calls later got ≥20¢ cheaper</b> — and those windows
+    still won <b>82%</b> of the time. The price you pay matters as much as the
+    call. The elegant version — a stability-gated entry — <b>FAILED</b> its
+    test: −7.9% per $1 (n=10). The simple rule survived: n=35, 71% won,
+    +10.9% per $1; on the kb9-det subset n=25, 76% won, +18.4%.</p>
+    <p class="mini">Small exploratory samples, not qualified performance. A3 was
+    frozen (<code>A3_SPEC.yaml</code>) before forward testing began and must
+    beat the incumbent prequentially, after costs, to earn anything.</p>
+  </details>
 
   <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
   <div class="pickrow">
@@ -241,8 +300,10 @@ a.mus:hover { border-color: var(--series-2) !important; }
   <div id="compare-card"></div>
   <div id="lasttime"></div>
   <div id="play-chart"></div>
+  <p class="mini" id="a3-cap" style="margin:2px 0 0"></p>
   <p class="mini" id="play-src">strike + model probability from
-  <code>online_status.json .pm</code> · gate τ from
+  <code>online_status.json .pm</code> · desk state from
+  <code>a3_live.json</code> · gate τ from
   <code>site_manifest.json .config</code> · your pick stays in your browser only</p>
 
   <details class="drawer" id="wallet-drawer">
@@ -446,36 +507,138 @@ function drawStrip() {
   const eo = $id("ws-mod");
   eo.textContent = p == null ? "—" : "kb2 " + (100 * p).toFixed(0) + "% YES";
   eo.className = "wv" + (p == null ? "" : p >= 0.5 ? " yes" : " no");
-  $id("ws-mod-m").textContent = ctLine();
-  /* 🔮 the product: the Oracle Call from oracle_calls.json */
-  const ov = $id("ws-orc"), om = $id("ws-orc-m");
-  const oc = S.oracle, lv = oc && oc.live;
-  if (!lv || !lv.call) {
-    ov.textContent = "—"; ov.className = "wv mut";
-    om.textContent = "reading the tape…";
-  } else {
-    const call = lv.call;
-    ov.textContent = call;
-    ov.className = "wv " + (call === "UP" ? "yes" : call === "DOWN" ? "no" : "mut");
-    const kb2 = oc.kb2 || {};
-    const stats = kb2.selective_accuracy != null && kb2.coverage != null
-      ? `right ${(100 * kb2.selective_accuracy).toFixed(0)}% of the time when it speaks · ` +
-        `speaks on ${(100 * kb2.coverage).toFixed(0)}% of windows (n=${kb2.calls != null ? kb2.calls : "—"})`
-      : "track record still settling";
-    om.textContent = (call !== "NO CALL" && lv.claimed_conf != null
-      ? `claimed conf ${(100 * lv.claimed_conf).toFixed(0)}% · ` : "") + stats;
-  }
 }
 
-/* control-vs-treatment subline from oracle_calls.json .early_ct */
-function ctLine() {
-  const ct = S.oracle && S.oracle.early_ct;
-  const sa = x => x && x.selective_accuracy != null
-    ? (100 * x.selective_accuracy).toFixed(0) + "%" : "—";
-  const tArm = ct && ct.treatment && ct.treatment.arm ? ct.treatment.arm : "kb9";
-  return ct
-    ? `treatment ${tArm} tracked — early_ct: C ${sa(ct.control)} vs T ${sa(ct.treatment)} (collecting)`
-    : "treatment kb9 tracked — early_ct (collecting)";
+/* ---------- A3 thesis engine (a3_live.json) ---------- */
+const A3_STATES = {
+  NO_THESIS:   { col: "var(--muted)",     sub: "confidence never cleared 75%" },
+  WATCHING:    { col: "var(--series-2)",  sub: "thesis registered — waiting for price" },
+  TRIGGERED:   { col: "var(--good-text)", sub: "dip reached — A3 paper-bought" },
+  INVALIDATED: { col: "var(--down)",      sub: "confidence fell below 65% — cancelled" },
+  MISSED:      { col: "var(--series-4)",  sub: "settled without a qualifying entry" },
+};
+const DESK_LINES = {
+  WATCHING: "strong view, waiting for a better price",
+  TRIGGERED: "dip reached — paper-bought below the call",
+  NO_THESIS: "no strong view — doing nothing",
+  INVALIDATED: "thesis cancelled — confidence fell",
+  MISSED: "settled without a qualifying entry",
+};
+const deskAction = st => st === "WATCHING" ? "WAIT"
+  : st === "TRIGGERED" ? "BUY" : st ? "PASS" : "—";
+const c1 = v => String(Math.round(v * 10) / 10);
+function a3Ctx() {
+  const a3 = S.a3 || null, lv = (a3 && a3.live) || null;
+  const pm = (S.st && S.st.pm) || null;
+  const mkt = pm && pm.yes_bid != null && pm.yes_ask != null
+    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
+  const p = pm ? pm.model_p_up : null;
+  const side = lv && lv.side ? lv.side : null;
+  const sideP = p == null ? null
+    : side === "DOWN" ? 1 - p : side === "UP" ? p : Math.max(p, 1 - p);
+  /* live contract ask, A3 convention: 100·p + 2.5¢ spread, side-adjusted */
+  const curAsk = mkt == null ? null
+    : side === "DOWN" ? 100 * (1 - mkt) + 2.5 : 100 * mkt + 2.5;
+  return { a3, lv, pm, mkt, p, side, sideP, curAsk };
+}
+function drawThesisDesk() {
+  const { a3, lv, side, sideP, curAsk } = a3Ctx();
+  const stt = lv && lv.state ? lv.state : null;
+  /* thesis-state chip */
+  const chip = $id("ws-thesis"), chipM = $id("ws-thesis-m");
+  const meta = stt && A3_STATES[stt];
+  if (!meta) {
+    chip.textContent = "—";
+    chip.style.color = "var(--muted)"; chip.style.borderColor = "var(--border)";
+    chipM.textContent = "a3_live.json unavailable — no state is invented";
+  } else {
+    chip.textContent = stt.replace(/_/g, " ") + (side ? " · " + side : "");
+    chip.style.color = meta.col; chip.style.borderColor = meta.col;
+    chipM.textContent = meta.sub;
+  }
+  /* 🎯 the desk tile */
+  const dbox = $id("desk-tile");
+  const dhead = `<div class="dk">🎯 The desk — what A3 is doing right now</div>`;
+  if (!stt) {
+    dbox.innerHTML = dhead +
+      '<p class="mini">a3_live.json unavailable — the desk shows nothing it cannot fetch</p>';
+  } else {
+    const act = deskAction(stt);
+    const acol = act === "BUY" ? "var(--good-text)"
+      : act === "WAIT" ? "var(--series-2)" : "var(--muted)";
+    let panel = "";
+    if (stt === "WATCHING" || stt === "TRIGGERED") {
+      const kv = (k, v) => `<div class="k">${k}</div><div class="v">${v}</div>`;
+      const dip = lv.call_ask != null && curAsk != null ? lv.call_ask - curAsk : null;
+      panel = `<div class="watchkv">` +
+        kv("call price (incumbent paid)",
+          lv.call_ask != null ? c1(lv.call_ask) + "¢" : "—") +
+        kv("current ask (live)", curAsk != null ? c1(curAsk) + "¢" : "—") +
+        kv("dip from call", dip == null ? "—" :
+          `<span style="color:${dip >= 10 ? "var(--good-text)" : dip < 0 ? "var(--down)" : "var(--ink)"}">${
+            (dip >= 0 ? "+" : "−") + c1(Math.abs(dip))}¢</span>`) +
+        kv("trigger", lv.trigger_ask != null ? "≤ " + c1(lv.trigger_ask) + "¢" : "—") +
+        (stt === "TRIGGERED" && lv.entry_ask != null
+          ? kv("A3 entry", c1(lv.entry_ask) + "¢" + (lv.improvement_c != null
+              ? ` (${c1(lv.improvement_c)}¢ better)` : "")) : "") +
+        kv("confidence", sideP == null ? "—" :
+          `<span style="color:${sideP >= 0.65 ? "var(--good-text)" : "var(--down)"}">${
+            (100 * sideP).toFixed(0)}%</span> vs floor 65%`) +
+        `</div>`;
+    }
+    dbox.innerHTML = dhead +
+      `<div class="action-word" style="color:${acol}">${act}</div>` +
+      `<div class="action-sub">${DESK_LINES[stt] || ""}</div>` + panel +
+      `<div class="dnote">incumbent buys at the call; A3 waits for a ≥10¢ better
+      price while the thesis stays alive.</div>`;
+  }
+  /* control-vs-treatment tile — the three headline numbers */
+  const abox = $id("ab-tile");
+  const ahead = `<div class="dk">Control vs Treatment —
+    <b style="color:var(--ink)">CONTROL</b> buy-at-call vs
+    <b style="color:var(--ink)">TREATMENT</b> A3 wait-for-dip</div>`;
+  const fwd = a3 && a3.forward;
+  if (!fwd) {
+    abox.innerHTML = ahead +
+      '<p class="mini">a3_live.json unavailable — no scoreboard is invented</p>';
+  } else {
+    const inc = fwd.incremental_per_eligible;
+    const incCol = inc == null ? "var(--muted)"
+      : inc > 0 ? "var(--good-text)" : inc < 0 ? "var(--down)" : "var(--ink)";
+    const imp = fwd.mean_entry_improvement_c, mr = fwd.miss_rate;
+    const three = `<div class="hl3">
+      <div><div class="hv big" style="color:${incCol}">${inc == null ? "—" : cents(inc)}</div>
+        <div class="hk">incremental P&amp;L / $1 / eligible window — the North Star</div></div>
+      <div><div class="hv">${imp == null ? "—" : (imp >= 0 ? "+" : "−") + c1(Math.abs(imp)) + "¢"}</div>
+        <div class="hk">mean entry improvement${imp == null ? " — no entries yet" : ""}</div></div>
+      <div><div class="hv">${mr == null ? "—" : (100 * mr).toFixed(0) + "%"}</div>
+        <div class="hk">miss rate — theses that never got their price</div></div>
+    </div>`;
+    const days = a3.registered_ts != null
+      ? Math.max(0, (Date.now() / 1000 - a3.registered_ts) / 86400) : null;
+    const nline = `n=${fwd.eligible != null ? fwd.eligible : "—"} eligible since registration` +
+      (fwd.eligible != null && fwd.eligible < 30
+        ? ` · <b>collecting — ${days == null ? "?" : days < 1
+            ? "under a day" : Math.floor(days) + "d"} old, too early to judge</b>` : "");
+    const rp = a3.replay || null;
+    const rline = rp ? `legacy replay — does not count: incremental ${
+        rp.incremental_per_eligible != null ? cents(rp.incremental_per_eligible) : "—"}/$1 ·
+      improvement ${rp.mean_entry_improvement_c != null
+        ? c1(rp.mean_entry_improvement_c) + "¢" : "—"} · miss ${
+        rp.miss_rate != null ? (100 * rp.miss_rate).toFixed(0) + "%" : "—"} (n=${
+        rp.eligible != null ? rp.eligible : "—"})` : "";
+    abox.innerHTML = ahead + three +
+      `<div class="dnote">${nline}${rline ? "<br>" + rline : ""}</div>`;
+  }
+  /* chart caption — trigger lives in contract ¢, not price dollars */
+  const cap = $id("a3-cap");
+  if (cap) {
+    if (lv && (stt === "WATCHING" || stt === "TRIGGERED") && lv.trigger_ask != null)
+      cap.innerHTML = `🎯 A3 trigger: ${side === "DOWN" ? "NO" : "YES"} ≤ ${
+        c1(lv.trigger_ask)}¢${curAsk != null ? ` (currently ${c1(curAsk)}¢)` : ""}
+        — the chart tracks price vs strike; the trigger lives in contract ¢`;
+    else cap.textContent = "";
+  }
 }
 
 function drawPlay() {
@@ -550,16 +713,14 @@ function drawCompare() {
     cell("Model says", (100 * p).toFixed(0) + "% YES", p >= 0.5 ? "yes" : "no",
       "leader arm, this window") +
     (() => {
-      const lv = S.oracle && S.oracle.live;
-      const call = lv && lv.call ? lv.call : "NO CALL";
-      return cell("🔮 Oracle", call,
-        call === "UP" ? "yes" : call === "DOWN" ? "no" : "mut",
-        call === "NO CALL" ? "not confident enough — the product stays silent"
-          : lv && lv.claimed_conf != null
-            ? `claimed conf ${(100 * lv.claimed_conf).toFixed(0)}%`
-            : "the product's call this window");
+      const lv = S.a3 && S.a3.live;
+      const st2 = lv && lv.state ? lv.state : null;
+      const act = deskAction(st2);
+      return cell("🎯 Desk", act,
+        act === "BUY" ? "yes" : act === "WAIT" ? "" : "mut",
+        st2 ? (DESK_LINES[st2] || "") : "a3_live.json unavailable");
     })() +
-    cell("The desk", TAU == null ? "GATE?" : gated ? "TRADE " + deskSide : "ABSTAIN",
+    cell("The gate", TAU == null ? "GATE?" : gated ? "TRADE " + deskSide : "ABSTAIN",
       TAU == null ? "" : gated ? (deskSide === "YES" ? "yes" : "no") : "",
       TAU == null ? "τ missing from manifest"
         : `confidence ${(100 * conf).toFixed(0)}% vs gate τ ${TAU}`) +
@@ -1267,7 +1428,7 @@ function drawAsOf() {
 async function boot() {
   const [st, man, prices, audit, db, board, world, prog, incidents, treatments,
     commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r, readiness,
-    oracle] =
+    a3] =
     await Promise.all([
       jget("../results/online_status.json"),
       jget("../results/site_manifest.json"),
@@ -1289,18 +1450,19 @@ async function boot() {
       jsonl("../results/pt7_trades.jsonl"),
       jsonl("../results/pt8_trades.jsonl"),
       jget("../results/readiness.json"),
-      jget("../results/oracle_calls.json"),
+      jget("../results/a3_live.json"),
     ]);
   const cfg = man && man.config ? man.config : {};
   if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
   else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
   else { TAU = null; TAU_SRC = ""; }
   S = { st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, readiness, oracle,
+    commentary, readiness, a3,
     ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
       pt6: pt6r, pt7: pt7r, pt8: pt8r } };
   try { drawAsOf(); } catch (e) {}
   try { drawPlay(); } catch (e) {}
+  try { drawThesisDesk(); } catch (e) {}
   try { drawWallet(); } catch (e) {}
   try { drawExecGrid(); } catch (e) {}
   try { drawWaterfall(); } catch (e) {}
