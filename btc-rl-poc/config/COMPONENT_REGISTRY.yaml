@@ -51,20 +51,34 @@ models:
   - {id: kb9, tier: T2, lifecycle: TREATMENT, runtime: true,
      note: TimesFM fusion challenger; temporary — not proof of
        long-term fair-value correctness}
-  - {id: kb3, tier: T2, lifecycle: SHADOW, runtime: false,
-     note: CANDIDATE FOR INCUMBENT pending M2 evaluator verdict}
-  - {id: kb4, tier: T2, lifecycle: RETIRED, runtime: false, note: offline only}
-  - {id: kb5, tier: T2, lifecycle: RETIRED, runtime: false,
-     note: edge anti-signal research benchmark}
+  # M3 corrections (08-30): the dependency map proved several
+  # "retired" arms are LOAD-BEARING for frozen registered policies —
+  # the M3 gate "A3/champion byte-equivalent" itself forbids removing
+  # them. Registry now states real roles instead of aspirations.
+  - {id: kb, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: INTERNAL, note: raw calibrated arm — kb2's p_cal input}
+  - {id: kb3, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: LEADER_POOL,
+     note: frozen champion input (PT_ARMS) — retiring it would change
+       the control policy; also INCUMBENT CANDIDATE pending M2}
+  - {id: kb4, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: LEADER_POOL, note: frozen champion input (PT_ARMS)}
+  - {id: kb5, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: ORACLE_V2_CALLER,
+     note: serves the registered M14-v2 prediction product; also the
+       edge anti-signal research stream}
   - {id: kb6, tier: T2, lifecycle: ARCHIVED, runtime: false,
-     reason: falsified (coverage 37%, calibration ~noise)}
-  - {id: kb7, tier: T2, lifecycle: RETIRED, runtime: false,
-     note: Chronos zero-shot temporal baseline (offline)}
-  - {id: kb8, tier: T2, lifecycle: RETIRED, runtime: false,
-     note: market+temporal blend benchmark (offline/shadow)}
+     reason: falsified (coverage 37%, calibration ~noise),
+     note: inference physically removed 08-30 (M3) — history frozen}
+  - {id: kb7, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: LEADER_POOL,
+     note: frozen champion input (PT_ARMS) + Conviction Book stream 2}
+  - {id: kb8, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: LEADER_POOL, note: frozen champion input (PT_ARMS)}
   - {id: kbf, tier: T2, lifecycle: ARCHIVED, runtime: false,
      reason: accuracy without monetizability — forecast arrives too late;
-       canonical teaching specimen}
+       canonical teaching specimen,
+     note: inference physically removed 08-30 (M3) — history frozen}
   - {id: t1_serving_pairs, tier: T1, lifecycle: CONTROL, runtime: true,
      note: "h1/h5/h15/h30 ctl + t9-h1/t10-h5/t7-h15/t9-h30 treatment;
        LEAN_RETRAIN enforces; all other t-arms FROZEN (serve nothing,

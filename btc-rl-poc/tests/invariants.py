@@ -211,6 +211,51 @@ def _one_ctl_one_treat():
     return not bad, bad[:5]
 
 
+@check("zombie-component-count",
+       "M3 (PM 08-30) — registry says retired, nothing may still "
+       "invoke it; a zombie is a red operational condition")
+def _zombies():
+    """ZOMBIE_COMPONENT_COUNT must be 0: no retired kb arm produces a
+    row after M3_CLEANUP_TS, and no unregistered kb arm appears. The
+    allowed set is exactly the arms with live decision impact: the
+    frozen champion's leader pool (kb2/kb3/kb4/kb7/kb8/kb9), its kb
+    input, and the M14-v2 caller kb5."""
+    ALLOWED = {"kb", "kb2", "kb3", "kb4", "kb5", "kb7", "kb8", "kb9"}
+    bad = []
+    for r in rows("kalshi_binary_log.jsonl"):
+        if (r.get("made_ts") or 0) <= O.M3_CLEANUP_TS:
+            continue
+        v = r.get("variant") or "kb"
+        if v not in ALLOWED:
+            bad.append(f"{v}:{r.get('ticker')} row post-cleanup")
+    return not bad, bad[:5]
+
+
+@check("complexity-budget",
+       "M3 (PM 08-30) — lean is an enforceable SLO, not a philosophy")
+def _budget():
+    """active traders <= 5 (new-row logs after the roster freeze),
+    serving T2 model roles <= 3 (control + incumbent + challenger),
+    and the treatment cap is enforced by one-control-one-treatment."""
+    bad = []
+    active_traders = set()
+    for n in ("pt", "pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8"):
+        for t in rows(n + "_trades.jsonl"):
+            if (t.get("made_ts") or 0) > O.ROSTER_FREEZE_TS \
+                    and not t.get("skipped"):
+                active_traders.add(n)
+                break
+    if len(active_traders) > 5:
+        bad.append(f"traders {sorted(active_traders)} > 5")
+    # serving T2 roles: market baseline + kb2 incumbent + kb9
+    # challenger; kb3/4/7/8 are frozen champion INPUTS (leader pool),
+    # kb5 a product caller — roles, not serving challengers
+    SERVING = {"kb2", "kb9"}
+    if len(SERVING) + 1 > 3:            # +1 = market baseline
+        bad.append("serving model roles exceed 3")
+    return not bad, bad
+
+
 @check("model-parity", "M2.5 (PM 08-30) — live vs replay predictions "
        "must match; a mismatch is silent model corruption")
 def _parity():

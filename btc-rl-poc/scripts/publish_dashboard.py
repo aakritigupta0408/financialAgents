@@ -32,7 +32,8 @@ PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "board.html", "analyst.html", "home_classic.html", "glossary.js", "glossary.json", "nav.js",
          "universe.html", "clock.html", "agents.html", "museum.html",
          "instrument.html", "watchtower.html", "ledgers.html",
-         "diagnosis.html", "paper.html", "archive.html", "models.html"]
+         "diagnosis.html", "paper.html", "archive.html", "models.html",
+         "backend.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -93,6 +94,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("model_qualification.json", None),
     ("parity.json", None),
     ("feature_snapshots.jsonl", 200),
+    ("system_change_log.jsonl", 500),
     ("reconciliation.json", None),
     ("meta_monitors.json", None),
     ("leakage_canaries.json", None),
@@ -121,7 +123,11 @@ def copy_bundle(dest: Path) -> None:
     (dest / "site").mkdir(parents=True, exist_ok=True)
     (dest / "results").mkdir(parents=True, exist_ok=True)
     for name in PAGES:
-        shutil.copy2(ROOT / "site" / name, dest / "site" / name)
+        src = ROOT / "site" / name
+        if not src.exists():        # a listed page may not be built
+            print(f"page missing (skipped): {name}")
+            continue
+        shutil.copy2(src, dest / "site" / name)
     for name, cap in DATA:
         src = ROOT / "results" / name
         if not src.exists():

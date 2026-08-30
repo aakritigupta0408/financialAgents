@@ -466,6 +466,15 @@ RETIRED_TREATMENTS = frozenset({
 PIT_SNAP_NAME = "feature_snapshots.jsonl"
 PIT_SCHEMA_V = "pit-v1"
 
+# M3 vertical cleanup (PM 08-30): the ONLY kb arms with zero live
+# decision impact. kb3/kb4/kb7/kb8 stay — they are inside the FROZEN
+# champion's leader pool (PT_ARMS), so removing them would change the
+# control policy itself; kb5 serves the M14-v2 oracle product.
+# kb6 (fast-info, falsified) and kbf (T-3min call, accuracy-without-
+# monetizability tombstone) stop producing new rows; history frozen.
+RETIRED_MODEL_ARMS = frozenset({"kb6", "kbf"})
+M3_CLEANUP_TS = 1_788_078_000   # 2026-08-30 — zombie clock starts here
+
 
 def _pit_snapshot(variant, ticker, close_ts, decision_ts, receive_ts,
                   model_desc, feature_obj, prediction, extra=None):
@@ -2969,13 +2978,16 @@ def run(once: bool = False) -> None:
                     # kb6 — fast-information arm: perp lead, tape, whale
                     # flow, OI delta; the channels aimed at the EDGE
                     # column rather than the accuracy column
-                    b6x = _kb6_features(snap, k_pup, bx, pf, mins_left)
-                    p6 = round(kb6_logit.predict(b6x), 4)
-                    kb.append({**common, "variant": "kb6", "p_up": p6,
-                               "call": int(p6 >= 0.5),
-                               "b6x": [round(v, 5) for v in b6x],
-                               "trained": kb6_logit.updates})
-                    kb_made.add(("kb6", pm_mkt["ticker"], slot1))
+                    if "kb6" not in RETIRED_MODEL_ARMS:
+                        b6x = _kb6_features(snap, k_pup, bx, pf,
+                                            mins_left)
+                        p6 = round(kb6_logit.predict(b6x), 4)
+                        kb.append({**common, "variant": "kb6",
+                                   "p_up": p6,
+                                   "call": int(p6 >= 0.5),
+                                   "b6x": [round(v, 5) for v in b6x],
+                                   "trained": kb6_logit.updates})
+                        kb_made.add(("kb6", pm_mkt["ticker"], slot1))
                     # kb7-fm — zero-shot foundation-model arm (Chronos
                     # Bolt): the LLM-timeseries direction, run against
                     # our ladder. No training, no state; a pretrained
@@ -3615,6 +3627,7 @@ def run(once: bool = False) -> None:
                     # operating point where per-class precision/recall
                     # cleared 80/80 in backtest (tests/window_call_eval.py)
                     if (mins_left <= 3.4
+                            and "kbf" not in RETIRED_MODEL_ARMS
                             and ("kbf", pm_mkt["ticker"], 0) not in kb_made):
                         kb.append({**common, "variant": "kbf", "p_up": p_cal,
                                    "call": int(p_cal >= 0.5),
