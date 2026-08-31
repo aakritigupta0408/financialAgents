@@ -3,3 +3,8 @@
 {"ts": 1788133200.484, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 0, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
 {"ts": 1788133500.623, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788133200.484, "state": "VERIFICATION_FAIL", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 5, "singleton": false, "processes": 0, "audit_progress": true, "scientific_unchanged": true}
 {"ts": 1788133500.623, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788133200.484, "state": "FAILED_CLOSED", "reason": "verification failed \u2014 system stays contained"}
+{"ts": 1788134100.625, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 510}
+{"ts": 1788134100.625, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788134100.77, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 2, "procs_before": 0, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788134401.255, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788134100.77, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 29, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788134401.255, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788134100.77, "state": "RESTORED", "reason": null}
