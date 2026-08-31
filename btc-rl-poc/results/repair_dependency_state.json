@@ -1,0 +1,9 @@
+{
+ "generated_ts": 1788177001,
+ "COMPUTE": "HEALTHY",
+ "STATE": "HEALTHY",
+ "DELIVERY": "HEALTHY",
+ "heartbeat_age_s": 19,
+ "processes": 1,
+ "ordering_law": "COMPUTE -> STATE -> DELIVERY; downstream repairs suppressed while upstream unhealthy"
+}
