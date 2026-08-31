@@ -248,9 +248,9 @@ details.drawer > summary { cursor: pointer; font-size: 12px;
 <!-- CARD 1 ─ LIVE RESEARCH PRIORITY -->
 <section>
   <div class="eyebrow">card 1 · live research priority</div>
-  <h2>A3-v1.1 — entry timing vs frozen control</h2>
+  <h2>A3-v2 — entry timing vs frozen control</h2>
   <p class="sub small">One paired question per window: <b>C0</b> buys
-  the moment the thesis fires; <b>T10</b> waits for a ≥10¢ valid dip
+  the moment the thesis fires; <b>T05</b> waits for a ≥5¢ valid dip
   from the same call. Same windows, same theses — only entry timing
   differs. Forward, post-registration, ¢ per $1 per eligible window.</p>
   <div id="a3"><p class="mini">loading a3_live.json…</p></div>
@@ -359,7 +359,7 @@ function renderStrip(prog, a3, inc) {
   const hs = (k, v) => `<div class="hs"><div class="k">${k}</div>` +
     `<div class="v">${v}</div></div>`;
   document.getElementById("hstrip").innerHTML =
-    hs("forward strategy", `A3-v1.1 <span class="state st-collect">` +
+    hs("forward strategy", `A3-v2 <span class="state st-collect">` +
       `COLLECTING</span><br><small>n = ${n} eligible</small>`) +
     hs("legacy best", best
       ? `${esc(best.id)} <small>${cS(best.effect)} · P(Δ>0) ${
@@ -432,7 +432,7 @@ function renderA3(a3) {
     cell("control · C0 buy-at-call",
       `<div class="n">${cS(fwd.control_pnl_per_eligible)}</div>` +
       `<div class="d">per eligible window</div>`) +
-    cell("treatment · T10 wait ≥10¢ dip",
+    cell("treatment · T05 wait ≥5¢ dip",
       `<div class="n">${cS(fwd.a3_pnl_per_eligible)}</div>` +
       `<div class="d">per eligible window</div>`) +
     cell("entry quality",
@@ -486,12 +486,12 @@ function renderA3(a3) {
   const t10 = { eligible: fwd.eligible, filled: fwd.filled,
     pnl_per_eligible: fwd.a3_pnl_per_eligible };
   const drawer = `<details class="drawer" data-x="a3-shadow">` +
-    `<summary>Threshold shadows — T05/T15 do not control A3-v1.1
-    </summary><div class="a3tblwrap"><table class="a3tbl">` +
+    `<summary>Diagnostic shadow — T10 (the rejected v1.1 rule) does
+    not control A3-v2</summary><div class="a3tblwrap"><table class="a3tbl">` +
     `<tr><th>arm</th><th>trigger</th><th>eligible</th><th>fill %</th>` +
     `<th>PnL / eligible</th></tr>` +
-    shRow("T05", sh.T05, false) + shRow("T10", t10, true) +
-    shRow("T15", sh.T15, false) + `</table></div>` +
+    shRow("T05", t10, true) + shRow("T10", sh.T10, false) +
+    `</table></div>` +
     `<p class="mini">Shadows watch the same tape and place nothing.
     A single window cannot rank thresholds — muted on purpose.</p>` +
     `</details>`;
@@ -542,7 +542,7 @@ function prow(prog, e) {
 }
 function a3row() {
   return `<details class="prow" data-x="p-A3"><summary>` +
-    `<span class="nm"><b>A3-v1.1</b><span>entry timing</span></span>` +
+    `<span class="nm"><b>A3-v2</b><span>entry timing</span></span>` +
     `<span class="qq">does waiting improve entry economics?</span>` +
     `<span class="dd" id="a3rowd">–</span>` +
     `<span class="ee" id="a3rowe">collecting</span>` +

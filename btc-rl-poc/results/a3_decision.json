@@ -1,16 +1,13 @@
 {
- "generated_ts": 1788147296,
- "experiment": "A3-v1.1",
+ "generated_ts": 1788149487,
+ "experiment": "A3-v2",
  "registered_gate_n": 50,
- "eligible_n": 55,
- "primary_effect_per_eligible": -0.0954,
- "ci95_bootstrap": [
-  -0.1827,
-  -0.0101
- ],
- "concentration_survives_ex_best1": true,
- "decision": "REJECT",
- "why": "95% bootstrap CI excludes 0 from below \u2014 waiting demonstrably loses under the frozen rule",
+ "eligible_n": 0,
+ "primary_effect_per_eligible": null,
+ "ci95_bootstrap": null,
+ "concentration_survives_ex_best1": null,
+ "decision": "INSUFFICIENT_EVIDENCE",
+ "why": "n=0 < registered decision gate 50",
  "allowed_outcomes": [
   "CONTINUE",
   "REJECT",

@@ -40,17 +40,18 @@ def main():
                         for m in qual.values()) if qual else None
     queue = [
         {"priority": "P0",
-         "research_question": "A3 forward qualification — does "
-         "waiting for a dip beat immediate entry after costs?",
-         "bottleneck": f"evidence n={n} (compare 25, decision 50)",
-         "evidence": "a3_live.json; experiment_analysis.json — two "
-         "loss mechanisms identified (opportunity cost + "
-         "fill-conditioned thesis degradation)",
+         "research_question": "A3-v2 forward qualification — does "
+         "waiting for a >=5c dip beat immediate entry after costs? "
+         "(fresh prospective test motivated by A3-v1.1's clean "
+         "REJECT: fills always won, misses dominated at 10c)",
+         "bottleneck": f"evidence n={n} (compare 25, decision 50; "
+         "fresh counter from 2026-08-30 registration)",
+         "evidence": "a3_live.json (v2); a3_v1_final.json (closed "
+         "predecessor); A3_V2_SPEC.yaml registration rationale",
          "estimated_impact": "decides the desk's entry policy",
          "state": "COLLECTING", "blocked_by": "evidence N",
          "owner": "market clock",
-         "next_gate": "registered decision gate; watch flags "
-         "informative from n>=10"},
+         "next_gate": "registered decision gate at n>=50"},
         {"priority": "P0",
          "research_question": "Feature-discovery program Phase 1: "
          "free-data CAPTURE_ONLY (F-MICRO existing tape; F-XVENUE "

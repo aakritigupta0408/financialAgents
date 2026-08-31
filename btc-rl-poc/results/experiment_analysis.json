@@ -1,64 +1,38 @@
 {
- "generated_ts": 1788091023,
- "experiment": "A3-v1.1",
- "n_eligible": 18,
- "paired_delta_per_eligible": -0.0203,
+ "generated_ts": 1788149601,
+ "experiment": "A3-v2",
+ "n_eligible": 0,
+ "paired_delta_per_eligible": null,
  "decomposition": {
-  "gross_fill_gain": 1.6196,
-  "timeout_control_pnl": 2.5673,
+  "gross_fill_gain": 0,
+  "timeout_control_pnl": 0,
   "missed_control_pnl": 0,
-  "invalidation_control_pnl": -0.5815,
-  "net_waiting_value": -0.3662,
-  "identity_residual": -0.0,
+  "invalidation_control_pnl": 0,
+  "net_waiting_value": 0,
+  "identity_residual": 0,
   "note": "under A3-v1.1 MISSED \u2261 timed-out (dip never arrived by cutoff), so missed_control_pnl is 0 unless a new state path appears; differential execution costs are inside gross_fill_gain (both arms priced at their own executable ask)",
-  "econ_classes": {
-   "A_FILLED_GOOD": {
-    "n": 8,
-    "delta_contribution": 1.6196
-   },
-   "C_MISSED_WINNER": {
-    "n": 8,
-    "delta_contribution": -2.5673
-   },
-   "F_INVALIDATED_LOSER": {
-    "n": 1,
-    "delta_contribution": 1.0
-   },
-   "E_INVALIDATED_WINNER": {
-    "n": 1,
-    "delta_contribution": -0.4185
-   }
-  }
+  "econ_classes": {}
  },
- "econ_class_distribution": {
-  "A_FILLED_GOOD": 8,
-  "C_MISSED_WINNER": 8,
-  "F_INVALIDATED_LOSER": 1,
-  "E_INVALIDATED_WINNER": 1
- },
+ "econ_class_distribution": {},
  "thesis_integrity_gap": {
-  "fill_win_rate": 0.625,
-  "eligible_win_rate": 0.778,
+  "fill_win_rate": null,
+  "eligible_win_rate": null,
   "interpretation": "fills land disproportionately on windows that go on to lose \u2014 dips are partly informative repricing, not only overreaction"
  },
- "watch_flags_firing": [
-  "paired_delta_negative",
-  "miss_cost_overwhelms",
-  "thesis_integrity"
- ],
+ "watch_flags_firing": [],
  "loss_mechanisms": [
   {
    "term": "timeout_control_pnl",
-   "value": 2.5673,
+   "value": 0,
    "mechanism": "opportunity cost \u2014 winners that never offered the dip"
   },
   {
    "term": "thesis_integrity_gap",
-   "value": 0.153,
+   "value": null,
    "mechanism": "fill-conditioned thesis degradation \u2014 adverse selection of the dip"
   }
  ],
- "state": "WATCH",
+ "state": "COLLECTING",
  "recommended_action": "COLLECT",
  "prohibited_interpretation": "do not infer an optimal threshold from the current sample; a smaller dip could reduce miss cost while worsening adverse-selection exposure \u2014 only the registered decision gate may adjudicate"
 }

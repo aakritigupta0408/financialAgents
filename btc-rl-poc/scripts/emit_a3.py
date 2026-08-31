@@ -1,4 +1,9 @@
-"""A3-v1.1 forward evaluator (TA specification, 2026-08-29).
+"""A3 forward evaluator — ACTIVE: A3-v2 (registered 2026-08-30).
+
+A3-v1.1 (10c dip) ran 2026-08-29..30, was REJECTED at its registered
+gate and is CLOSED; its frozen evidence lives in a3_v1_final.json /
+a3_v1_window_evaluation.jsonl / a3_v1_decision.json. v2 changes ONE
+variable (dip 10c -> 5c) per A3_V2_SPEC.yaml.
 
 v1.1 supersedes the v0 shortcut REGISTERED same evening: v0 used
 modeled asks (100p+2.5), which §4 forbids ("never model-derived
@@ -35,21 +40,30 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
-CALL_CONF, FLOOR, DIP_C = 0.75, 0.65, 10.0
+# ================= ACTIVE EXPERIMENT: A3-v2 =========================
+# A3-v1.1 was REJECTED at its registered gate (n=56, CI below zero)
+# and CLOSED by PM ratification 2026-08-30. Its evidence is frozen
+# forever in results/a3_v1_final.json (sha 22014cee8ebe2b82) +
+# a3_v1_window_evaluation.jsonl (sha 669bf952ace24ceb) +
+# a3_v1_decision.json. Reopen: NEVER as v1.1.
+# v2 changes EXACTLY ONE thing: dip threshold 10c -> 5c. Everything
+# else identical; fresh forward counter; no historical shadow row
+# counts toward the v2 statistic (A3_V2_SPEC.yaml).
+EXPERIMENT_ID = "A3-v2"
+CALL_CONF, FLOOR, DIP_C = 0.75, 0.65, 5.0
 ENV_LO, ENV_HI = 6.0, 13.0
 CUTOFF_S = 60
 FRESH_S = 10.0
-V11_REGISTERED_TS = 1788059100   # 2026-08-29 ~19:45 PT — v1.1 frozen
-# §53 A3-12: the spec file's hash at v1.1 freeze. If A3_SPEC.yaml
-# ever differs, the invariant fails — any change is a new experiment.
-SPEC_HASH_FROZEN = "2dbc2201416a296d"
-# Prospective shadows (TA order, registered 2026-08-29 20:00 PT):
-# identical machines at 5c / 15c dips, observing the SAME future
-# tape, placing nothing, unable to alter v1.1. Registered NOW so no
-# retrospective threshold selection is ever possible.
-SHADOWS = {"T05": 5.0, "T15": 15.0}
-SHADOW_REGISTERED_TS = 1788067225
+V2_REGISTERED_TS = 1788149400    # 2026-08-30 — PM ratification
+SPEC_FILE = "A3_V2_SPEC.yaml"
+SPEC_HASH_FROZEN = "ab0168b48c6ba794"   # A3_V2_SPEC.yaml at freeze
+# Shadow: T10 only — the rejected v1.1 rule as a diagnostic
+# continuity benchmark. T15 retired (deep-wait mechanism understood;
+# no threshold ladder zoo).
+SHADOWS = {"T10": 10.0}
+SHADOW_REGISTERED_TS = V2_REGISTERED_TS
 MARKOUT_H = (1, 5, 10, 30, 60)
+LEDGER_NAME = "a3v2_window_evaluation.jsonl"
 
 
 def fee(a):
@@ -157,7 +171,7 @@ def main():
     for tk, rs in kb2.items():
         rs.sort(key=lambda r: -r["mins_left"])
         cts = max(r.get("close_ts") or 0 for r in rs)
-        if cts < V11_REGISTERED_TS:
+        if cts < V2_REGISTERED_TS:
             continue                      # clean forward counter
         env = [r for r in rs if ENV_LO <= r["mins_left"] <= ENV_HI]
         call = next((r for r in env
@@ -435,7 +449,7 @@ def main():
               "keep collecting; no threshold change is admissible"
     (RES / "a3_decision.json").write_text(json.dumps({
         "generated_ts": int(time.time()),
-        "experiment": "A3-v1.1", "registered_gate_n": 50,
+        "experiment": EXPERIMENT_ID, "registered_gate_n": 50,
         "eligible_n": n_el,
         "primary_effect_per_eligible": round(sum(deltas_all) / n_el, 4)
         if n_el else None,
@@ -478,7 +492,7 @@ def main():
     excl = [e for e in ledger if e["state"] == "SYSTEM_EXCLUDED"]
     import hashlib
     spec_hash = hashlib.sha256(
-        (ROOT / "A3_SPEC.yaml").read_bytes()).hexdigest()[:16]
+        (ROOT / SPEC_FILE).read_bytes()).hexdigest()[:16]
     # the five failure modes the research manager watches (TA order);
     # thresholds are WATCH flags, never actions
     fw = None
@@ -510,7 +524,12 @@ def main():
                 "top10pct_share"),
             "note": "WATCH flags only — thresholds informative at "
                     "n>=10; no automatic action"}
-    doc = {"generated_ts": now, "spec": "A3_SPEC.yaml v1.1",
+    doc = {"generated_ts": now, "spec": SPEC_FILE,
+           "dip_c": DIP_C,
+           "experiment_id": EXPERIMENT_ID,
+           "predecessor": {"experiment": "A3-v1.1",
+                           "outcome": "CLOSED_REJECTED",
+                           "final": "a3_v1_final.json"},
            "failure_watch": fw,
            "spec_hash": spec_hash,
            "spec_hash_frozen": SPEC_HASH_FROZEN,
@@ -523,7 +542,7 @@ def main():
                        "to capture the opportunity set"},
            "outlier_dependence": outlier,
            "shadows": shadow_agg,
-           "registered_ts": V11_REGISTERED_TS,
+           "registered_ts": V2_REGISTERED_TS,
            "price_source": "EXECUTABLE event-tape asks (1s) — "
            "modeled asks forbidden (spec §4); v0 ledger retained as "
            "exploratory replay only",
@@ -542,7 +561,7 @@ def main():
               "shadow_config_hash": sh_hash,
               "provenance": "DERIVED_EX_POST",
               "fill_source": "V1_TAKE_ASK_CONVENTION"}
-    with (RES / "a3_window_evaluation.jsonl").open("w") as f:
+    with (RES / LEDGER_NAME).open("w") as f:
         for e in ledger:
             row = {**common, **{k: v for k, v in e.items()
                                 if k != "shadows"}}
@@ -555,7 +574,7 @@ def main():
                     row["a3_pnl"] - row["control_pnl"], 4)
             f.write(json.dumps(row) + "\n")
     (RES / "a3_live.json").write_text(json.dumps(doc, indent=1))
-    print(f"a3-v1.1: live={doc['live']['state']} · eligible "
+    print(f"{EXPERIMENT_ID}: live={doc['live']['state']} · eligible "
           f"{agg['eligible']} filled {agg['filled']} excluded "
           f"{agg['system_excluded']} · incr "
           f"{agg['incremental_per_eligible']}")

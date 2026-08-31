@@ -226,6 +226,25 @@ def _stale_never_proposes():
     return not bad, bad[:5]
 
 
+@check("a3-v1-evidence-immutable",
+       "PM ratification 08-30 — A3-v1.1 CLOSED_REJECTED: its frozen "
+       "evidence may never change, ever")
+def _a3_v1_frozen():
+    import hashlib
+    WANT = {"a3_v1_final.json": "22014cee8ebe2b82",
+            "a3_v1_window_evaluation.jsonl": "669bf952ace24ceb"}
+    bad = []
+    for name, want in WANT.items():
+        p = RES / name
+        if not p.exists():
+            bad.append(f"{name} MISSING")
+            continue
+        got = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
+        if got != want:
+            bad.append(f"{name} MUTATED ({got} != {want})")
+    return not bad, bad
+
+
 @check("repair-scientific-integrity",
        "M6.1 (PM 08-30) — REPAIR_DID_NOT_CHANGE: a repair may only "
        "reach RESTORED with scientific-unchanged evidence, verified "
@@ -440,8 +459,10 @@ def _a3():
         if e.get("state") == "FILLED":
             if (e.get("entry_conf") or 1) < 0.65:
                 bad.append(f"{e.get('ticker')}: conf<floor")
-            if (e.get("improvement_c") or 0) < 10:
-                bad.append(f"{e.get('ticker')}: dip<10c")
+            # dip gate is experiment-versioned: the artifact carries
+            # its own registered threshold (v1.1: 10c, v2: 5c)
+            if (e.get("improvement_c") or 0) < (d.get("dip_c") or 10):
+                bad.append(f"{e.get('ticker')}: dip<gate")
         if e.get("settled") and ("control_pnl" not in e
                                  or "a3_pnl" not in e):
             bad.append(f"{e.get('ticker')}: unpaired")
@@ -461,11 +482,16 @@ def _a3_indep():
           (entry_ts + h consistency: markout fields only on FILLED
           rows with entry_ts);
     A3-19 shadow arms never appear in any trader order ledger."""
-    p = RES / "a3_window_evaluation.jsonl"
-    if not p.exists():
-        return True, ["artifact not yet published"]
     bad = []
-    for l in p.open():
+    paths = [RES / "a3_window_evaluation.jsonl",
+             RES / "a3v2_window_evaluation.jsonl"]
+    lines = []
+    for p in paths:
+        if p.exists():
+            lines.extend(p.open())
+    if not lines:
+        return True, ["artifacts not yet published"]
+    for l in lines:
         e = json.loads(l)
         st_ = e.get("state")
         if st_ == "FILLED":
@@ -499,7 +525,7 @@ def _a3_indep():
     def _pnl(ask, won):
         cost = ask + 7 * (ask / 100.0) * (1 - ask / 100.0)
         return (100 - cost) / cost if won else -1.0
-    for l in p.open():
+    for l in lines:
         e = json.loads(l)
         if e.get("state") == "FILLED" and e.get("settled"):
             want_c0 = round(_pnl(e["call_ask"], e["won"]), 4)

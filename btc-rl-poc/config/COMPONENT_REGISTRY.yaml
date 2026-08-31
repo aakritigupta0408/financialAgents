@@ -118,8 +118,18 @@ models:
        keep-all-horizons order"}
 
 experiments:
-  - {id: A3-v1.1, lifecycle: TREATMENT, runtime: true, control: C0,
-     treatment: T10, shadows: [T05, T15], frozen: true}
+  - {id: A3-v1.1, lifecycle: CLOSED_REJECTED, runtime: false,
+     control: C0, treatment: T10,
+     final_verdict: "REJECT at registered gate (n=56, paired delta
+       -10.4c/eligible, 95% CI below zero)",
+     evidence: "a3_v1_final.json sha 22014cee8ebe2b82 (immutable,
+       invariant-guarded)", reopen: NEVER as v1.1,
+     canonical_completed_experiment: true}
+  - {id: A3-v2, lifecycle: TREATMENT, runtime: true, control: C0,
+     treatment: T05, shadows: [T10-diagnostic], frozen: true,
+     spec: A3_V2_SPEC.yaml, registered: 2026-08-30,
+     note: "one variable changed vs v1.1 (dip 10c->5c); fresh n=0;
+       motivated by v1.1 failure, NOT an optimization claim"}
   - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
      control: t_exec, treatment: t_exec_reg,
      note: the ONE legacy pair; after verdict archive loser, close family}

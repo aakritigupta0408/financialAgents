@@ -1,41 +1,41 @@
 {
- "generated_ts": 1788093695,
+ "generated_ts": 1788149433,
  "experiment": "A3-v1.1 (observational \u2014 never modifies A3)",
  "thesis_adverse_selection": {
-  "fill_win_rate": 0.667,
-  "eligible_win_rate": 0.81,
-  "gap": 0.143,
-  "n_fills": 9,
-  "n_eligible": 21,
+  "fill_win_rate": 0.737,
+  "eligible_win_rate": 0.893,
+  "gap": 0.156,
+  "n_fills": 19,
+  "n_eligible": 56,
   "state": "PRESENT",
   "meaning": "outcome-level: dips partly ARE the market correctly repricing the thesis down"
  },
  "execution_adverse_selection": {
   "by_horizon": {
    "markout_1s": {
-    "n": 9,
-    "mean_c": 0.33,
-    "frac_negative": 0.89
+    "n": 19,
+    "mean_c": -0.37,
+    "frac_negative": 0.95
    },
    "markout_5s": {
-    "n": 9,
-    "mean_c": 2.56,
-    "frac_negative": 0.78
+    "n": 19,
+    "mean_c": 1.68,
+    "frac_negative": 0.84
    },
    "markout_10s": {
-    "n": 9,
-    "mean_c": 5.0,
-    "frac_negative": 0.56
+    "n": 19,
+    "mean_c": 3.53,
+    "frac_negative": 0.68
    },
    "markout_30s": {
-    "n": 8,
-    "mean_c": 4.0,
-    "frac_negative": 0.38
+    "n": 18,
+    "mean_c": 4.28,
+    "frac_negative": 0.39
    },
    "markout_60s": {
-    "n": 9,
-    "mean_c": 5.44,
-    "frac_negative": 0.22
+    "n": 19,
+    "mean_c": 6.69,
+    "frac_negative": 0.21
    }
   },
   "state": "NOT_EVIDENT",

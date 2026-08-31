@@ -36,7 +36,7 @@ HORIZONS = ("markout_1s", "markout_5s", "markout_10s",
 
 
 def main():
-    age = fw.stale("a3_window_evaluation.jsonl", 3600)
+    age = fw.stale("a3v2_window_evaluation.jsonl", 3600)
     if age is not None:
         fw.submit(agent="execution_researcher",
                   action_class="OBSERVE",
@@ -46,7 +46,7 @@ def main():
                   evidence=["a3_window_evaluation.jsonl mtime"])
         print("execution_researcher: STALE_INPUT — no diagnosis")
         return
-    p = RES / "a3_window_evaluation.jsonl"
+    p = RES / "a3v2_window_evaluation.jsonl"
     rows = []
     if p.exists():
         for l in p.open():
@@ -109,7 +109,7 @@ def main():
                 == "PRESENT" else "NEITHER_EVIDENT")
     doc = {
         "generated_ts": int(time.time()),
-        "experiment": "A3-v1.1 (observational — never modifies A3)",
+        "experiment": "A3 (active version; observational — never modifies A3)",
         "thesis_adverse_selection": thesis_as,
         "execution_adverse_selection": exec_as,
         "dominant_channel": dominant,
@@ -119,7 +119,7 @@ def main():
                         "isolated Kalshi dips?",
             "status": "BLOCKED — synchronized F-XVENUE tape must "
                       "pass Gate F1 (>= 2026-09-06)"},
-        "provenance": ["a3_window_evaluation.jsonl"],
+        "provenance": ["a3v2_window_evaluation.jsonl"],
     }
     (RES / "execution_research.json").write_text(
         json.dumps(doc, indent=1))
@@ -135,7 +135,7 @@ def main():
         recommendation="observe; the dominant channel decides what a "
                        "future treatment must solve — no A3 change",
         evidence=["execution_research.json",
-                  "a3_window_evaluation.jsonl"],
+                  "a3v2_window_evaluation.jsonl"],
         n=n_f)
     print(f"execution_researcher: fills {n_f}/{n_el} · thesis-AS "
           f"{thesis_as['state']} · exec-AS {exec_as['state']} · "

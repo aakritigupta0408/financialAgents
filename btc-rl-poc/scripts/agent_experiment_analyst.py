@@ -46,7 +46,7 @@ def main():
                                   (isinstance(v, dict) and v.get("flag")))]
     analysis = {
         "generated_ts": int(time.time()),
-        "experiment": "A3-v1.1",
+        "experiment": a3.get("experiment_id", "A3"),
         "n_eligible": n,
         "paired_delta_per_eligible": f.get("incremental_per_eligible"),
         "decomposition": dec,

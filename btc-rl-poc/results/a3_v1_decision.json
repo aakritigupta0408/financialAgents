@@ -1,0 +1,21 @@
+{
+ "generated_ts": 1788149400,
+ "experiment": "A3-v1.1",
+ "registered_gate_n": 50,
+ "eligible_n": 56,
+ "primary_effect_per_eligible": -0.1038,
+ "ci95_bootstrap": [
+  -0.1902,
+  -0.013
+ ],
+ "concentration_survives_ex_best1": true,
+ "decision": "REJECT",
+ "why": "95% bootstrap CI excludes 0 from below \u2014 waiting demonstrably loses under the frozen rule",
+ "allowed_outcomes": [
+  "CONTINUE",
+  "REJECT",
+  "QUALIFY",
+  "INSUFFICIENT_EVIDENCE"
+ ],
+ "law": "no interpretation-induced threshold change in the same cycle; a clean failure is a successful research outcome; full mechanism evidence lives in a3_live (decomposition, watches, shadows, markouts)"
+}
