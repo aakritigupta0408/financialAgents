@@ -180,6 +180,72 @@ def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
                     "UNAVAILABLE, .pre_rebuild preserved"}) + "\n")
             out.append(verdict)
             continue
+        # ---- R3 branch: fetch the REAL destination -----------------
+        if str(r.get("repair_id", "")).startswith("M6-R3"):
+            try:
+                sys_path_added = str(RES.parent / "scripts")
+                import sys as _sys
+                if sys_path_added not in _sys.path:
+                    _sys.path.insert(0, sys_path_added)
+                import repair_r3
+                pub, err = repair_r3.fetch_published(repair_r3.CFG)
+            except Exception:
+                pub, err = None, "FETCH_FAILED"
+            checks3 = {"destination_reachable": err is None,
+                       "fetch_error": err}
+            ok3 = False
+            if isinstance(pub, dict):
+                checks3["schema_valid"] = True
+                checks3["experiment_id_matches"] = \
+                    pub.get("experiment_id") == \
+                    r.get("local_experiment_id")
+                pn = ((pub.get("forward") or {}).get("eligible"))
+                ln = r.get("local_eligible_n")
+                # semantic: published n must be >= the value at repair
+                # time (market clock only moves forward) and identity
+                # must match — catches wrong-file uploads that
+                # returned rc=0
+                checks3["semantic_eligible_n"] = (
+                    pn is not None and ln is not None and pn >= ln)
+                checks3["fresh_vs_repair"] = \
+                    (pub.get("generated_ts") or 0) >= \
+                    (r.get("local_generated_ts") or 0)
+                ok3 = all(checks3.get(k) for k in
+                          ("schema_valid", "experiment_id_matches",
+                           "semantic_eligible_n", "fresh_vs_repair"))
+            sci3 = False
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                inv = json.loads(
+                    (res / "invariants.json").read_text())
+                sci3 = a3.get("spec_hash_ok") is True \
+                    and not inv.get("failed")
+            except Exception:
+                pass
+            verdict = {"ts": round(now, 3),
+                       "repair_id": r.get("repair_id"),
+                       "plane": "DELIVERY",
+                       "verifies_attempt_ts": r["ts"],
+                       "state": "VERIFICATION_PASS" if ok3
+                       else "VERIFICATION_FAIL",
+                       "verified_by": "meta_monitor (independent "
+                                      "destination fetch)",
+                       "checks": checks3,
+                       "scientific_unchanged": sci3}
+            with heal.open("a") as f:
+                f.write(json.dumps(verdict) + "\n")
+                f.write(json.dumps({
+                    "ts": round(now, 3),
+                    "repair_id": r.get("repair_id"),
+                    "plane": "DELIVERY",
+                    "verifies_attempt_ts": r["ts"],
+                    "state": "RESTORED" if ok3 and sci3
+                    else "FAILED_CLOSED",
+                    "reason": None if ok3 and sci3 else
+                    "destination verification failed — published "
+                    "state stays UNAVAILABLE"}) + "\n")
+            out.append(verdict)
+            continue
         # ---- R1 branch: independent process checks -----------------
         hb_ok = False
         try:

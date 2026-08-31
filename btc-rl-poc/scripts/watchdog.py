@@ -247,6 +247,16 @@ def main(cfg=CFG):
                 print(f"watchdog: R2 {acted}")
     except Exception as e:
         print(f"watchdog: R2 pass error {e!r}")
+    # R3 (delivery) runs LAST — dependency ordering: its canonical-
+    # health gate refuses while compute/state planes are broken
+    try:
+        import repair_r3
+        if repair_r3.r3_enabled(repair_r3.CFG):
+            s3 = repair_r3.run_r3(repair_r3.CFG)
+            if s3 != "HEALTHY_NO_TRIGGER":
+                print(f"watchdog: R3 {s3}")
+    except Exception as e:
+        print(f"watchdog: R3 pass error {e!r}")
     if r1_enabled(cfg):
         return run_r1(cfg)
     # legacy protective path (certification period): unchanged

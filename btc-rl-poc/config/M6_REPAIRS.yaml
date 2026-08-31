@@ -67,8 +67,9 @@ class_a_allowlist:        # eligible after certification, launch set = 3
     forbidden_side_effects: [raw ledgers, specs, configs]
 
   - repair_id: M6-R3_RETRY_PUBLISHER
-    enabled: false
-    certified: false
+    enabled: true          # M6.3 2026-08-31
+    certified: true        # chaos matrix 16/16 groups / 17 fixtures
+                           # + interaction (tests/test_m6_r3.py)
     trigger: "local canonical artifact fresh AND published copy
       stale/missing"
     preconditions: ["publisher not mid-run", "no rebase-merge state"]
