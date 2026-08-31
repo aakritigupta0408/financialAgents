@@ -8,3 +8,38 @@
 {"ts": 1788134100.77, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 2, "procs_before": 0, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
 {"ts": 1788134401.255, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788134100.77, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 29, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
 {"ts": 1788134401.255, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788134100.77, "state": "RESTORED", "reason": null}
+{"ts": 1788135001.079, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 507}
+{"ts": 1788135001.081, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788135003.842, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 2, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788135300.815, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788135003.842, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 14, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788135300.815, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788135003.842, "state": "RESTORED", "reason": null}
+{"ts": 1788138601.023, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 480}
+{"ts": 1788138601.023, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788138603.501, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788138900.916, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788138603.501, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 13, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788138900.916, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788138603.501, "state": "RESTORED", "reason": null}
+{"ts": 1788142201.371, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 506}
+{"ts": 1788142201.372, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788142203.818, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788142500.395, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788142203.818, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 28, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788142500.395, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788142203.818, "state": "RESTORED", "reason": null}
+{"ts": 1788145801.467, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 489}
+{"ts": 1788145801.467, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788145803.897, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788146100.393, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788145803.897, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 18, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788146100.393, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788145803.897, "state": "RESTORED", "reason": null}
+{"ts": 1788149401.66, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 523}
+{"ts": 1788149401.677, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788149404.253, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788149701.062, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788149404.253, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 10, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788149701.062, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788149404.253, "state": "RESTORED", "reason": null}
+{"ts": 1788156601.313, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "DETECTED", "heartbeat_age_s": 529}
+{"ts": 1788156601.313, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "CONTAINED", "note": "data plane marked stale; no new decisions trusted until verified"}
+{"ts": 1788156604.309, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "state": "REPAIR_ATTEMPTED", "attempt": 1, "procs_before": 1, "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788156900.977, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788156604.309, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "heartbeat_fresh": true, "heartbeat_age_s": 35, "singleton": true, "processes": 1, "audit_progress": false, "scientific_unchanged": true}
+{"ts": 1788156900.977, "repair_id": "M6-R1_RESTART_DEAD_DAEMON", "verifies_attempt_ts": 1788156604.309, "state": "RESTORED", "reason": null}
+{"ts": 1788160801.174, "repair_id": "M6-R2_REBUILD_DERIVED_ARTIFACT", "state": "DETECTED", "artifact": "pm_snapshot.json", "trigger": "FILE_MISSING"}
+{"ts": 1788160801.177, "repair_id": "M6-R2_REBUILD_DERIVED_ARTIFACT", "state": "CONTAINED", "artifact": "pm_snapshot.json", "note": "artifact marked UNAVAILABLE until independently verified"}
+{"ts": 1788160801.299, "repair_id": "M6-R2_REBUILD_DERIVED_ARTIFACT", "state": "REPAIR_ATTEMPTED", "artifact": "pm_snapshot.json", "attempt": 1, "emitter_rc": 0, "trigger": "FILE_MISSING", "verification": "pending \u2014 meta_monitor (independent) certifies; this process may not"}
+{"ts": 1788161101.092, "repair_id": "M6-R2_REBUILD_DERIVED_ARTIFACT", "artifact": "pm_snapshot.json", "verifies_attempt_ts": 1788160801.299, "state": "VERIFICATION_PASS", "verified_by": "meta_monitor (independent)", "checks": {"exists": true, "schema_valid": true, "fresh": true, "semantic_a3_n": true, "lineage_no_generation_splice": true}, "scientific_unchanged": true}
+{"ts": 1788161101.092, "repair_id": "M6-R2_REBUILD_DERIVED_ARTIFACT", "artifact": "pm_snapshot.json", "verifies_attempt_ts": 1788160801.299, "state": "RESTORED", "reason": null}

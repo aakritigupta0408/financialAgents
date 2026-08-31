@@ -35,6 +35,82 @@ WATCH = {
 }
 
 
+def _verify_r2_artifact(res, name):
+    """Independent R2 verification: schema, freshness, SEMANTIC TRUTH
+    (a valid-JSON-but-wrong value must fail), and the cross-version
+    lineage gate (recovery may never splice scientific generations).
+    Returns (ok, checks_dict)."""
+    checks = {}
+    p = res / name
+    checks["exists"] = p.exists()
+    doc = None
+    if checks["exists"]:
+        try:
+            doc = json.loads(p.read_text())
+            checks["schema_valid"] = True
+        except Exception:
+            checks["schema_valid"] = False
+    else:
+        checks["schema_valid"] = False
+    checks["fresh"] = checks["exists"] and \
+        time.time() - p.stat().st_mtime < 900
+    live_exp = None
+    try:
+        live_exp = json.loads(
+            (res / "a3_live.json").read_text()).get("experiment_id")
+    except Exception:
+        pass
+    sem = True
+    if isinstance(doc, dict):
+        if name == "pm_snapshot.json":
+            try:
+                truth = json.loads((res / "a3_live.json").read_text()
+                                   )["forward"]["eligible"]
+                sem = (doc.get("a3") or {}).get("n") == truth
+                checks["semantic_a3_n"] = sem
+            except Exception:
+                sem = False
+                checks["semantic_a3_n"] = False
+        elif name == "experiment_analysis.json":
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                sem = doc.get("n_eligible") == \
+                    a3["forward"]["eligible"] and \
+                    doc.get("experiment") == a3.get("experiment_id")
+                checks["semantic_scope"] = sem
+            except Exception:
+                sem = False
+                checks["semantic_scope"] = False
+        elif name in ("data_health.json", "monitor_health.json"):
+            sem = doc.get("overall") in ("HEALTHY", "WATCH",
+                                         "CRITICAL", "UNKNOWN",
+                                         "STALE", "DEGRADED")
+            checks["semantic_enum"] = sem
+        elif name == "research_queue.json":
+            q = doc.get("queue") or []
+            sem = bool(q) and any(x.get("priority") == "P0"
+                                  for x in q)
+            checks["semantic_queue"] = sem
+        elif name == "information_timing.json":
+            sem = "models" in doc
+            checks["semantic_fields"] = sem
+        # cross-version lineage gate: a v2-scoped artifact must never
+        # reference the CLOSED v1 generation's ledgers
+        if live_exp and live_exp != "A3-v1.1" \
+                and name in ("pm_snapshot.json",
+                             "experiment_analysis.json"):
+            blob = json.dumps(doc)
+            spliced = ("a3_v1_" in blob
+                       or "a3_window_evaluation.jsonl" in blob)
+            checks["lineage_no_generation_splice"] = not spliced
+            sem = sem and not spliced
+    else:
+        sem = False
+    ok = checks["exists"] and checks["schema_valid"] \
+        and checks["fresh"] and sem
+    return ok, checks
+
+
 def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
                    pat=r"-m btc_rl\.online$"):
     """M6 independent-verification law: the repairing process
@@ -68,7 +144,43 @@ def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
             continue
         if r["ts"] in verified_ts or now - r["ts"] < min_age_s:
             continue
-        # independent checks
+        # ---- R2 branch: derived-artifact verification --------------
+        if str(r.get("repair_id", "")).startswith("M6-R2"):
+            art = r.get("artifact")
+            ok2, checks2 = _verify_r2_artifact(res, art)
+            sci2 = False
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                inv = json.loads(
+                    (res / "invariants.json").read_text())
+                sci2 = a3.get("spec_hash_ok") is True \
+                    and not inv.get("failed")
+            except Exception:
+                pass
+            verdict = {"ts": round(now, 3),
+                       "repair_id": r.get("repair_id"),
+                       "artifact": art,
+                       "verifies_attempt_ts": r["ts"],
+                       "state": "VERIFICATION_PASS" if ok2
+                       else "VERIFICATION_FAIL",
+                       "verified_by": "meta_monitor (independent)",
+                       "checks": checks2,
+                       "scientific_unchanged": sci2}
+            with heal.open("a") as f:
+                f.write(json.dumps(verdict) + "\n")
+                f.write(json.dumps({
+                    "ts": round(now, 3),
+                    "repair_id": r.get("repair_id"),
+                    "artifact": art,
+                    "verifies_attempt_ts": r["ts"],
+                    "state": "RESTORED" if ok2 and sci2
+                    else "FAILED_CLOSED",
+                    "reason": None if ok2 and sci2 else
+                    "verification failed — artifact stays "
+                    "UNAVAILABLE, .pre_rebuild preserved"}) + "\n")
+            out.append(verdict)
+            continue
+        # ---- R1 branch: independent process checks -----------------
         hb_ok = False
         try:
             hb_age = now - json.loads(

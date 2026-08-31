@@ -46,8 +46,10 @@ class_a_allowlist:        # eligible after certification, launch set = 3
       specs, model artifacts]
 
   - repair_id: M6-R2_REBUILD_DERIVED_ARTIFACT
-    enabled: false
-    certified: false
+    enabled: true          # M6.2 2026-08-31
+    certified: true        # chaos matrix 14/14 groups / 18 fixtures
+                           # (tests/test_m6_r2.py) incl. truth test
+                           # and cross-generation lineage gates
     trigger: "pm_snapshot.json / data_health.json /
       information_timing.json missing, stale beyond SLO, or malformed"
     preconditions: ["source artifacts fresh", "emitter unchanged
