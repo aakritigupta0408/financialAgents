@@ -395,6 +395,61 @@ def main():
                 "own executable ask)",
         "econ_classes": classes,
     }
+    # ---- registered decision artifact (PM 08-30): at n>=50 the
+    # MACHINE emits the decision evidence under the frozen
+    # registration — never an engineering reaction. Below 50 the
+    # artifact exists with state INSUFFICIENT_EVIDENCE so the gate's
+    # arrival changes a field, not the architecture.
+    import random as _rnd
+    deltas_all = [e["a3_pnl"] - e["control_pnl"] for e in el]
+    n_el = len(deltas_all)
+    ci_lo = ci_hi = None
+    if n_el >= 2:
+        rng = _rnd.Random(20260830)
+        means = []
+        for _ in range(2000):
+            s = [deltas_all[rng.randrange(n_el)] for _ in range(n_el)]
+            means.append(sum(s) / n_el)
+        means.sort()
+        ci_lo, ci_hi = means[50], means[1949]     # 95% bootstrap
+    conc_ok = None
+    if deltas_all:
+        srt = sorted(deltas_all, reverse=True)
+        tot = sum(srt)
+        conc_ok = not (tot > 0 and tot - srt[0] <= 0)  # §39: no
+        # promotion if the effect dies without the single best window
+    if n_el < 50:
+        decision = "INSUFFICIENT_EVIDENCE"
+        why = f"n={n_el} < registered decision gate 50"
+    elif ci_lo is not None and ci_lo > 0 and conc_ok:
+        decision = "QUALIFY"
+        why = "95% bootstrap CI excludes 0 from above AND survives " \
+              "ex-best-1 concentration — registered promotion gate met"
+    elif ci_hi is not None and ci_hi < 0:
+        decision = "REJECT"
+        why = "95% bootstrap CI excludes 0 from below — waiting " \
+              "demonstrably loses under the frozen rule"
+    else:
+        decision = "CONTINUE"
+        why = "CI spans 0 at the gate — the registered rule says " \
+              "keep collecting; no threshold change is admissible"
+    (RES / "a3_decision.json").write_text(json.dumps({
+        "generated_ts": int(time.time()),
+        "experiment": "A3-v1.1", "registered_gate_n": 50,
+        "eligible_n": n_el,
+        "primary_effect_per_eligible": round(sum(deltas_all) / n_el, 4)
+        if n_el else None,
+        "ci95_bootstrap": [round(ci_lo, 4), round(ci_hi, 4)]
+        if ci_lo is not None else None,
+        "concentration_survives_ex_best1": conc_ok,
+        "decision": decision, "why": why,
+        "allowed_outcomes": ["CONTINUE", "REJECT", "QUALIFY",
+                             "INSUFFICIENT_EVIDENCE"],
+        "law": "no interpretation-induced threshold change in the "
+               "same cycle; a clean failure is a successful research "
+               "outcome; full mechanism evidence lives in a3_live "
+               "(decomposition, watches, shadows, markouts)",
+    }, indent=1))
     # outlier-dependence view (fat-tail discipline)
     deltas = sorted((e["a3_pnl"] - e["control_pnl"] for e in el),
                     reverse=True)
