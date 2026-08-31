@@ -25,10 +25,15 @@ def run():
         r = fw.submit("test", "SAFE_OPS_REPAIR", "f", "restart thing",
                       ev)
         assert r["status"] == "BLOCKED_REPAIR_NOT_ENABLED"
+        # a certified+enabled registry entry (R1 since M6.1) is
+        # APPROVED; an unregistered repair_id stays blocked
         r = fw.submit("test", "SAFE_OPS_REPAIR", "f", "restart d",
                       ev, repair_id="M6-R1_RESTART_DEAD_DAEMON")
+        assert r["status"] == "APPROVED_FOR_EXECUTION"
+        r = fw.submit("test", "SAFE_OPS_REPAIR", "f", "mystery fix",
+                      ev, repair_id="M6-R9_UNREGISTERED")
         assert r["status"] == "BLOCKED_REPAIR_NOT_ENABLED", \
-            "uncertified repair must stay blocked"
+            "unregistered repair must stay blocked"
         # 3. PROPOSE without loss term refused, nothing persisted
         n_before = len(fw.LEDGER.read_text().splitlines())
         try:

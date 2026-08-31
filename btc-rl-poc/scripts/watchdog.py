@@ -234,31 +234,56 @@ def run_r1(cfg):
 
 
 def main(cfg=CFG):
-    # R2 (derived-artifact rebuild) rides the same executor cron;
-    # verification stays with meta_monitor (independent)
+    if cfg is not CFG:
+        # injected configuration (fixtures) — direct single-repair
+        # path; the orchestrator is production-scoped and covered by
+        # tests/test_m6_interaction.py
+        if r1_enabled(cfg):
+            return run_r1(cfg)
+        age = heartbeat_age(cfg)
+        if age is not None and age < cfg["stale_s"]:
+            return "HEALTHY_NO_TRIGGER"
+        if in_grace(cfg):
+            return "GRACE_NO_TRIGGER"
+        legacy_restart(cfg, age)
+        return "LEGACY_RESTARTED"
+    # M6 interaction contract: ONE orchestrator computes the plane
+    # dependency state and runs at most the earliest broken plane's
+    # repair (COMPUTE -> STATE -> DELIVERY). Suppressed downstream
+    # repairs are recorded, never raced.
     try:
         sys.path.insert(0, str(ROOT / "scripts"))
+        import repair_planes
         import repair_r2
-        if repair_r2.r2_enabled(repair_r2.CFG):
-            r2 = repair_r2.run_r2(repair_r2.CFG)
-            acted = {k: v for k, v in r2.items()
-                     if v != "HEALTHY_NO_TRIGGER"}
-            if acted:
-                print(f"watchdog: R2 {acted}")
-    except Exception as e:
-        print(f"watchdog: R2 pass error {e!r}")
-    # R3 (delivery) runs LAST — dependency ordering: its canonical-
-    # health gate refuses while compute/state planes are broken
-    try:
         import repair_r3
-        if repair_r3.r3_enabled(repair_r3.CFG):
-            s3 = repair_r3.run_r3(repair_r3.CFG)
-            if s3 != "HEALTHY_NO_TRIGGER":
-                print(f"watchdog: R3 {s3}")
+        probe = (lambda: repair_r3.detect(repair_r3.CFG)[0]) \
+            if repair_r3.r3_enabled(repair_r3.CFG) else None
+        planes = repair_planes.plane_state(
+            ROOT / "results", pat=cfg["pat"], delivery_probe=probe)
+        repair_planes.emit(ROOT / "results", planes)
+
+        def _rec(state, **f):
+            record(cfg, state, **f)
+        res = repair_planes.orchestrate(
+            planes,
+            run_r1=(lambda: run_r1(cfg)) if r1_enabled(cfg)
+            else None,
+            run_r2=(lambda: repair_r2.run_r2(repair_r2.CFG))
+            if repair_r2.r2_enabled(repair_r2.CFG) else None,
+            run_r3=(lambda: repair_r3.run_r3(repair_r3.CFG))
+            if repair_r3.r3_enabled(repair_r3.CFG) else None,
+            record=_rec)
+        if res["acted"] or res["suppressed"]:
+            print(f"watchdog: planes {planes['COMPUTE'][:1]}/"
+                  f"{planes['STATE'][:1]}/{planes['DELIVERY'][:1]} "
+                  f"acted={res['acted']} "
+                  f"suppressed={res['suppressed']}")
+        if r1_enabled(cfg):
+            return res["results"].get("R1", "ORCHESTRATED")
     except Exception as e:
-        print(f"watchdog: R3 pass error {e!r}")
-    if r1_enabled(cfg):
-        return run_r1(cfg)
+        print(f"watchdog: orchestrator error {e!r} — falling back")
+        if r1_enabled(cfg):
+            return run_r1(cfg)
     # legacy protective path (certification period): unchanged
     age = heartbeat_age(cfg)
     if age is not None and age < cfg["stale_s"]:
