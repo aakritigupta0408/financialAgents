@@ -125,6 +125,10 @@ experiments:
      evidence: "a3_v1_final.json sha 22014cee8ebe2b82 (immutable,
        invariant-guarded)", reopen: NEVER as v1.1,
      canonical_completed_experiment: true}
+  - {id: A4, lifecycle: SPEC_ONLY, runtime: false, spec: A4_SPEC.yaml,
+     dependency_class: ZERO_DECISION_IMPACT,
+     note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
+       unlock conditions in-spec; evidence decides, not roadmap"}
   - {id: A3-v2, lifecycle: TREATMENT, runtime: true, control: C0,
      treatment: T05, shadows: [T10-diagnostic], frozen: true,
      spec: A3_V2_SPEC.yaml, registered: 2026-08-30,

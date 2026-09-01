@@ -1,0 +1,73 @@
+# A4 — LEARNED VALUE-OF-WAIT POLICY — research spec (2026-09-01)
+# STATUS: SPEC ONLY. No training, no dataset build, no architecture
+# work, no new data sources. This document exists so the project is
+# READY if the evidence unlocks it — the evidence decides, not us.
+version: 0.1-spec
+experiment_id: A4
+status: BLOCKED
+blocked_on: [A3_V2_CLOSE, GATE_F1]
+
+research_question: Does a learned state-dependent wait policy add
+  after-cost value per eligible window beyond the BEST QUALIFIED
+  FIXED wait policy?
+
+# 3. the learned target — decision value, never "optimal dip cents"
+target: |
+  dEV_wait(state) = E[value | wait] - E[value | enter now]
+  The model learns the VALUE of waiting in a state; any required
+  discount is derived later from the estimated value surface, never
+  output directly.
+
+# 4. labels — completed historical windows only, all-eligible
+# economics (the A3 lesson preserved: misses and invalidations are
+# scored outcomes, not exclusions)
+labels:
+  source: completed eligible windows only (a3v2/a3_v1 ledgers + event
+    tape), PIT-reconstructed
+  counterfactuals_per_decision_state: [enter_now, wait, no_fill,
+    invalidation, execution_costs, missed_winner_opportunity_cost]
+  unit: all-eligible-window economics — never fill-conditioned
+
+# 5. compact state vector — no sentiment, no indicator zoo
+state_vector:
+  - thesis_confidence + confidence_velocity
+  - current_executable_price
+  - time_remaining
+  - distance_to_strike (+ normalized / z)
+  - kalshi_spread, kalshi_depth, kalshi_ofi
+  - btc_path_return, btc_realized_vol
+  - xvenue_consensus, xvenue_dispersion, xvenue_lead_lag   # post-F1
+  - deltas_since_thesis_registration (price, confidence, market_p)
+
+# 6/7. the future experiment design
+experiment_design:
+  control: best qualified fixed wait policy (T05 if v2 qualifies;
+    C0 immediate if no fixed wait policy qualifies)
+  treatment: learned dEV_wait policy
+  note: NOT vs immediate entry — the question is whether LEARNING
+    adds value beyond the best simple rule
+  action_space: [ENTER_NOW, WAIT, ABSTAIN_INVALIDATE]
+  forbidden_v1: unconstrained continuous threshold output
+
+# 8. qualification — the same strict pipeline, nothing softer
+qualification_pipeline: [PIT-safe dataset, leakage/falsification
+    battery, chronological walk-forward, market-relative + economic
+    metrics, worst-fold + fold stability, shadow, fresh forward
+    control-vs-treatment]
+promotion: never from offline results
+
+# 9. unlock rule — at least ONE must hold after v2 closes, verified
+# from artifacts, else A4 stays a spec forever
+unlock_conditions:
+  - fixed waiting remains negative BECAUSE of heterogeneous
+    miss-cost (missed_winner_magnitude shows state-dependence, not
+    uniform expense)
+  - v2 positive but material state-dependent wait regret remains
+    (ECR / wait_regret slices)
+  - F-XVENUE demonstrates incremental early resolution relevant to
+    entry selection
+anti_unlock: sophistication is not a reason; "sounds like the next
+  step" is not a reason
+
+next_decision_point: whichever fires first — A3-v2 n>=50 verdict or
+  Gate F1 — determines whether A4 becomes an experiment at all
