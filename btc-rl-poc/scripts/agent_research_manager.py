@@ -66,19 +66,23 @@ def main():
          "state": "ACTIVE", "blocked_by": None,
          "owner": "data_reliability", "next_gate": "Gate F1"},
         {"priority": "P1",
-         "research_question": "M5.4 diagnosis follow-through: does "
-         "kb9 disagreement (>=5pp) predict market error "
-         "prospectively? (ONE candidate question; F-XVENUE is its "
-         "natural feature family)",
-         "bottleneck": "prospective registration + capture Gate F1",
-         "evidence": "model_research.json — kb9 EARLY_SKILL, "
-         "3/36 slices passed gates; kb2 redundancy 0.998 sanity-"
-         "confirmed" + ("" if no_challenger else " (partial)"),
-         "estimated_impact": "unlocks a legitimate challenger "
-         "pipeline (Phase 10: incumbent + winning family only)",
+         "research_question": "T1T2 program (PM 09-01, "
+         "T1T2_PROGRAM.yaml): improve forecast quality first, then "
+         "probability quality. At F1: freeze PIT dataset, then T1 "
+         "CONTROL vs T1 + F-XVENUE (distributional metrics), then "
+         "propagation through the UNCHANGED probability bridge, "
+         "then ONE T2 challenger",
+         "bottleneck": "capture Gate F1 (then PIT-dataset freeze)",
+         "evidence": "model_research.json — kb9 EARLY_SKILL; "
+         "resolution is the bottleneck (0/10 arms beat market); "
+         "kb2 redundancy 0.998 sanity-confirmed"
+         + ("" if no_challenger else " (partial)"),
+         "estimated_impact": "the desk's core ML objective — beat "
+         "Kalshi's probability early (market-relative resolution)",
          "state": "ACTIVE", "blocked_by": "Gate F1",
          "owner": "model_researcher",
-         "next_gate": "family-level walk-forward ablation"},
+         "next_gate": "F1 -> P0 freeze PIT dataset -> T1.1 "
+         "family-level walk-forward ablation"},
         {"priority": "P2",
          "research_question": "Legacy M10 vs M10+M8 closure",
          "bottleneck": "paired increment P(Δ>0) 77% — unclear",

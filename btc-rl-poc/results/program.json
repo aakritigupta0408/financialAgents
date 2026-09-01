@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788082700,
+ "generated_ts": 1788285382,
  "counts": {
   "live": 4,
   "retire_candidates": 0,
@@ -115,7 +115,7 @@
    "mechanism": "stand down when the market itself is unpredictable",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +11.6c (n=75) vs +0.0c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +11.2c (n=103) vs +0.0c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [],
    "children": [
@@ -124,15 +124,15 @@
     "M10+M8",
     "M11+M8"
    ],
-   "effect": 0.03352,
+   "effect": 0.03082,
    "ci95_boot": [
-    -0.01327,
-    0.08379
+    -0.00692,
+    0.0727
    ],
-   "p_gt0": 0.919,
-   "coverage": 0.71,
-   "llr": 0.886,
-   "n": 259,
+   "p_gt0": 0.935,
+   "coverage": 0.724,
+   "llr": 1.101,
+   "n": 373,
    "lifecycle": "SHADOW (diagnostic) \u2014 standalone question folded into M10+M8; single-factor evidence stream kept",
    "analysis_recommendation": "CONTINUE",
    "recommendation_why": [
@@ -219,22 +219,22 @@
    "children": [
     "M10+M8"
    ],
-   "effect": 0.04201,
+   "effect": 0.0398,
    "ci95_boot": [
-    -0.00717,
-    0.09365
+    -0.00041,
+    0.08502
    ],
-   "p_gt0": 0.954,
-   "coverage": 0.656,
-   "llr": 0.502,
-   "n": 259,
+   "p_gt0": 0.974,
+   "coverage": 0.657,
+   "llr": 0.842,
+   "n": 373,
    "lifecycle": "CONTROL \u2014 the legacy experiment incumbent",
    "analysis_recommendation": "PRIORITY",
    "recommendation_why": [
-    "P(\u0394>0) 95% \u2014 spend windows here"
+    "P(\u0394>0) 97% \u2014 spend windows here"
    ],
    "attention": [
-    "strongest positive evidence (P(\u0394>0) 95%)"
+    "strongest positive evidence (P(\u0394>0) 97%)"
    ],
    "retire_pressure": "LOW",
    "incremental_vs_parent": null
@@ -301,14 +301,14 @@
    "attention": [],
    "retire_pressure": null,
    "incremental_vs_parent": {
-    "n": 260,
-    "mean": -0.05036,
-    "se": 0.02719,
+    "n": 373,
+    "mean": -0.05103,
+    "se": 0.02605,
     "boot_ci95": [
-     -0.1041,
-     0.00846
+     -0.10306,
+     0.00351
     ],
-    "p_gt0_boot": 0.044
+    "p_gt0_boot": 0.035
    }
   },
   {
@@ -342,14 +342,14 @@
    "attention": [],
    "retire_pressure": null,
    "incremental_vs_parent": {
-    "n": 260,
-    "mean": -0.08787,
-    "se": 0.03503,
+    "n": 373,
+    "mean": -0.07717,
+    "se": 0.03026,
     "boot_ci95": [
-     -0.16007,
-     -0.01892
+     -0.13799,
+     -0.01594
     ],
-    "p_gt0_boot": 0.004
+    "p_gt0_boot": 0.006
    }
   },
   {
@@ -365,40 +365,40 @@
    "mechanism": "fill discipline + regime gate",
    "mechanism_check": {
     "status": "SUPPORTED",
-    "note": "\u0394 on regime<floor windows +15.0c (n=75) vs -0.4c on healthy windows \u2014 the gate earns exactly where it claims to"
+    "note": "\u0394 on regime<floor windows +15.4c (n=103) vs +0.7c on healthy windows \u2014 the gate earns exactly where it claims to"
    },
    "parents": [
     "M10",
     "M8"
    ],
    "children": [],
-   "effect": 0.05519,
+   "effect": 0.05683,
    "ci95_boot": [
-    -0.00597,
-    0.11879
+    0.00934,
+    0.10853
    ],
-   "p_gt0": 0.963,
-   "coverage": 0.479,
-   "llr": 0.624,
-   "n": 259,
+   "p_gt0": 0.991,
+   "coverage": 0.485,
+   "llr": 1.114,
+   "n": 373,
    "lifecycle": "TREATMENT \u2014 the one legacy challenger (does regime filtering add value beyond the exec guard?)",
    "analysis_recommendation": "PRIORITY",
    "recommendation_why": [
-    "P(\u0394>0) 96% \u2014 spend windows here"
+    "P(\u0394>0) 99% \u2014 spend windows here"
    ],
    "attention": [
-    "strongest positive evidence (P(\u0394>0) 96%)"
+    "strongest positive evidence (P(\u0394>0) 99%)"
    ],
    "retire_pressure": "LOW",
    "incremental_vs_parent": {
-    "n": 260,
-    "mean": 0.01313,
-    "se": 0.01714,
+    "n": 373,
+    "mean": 0.01703,
+    "se": 0.01427,
     "boot_ci95": [
-     -0.01958,
-     0.04724
+     -0.00978,
+     0.04568
     ],
-    "p_gt0_boot": 0.784
+    "p_gt0_boot": 0.892
    }
   },
   {
@@ -432,14 +432,14 @@
    "attention": [],
    "retire_pressure": null,
    "incremental_vs_parent": {
-    "n": 260,
-    "mean": -0.01565,
-    "se": 0.02493,
+    "n": 373,
+    "mean": -0.02683,
+    "se": 0.02494,
     "boot_ci95": [
-     -0.06157,
-     0.034
+     -0.07456,
+     0.0246
     ],
-    "p_gt0_boot": 0.281
+    "p_gt0_boot": 0.159
    }
   },
   {
@@ -459,22 +459,22 @@
    },
    "parents": [],
    "children": [],
-   "effect": -0.03715,
+   "effect": -0.01332,
    "ci95_boot": [
-    -0.17781,
-    0.11133
+    -0.10267,
+    0.08481
    ],
-   "p_gt0": 0.3,
-   "coverage": 0.183,
-   "llr": -0.107,
-   "n": 71,
+   "p_gt0": 0.387,
+   "coverage": 0.216,
+   "llr": -0.172,
+   "n": 185,
    "lifecycle": "SHADOW / HOLD \u2014 anti-signal research, collecting",
    "analysis_recommendation": "HOLD",
    "recommendation_why": [
-    "coverage 18% \u2014 not comparable at deployment scale"
+    "coverage 22% \u2014 not comparable at deployment scale"
    ],
    "attention": [
-    "coverage 18%"
+    "coverage 22%"
    ],
    "retire_pressure": "HIGH",
    "incremental_vs_parent": null
@@ -499,14 +499,14 @@
    "combo": "M2+M8",
    "parent": "M8",
    "valid": true,
-   "n": 260,
-   "mean": -0.05036,
-   "se": 0.02719,
+   "n": 373,
+   "mean": -0.05103,
+   "se": 0.02605,
    "boot_ci95": [
-    -0.1041,
-    0.00846
+    -0.10306,
+    0.00351
    ],
-   "p_gt0_boot": 0.044,
+   "p_gt0_boot": 0.035,
    "read": "no evidence of useful addition"
   },
   {
@@ -527,29 +527,29 @@
    "combo": "M3+M8",
    "parent": "M8",
    "valid": true,
-   "n": 260,
-   "mean": -0.08787,
-   "se": 0.03503,
+   "n": 373,
+   "mean": -0.07717,
+   "se": 0.03026,
    "boot_ci95": [
-    -0.16007,
-    -0.01892
+    -0.13799,
+    -0.01594
    ],
-   "p_gt0_boot": 0.004,
+   "p_gt0_boot": 0.006,
    "read": "no evidence of useful addition"
   },
   {
    "combo": "M10+M8",
    "parent": "M10",
    "valid": true,
-   "n": 260,
-   "mean": 0.01313,
-   "se": 0.01714,
+   "n": 373,
+   "mean": 0.01703,
+   "se": 0.01427,
    "boot_ci95": [
-    -0.01958,
-    0.04724
+    -0.00978,
+    0.04568
    ],
-   "p_gt0_boot": 0.784,
-   "read": "unclear"
+   "p_gt0_boot": 0.892,
+   "read": "adds value"
   },
   {
    "combo": "M10+M8",
@@ -575,14 +575,14 @@
    "combo": "M11+M8",
    "parent": "M8",
    "valid": true,
-   "n": 260,
-   "mean": -0.01565,
-   "se": 0.02493,
+   "n": 373,
+   "mean": -0.02683,
+   "se": 0.02494,
    "boot_ci95": [
-    -0.06157,
-    0.034
+    -0.07456,
+    0.0246
    ],
-   "p_gt0_boot": 0.281,
+   "p_gt0_boot": 0.159,
    "read": "no evidence of useful addition"
   }
  ],
@@ -595,8 +595,8 @@
  ],
  "research_manager": {
   "what_changed": [
-   "A3 forward: 11 eligible windows settled",
-   "M10+M8 remains strongest legacy branch (P(\u0394>0) 96%)",
+   "A3 forward: 38 eligible windows settled",
+   "M10+M8 remains strongest legacy branch (P(\u0394>0) 99%)",
    "no new qualified alpha (best BSS \u2264 0 this sample)"
   ],
   "queue": [
@@ -604,20 +604,20 @@
     "rank": 1,
     "title": "Accumulate A3 forward evidence",
     "why": "biggest current unknown",
-    "bottleneck": "n=11 eligible (compare gate 25, decision gate 50)",
+    "bottleneck": "n=38 eligible (compare gate 25, decision gate 50)",
     "action": "no engineering \u2014 market clock only"
    },
    {
     "rank": 2,
     "title": "Validate A3 execution quality",
-    "why": "mean 10s markout +5.0c on filled entries",
+    "why": "mean 10s markout +1.6c on filled entries",
     "metric": "markout_h / ECR",
     "action": "collect"
    },
    {
     "rank": 3,
     "title": "Continue M10+M8",
-    "why": "strongest existing positive legacy branch (P(\u0394>0) 96%)",
+    "why": "strongest existing positive legacy branch (P(\u0394>0) 99%)",
     "metric": "incremental paired PnL",
     "action": "continue"
    },
@@ -631,16 +631,24 @@
   ],
   "blocked": [
    {
-    "item": "Value-of-Wait ML",
-    "reason": "A3 has not demonstrated a timing loss yet (needs poor ECR at positive \u0394 per the frozen decision tree)"
+    "item": "T3 decision-layer optimization",
+    "reason": "T1T2 program law \u2014 return to the trading algorithm only after BOTH T1 and T2 are materially improved out of sample"
    },
    {
-    "item": "Sizing",
-    "reason": "positive durable alpha not established"
+    "item": "Learned dip / entry-timing tuning",
+    "reason": "A3-v2 is COLLECT ONLY to its registered gate; threshold frozen at 5c"
    },
    {
-    "item": "Passive execution",
-    "reason": "standalone maker already failed (M11)"
+    "item": "Value-of-Wait ML (A4)",
+    "reason": "SPEC_ONLY (A4_SPEC.yaml) \u2014 blocked on A3-v2 close + Gate F1 AND on the T1T2 BLOCK list; unlock conditions in-spec"
+   },
+   {
+    "item": "Sizing research",
+    "reason": "positive durable alpha not established; T5 in the T1T2 hierarchy"
+   },
+   {
+    "item": "Execution research (incl. passive)",
+    "reason": "standalone maker already failed (M11); T4 in the T1T2 hierarchy"
    },
    {
     "item": "Champion simplification (CHAMPION-vLean)",

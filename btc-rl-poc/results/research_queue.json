@@ -1,11 +1,11 @@
 {
- "generated_ts": 1788149601,
+ "generated_ts": 1788285382,
  "maintained_by": "agent_research_manager (script-backed)",
  "queue": [
   {
    "priority": "P0",
    "research_question": "A3-v2 forward qualification \u2014 does waiting for a >=5c dip beat immediate entry after costs? (fresh prospective test motivated by A3-v1.1's clean REJECT: fills always won, misses dominated at 10c)",
-   "bottleneck": "evidence n=0 (compare 25, decision 50; fresh counter from 2026-08-30 registration)",
+   "bottleneck": "evidence n=38 (compare 25, decision 50; fresh counter from 2026-08-30 registration)",
    "evidence": "a3_live.json (v2); a3_v1_final.json (closed predecessor); A3_V2_SPEC.yaml registration rationale",
    "estimated_impact": "decides the desk's entry policy",
    "state": "COLLECTING",
@@ -26,14 +26,14 @@
   },
   {
    "priority": "P1",
-   "research_question": "M5.4 diagnosis follow-through: does kb9 disagreement (>=5pp) predict market error prospectively? (ONE candidate question; F-XVENUE is its natural feature family)",
-   "bottleneck": "prospective registration + capture Gate F1",
-   "evidence": "model_research.json \u2014 kb9 EARLY_SKILL, 3/36 slices passed gates; kb2 redundancy 0.998 sanity-confirmed (partial)",
-   "estimated_impact": "unlocks a legitimate challenger pipeline (Phase 10: incumbent + winning family only)",
+   "research_question": "T1T2 program (PM 09-01, T1T2_PROGRAM.yaml): improve forecast quality first, then probability quality. At F1: freeze PIT dataset, then T1 CONTROL vs T1 + F-XVENUE (distributional metrics), then propagation through the UNCHANGED probability bridge, then ONE T2 challenger",
+   "bottleneck": "capture Gate F1 (then PIT-dataset freeze)",
+   "evidence": "model_research.json \u2014 kb9 EARLY_SKILL; resolution is the bottleneck (0/10 arms beat market); kb2 redundancy 0.998 sanity-confirmed (partial)",
+   "estimated_impact": "the desk's core ML objective \u2014 beat Kalshi's probability early (market-relative resolution)",
    "state": "ACTIVE",
    "blocked_by": "Gate F1",
    "owner": "model_researcher",
-   "next_gate": "family-level walk-forward ablation"
+   "next_gate": "F1 -> P0 freeze PIT dataset -> T1.1 family-level walk-forward ablation"
   },
   {
    "priority": "P2",
@@ -60,16 +60,24 @@
  ],
  "blocked": [
   {
-   "item": "Value-of-Wait ML",
-   "reason": "A3 has not demonstrated a timing loss yet (needs poor ECR at positive \u0394 per the frozen decision tree)"
+   "item": "T3 decision-layer optimization",
+   "reason": "T1T2 program law \u2014 return to the trading algorithm only after BOTH T1 and T2 are materially improved out of sample"
   },
   {
-   "item": "Sizing",
-   "reason": "positive durable alpha not established"
+   "item": "Learned dip / entry-timing tuning",
+   "reason": "A3-v2 is COLLECT ONLY to its registered gate; threshold frozen at 5c"
   },
   {
-   "item": "Passive execution",
-   "reason": "standalone maker already failed (M11)"
+   "item": "Value-of-Wait ML (A4)",
+   "reason": "SPEC_ONLY (A4_SPEC.yaml) \u2014 blocked on A3-v2 close + Gate F1 AND on the T1T2 BLOCK list; unlock conditions in-spec"
+  },
+  {
+   "item": "Sizing research",
+   "reason": "positive durable alpha not established; T5 in the T1T2 hierarchy"
+  },
+  {
+   "item": "Execution research (incl. passive)",
+   "reason": "standalone maker already failed (M11); T4 in the T1T2 hierarchy"
   },
   {
    "item": "Champion simplification (CHAMPION-vLean)",

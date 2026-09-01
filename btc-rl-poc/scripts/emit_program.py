@@ -429,14 +429,26 @@ def main():
         ],
         "queue": queue,
         "blocked": [
-            {"item": "Value-of-Wait ML",
-             "reason": "A3 has not demonstrated a timing loss yet "
-                       "(needs poor ECR at positive Δ per the frozen "
-                       "decision tree)"},
-            {"item": "Sizing",
-             "reason": "positive durable alpha not established"},
-            {"item": "Passive execution",
-             "reason": "standalone maker already failed (M11)"},
+            # PM 09-01: the T1T2 forecast-quality-first program
+            # (T1T2_PROGRAM.yaml) is now the sequencing authority —
+            # its BLOCK list verbatim, with each item's local reason.
+            {"item": "T3 decision-layer optimization",
+             "reason": "T1T2 program law — return to the trading "
+                       "algorithm only after BOTH T1 and T2 are "
+                       "materially improved out of sample"},
+            {"item": "Learned dip / entry-timing tuning",
+             "reason": "A3-v2 is COLLECT ONLY to its registered "
+                       "gate; threshold frozen at 5c"},
+            {"item": "Value-of-Wait ML (A4)",
+             "reason": "SPEC_ONLY (A4_SPEC.yaml) — blocked on "
+                       "A3-v2 close + Gate F1 AND on the T1T2 "
+                       "BLOCK list; unlock conditions in-spec"},
+            {"item": "Sizing research",
+             "reason": "positive durable alpha not established; "
+                       "T5 in the T1T2 hierarchy"},
+            {"item": "Execution research (incl. passive)",
+             "reason": "standalone maker already failed (M11); "
+                       "T4 in the T1T2 hierarchy"},
             {"item": "Champion simplification (CHAMPION-vLean)",
              "reason": "would mutate the frozen control — the "
                        "leader pool (kb3/kb4/kb7/kb8) is a "

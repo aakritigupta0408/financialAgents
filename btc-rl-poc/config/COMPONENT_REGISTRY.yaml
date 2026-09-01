@@ -128,7 +128,15 @@ experiments:
   - {id: A4, lifecycle: SPEC_ONLY, runtime: false, spec: A4_SPEC.yaml,
      dependency_class: ZERO_DECISION_IMPACT,
      note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
-       unlock conditions in-spec; evidence decides, not roadmap"}
+       unlock conditions in-spec; evidence decides, not roadmap;
+       also on the T1T2 program BLOCK list (PM 09-01)"}
+  - {id: T1T2, lifecycle: SPEC_ONLY, runtime: false,
+     spec: T1T2_PROGRAM.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     note: "forecast-quality-first program (PM 09-01) — the research
+       sequencing authority after Gate F1: T1 feature families one
+       at a time, propagation test through unchanged bridge, then
+       ONE T2 challenger; blocks T3+/learned-dip/VoW/exec/sizing;
+       starts NOTHING before F1"}
   - {id: A3-v2, lifecycle: TREATMENT, runtime: true, control: C0,
      treatment: T05, shadows: [T10-diagnostic], frozen: true,
      spec: A3_V2_SPEC.yaml, registered: 2026-08-30,

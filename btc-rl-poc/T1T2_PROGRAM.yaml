@@ -1,0 +1,111 @@
+# T1/T2 — FORECAST-QUALITY-FIRST ALGORITHM PROGRAM (PM, 2026-09-01)
+# STATUS: REGISTERED, PREPARE-ONLY. Nothing here starts before its
+# trigger fires (Gate F1). This file is the authority for research
+# sequencing; research_queue.json and the blocked list defer to it.
+version: 1.0
+program_id: T1T2
+status: REGISTERED_AWAITING_F1
+objective: >
+  Improve forecast quality first, then improve probability quality.
+  Not traders, not dip logic, not execution, not sizing.
+
+# ------------------------------------------------------------------
+# The algorithm-development chain (frozen hierarchy — we stop at
+# T1/T2 for now; T3+ are BLOCKED below)
+hierarchy:
+  - FREE RAW DATA
+  - FEATURE ENGINEERING
+  - "T1 — FORECAST QUALITY: predict future BTC distribution (h1/h5/h15/h30)"
+  - "PROBABILITY BRIDGE: convert forecast relative to strike/time"
+  - "T2 — PROBABILITY QUALITY: calibrated settlement probability that beats market"
+  - "T3 — DECISION (BLOCKED)"
+  - "T4 — EXECUTION (BLOCKED)"
+  - "T5 — SIZING (BLOCKED)"
+
+# ------------------------------------------------------------------
+# T1 — improve the underlying forecast (DISTRIBUTIONAL, not point MAE)
+t1:
+  target: future BTC distribution per horizon (h1, h5, h15, h30)
+  required_metrics:
+    point: [MAE, RMSE, signed_bias]
+    distribution: [pinball_loss, interval_coverage_80, interval_width]
+    robustness: [median_fold, worst_fold, fold_variance]
+  feature_program:   # ONE family at a time — never three at once
+    T1.1: {control: current forecast features,
+           treatment: current + F-XVENUE}
+    T1.2: {control: winning T1, treatment: winning T1 + F-MICRO,
+           gated_on: T1.1 verdict}
+    T1.3: {control: winning T1, treatment: winning T1 + F-PATH,
+           gated_on: T1.2 verdict}
+  architecture_rule: >
+    Do not change features AND architecture simultaneously. Features
+    first (same model, old vs new features). If features win, FREEZE
+    them; only then CONTROL current architecture vs ONE challenger
+    architecture on the same winning features. Simple challengers
+    must beat the incumbent before anything more complex. The design
+    attributes any gain to INFORMATION vs MODEL, never a mixture.
+
+# ------------------------------------------------------------------
+# Propagation test — MANDATORY before touching T2
+propagation_test:
+  design: "OLD T1 -> same probability bridge  vs  NEW T1 -> same
+    probability bridge (bridge held constant)"
+  metrics: [Brier, BSS_vs_market, log_loss, resolution, reliability,
+            calibration]
+  why: >
+    It is possible to improve BTC MAE without improving
+    P(close > strike). Those are not the same problem. This test
+    answers whether better forecasting produces better settlement
+    probabilities before any T2 redesign is justified.
+
+# ------------------------------------------------------------------
+# T2 — improve probability quality (after T1 frozen)
+t2:
+  target: "P(S_T > K | information at t)"
+  design: "FROZEN T1 feeds both arms identically; only the
+    probability algorithm changes between control and treatment"
+  primary_objective: beat Kalshi's probability estimate early enough
+    to matter — not merely calibration
+  required_metrics:
+    core: [Brier, BSS_vs_market, log_loss]
+    murphy: [reliability, resolution, uncertainty]
+    calibration: [slope, intercept, ECE]
+    per_horizon_bss: [T-13, T-10, T-8, T-6, T-4, T-2]
+  critical_metric: MARKET_RELATIVE_RESOLUTION   # the Model
+    # Researcher's finding — resolution is the current bottleneck
+  feature_program: >
+    Probability needs its own feature research: after T1 improves,
+    T2 CONTROL (T1 distribution + strike + time remaining) vs T2
+    TREATMENT (same + ONE additional probability feature family —
+    e.g. distance-to-strike shape, volatility, forecast uncertainty,
+    path geometry, market probability, cross-venue dispersion).
+    One variable family at a time, as always.
+
+# ------------------------------------------------------------------
+# Immediate work (in force NOW — this is the entire runtime surface)
+immediate:
+  - "A3-v2: COLLECT ONLY — finish its registered experiment"
+  - "F-XVENUE: COLLECT -> Gate F1 (>=7d, >=95% coverage; earliest 09-06)"
+at_gate_f1:
+  P0: [freeze PIT dataset,
+       "T1 CONTROL vs T1 + F-XVENUE (walk-forward)",
+       measure forecast-distribution improvement]
+  P1: ["if T1 wins: freeze new T1",
+       propagate new T1 through UNCHANGED probability bridge,
+       measure downstream BSS / resolution]
+  P2: [run ONE T2 probability challenger]
+
+blocked:   # the PM's explicit BLOCK list — supersedes prior phrasing
+  - T3 optimization
+  - learned dip
+  - Value-of-Wait (A4 stays SPEC_ONLY per A4_SPEC.yaml)
+  - execution research
+  - sizing research
+
+success_criteria:
+  t1: forecast the future BTC distribution MATERIALLY better out of
+    sample
+  t2: turn that information into probabilities that MATERIALLY beat
+    Kalshi out of sample, especially early in the window
+  exit: only once BOTH are materially improved do we return to the
+    trading algorithm (T3+)
