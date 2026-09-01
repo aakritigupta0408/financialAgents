@@ -1,13 +1,16 @@
 {
- "generated_ts": 1788149487,
+ "generated_ts": 1788302467,
  "experiment": "A3-v2",
  "registered_gate_n": 50,
- "eligible_n": 0,
- "primary_effect_per_eligible": null,
- "ci95_bootstrap": null,
- "concentration_survives_ex_best1": null,
- "decision": "INSUFFICIENT_EVIDENCE",
- "why": "n=0 < registered decision gate 50",
+ "eligible_n": 50,
+ "primary_effect_per_eligible": -0.0154,
+ "ci95_bootstrap": [
+  -0.1128,
+  0.0855
+ ],
+ "concentration_survives_ex_best1": true,
+ "decision": "CONTINUE",
+ "why": "CI spans 0 at the gate \u2014 the registered rule says keep collecting; no threshold change is admissible",
  "allowed_outcomes": [
   "CONTINUE",
   "REJECT",
