@@ -395,7 +395,32 @@ def main():
             d["delta_contribution"] = round(
                 d["delta_contribution"]
                 + e["a3_pnl"] - e["control_pnl"], 4)
+    # PM 08-31 (n=25 interim ruling): descriptive missed-winner
+    # magnitude diagnosis for the n=50 artifact — many ordinary
+    # misses (fixed waiting structurally expensive) vs a few extreme
+    # misses (points to future state-dependent research, POST-v2
+    # only). Mechanism diagnosis, never a decision rule.
+    mw = sorted((e["control_pnl"] for e in el
+                 if e.get("econ_class") == "C_MISSED_WINNER"),
+                reverse=True)
+    miss_mag = None
+    if mw:
+        tot_mw = sum(mw)
+        q = lambda p: mw[min(len(mw) - 1, int(p * len(mw)))]  # noqa
+        miss_mag = {
+            "n_missed_winners": len(mw),
+            "mean_c": round(100 * tot_mw / len(mw), 1),
+            "median_c": round(100 * mw[len(mw) // 2], 1),
+            "p75_c": round(100 * q(0.25), 1),
+            "p90_c": round(100 * q(0.10), 1),
+            "largest_c": round(100 * mw[0], 1),
+            "top1_share_of_miss_cost": round(mw[0] / tot_mw, 3)
+            if tot_mw > 0 else None,
+            "top3_share_of_miss_cost": round(
+                sum(mw[:3]) / tot_mw, 3) if tot_mw > 0 else None,
+        }
     agg["decomposition"] = {
+        "missed_winner_magnitude": miss_mag,
         "gross_fill_gain": round(gross_fill_gain, 4),
         "timeout_control_pnl": round(timeout_pnl, 4),
         "missed_control_pnl": round(missed_other_pnl, 4),
