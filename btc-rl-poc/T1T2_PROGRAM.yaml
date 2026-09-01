@@ -2,7 +2,8 @@
 # STATUS: REGISTERED, PREPARE-ONLY. Nothing here starts before its
 # trigger fires (Gate F1). This file is the authority for research
 # sequencing; research_queue.json and the blocked list defer to it.
-version: 1.0
+version: 1.1   # 1.1 (PM 09-01 ratification): F1 != train law +
+               # dataset-manifest-first + surgical T1.1 design
 program_id: T1T2
 status: REGISTERED_AWAITING_F1
 objective: >
@@ -86,10 +87,33 @@ t2:
 immediate:
   - "A3-v2: COLLECT ONLY — finish its registered experiment"
   - "F-XVENUE: COLLECT -> Gate F1 (>=7d, >=95% coverage; earliest 09-06)"
+# PM LAW (09-01 ratification): F1 must NOT automatically mean
+# "train." F1 means the data is ALLOWED TO ENTER EVALUATION. The
+# first artifact after F1 is the frozen dataset manifest; T1.1 may
+# run only after that manifest is immutable.
+f1_first_artifact:
+  name: PIT dataset manifest (frozen, immutable before any training)
+  required_fields: [coverage, timestamps, feature_version,
+                    decision_time_range, exclusions, hashes,
+                    fold_boundaries]
+t1_1_surgical_design:   # single-difference law — if it improves,
+  # "new INFORMATION improved the forecast", never "something
+  # somewhere changed"
+  control:   {model: same T1, features: current set}
+  treatment: {model: same T1, features: current set + F-XVENUE}
+  held_identical: [architecture, loss, folds, training_procedure]
+propagation_law: >
+  Mandatory before any T2 work. If T1 improves but downstream
+  probability/resolution through the unchanged bridge does not, the
+  next bottleneck is the bridge/T2 layer — NOT more T1 feature
+  accumulation.
+
 at_gate_f1:
-  P0: [freeze PIT dataset,
-       "T1 CONTROL vs T1 + F-XVENUE (walk-forward)",
-       measure forecast-distribution improvement]
+  P0:
+    - freeze PIT dataset manifest (f1_first_artifact above) —
+      immutable BEFORE T1.1 runs
+    - T1 CONTROL vs T1 + F-XVENUE (t1_1_surgical_design above)
+    - measure forecast-distribution improvement
   P1: ["if T1 wins: freeze new T1",
        propagate new T1 through UNCHANGED probability bridge,
        measure downstream BSS / resolution]
