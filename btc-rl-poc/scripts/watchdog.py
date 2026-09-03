@@ -40,7 +40,13 @@ CFG = {
     "pat": r"-m btc_rl\.online$",
     "spawn": [sys.executable, "-u", "-m", "btc_rl.online"],
     "stale_s": 300,
-    "grace_s": 600,
+    # INC 2026-09-03 (restart kill-loop): warm-up (model load +
+    # 60k-row replay across 31 arms) measured at 29.6 min — the old
+    # 600s grace expired mid-warm-up, so every R1 attempt killed the
+    # previous still-warming spawn for ~7h. Grace must cover
+    # measured warm-up x1.5; re-measure if the replay cap or arm
+    # count changes.
+    "grace_s": 2700,
     "max_attempts": 2,
     "attempt_window_s": 1800,
     "record_governance": True,
