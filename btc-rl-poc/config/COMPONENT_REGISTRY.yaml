@@ -130,6 +130,11 @@ experiments:
      note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
        unlock conditions in-spec; evidence decides, not roadmap;
        also on the T1T2 program BLOCK list (PM 09-01)"}
+  - {id: T1.1, lifecycle: SPEC_ONLY, runtime: false,
+     spec: T1_1_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     note: "feature-family ablation current-vs-+F-XVENUE; frozen
+       improvement criteria pre-registered 09-04 BEFORE any result;
+       blocked on F1 v2.1 governing + PIT dataset freeze"}
   - {id: T1T2, lifecycle: SPEC_ONLY, runtime: false,
      spec: T1T2_PROGRAM.yaml, dependency_class: ZERO_DECISION_IMPACT,
      note: "forecast-quality-first program (PM 09-01) — the research

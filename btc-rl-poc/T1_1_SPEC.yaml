@@ -1,0 +1,71 @@
+# T1.1 — FEATURE-FAMILY ABLATION #1: current features vs +F-XVENUE
+# STATUS: SPEC_ONLY, PRE-REGISTERED 2026-09-04 (before any T1.1
+# result exists). Runs ONLY after both blockers clear. Improvement
+# criteria below are frozen NOW — the anti-peeking law applies: no
+# threshold, endpoint, or fold rule may change after the frozen
+# dataset is evaluated. A clean failure is a successful outcome.
+version: 1.0
+experiment_id: T1.1
+program: T1T2 (T1T2_PROGRAM.yaml)
+status: BLOCKED
+blocked_on:
+  - F1_V2_1_GOVERNING   # missingness audit v2.1.1 PASS + PM ratify
+  - PIT_DATASET_FROZEN  # manifest with hashes, folds, exclusions
+
+research_question: Does the F-XVENUE family (cross-venue trade
+  tape) add INFORMATION that improves the distributional forecast
+  of future BTC state, beyond the current serving feature set?
+
+# Surgical single-difference law (PM 09-01): if it improves, "new
+# information improved the forecast" — never "something changed".
+design:
+  unit: 15-min decision grid points from the FROZEN PIT dataset
+    (v2.1 stitched usability rule — [t-60, t+30] outage-free)
+  horizons: [h5, h15, h30]
+  control:   {features: current serving set (btc_rl/features.py
+      feature_vector + trend + tech), model: linear-probe}
+  treatment: {features: control + F-XVENUE family
+      (FEATURE_REGISTRY.yaml, 8 features via xvenue_sync ONLY),
+      model: linear-probe}
+  probe_rationale: BOTH arms use the same fixed linear quantile
+    probe (pinball loss, q10/q50/q90) — the T1.1 question is
+    information content, not architecture; a shared linear probe
+    isolates it. Architecture challengers come only after the
+    feature set is frozen (T1T2 law).
+  held_identical: [architecture, loss, folds, training procedure,
+                   preprocessing, seed]
+  folds: 5 chronological walk-forward folds from the frozen
+    manifest; train on folds < k, evaluate fold k (k = 2..5)
+  seed: 20260904
+
+metrics:
+  distribution: [pinball_q10, pinball_q50, pinball_q90,
+                 interval_coverage_80, interval_width]
+  point: [MAE, RMSE, signed_bias]
+  robustness: [median_fold, worst_fold, fold_variance]
+  reference: martingale baseline reported alongside both arms
+
+# FROZEN IMPROVEMENT CRITERIA (the only ones that will be applied)
+primary_endpoint: paired mean pinball loss (average of q10/q50/q90)
+  per horizon, control minus treatment, on out-of-fold predictions
+decision_rule:
+  qualify_iff:
+    - relative improvement >= 3% with seeded block-bootstrap 95% CI
+      excluding zero, on at least 2 of 3 horizons
+    - worst-fold relative improvement > -1% on every qualifying
+      horizon (no fold pays for another)
+    - interval_coverage_80 in [0.72, 0.88] for BOTH arms (a
+      "better" loss with broken calibration does not qualify)
+  reject_iff: CI includes zero on >= 2 horizons at the registered
+    evaluation, or any guard above fails
+  no_partial_credit: exploratory slices may be REPORTED, never
+    substituted for the endpoint
+one_shot: the frozen dataset is evaluated ONCE against this rule;
+  re-runs require a new registered spec version
+next_if_qualified: freeze winning feature set -> propagation test
+  through the UNCHANGED probability bridge (T1T2_PROGRAM
+  propagation_law) BEFORE any T2 work
+next_if_rejected: F-XVENUE recorded REJECT_FOR_T1 at family level;
+  proceed to T1.2 (F-MICRO) registration
+independence: no A3-v2 result may influence this experiment in
+  either direction (PM 09-03)
