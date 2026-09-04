@@ -1,50 +1,54 @@
 {
- "generated_ts": 1788494148,
+ "generated_ts": 1788497740,
  "status": "EXPLORATORY_OBSERVATION_ONLY",
- "f1_registration": "UNTOUCHED \u2014 7d/95% gate remains the registered rule; this audit can only motivate a FORMAL protocol amendment",
+ "f1_registration": "see GATE_F1_V2 in FEATURE_REGISTRY.yaml \u2014 the gate applies these computations to the clean eligible window via emit_f1_gate.py",
  "no_training_no_feature_selection": true,
- "span_days": 4.64,
- "grid_s": 900,
- "venues": [
-  "binance",
-  "okx",
-  "kraken"
- ],
  "integrity": {
   "binance": {
-   "rows": 12598913,
+   "rows": 12697515,
    "pit_violations": 0,
    "max_skew_s": 0.583,
    "out_of_order": 3,
    "bad_rows": 0
   },
   "okx": {
-   "rows": 880513,
+   "rows": 890202,
    "pit_violations": 0,
    "max_skew_s": 0.587,
    "out_of_order": 1,
    "bad_rows": 0
   },
   "kraken": {
-   "rows": 356005,
+   "rows": 359713,
    "pit_violations": 0,
    "max_skew_s": 0.569,
    "out_of_order": 0,
    "bad_rows": 0
   }
  },
+ "window_utc": [
+  "08-30 12:32",
+  "09-04 04:55"
+ ],
+ "span_days": 4.68,
+ "grid_s": 900,
+ "venues": [
+  "binance",
+  "okx",
+  "kraken"
+ ],
  "coverage": {
   "binance": {
-   "minute_presence": 0.7392,
-   "five_min_presence": 0.7651
+   "minute_presence": 0.7415,
+   "five_min_presence": 0.7672
   },
   "okx": {
-   "minute_presence": 0.7391,
-   "five_min_presence": 0.7614
+   "minute_presence": 0.7414,
+   "five_min_presence": 0.7635
   },
   "kraken": {
-   "minute_presence": 0.7367,
-   "five_min_presence": 0.7622
+   "minute_presence": 0.739,
+   "five_min_presence": 0.7643
   }
  },
  "material_gaps": {
@@ -117,27 +121,27 @@
  },
  "feature_availability": {
   "binance": {
-   "lookback_5s": 0.9784,
-   "lookback_60s": 0.9815
+   "lookback_5s": 0.9787,
+   "lookback_60s": 0.9817
   },
   "okx": {
-   "lookback_5s": 0.9506,
-   "lookback_60s": 0.9846
+   "lookback_5s": 0.9512,
+   "lookback_60s": 0.9848
   },
   "kraken": {
-   "lookback_5s": 0.8827,
-   "lookback_60s": 0.9846
+   "lookback_5s": 0.878,
+   "lookback_60s": 0.9848
   },
-  "all_venues_5s": 0.8457
+  "all_venues_5s": 0.8415
  },
  "venue_redundancy_corr_1min": {
   "binance~okx": 0.9878,
-  "binance~kraken": 0.9662,
-  "okx~kraken": 0.9548
+  "binance~kraken": 0.9661,
+  "okx~kraken": 0.9547
  },
  "cross_venue_dispersion_bps": {
-  "median": 3.1,
-  "p90": 5.28
+  "median": 3.06,
+  "p90": 5.27
  },
  "temporal_blocks_6h": {
   "n_blocks": 15,
@@ -150,6 +154,7 @@
   "blocks": [
    {
     "block_utc": "08-30 12:00",
+    "block_id": 82782,
     "vol_bps": 78.9,
     "ret_bps": 35.3,
     "n_min": 328,
@@ -157,6 +162,7 @@
    },
    {
     "block_utc": "08-30 18:00",
+    "block_id": 82783,
     "vol_bps": 78.4,
     "ret_bps": -111.7,
     "n_min": 207,
@@ -164,6 +170,7 @@
    },
    {
     "block_utc": "08-31 00:00",
+    "block_id": 82784,
     "vol_bps": 96.3,
     "ret_bps": 46.5,
     "n_min": 360,
@@ -171,6 +178,7 @@
    },
    {
     "block_utc": "08-31 06:00",
+    "block_id": 82785,
     "vol_bps": 83.7,
     "ret_bps": 43.4,
     "n_min": 355,
@@ -178,6 +186,7 @@
    },
    {
     "block_utc": "08-31 12:00",
+    "block_id": 82786,
     "vol_bps": 137.6,
     "ret_bps": 68.8,
     "n_min": 360,
@@ -185,6 +194,7 @@
    },
    {
     "block_utc": "08-31 18:00",
+    "block_id": 82787,
     "vol_bps": 61.5,
     "ret_bps": 21.3,
     "n_min": 233,
@@ -192,6 +202,7 @@
    },
    {
     "block_utc": "09-01 18:00",
+    "block_id": 82791,
     "vol_bps": 104.2,
     "ret_bps": 28.9,
     "n_min": 360,
@@ -199,6 +210,7 @@
    },
    {
     "block_utc": "09-02 00:00",
+    "block_id": 82792,
     "vol_bps": 86.0,
     "ret_bps": 23.8,
     "n_min": 360,
@@ -206,6 +218,7 @@
    },
    {
     "block_utc": "09-02 06:00",
+    "block_id": 82793,
     "vol_bps": 87.6,
     "ret_bps": -116.5,
     "n_min": 360,
@@ -213,6 +226,7 @@
    },
    {
     "block_utc": "09-02 12:00",
+    "block_id": 82794,
     "vol_bps": 122.4,
     "ret_bps": 74.6,
     "n_min": 360,
@@ -220,6 +234,7 @@
    },
    {
     "block_utc": "09-02 18:00",
+    "block_id": 82795,
     "vol_bps": 67.1,
     "ret_bps": -2.7,
     "n_min": 360,
@@ -227,6 +242,7 @@
    },
    {
     "block_utc": "09-03 00:00",
+    "block_id": 82796,
     "vol_bps": 89.6,
     "ret_bps": 55.9,
     "n_min": 360,
@@ -234,6 +250,7 @@
    },
    {
     "block_utc": "09-03 06:00",
+    "block_id": 82797,
     "vol_bps": 76.0,
     "ret_bps": -4.3,
     "n_min": 266,
@@ -241,6 +258,7 @@
    },
    {
     "block_utc": "09-03 18:00",
+    "block_id": 82799,
     "vol_bps": 118.9,
     "ret_bps": 5.3,
     "n_min": 341,
@@ -248,43 +266,44 @@
    },
    {
     "block_utc": "09-04 00:00",
-    "vol_bps": 71.8,
-    "ret_bps": -39.8,
-    "n_min": 235,
+    "block_id": 82800,
+    "vol_bps": 76.7,
+    "ret_bps": -10.2,
+    "n_min": 295,
     "vol_tercile": "LOW"
    }
   ]
  },
  "outcome_diversity": {
   "h5": {
-   "up_frac": 0.498,
-   "median_abs_bps": 6.5
+   "up_frac": 0.505,
+   "median_abs_bps": 6.4
   },
   "h15": {
-   "up_frac": 0.513,
+   "up_frac": 0.516,
    "median_abs_bps": 10.7
   },
   "h30": {
-   "up_frac": 0.524,
+   "up_frac": 0.526,
    "median_abs_bps": 15.4
   }
  },
  "regime_concentration_of_usable": {
-  "LOW": 0.332,
-  "MID": 0.429,
-  "HIGH": 0.239
+  "LOW": 0.325,
+  "MID": 0.375,
+  "HIGH": 0.3
  },
  "power": {
   "h5": {
-   "usable_n": 319,
-   "ess": 164.2,
-   "ess_ratio": 0.515,
+   "usable_n": 323,
+   "ess": 165.4,
+   "ess_ratio": 0.512,
    "acf_head": [
-    0.1932,
-    0.0772,
-    0.0227,
-    0.0942,
-    0.0748
+    0.1971,
+    0.0773,
+    0.0235,
+    0.0972,
+    0.076
    ],
    "baseline_mae_bps": 8.2,
    "sd_abs_err_bps": 7.4,
@@ -297,7 +316,7 @@
     "rho_0.95": {
      "mde80_bps": 0.51,
      "mde80_pct_of_mae": 6.2,
-     "ci95_width_bps": 0.72
+     "ci95_width_bps": 0.71
     },
     "rho_0.99": {
      "mde80_bps": 0.23,
@@ -307,37 +326,37 @@
    },
    "folds": {
     "n_folds": 5,
-    "per_fold": 63,
+    "per_fold": 64,
     "min_required": 48,
     "viable": true,
     "fold_mae_bps": [
-     8.9,
+     9.0,
      7.2,
-     7.6,
-     7.6,
-     9.8
+     7.8,
+     7.3,
+     9.7
     ],
-    "fold_mae_cv": 0.133
+    "fold_mae_cv": 0.134
    }
   },
   "h15": {
-   "usable_n": 318,
-   "ess": 238.9,
-   "ess_ratio": 0.751,
+   "usable_n": 322,
+   "ess": 241.2,
+   "ess_ratio": 0.749,
    "acf_head": [
-    0.1656
+    0.1675
    ],
    "baseline_mae_bps": 13.9,
    "sd_abs_err_bps": 12.5,
    "min_detectable_improvement": {
     "rho_0.9": {
      "mde80_bps": 1.01,
-     "mde80_pct_of_mae": 7.3,
-     "ci95_width_bps": 1.42
+     "mde80_pct_of_mae": 7.2,
+     "ci95_width_bps": 1.41
     },
     "rho_0.95": {
-     "mde80_bps": 0.72,
-     "mde80_pct_of_mae": 5.2,
+     "mde80_bps": 0.71,
+     "mde80_pct_of_mae": 5.1,
      "ci95_width_bps": 1.0
     },
     "rho_0.99": {
@@ -348,61 +367,61 @@
    },
    "folds": {
     "n_folds": 5,
-    "per_fold": 63,
+    "per_fold": 64,
     "min_required": 48,
     "viable": true,
     "fold_mae_bps": [
-     14.0,
-     15.9,
-     13.5,
-     13.2,
+     13.9,
+     15.7,
+     13.8,
+     13.0,
      12.9
     ],
-    "fold_mae_cv": 0.085
+    "fold_mae_cv": 0.08
    }
   },
   "h30": {
-   "usable_n": 317,
-   "ess": 217.2,
-   "ess_ratio": 0.685,
+   "usable_n": 321,
+   "ess": 223.0,
+   "ess_ratio": 0.695,
    "acf_head": [
-    0.1338,
-    0.04,
-    0.0164,
-    0.0395
+    0.1296,
+    0.0385,
+    0.0134,
+    0.0381
    ],
-   "baseline_mae_bps": 19.5,
+   "baseline_mae_bps": 19.4,
    "sd_abs_err_bps": 16.6,
    "min_detectable_improvement": {
     "rho_0.9": {
-     "mde80_bps": 1.41,
-     "mde80_pct_of_mae": 7.2,
-     "ci95_width_bps": 1.97
+     "mde80_bps": 1.39,
+     "mde80_pct_of_mae": 7.1,
+     "ci95_width_bps": 1.94
     },
     "rho_0.95": {
-     "mde80_bps": 0.99,
+     "mde80_bps": 0.98,
      "mde80_pct_of_mae": 5.1,
-     "ci95_width_bps": 1.39
+     "ci95_width_bps": 1.37
     },
     "rho_0.99": {
      "mde80_bps": 0.44,
      "mde80_pct_of_mae": 2.3,
-     "ci95_width_bps": 0.62
+     "ci95_width_bps": 0.61
     }
    },
    "folds": {
     "n_folds": 5,
-    "per_fold": 63,
+    "per_fold": 64,
     "min_required": 48,
     "viable": true,
     "fold_mae_bps": [
-     20.1,
-     22.4,
-     18.9,
-     18.6,
-     17.8
+     19.8,
+     22.3,
+     19.5,
+     17.7,
+     18.1
     ],
-    "fold_mae_cv": 0.091
+    "fold_mae_cv": 0.094
    }
   }
  },
@@ -421,12 +440,12 @@
  "sufficiency_summary": {
   "n_pass": 7,
   "n_total": 10,
-  "verdict": "INSUFFICIENT \u2014 wait for Sep 6",
+  "verdict": "INSUFFICIENT",
   "failed": [
    "coverage_95",
    "continuity",
    "feature_availability"
   ]
  },
- "runtime_s": 19.7
+ "runtime_s": 20.3
 }
