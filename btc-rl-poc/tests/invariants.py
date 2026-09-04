@@ -302,10 +302,11 @@ def _no_private_alignment():
     shards: capture_xvenue.py (writer) and xvenue_sync.py (the ONE
     alignment layer). Any other code referencing events_xvenue is a
     private-alignment violation."""
-    # writer, the ONE alignment layer, and the F1 quality auditor
-    # (coverage/gap measurement is not alignment)
+    # writer, the ONE alignment layer, and the two quality auditors
+    # (coverage/gap/power measurement is not alignment; auditors
+    # never emit features). audit_f1_sufficiency added PM 09-03.
     ALLOWED = {"capture_xvenue.py", "xvenue_sync.py",
-               "emit_f1_gate.py"}
+               "emit_f1_gate.py", "audit_f1_sufficiency.py"}
     bad = []
     for d in (ROOT / "scripts", ROOT / "btc_rl"):
         for p in d.glob("*.py"):
