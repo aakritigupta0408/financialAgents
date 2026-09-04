@@ -1,18 +1,35 @@
 {
- "generated_ts": 1788498163,
+ "generated_ts": 1788498713,
+ "audit_version": "2.1.1",
+ "amendment": "E episode-level (PM 09-03); v2.1.0 FAIL frozen in git 82db163; bounds and A-D/F byte-identical",
+ "rerun_not_before_utc": "2026-09-05 05:10",
+ "episodes": [
+  {
+   "start_utc": "08-30 21:02",
+   "total_outage_min": 120
+  },
+  {
+   "start_utc": "08-31 21:53",
+   "total_outage_min": 1165
+  },
+  {
+   "start_utc": "09-03 10:21",
+   "total_outage_min": 442
+  }
+ ],
  "purpose": "condition on ratifying GATE_F1 v2.1 (PM 09-03)",
  "reference_series": "Coinbase 1m candles (independent, covers outage minutes)",
  "grid_step_min": 15,
  "usable_path_rule": "[m-60, m+30] clean",
  "retained": {
-  "n": 312,
-  "median_vol30": 24.3,
+  "n": 313,
+  "median_vol30": 24.2,
   "median_abs_ret60": 21.0,
-  "up_frac_h5": 0.481,
+  "up_frac_h5": 0.479,
   "median_abs_h5": 6.5,
-  "up_frac_h15": 0.51,
+  "up_frac_h15": 0.508,
   "median_abs_h15": 10.4,
-  "up_frac_h30": 0.538,
+  "up_frac_h30": 0.537,
   "median_abs_h30": 15.2
  },
  "excluded": {
@@ -33,9 +50,9 @@
    "retention": 0.8
   },
   "utc_03-06": {
-   "ret": 42,
+   "ret": 43,
    "exc": 12,
-   "retention": 0.778
+   "retention": 0.782
   },
   "utc_06-09": {
    "ret": 36,
@@ -68,33 +85,14 @@
    "retention": 0.633
   }
  },
- "pre_outage_vol_percentiles": [
-  84.2,
-  82.4,
-  46.2,
-  81.3,
-  61.7,
+ "pre_episode_vol_percentiles": [
+  84.3,
   11.5,
-  28.6,
-  50.5,
-  63.7,
-  29.3,
-  43.9,
-  88.7,
-  78.8,
-  83.3,
-  93.2,
-  89.9,
-  88.7,
-  98.4,
-  96.8,
-  95.5,
-  96.6,
-  83.8,
-  65.1,
-  44.8
+  28.8
  ],
- "median_pre_outage_vol_pct": 82.4,
+ "median_pre_episode_vol_pct": 28.8,
+ "n_episodes": 3,
+ "min_episodes_for_E": 3,
  "gate_shadow_recheck": {
   "ess_min_150": true,
   "diversity": true
@@ -104,10 +102,10 @@
   "B_volatility_parity": true,
   "C_trend_parity": true,
   "D_time_of_day": true,
-  "E_outage_not_condition_triggered": false,
+  "E_outage_episode_independence": true,
   "F_gate_ess_and_diversity_hold": true
  },
  "not_evaluable": [],
- "verdict": "FAIL",
- "runtime_s": 31.0
+ "verdict": "PENDING_PROSPECTIVE_RERUN",
+ "runtime_s": 30.8
 }

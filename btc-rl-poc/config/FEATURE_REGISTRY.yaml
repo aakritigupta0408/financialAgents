@@ -31,6 +31,16 @@
 #   · no open capture incident · all hourly shards present.
 #   ANTI-PEEKING LAW: thresholds frozen 09-03 BEFORE any T1.1 model
 #   result exists; model outcomes never feed back into this gate.
+#   v2.1 RATIFICATION CONDITION (PM 09-03): the stitched rule
+#   becomes governing only after the missingness-selection audit
+#   (scripts/audit_missingness.py) passes. v2.1.0 of that audit
+#   ruled FAIL (frozen, git 82db163); F1-v2.1.1 amends ONLY its
+#   check E to the outage-EPISODE level (episodes = outages
+#   separated by <120min clean; >=3 episodes required; bounds
+#   [25,75] byte-identical) and must rerun PROSPECTIVELY (not
+#   before 2026-09-05 05:10 UTC, >=24h fresh capture under the
+#   sleep fix). All other criteria byte-identical — the amendment
+#   fixes a defective measurement, it does not ease the gate.
 #   (All-venue 5s availability is a T1.1 feature-spec concern —
 #   kraken legitimately gaps to 120s — NOT a capture criterion.)
 #   Data Reliability agent owns the gate evidence.

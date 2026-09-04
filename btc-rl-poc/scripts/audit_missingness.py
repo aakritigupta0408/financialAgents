@@ -8,18 +8,34 @@ EXCLUDED observations using the desk's INDEPENDENT Coinbase 1-min
 candle source (REST, retrospective — it covers outage minutes our
 own tape lacks).
 
-PRE-DECLARED PASS CONDITIONS (written before results were seen):
+PRE-DECLARED PASS CONDITIONS (A-D, F written before any result was
+seen; E amended once, see below):
   A. outcome parity  — |up_frac(ret) - up_frac(exc)| <= 0.10 per
      horizon (evaluated only if excluded n >= 30, else reported)
   B. volatility parity — median vol30 ratio ret/exc in [0.7, 1.4]
   C. trend parity   — median |ret60| ratio ret/exc in [0.5, 2.0]
   D. time-of-day    — every 3h UTC bucket retains >= 30% of its
      grid points (no session wiped out)
-  E. outage trigger — median pre-outage vol30 percentile in
-     [25, 75] (outages are not market-condition-triggered)
+  E. outage-condition independence — AMENDED v2.1.1 (PM ruling
+     2026-09-03, registered BEFORE the prospective rerun):
+     evaluated at the OUTAGE-EPISODE level, never the individual
+     gap level (the v2.1.0 form counted 17 gaps of one doze
+     episode as independent draws — a measurement defect, ruled
+     FAIL and frozen in git 82db163). Episodes are deterministic:
+     adjacent outages separated by < EPISODE_QUIET_MIN of clean
+     capture belong to one episode. Median PRE-EPISODE vol30
+     percentile must lie in [25, 75] — bounds byte-identical to
+     v2.1.0 — and >= MIN_EPISODES episodes are required for E to
+     be evaluable; with fewer, the verdict is PENDING (a
+     not-evaluable E can never default to PASS).
   F. gate re-check  — v2.1 shadow still shows ESS >= 150 per
      horizon and temporal/regime diversity PASS
-Verdict PASS iff all evaluable conditions hold.
+Verdict PASS iff all conditions evaluable and passing; the rerun is
+PROSPECTIVE — before RERUN_NOT_BEFORE_TS the artifact can only say
+PENDING_PROSPECTIVE_RERUN, never PASS. All other criteria (A-D, F,
+and every GATE_F1 v2/v2.1 threshold) are byte-identical: this
+amendment fixes a defective measurement dimension, it does not make
+F1 easier to pass.
 """
 import json
 import math
@@ -38,6 +54,12 @@ from btc_rl.sources import fetch_range
 
 GRID_STEP_MIN = 15
 PATH_LO, PATH_HI = 60, 30            # v2.1 usable-path rule
+AUDIT_VERSION = "2.1.1"
+EPISODE_QUIET_MIN = 120              # registered episode separator
+MIN_EPISODES = 3                     # E evaluability floor
+RERUN_NOT_BEFORE_TS = 1788585037     # 2026-09-05 05:10 UTC —
+# registration + >=24h of fresh capture under the sleep fix; before
+# this ts the verdict is PENDING_PROSPECTIVE_RERUN by law
 
 
 def pct_rank(x, pool):
@@ -118,14 +140,23 @@ def main():
         **c, "retention": round(c["ret"] / (c["ret"] + c["exc"]), 3)}
         for b, c in sorted(buckets.items())}
 
-    # E. were outages triggered by market conditions?
+    # E (v2.1.1). episode-level outage-condition independence:
+    # deterministic episodes — adjacent outages with < EPISODE_QUIET
+    # clean minutes between them are ONE operational event
+    episodes = []
+    for a, b in outages:
+        if episodes and a - episodes[-1][1] < EPISODE_QUIET_MIN:
+            episodes[-1][1] = b
+        else:
+            episodes.append([a, b])
     vol_pool = [r["vol30"] for r in retained + excluded]
-    pre_vol_pcts = []
-    for a, _b in outages:
+    pre_vol_pcts = []                    # one per EPISODE, at first
+    for a, _b in episodes:               # outage of the episode
         v = vol30(a)
         if v is not None:
             pre_vol_pcts.append(round(pct_rank(v, vol_pool), 1))
     med_pre_pct = med(pre_vol_pcts)
+    e_evaluable = len(pre_vol_pcts) >= MIN_EPISODES
 
     # F. gate v2.1 shadow re-check
     gate = json.loads((RES / "f1_capture_qualification.json")
@@ -151,15 +182,30 @@ def main():
             else None),
         "D_time_of_day": all(v["retention"] >= 0.30
                              for v in tod.values()),
-        "E_outage_not_condition_triggered": (
-            25 <= med_pre_pct <= 75 if med_pre_pct is not None
-            else None),
+        "E_outage_episode_independence": (
+            25 <= med_pre_pct <= 75
+            if e_evaluable and med_pre_pct is not None else None),
         "F_gate_ess_and_diversity_hold": bool(ess_ok and div_ok),
     }
-    evaluable = {k: v for k, v in checks.items() if v is not None}
-    verdict = "PASS" if all(evaluable.values()) else "FAIL"
+    now = time.time()
+    if now < RERUN_NOT_BEFORE_TS:
+        verdict = "PENDING_PROSPECTIVE_RERUN"
+    elif checks["E_outage_episode_independence"] is None:
+        verdict = "PENDING"      # not-evaluable E never defaults on
+    else:
+        evaluable = {k: v for k, v in checks.items()
+                     if v is not None}
+        verdict = "PASS" if all(evaluable.values()) else "FAIL"
     doc = {
         "generated_ts": int(time.time()),
+        "audit_version": AUDIT_VERSION,
+        "amendment": "E episode-level (PM 09-03); v2.1.0 FAIL frozen "
+                     "in git 82db163; bounds and A-D/F byte-identical",
+        "rerun_not_before_utc": time.strftime(
+            "%Y-%m-%d %H:%M", time.gmtime(RERUN_NOT_BEFORE_TS)),
+        "episodes": [{"start_utc": time.strftime(
+            "%m-%d %H:%M", time.gmtime(a * 60)),
+            "total_outage_min": b - a} for a, b in episodes],
         "purpose": "condition on ratifying GATE_F1 v2.1 (PM 09-03)",
         "reference_series": "Coinbase 1m candles (independent, "
                             "covers outage minutes)",
@@ -167,8 +213,10 @@ def main():
         "usable_path_rule": f"[m-{PATH_LO}, m+{PATH_HI}] clean",
         "retained": dr, "excluded": de,
         "time_of_day_retention_3h_utc": tod,
-        "pre_outage_vol_percentiles": pre_vol_pcts,
-        "median_pre_outage_vol_pct": med_pre_pct,
+        "pre_episode_vol_percentiles": pre_vol_pcts,
+        "median_pre_episode_vol_pct": med_pre_pct,
+        "n_episodes": len(pre_vol_pcts),
+        "min_episodes_for_E": MIN_EPISODES,
         "gate_shadow_recheck": {"ess_min_150": ess_ok,
                                 "diversity": div_ok},
         "checks": checks,
@@ -179,7 +227,8 @@ def main():
         json.dumps(doc, indent=1))
     print(json.dumps({k: doc[k] for k in
                       ("retained", "excluded", "checks", "verdict",
-                       "median_pre_outage_vol_pct")}, indent=1))
+                       "n_episodes", "median_pre_episode_vol_pct")},
+                     indent=1))
 
 
 if __name__ == "__main__":
