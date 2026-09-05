@@ -1,0 +1,85 @@
+{
+ "generated_ts": 1788585281,
+ "experiment": "T1.1",
+ "spec_sha": "9cf7e653189c2e33",
+ "dataset_sha": "c255447862551cb5",
+ "mode": "REGISTERED",
+ "seed": 20260904,
+ "horizons": {
+  "h5": {
+   "n_oof": 321,
+   "pinball_ctl": 2.779,
+   "pinball_trt": 2.89,
+   "rel_improvement": -0.04,
+   "ci95_block_bootstrap": [
+    -0.0881,
+    0.0021
+   ],
+   "fold_rel": [
+    -0.1081,
+    -0.0348,
+    -0.0208,
+    0.0176
+   ],
+   "worst_fold_rel": -0.1081,
+   "coverage80": {
+    "ctl": 0.751,
+    "trt": 0.692
+   },
+   "mae_ctl": 8.59,
+   "mae_trt": 8.84,
+   "qualifies": false
+  },
+  "h15": {
+   "n_oof": 321,
+   "pinball_ctl": 4.966,
+   "pinball_trt": 5.138,
+   "rel_improvement": -0.0348,
+   "ci95_block_bootstrap": [
+    -0.062,
+    -0.007
+   ],
+   "fold_rel": [
+    -0.0203,
+    -0.0779,
+    0.0011,
+    -0.0412
+   ],
+   "worst_fold_rel": -0.0779,
+   "coverage80": {
+    "ctl": 0.751,
+    "trt": 0.745
+   },
+   "mae_ctl": 14.65,
+   "mae_trt": 14.97,
+   "qualifies": false
+  },
+  "h30": {
+   "n_oof": 321,
+   "pinball_ctl": 7.192,
+   "pinball_trt": 7.324,
+   "rel_improvement": -0.0183,
+   "ci95_block_bootstrap": [
+    -0.036,
+    -0.0016
+   ],
+   "fold_rel": [
+    0.0198,
+    -0.0789,
+    -0.0025,
+    -0.0169
+   ],
+   "worst_fold_rel": -0.0789,
+   "coverage80": {
+    "ctl": 0.745,
+    "trt": 0.741
+   },
+   "mae_ctl": 20.83,
+   "mae_trt": 21.3,
+   "qualifies": false
+  }
+ },
+ "decision_rule": "QUALIFY iff >=2/3 horizons pass (rel>=0.03, CI>0, worst-fold>-0.01, coverage in (0.72, 0.88))",
+ "horizons_qualifying": 0,
+ "verdict": "REJECT"
+}

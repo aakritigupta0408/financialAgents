@@ -130,11 +130,18 @@ experiments:
      note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
        unlock conditions in-spec; evidence decides, not roadmap;
        also on the T1T2 program BLOCK list (PM 09-01)"}
-  - {id: T1.1, lifecycle: SPEC_ONLY, runtime: false,
+  - {id: T1.1, lifecycle: CLOSED_REJECTED, runtime: false,
      spec: T1_1_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
-     note: "feature-family ablation current-vs-+F-XVENUE; frozen
-       improvement criteria pre-registered 09-04 BEFORE any result;
-       blocked on F1 v2.1 governing + PIT dataset freeze"}
+     final_verdict: "REJECT at registered one-shot gate (09-05):
+       F-XVENUE worsened paired pinball at every horizon (h5 -4.0pct,
+       h15 -3.5pct CI [-6.2,-0.7], h30 -1.8pct CI [-3.6,-0.2]) on
+       frozen dataset c255447862551cb5, n=401, linear probe",
+     evidence: "t1_1_result.json + t1_dataset_manifest.json
+       (immutable); criteria pre-registered at 097a313",
+     scope_of_claim: "family-level for T1 price forecasting at
+       h5-h30 via linear probe — NOT a claim about T2 probability
+       features or nonlinear extraction",
+     next: "T1.2 (F-MICRO) registration per T1T2 program"}
   - {id: T1T2, lifecycle: SPEC_ONLY, runtime: false,
      spec: T1T2_PROGRAM.yaml, dependency_class: ZERO_DECISION_IMPACT,
      note: "forecast-quality-first program (PM 09-01) — the research

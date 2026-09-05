@@ -172,10 +172,27 @@ def main():
         "no_open_capture_incident": not open_inc,
         "provenance_complete": not missing_shards,
     }
+    # RATIFICATION (PM 09-04, pre-authorized conditional): v2.1
+    # becomes GOVERNING iff the v2.1.1 missingness audit ran after
+    # its registered prospective time and PASSed. Verified from the
+    # artifact, never assumed.
+    v21_governing = False
+    try:
+        _miss = json.loads((RES / "f1_missingness_audit.json")
+                           .read_text())
+        from audit_missingness import RERUN_NOT_BEFORE_TS
+        v21_governing = (_miss.get("verdict") == "PASS"
+                         and _miss.get("generated_ts", 0)
+                         >= RERUN_NOT_BEFORE_TS)
+    except Exception:
+        pass
     shadow_v2_1 = {
-        "status": "PROPOSED_NOT_GOVERNING — needs formal PM "
-                  "ratification (contiguity proved fragile: this "
-                  "machine dozes; see machine_outages list)",
+        "status": ("GOVERNING — PM pre-ratified 09-04 conditional "
+                   "on v2.1.1 missingness PASS; condition verified "
+                   "from f1_missingness_audit.json"
+                   if v21_governing else
+                   "PROPOSED_NOT_GOVERNING — awaiting v2.1.1 "
+                   "prospective missingness PASS"),
         "rule": "stitched clean segments — documented outages leave "
                 "denominators; usable obs = clean [m-60, m+30] path",
         "would_pass": all(s_criteria.values()),
@@ -187,8 +204,15 @@ def main():
         "usable_days_ex_outages": sb["span_days"],
         "power": sp}
 
+    if v21_governing:
+        verdict = ("PASS" if all(s_criteria.values())
+                   else "EXTEND_CAPTURE")
     doc = {"generated_ts": int(now),
-           "gate": "F1", "gate_version": GATE_VERSION,
+           "gate": "F1",
+           "gate_version": "2.1" if v21_governing else GATE_VERSION,
+           "governing_rule": ("v2.1 stitched clean segments"
+                              if v21_governing
+                              else "v2 contiguous clean window"),
            "amendment": "PM 2026-09-03 — clean-window truncation + "
                         "pre-registered statistical sufficiency; "
                         "v1 span-coverage rule retired (rationale: "
@@ -206,9 +230,11 @@ def main():
                                        time.gmtime(a * 60)),
                                      "gap_min": b - a}
                                     for a, b in outages]},
-           "criteria": criteria,
+           "criteria": s_criteria if v21_governing else criteria,
            "verdict": verdict,
-           "failing": [k for k, v in criteria.items() if not v],
+           "failing": [k for k, v in
+                       (s_criteria if v21_governing
+                        else criteria).items() if not v],
            "projection": projection,
            "ess_min_across_horizons": round(ess_min, 1),
            "mde80_worst_pct_of_mae": (round(mde_max, 1)

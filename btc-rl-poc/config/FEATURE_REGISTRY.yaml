@@ -119,6 +119,12 @@ families:
 
   F-XVENUE:     # ~8 · targets early-window residual resolution —
                 # the M5.4 candidate question's family
+    # T1.1 verdict (09-05, registered one-shot): REJECT_FOR_T1 —
+    # worsened distributional forecast at h5/h15/h30 via linear
+    # probe on frozen dataset c255447862551cb5. Scope: T1 price
+    # forecasting only; T2 probability-layer use (e.g. dispersion
+    # for resolution) would need its OWN registered experiment.
+    # Capture continues (cheap, PIT record retained).
     lifecycle: CAPTURE_ONLY
     features:
       - {feature_id: coinbase_return_1s,  lookback: 1s}

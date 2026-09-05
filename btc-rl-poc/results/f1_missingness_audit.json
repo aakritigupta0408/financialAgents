@@ -1,5 +1,5 @@
 {
- "generated_ts": 1788498713,
+ "generated_ts": 1788585102,
  "audit_version": "2.1.1",
  "amendment": "E episode-level (PM 09-03); v2.1.0 FAIL frozen in git 82db163; bounds and A-D/F byte-identical",
  "rerun_not_before_utc": "2026-09-05 05:10",
@@ -15,6 +15,10 @@
   {
    "start_utc": "09-03 10:21",
    "total_outage_min": 442
+  },
+  {
+   "start_utc": "09-04 17:32",
+   "total_outage_min": 18
   }
  ],
  "purpose": "condition on ratifying GATE_F1 v2.1 (PM 09-03)",
@@ -22,76 +26,77 @@
  "grid_step_min": 15,
  "usable_path_rule": "[m-60, m+30] clean",
  "retained": {
-  "n": 313,
-  "median_vol30": 24.2,
-  "median_abs_ret60": 21.0,
-  "up_frac_h5": 0.479,
-  "median_abs_h5": 6.5,
-  "up_frac_h15": 0.508,
-  "median_abs_h15": 10.4,
-  "up_frac_h30": 0.537,
-  "median_abs_h30": 15.2
+  "n": 402,
+  "median_vol30": 23.7,
+  "median_abs_ret60": 18.8,
+  "up_frac_h5": 0.483,
+  "median_abs_h5": 5.7,
+  "up_frac_h15": 0.505,
+  "median_abs_h15": 9.7,
+  "up_frac_h30": 0.517,
+  "median_abs_h30": 13.6
  },
  "excluded": {
-  "n": 132,
-  "median_vol30": 25.5,
-  "median_abs_ret60": 28.1,
-  "up_frac_h5": 0.515,
-  "median_abs_h5": 7.6,
-  "up_frac_h15": 0.508,
-  "median_abs_h15": 12.5,
-  "up_frac_h30": 0.523,
-  "median_abs_h30": 19.0
+  "n": 139,
+  "median_vol30": 24.8,
+  "median_abs_ret60": 25.5,
+  "up_frac_h5": 0.518,
+  "median_abs_h5": 7.3,
+  "up_frac_h15": 0.511,
+  "median_abs_h15": 11.8,
+  "up_frac_h30": 0.54,
+  "median_abs_h30": 17.8
  },
  "time_of_day_retention_3h_utc": {
   "utc_00-03": {
+   "ret": 60,
+   "exc": 12,
+   "retention": 0.833
+  },
+  "utc_03-06": {
+   "ret": 55,
+   "exc": 12,
+   "retention": 0.821
+  },
+  "utc_06-09": {
    "ret": 48,
    "exc": 12,
    "retention": 0.8
   },
-  "utc_03-06": {
-   "ret": 43,
-   "exc": 12,
-   "retention": 0.782
-  },
-  "utc_06-09": {
-   "ret": 36,
-   "exc": 12,
-   "retention": 0.75
-  },
   "utc_09-12": {
-   "ret": 28,
+   "ret": 40,
    "exc": 20,
-   "retention": 0.583
+   "retention": 0.667
   },
   "utc_12-15": {
-   "ret": 30,
+   "ret": 42,
    "exc": 24,
-   "retention": 0.556
+   "retention": 0.636
   },
   "utc_15-18": {
-   "ret": 36,
-   "exc": 24,
-   "retention": 0.6
+   "ret": 45,
+   "exc": 27,
+   "retention": 0.625
   },
   "utc_18-21": {
-   "ret": 54,
-   "exc": 6,
-   "retention": 0.9
+   "ret": 62,
+   "exc": 10,
+   "retention": 0.861
   },
   "utc_21-24": {
-   "ret": 38,
+   "ret": 50,
    "exc": 22,
-   "retention": 0.633
+   "retention": 0.694
   }
  },
  "pre_episode_vol_percentiles": [
-  84.3,
-  11.5,
-  28.8
+  84.8,
+  16.3,
+  33.6,
+  42.0
  ],
- "median_pre_episode_vol_pct": 28.8,
- "n_episodes": 3,
+ "median_pre_episode_vol_pct": 42.0,
+ "n_episodes": 4,
  "min_episodes_for_E": 3,
  "gate_shadow_recheck": {
   "ess_min_150": true,
@@ -106,6 +111,6 @@
   "F_gate_ess_and_diversity_hold": true
  },
  "not_evaluable": [],
- "verdict": "PENDING_PROSPECTIVE_RERUN",
- "runtime_s": 30.8
+ "verdict": "PASS",
+ "runtime_s": 39.3
 }

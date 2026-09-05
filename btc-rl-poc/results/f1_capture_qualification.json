@@ -1,13 +1,14 @@
 {
- "generated_ts": 1788497884,
+ "generated_ts": 1788585170,
  "gate": "F1",
- "gate_version": "2.0",
+ "gate_version": "2.1",
+ "governing_rule": "v2.1 stitched clean segments",
  "amendment": "PM 2026-09-03 \u2014 clean-window truncation + pre-registered statistical sufficiency; v1 span-coverage rule retired (rationale: f1_sufficiency_audit sha in commit 1caa9a9)",
  "anti_peeking_law": "criteria frozen before any T1.1 model result; model outcomes never amend this gate",
- "days": 4.72,
+ "days": 5.73,
  "eligible_window": {
-  "start_utc": "09-03 17:43",
-  "end_utc": "09-04 04:58",
+  "start_utc": "09-04 17:50",
+  "end_utc": "09-05 05:13",
   "days": 0.47,
   "machine_outages_all_capture": [
    {
@@ -105,6 +106,10 @@
    {
     "start_utc": "09-03 17:27",
     "gap_min": 16
+   },
+   {
+    "start_utc": "09-04 17:32",
+    "gap_min": 18
    }
   ]
  },
@@ -112,208 +117,183 @@
   "pit_zero": true,
   "schema_clean": true,
   "timestamps_ordered": true,
-  "coverage_95_in_window": true,
-  "continuity_in_window": true,
-  "ess_min_150": false,
-  "mde80_max_8pct": false,
-  "fold_viability": false,
+  "coverage_95_ex_outages": true,
+  "continuity_ex_outages": true,
+  "ess_min_150": true,
+  "mde80_max_8pct": true,
+  "fold_viability": true,
   "outcome_nondegenerate": true,
-  "temporal_diversity": false,
+  "temporal_diversity": true,
   "regime_no_domination": true,
   "no_open_capture_incident": true,
   "provenance_complete": true
  },
- "verdict": "EXTEND_CAPTURE",
- "failing": [
-  "ess_min_150",
-  "mde80_max_8pct",
-  "fold_viability",
-  "temporal_diversity"
- ],
- "projection": "~1.5 more CLEAN days for ESS>=150 (linear estimate; any new machine outage re-truncates)",
- "ess_min_across_horizons": 35.4,
- "mde80_worst_pct_of_mae": 13.6,
+ "verdict": "PASS",
+ "failing": [],
+ "projection": "~3.7 more CLEAN days for ESS>=150 (linear estimate; any new machine outage re-truncates)",
+ "ess_min_across_horizons": 16.8,
+ "mde80_worst_pct_of_mae": 18.1,
  "open_capture_incidents": [],
  "missing_shards": [],
  "window_analysis": {
   "coverage": {
    "binance": {
-    "minute_presence": 0.9556,
-    "five_min_presence": 0.9706
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
    },
    "okx": {
-    "minute_presence": 0.9527,
-    "five_min_presence": 0.9632
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
    },
    "kraken": {
-    "minute_presence": 0.9541,
-    "five_min_presence": 0.9706
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
    }
   },
   "material_gaps": {
-   "binance": [
-    {
-     "start": "09-03 17:44",
-     "gap_min": 15
-    },
-    {
-     "start": "09-03 18:02",
-     "gap_min": 15
-    }
-   ],
-   "okx": [
-    {
-     "start": "09-03 18:00",
-     "gap_min": 17
-    },
-    {
-     "start": "09-03 17:44",
-     "gap_min": 16
-    }
-   ],
-   "kraken": [
-    {
-     "start": "09-03 18:00",
-     "gap_min": 17
-    },
-    {
-     "start": "09-03 17:44",
-     "gap_min": 15
-    }
-   ]
+   "binance": [],
+   "okx": [],
+   "kraken": []
   },
   "outcome_diversity": {
    "h5": {
-    "up_frac": 0.385,
-    "median_abs_bps": 7.4
+    "up_frac": 0.525,
+    "median_abs_bps": 2.2
    },
    "h15": {
-    "up_frac": 0.513,
-    "median_abs_bps": 9.3
+    "up_frac": 0.475,
+    "median_abs_bps": 3.3
    },
    "h30": {
-    "up_frac": 0.487,
-    "median_abs_bps": 12.5
+    "up_frac": 0.45,
+    "median_abs_bps": 5.7
    }
   },
   "power": {
    "h5": {
-    "usable_n": 39,
-    "ess": 39.0,
+    "usable_n": 40,
+    "ess": 40.0,
     "ess_ratio": 1.0,
     "acf_head": [],
-    "baseline_mae_bps": 9.6,
-    "sd_abs_err_bps": 9.3,
+    "baseline_mae_bps": 3.3,
+    "sd_abs_err_bps": 3.8,
     "min_detectable_improvement": {
      "rho_0.9": {
-      "mde80_bps": 1.86,
-      "mde80_pct_of_mae": 19.3,
-      "ci95_width_bps": 2.6
+      "mde80_bps": 0.76,
+      "mde80_pct_of_mae": 22.7,
+      "ci95_width_bps": 1.06
      },
      "rho_0.95": {
-      "mde80_bps": 1.31,
-      "mde80_pct_of_mae": 13.6,
-      "ci95_width_bps": 1.84
+      "mde80_bps": 0.53,
+      "mde80_pct_of_mae": 16.1,
+      "ci95_width_bps": 0.75
      },
      "rho_0.99": {
-      "mde80_bps": 0.59,
-      "mde80_pct_of_mae": 6.1,
-      "ci95_width_bps": 0.82
+      "mde80_bps": 0.24,
+      "mde80_pct_of_mae": 7.2,
+      "ci95_width_bps": 0.33
      }
     },
     "folds": {
      "n_folds": 5,
-     "per_fold": 7,
+     "per_fold": 8,
      "min_required": 48,
      "viable": false,
      "fold_mae_bps": [
-      10.0,
-      12.9,
-      9.5,
-      6.8,
-      9.9
+      2.6,
+      5.1,
+      3.0,
+      3.1,
+      2.9
      ],
-     "fold_mae_cv": 0.224
+     "fold_mae_cv": 0.304
     }
    },
    "h15": {
-    "usable_n": 39,
-    "ess": 39.0,
-    "ess_ratio": 1.0,
-    "acf_head": [],
-    "baseline_mae_bps": 12.7,
-    "sd_abs_err_bps": 10.6,
+    "usable_n": 40,
+    "ess": 24.8,
+    "ess_ratio": 0.62,
+    "acf_head": [
+     0.0114,
+     0.2956
+    ],
+    "baseline_mae_bps": 4.4,
+    "sd_abs_err_bps": 4.1,
     "min_detectable_improvement": {
      "rho_0.9": {
-      "mde80_bps": 2.12,
-      "mde80_pct_of_mae": 16.7,
-      "ci95_width_bps": 2.96
+      "mde80_bps": 1.02,
+      "mde80_pct_of_mae": 23.1,
+      "ci95_width_bps": 1.43
      },
      "rho_0.95": {
-      "mde80_bps": 1.5,
-      "mde80_pct_of_mae": 11.8,
-      "ci95_width_bps": 2.09
+      "mde80_bps": 0.72,
+      "mde80_pct_of_mae": 16.4,
+      "ci95_width_bps": 1.01
      },
      "rho_0.99": {
-      "mde80_bps": 0.67,
-      "mde80_pct_of_mae": 5.3,
-      "ci95_width_bps": 0.94
+      "mde80_bps": 0.32,
+      "mde80_pct_of_mae": 7.3,
+      "ci95_width_bps": 0.45
      }
     },
     "folds": {
      "n_folds": 5,
-     "per_fold": 7,
+     "per_fold": 8,
      "min_required": 48,
      "viable": false,
      "fold_mae_bps": [
-      19.5,
-      12.6,
-      8.7,
-      8.9,
-      13.9
+      7.8,
+      5.1,
+      2.3,
+      4.2,
+      2.8
      ],
-     "fold_mae_cv": 0.347
+     "fold_mae_cv": 0.497
     }
    },
    "h30": {
-    "usable_n": 39,
-    "ess": 35.4,
-    "ess_ratio": 0.908,
+    "usable_n": 40,
+    "ess": 16.8,
+    "ess_ratio": 0.42,
     "acf_head": [
-     0.0509
+     0.0889,
+     0.174,
+     0.2023,
+     0.0061,
+     0.0631
     ],
-    "baseline_mae_bps": 16.0,
-    "sd_abs_err_bps": 12.5,
+    "baseline_mae_bps": 6.6,
+    "sd_abs_err_bps": 5.6,
     "min_detectable_improvement": {
      "rho_0.9": {
-      "mde80_bps": 2.63,
-      "mde80_pct_of_mae": 16.4,
-      "ci95_width_bps": 3.69
+      "mde80_bps": 1.7,
+      "mde80_pct_of_mae": 25.7,
+      "ci95_width_bps": 2.38
      },
      "rho_0.95": {
-      "mde80_bps": 1.86,
-      "mde80_pct_of_mae": 11.6,
-      "ci95_width_bps": 2.61
+      "mde80_bps": 1.2,
+      "mde80_pct_of_mae": 18.1,
+      "ci95_width_bps": 1.68
      },
      "rho_0.99": {
-      "mde80_bps": 0.83,
-      "mde80_pct_of_mae": 5.2,
-      "ci95_width_bps": 1.17
+      "mde80_bps": 0.54,
+      "mde80_pct_of_mae": 8.1,
+      "ci95_width_bps": 0.75
      }
     },
     "folds": {
      "n_folds": 5,
-     "per_fold": 7,
+     "per_fold": 8,
      "min_required": 48,
      "viable": false,
      "fold_mae_bps": [
-      21.7,
-      19.1,
-      11.5,
-      16.1,
-      11.0
+      10.8,
+      8.2,
+      2.5,
+      6.0,
+      5.4
      ],
-     "fold_mae_cv": 0.294
+     "fold_mae_cv": 0.472
     }
    }
   },
@@ -327,31 +307,31 @@
    "up_block_frac": 0.5,
    "blocks": [
     {
-     "block_utc": "09-03 18:00",
-     "block_id": 82799,
-     "vol_bps": 118.9,
-     "ret_bps": 5.3,
-     "n_min": 341,
+     "block_utc": "09-04 18:00",
+     "block_id": 82803,
+     "vol_bps": 51.6,
+     "ret_bps": 14.2,
+     "n_min": 360,
      "vol_tercile": "MID"
     },
     {
-     "block_utc": "09-04 00:00",
-     "block_id": 82800,
-     "vol_bps": 76.8,
-     "ret_bps": -17.8,
-     "n_min": 298,
+     "block_utc": "09-05 00:00",
+     "block_id": 82804,
+     "vol_bps": 40.1,
+     "ret_bps": -13.3,
+     "n_min": 313,
      "vol_tercile": "LOW"
     }
    ]
   },
   "regime_concentration_of_usable": {
-   "LOW": 0.436,
-   "MID": 0.564,
+   "LOW": 0.475,
+   "MID": 0.525,
    "HIGH": 0.0
   }
  },
  "proposed_v2_1_stitched": {
-  "status": "PROPOSED_NOT_GOVERNING \u2014 needs formal PM ratification (contiguity proved fragile: this machine dozes; see machine_outages list)",
+  "status": "GOVERNING \u2014 PM pre-ratified 09-04 conditional on v2.1.1 missingness PASS; condition verified from f1_missingness_audit.json",
   "rule": "stitched clean segments \u2014 documented outages leave denominators; usable obs = clean [m-60, m+30] path",
   "would_pass": true,
   "criteria": {
@@ -370,133 +350,138 @@
    "provenance_complete": true
   },
   "failing": [],
-  "ess_min_across_horizons": 183.5,
-  "mde80_worst_pct_of_mae": 5.7,
-  "usable_days_ex_outages": 4.69,
+  "ess_min_across_horizons": 186.4,
+  "mde80_worst_pct_of_mae": 6.8,
+  "usable_days_ex_outages": 5.7,
   "power": {
    "h5": {
-    "usable_n": 312,
-    "ess": 183.5,
-    "ess_ratio": 0.588,
+    "usable_n": 402,
+    "ess": 189.2,
+    "ess_ratio": 0.471,
     "acf_head": [
-     0.1868,
-     0.0427,
-     0.0026,
-     0.0716,
-     0.0467
+     0.2186,
+     0.096,
+     0.0515,
+     0.1129,
+     0.0836
     ],
-    "baseline_mae_bps": 8.1,
+    "baseline_mae_bps": 7.7,
     "sd_abs_err_bps": 7.1,
     "min_detectable_improvement": {
      "rho_0.9": {
       "mde80_bps": 0.65,
-      "mde80_pct_of_mae": 8.1,
+      "mde80_pct_of_mae": 8.5,
       "ci95_width_bps": 0.91
      },
      "rho_0.95": {
       "mde80_bps": 0.46,
-      "mde80_pct_of_mae": 5.7,
-      "ci95_width_bps": 0.65
+      "mde80_pct_of_mae": 6.0,
+      "ci95_width_bps": 0.64
      },
      "rho_0.99": {
       "mde80_bps": 0.21,
-      "mde80_pct_of_mae": 2.6,
+      "mde80_pct_of_mae": 2.7,
       "ci95_width_bps": 0.29
      }
     },
     "folds": {
      "n_folds": 5,
-     "per_fold": 62,
+     "per_fold": 80,
      "min_required": 48,
      "viable": true,
      "fold_mae_bps": [
-      8.3,
-      7.2,
+      7.7,
+      7.6,
       7.8,
-      7.3,
-      9.7
-     ],
-     "fold_mae_cv": 0.125
-    }
-   },
-   "h15": {
-    "usable_n": 311,
-    "ess": 248.3,
-    "ess_ratio": 0.798,
-    "acf_head": [
-     0.1263
-    ],
-    "baseline_mae_bps": 13.5,
-    "sd_abs_err_bps": 11.9,
-    "min_detectable_improvement": {
-     "rho_0.9": {
-      "mde80_bps": 0.94,
-      "mde80_pct_of_mae": 7.0,
-      "ci95_width_bps": 1.32
-     },
-     "rho_0.95": {
-      "mde80_bps": 0.67,
-      "mde80_pct_of_mae": 4.9,
-      "ci95_width_bps": 0.93
-     },
-     "rho_0.99": {
-      "mde80_bps": 0.3,
-      "mde80_pct_of_mae": 2.2,
-      "ci95_width_bps": 0.42
-     }
-    },
-    "folds": {
-     "n_folds": 5,
-     "per_fold": 62,
-     "min_required": 48,
-     "viable": true,
-     "fold_mae_bps": [
-      12.2,
-      15.3,
-      13.9,
-      13.2,
-      13.0
+      8.6,
+      6.7
      ],
      "fold_mae_cv": 0.087
     }
    },
-   "h30": {
-    "usable_n": 311,
-    "ess": 254.2,
-    "ess_ratio": 0.817,
+   "h15": {
+    "usable_n": 401,
+    "ess": 186.4,
+    "ess_ratio": 0.465,
     "acf_head": [
-     0.1118
+     0.1862,
+     0.0182,
+     0.0098,
+     0.0337,
+     0.0531
     ],
-    "baseline_mae_bps": 18.7,
-    "sd_abs_err_bps": 15.6,
+    "baseline_mae_bps": 13.3,
+    "sd_abs_err_bps": 14.0,
     "min_detectable_improvement": {
      "rho_0.9": {
-      "mde80_bps": 1.23,
-      "mde80_pct_of_mae": 6.6,
-      "ci95_width_bps": 1.72
+      "mde80_bps": 1.28,
+      "mde80_pct_of_mae": 9.6,
+      "ci95_width_bps": 1.79
      },
      "rho_0.95": {
-      "mde80_bps": 0.87,
-      "mde80_pct_of_mae": 4.6,
-      "ci95_width_bps": 1.22
+      "mde80_bps": 0.91,
+      "mde80_pct_of_mae": 6.8,
+      "ci95_width_bps": 1.27
      },
      "rho_0.99": {
-      "mde80_bps": 0.39,
-      "mde80_pct_of_mae": 2.1,
-      "ci95_width_bps": 0.54
+      "mde80_bps": 0.41,
+      "mde80_pct_of_mae": 3.0,
+      "ci95_width_bps": 0.57
      }
     },
     "folds": {
      "n_folds": 5,
-     "per_fold": 62,
+     "per_fold": 80,
      "min_required": 48,
      "viable": true,
      "fold_mae_bps": [
-      18.2,
-      20.7,
-      19.3,
-      17.8,
-      17.8
+      13.3,
+      14.8,
+      12.8,
+      12.7,
+      13.2
+     ],
+     "fold_mae_cv": 0.063
+    }
+   },
+   "h30": {
+    "usable_n": 401,
+    "ess": 239.2,
+    "ess_ratio": 0.596,
+    "acf_head": [
+     0.3197,
+     0.0186
+    ],
+    "baseline_mae_bps": 18.9,
+    "sd_abs_err_bps": 19.8,
+    "min_detectable_improvement": {
+     "rho_0.9": {
+      "mde80_bps": 1.6,
+      "mde80_pct_of_mae": 8.5,
+      "ci95_width_bps": 2.25
+     },
+     "rho_0.95": {
+      "mde80_bps": 1.13,
+      "mde80_pct_of_mae": 6.0,
+      "ci95_width_bps": 1.59
+     },
+     "rho_0.99": {
+      "mde80_bps": 0.51,
+      "mde80_pct_of_mae": 2.7,
+      "ci95_width_bps": 0.71
+     }
+    },
+    "folds": {
+     "n_folds": 5,
+     "per_fold": 80,
+     "min_required": 48,
+     "viable": true,
+     "fold_mae_bps": [
+      19.5,
+      19.5,
+      18.3,
+      17.0,
+      20.2
      ],
      "fold_mae_cv": 0.067
     }
@@ -505,21 +490,21 @@
  },
  "integrity_whole_capture": {
   "binance": {
-   "rows": 12699274,
+   "rows": 15794617,
    "pit_violations": 0,
    "max_skew_s": 0.583,
-   "out_of_order": 3,
+   "out_of_order": 4,
    "bad_rows": 0
   },
   "okx": {
-   "rows": 890431,
+   "rows": 1184057,
    "pit_violations": 0,
    "max_skew_s": 0.587,
    "out_of_order": 1,
    "bad_rows": 0
   },
   "kraken": {
-   "rows": 359834,
+   "rows": 458310,
    "pit_violations": 0,
    "max_skew_s": 0.569,
    "out_of_order": 0,
