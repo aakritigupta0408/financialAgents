@@ -1,0 +1,76 @@
+# T1.2 — FEATURE-FAMILY ABLATION #2: incumbent features vs +F-MICRO
+# STATUS: DRAFT_PENDING_PM_REVIEW — NOT REGISTERED. No registry
+# entry, no governance event, no dataset, no run. Becomes a
+# registered spec only on explicit PM ratification, at which point
+# the criteria below freeze byte-for-byte.
+version: 0.1-draft
+experiment_id: T1.2
+program: T1T2 (T1T2_PROGRAM.yaml)
+status: DRAFT
+becomes_blocked_on_at_registration:
+  - F1_PASS_AT_FREEZE   # gate must read PASS at the freeze moment
+                        # (it flaps near the ESS threshold — the
+                        # freeze waits for the gate, never argues)
+  - PIT_DATASET_FROZEN  # fresh manifest; T1.1's dataset is NOT
+                        # reused (its windows are stale by then and
+                        # its result is known — anti-peeking)
+
+research_question: Does the F-MICRO family (Coinbase L2 order book
+  + Kalshi book/trades — the desk's own market microstructure) add
+  INFORMATION that improves the distributional forecast of future
+  BTC state, beyond the incumbent serving feature set?
+context: T1.1 established that another venue's PRICE adds nothing
+  (REJECT_FOR_T1). F-MICRO is a genuinely different information
+  class — order-flow/liquidity state, not a redundant price.
+
+design:   # identical machinery to T1.1 — only the family changes
+  unit: 15-min decision grid points, v2.1 stitched usability
+    ([t-60, t+30] outage-free), FRESH capture window at freeze
+  horizons: [h5, h15, h30]
+  control:   {features: incumbent serving set (T1.1 control,
+      unchanged — T1.1 rejected, so the incumbent stands),
+      model: linear-probe}
+  treatment: {features: control + F-MICRO block (8 features,
+      PROPOSED below — frozen at ratification),
+      model: linear-probe}
+  held_identical: [architecture, loss, folds, training procedure,
+                   preprocessing, seed]
+  folds: 5 chronological walk-forward folds; train < k, eval k
+  seed: 20260906
+
+proposed_f_micro_block:   # PM may amend BEFORE ratification;
+  # extraction lives in ONE sanctioned module with frozen order,
+  # per-feed staleness bounds from FEATURE_REGISTRY
+  - cb_ofi_5s              # Coinbase signed order-flow imbalance
+  - cb_ofi_30s
+  - cb_book_imbalance      # L2 top-of-book depth imbalance
+  - cb_spread_bp
+  - kalshi_book_imbalance  # contract book, yes/no depth skew
+  - kalshi_spread_c
+  - kalshi_trade_flow_30s  # signed contract tape
+  - cb_trade_intensity_30s
+
+metrics:   # byte-identical to T1.1
+  distribution: [pinball_q10, pinball_q50, pinball_q90,
+                 interval_coverage_80, interval_width]
+  point: [MAE, RMSE, signed_bias]
+  robustness: [median_fold, worst_fold, fold_variance]
+  reference: martingale baseline reported alongside both arms
+
+primary_endpoint: paired mean pinball loss (q10/q50/q90 average)
+  per horizon, control minus treatment, out-of-fold
+decision_rule:   # byte-identical to T1.1 — the bar does not move
+  qualify_iff:
+    - relative improvement >= 3% with seeded block-bootstrap 95% CI
+      excluding zero, on at least 2 of 3 horizons
+    - worst-fold relative improvement > -1% on qualifying horizons
+    - interval_coverage_80 in [0.72, 0.88] for BOTH arms
+  reject_iff: CI includes zero on >= 2 horizons, or any guard fails
+  no_partial_credit: exploratory slices reported, never substituted
+one_shot: the frozen dataset is evaluated ONCE against this rule
+next_if_qualified: freeze winning feature set -> propagation test
+  through the UNCHANGED probability bridge BEFORE any T2 work
+next_if_rejected: F-MICRO recorded REJECT_FOR_T1 at family level;
+  T1.3 (F-PATH) registration is the next program step
+independence: no A3 result (any version) may influence this
+  experiment in either direction
