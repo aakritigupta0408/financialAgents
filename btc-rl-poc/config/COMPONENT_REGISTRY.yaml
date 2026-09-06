@@ -149,11 +149,22 @@ experiments:
        at a time, propagation test through unchanged bridge, then
        ONE T2 challenger; blocks T3+/learned-dip/VoW/exec/sizing;
        starts NOTHING before F1"}
-  - {id: A3-v2, lifecycle: TREATMENT, runtime: true, control: C0,
+  - {id: A3-v2, lifecycle: CLOSED_INVALIDATED, runtime: false,
+     control: C0, treatment: T05, spec: A3_V2_SPEC.yaml,
+     final_verdict: "INVALIDATED_BY_EVIDENCE_INTEGRITY (PM 09-06):
+       source-log rotation destroyed ~34/153 eligible windows before
+       the persistence fix; denominator unreconstructable. The delta
+       at closure is NOT a scientific result",
+     evidence: "a3_v2_closure.json + 4 sha-frozen artifacts
+       (invariant-guarded); n=50 CONTINUE artifact in git 7b99d6d",
+     reopen: NEVER as v2}
+  - {id: A3-v2.1, lifecycle: TREATMENT, runtime: true, control: C0,
      treatment: T05, shadows: [T10-diagnostic], frozen: true,
-     spec: A3_V2_SPEC.yaml, registered: 2026-08-30,
-     note: "one variable changed vs v1.1 (dip 10c->5c); fresh n=0;
-       motivated by v1.1 failure, NOT an optimization claim"}
+     spec: A3_V2_1_SPEC.yaml, registered: 2026-09-06,
+     note: "scientifically identical to v2 (same thresholds, gates,
+       decision rule); fresh n=0, no inherited rows; re-registered
+       ONLY for evidence-chain integrity, protected by union
+       persistence + registered-ledger-never-shrinks invariant"}
   - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
      control: t_exec, treatment: t_exec_reg,
      note: the ONE legacy pair; after verdict archive loser, close family}

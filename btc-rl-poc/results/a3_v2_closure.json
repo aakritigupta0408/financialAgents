@@ -1,0 +1,24 @@
+{
+ "closed_ts": 1788727327,
+ "experiment": "A3-v2",
+ "lifecycle": "CLOSED_INVALIDATED",
+ "reason": "INVALIDATED_BY_EVIDENCE_INTEGRITY \u2014 the registered evidence chain was altered after the fact: kalshi_binary_log rotation destroyed ~34 of 153 eligible windows before the persistence fix (INC 2026-09-05); the original complete denominator cannot be reconstructed",
+ "not_the_reason": [
+  "delta at closure (-2.2c) \u2014 NOT a terminal scientific result",
+  "strategy failure",
+  "persistence-fix failure"
+ ],
+ "pm_ruling": "2026-09-06: CLOSE, then re-register A3-v2.1 scientifically identical, fresh n=0, no inherited rows; do NOT use the compromised -2.2c stream to redesign T05",
+ "preserved_immutable": {
+  "a3_v2_final.json": "6103e2458f7b3cea",
+  "a3_v2_decision_final.json": "a378a2a60b9a9045",
+  "a3_v2_final_ledger.jsonl": "833681ed3a59c3dc"
+ },
+ "other_preserved": [
+  "n=50 decision artifact in git 7b99d6d (CONTINUE, delta -1.54c, CI [-11.3,+8.6], full data at the time)",
+  "n=25 mechanism comparison (conversation record + pm_snapshot history)",
+  "incident row 2026-09-05",
+  "persistence fix aa3334b"
+ ],
+ "diagnostic_status": "the 139-row ledger is DIAGNOSTIC HISTORICAL EVIDENCE, never a decision input"
+}

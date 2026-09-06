@@ -232,7 +232,12 @@ def _stale_never_proposes():
 def _a3_v1_frozen():
     import hashlib
     WANT = {"a3_v1_final.json": "22014cee8ebe2b82",
-            "a3_v1_window_evaluation.jsonl": "669bf952ace24ceb"}
+            "a3_v1_window_evaluation.jsonl": "669bf952ace24ceb",
+            # A3-v2 CLOSED_INVALIDATED (PM 09-06) — frozen forever
+            "a3_v2_final.json": "6103e2458f7b3cea",
+            "a3_v2_decision_final.json": "a378a2a60b9a9045",
+            "a3_v2_final_ledger.jsonl": "833681ed3a59c3dc",
+            "a3_v2_closure.json": "4d3ed4ffd27fdde9"}
     bad = []
     for name, want in WANT.items():
         p = RES / name
@@ -242,6 +247,41 @@ def _a3_v1_frozen():
         got = hashlib.sha256(p.read_bytes()).hexdigest()[:16]
         if got != want:
             bad.append(f"{name} MUTATED ({got} != {want})")
+    return not bad, bad
+
+
+@check("registered-ledger-never-shrinks",
+       "PM 09-06 (INC 09-05, permanent) — a registered experiment "
+       "ledger may never lose rows; a shrink fails closed AND "
+       "opens an incident")
+def _ledger_monotone():
+    import json as _j
+    import time as _t
+    LEDGERS = ("a3v21_window_evaluation.jsonl",)   # live experiments
+    hw_p = RES / "_ledger_highwater.json"
+    try:
+        hw = _j.loads(hw_p.read_text())
+    except Exception:
+        hw = {}
+    bad = []
+    for name in LEDGERS:
+        p = RES / name
+        n = sum(1 for l in p.open() if l.strip()) if p.exists() else 0
+        prev = hw.get(name, 0)
+        if n < prev:
+            bad.append(f"{name} SHRANK {prev} -> {n}")
+            with (RES / "incidents.jsonl").open("a") as f:
+                f.write(_j.dumps({
+                    "sev": 2, "title": f"EVIDENCE SHRINK: {name} "
+                    f"{prev} -> {n} rows",
+                    "opened": _t.strftime("%Y-%m-%d %H:%M"),
+                    "status": "open — needs human",
+                    "detected_by": "invariant "
+                                   "registered-ledger-never-shrinks",
+                    "root_cause": "UNKNOWN"}) + "\n")
+        else:
+            hw[name] = n
+    hw_p.write_text(_j.dumps(hw))
     return not bad, bad
 
 
@@ -485,7 +525,8 @@ def _a3_indep():
     A3-19 shadow arms never appear in any trader order ledger."""
     bad = []
     paths = [RES / "a3_window_evaluation.jsonl",
-             RES / "a3v2_window_evaluation.jsonl"]
+             RES / "a3v2_window_evaluation.jsonl",
+             RES / "a3v21_window_evaluation.jsonl"]
     lines = []
     for p in paths:
         if p.exists():

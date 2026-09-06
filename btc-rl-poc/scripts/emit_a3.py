@@ -49,21 +49,28 @@ RES = ROOT / "results"
 # v2 changes EXACTLY ONE thing: dip threshold 10c -> 5c. Everything
 # else identical; fresh forward counter; no historical shadow row
 # counts toward the v2 statistic (A3_V2_SPEC.yaml).
-EXPERIMENT_ID = "A3-v2"
+EXPERIMENT_ID = "A3-v2.1"
 CALL_CONF, FLOOR, DIP_C = 0.75, 0.65, 5.0
 ENV_LO, ENV_HI = 6.0, 13.0
 CUTOFF_S = 60
 FRESH_S = 10.0
-V2_REGISTERED_TS = 1788149400    # 2026-08-30 — PM ratification
-SPEC_FILE = "A3_V2_SPEC.yaml"
-SPEC_HASH_FROZEN = "ab0168b48c6ba794"   # A3_V2_SPEC.yaml at freeze
+# A3-v2.1 (PM 2026-09-06): v2 CLOSED_INVALIDATED (evidence-chain
+# truncation, see a3_v2_closure.json); v2.1 is scientifically
+# identical with a fresh counter. Variable names keep the V2_
+# prefix — only values changed.
+V2_REGISTERED_TS = 1788727331    # 2026-09-06 — PM ruling
+SPEC_FILE = "A3_V2_1_SPEC.yaml"
+SPEC_HASH_FROZEN = "5bece7efbd7f3e39"   # A3_V2_1_SPEC.yaml frozen
 # Shadow: T10 only — the rejected v1.1 rule as a diagnostic
 # continuity benchmark. T15 retired (deep-wait mechanism understood;
 # no threshold ladder zoo).
 SHADOWS = {"T10": 10.0}
 SHADOW_REGISTERED_TS = V2_REGISTERED_TS
 MARKOUT_H = (1, 5, 10, 30, 60)
-LEDGER_NAME = "a3v2_window_evaluation.jsonl"
+LEDGER_NAME = "a3v21_window_evaluation.jsonl"
+# a3v2_window_evaluation.jsonl is FROZEN diagnostic evidence of the
+# closed v2 (sha-guarded via a3_v2_final_ledger.jsonl copy) — this
+# evaluator never writes it again.
 
 
 def fee(a):
