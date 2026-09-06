@@ -1,12 +1,12 @@
 {
- "generated_ts": 1788302467,
+ "generated_ts": 1788667274,
  "experiment": "A3-v2",
  "registered_gate_n": 50,
- "eligible_n": 50,
- "primary_effect_per_eligible": -0.0154,
+ "eligible_n": 119,
+ "primary_effect_per_eligible": -0.0024,
  "ci95_bootstrap": [
-  -0.1128,
-  0.0855
+  -0.0649,
+  0.057
  ],
  "concentration_survives_ex_best1": true,
  "decision": "CONTINUE",

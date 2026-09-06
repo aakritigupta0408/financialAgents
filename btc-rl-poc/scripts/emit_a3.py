@@ -335,6 +335,32 @@ def main():
             if live is None or cts > (live.get("close_ts") or 0):
                 live = st
 
+    # EVIDENCE PRESERVATION (INC 2026-09-05): kalshi_binary_log
+    # rotates at 20k rows; deriving the ledger ONLY from it silently
+    # dropped settled evidence rows of this registered experiment
+    # (153 -> 119 observed after the doze-catchup bursts). The
+    # persisted ledger is authoritative for windows the rotating
+    # source no longer contains: first-written rows are immutable
+    # evidence and are merged back. NO scientific formula changes —
+    # persistence only.
+    seen_tk = {e.get("ticker") for e in ledger}
+    led_p = RES / LEDGER_NAME
+    if led_p.exists():
+        for _l in led_p.read_text().splitlines():
+            try:
+                old = json.loads(_l)
+            except Exception:
+                continue
+            if old.get("ticker") in seen_tk or not old.get("settled"):
+                continue
+            old["shadows"] = {n: {"state": old.get(f"{n}_state"),
+                                  "pnl": old.get(f"{n}_net_pnl")}
+                              for n in SHADOWS}
+            old["restored_from_ledger"] = True
+            ledger.append(old)
+            seen_tk.add(old.get("ticker"))
+    ledger.sort(key=lambda e: e.get("close_ts") or 0)
+
     el = [e for e in ledger if e["state"] != "SYSTEM_EXCLUDED"]
     filled = [e for e in el if e["state"] == "FILLED"]
     agg = {"eligible": len(el),
@@ -586,18 +612,27 @@ def main():
               "shadow_config_hash": sh_hash,
               "provenance": "DERIVED_EX_POST",
               "fill_source": "V1_TAKE_ASK_CONVENTION"}
-    with (RES / LEDGER_NAME).open("w") as f:
-        for e in ledger:
-            row = {**common, **{k: v for k, v in e.items()
-                                if k != "shadows"}}
-            for name in SHADOWS:
-                sh = e.get("shadows", {}).get(name, {})
-                row[f"{name}_state"] = sh.get("state")
-                row[f"{name}_net_pnl"] = sh.get("pnl")
-            if "a3_pnl" in row and "control_pnl" in row:
-                row["delta_pnl"] = round(
-                    row["a3_pnl"] - row["control_pnl"], 4)
-            f.write(json.dumps(row) + "\n")
+    # fail-closed write guard (INC 2026-09-05): the evidence ledger
+    # may never shrink; if it would, keep the old file and scream
+    # (a3_live still updates — only the ledger write is refused).
+    prev_rows = sum(1 for _l in led_p.read_text().splitlines()
+                    if _l.strip()) if led_p.exists() else 0
+    if len(ledger) < prev_rows:
+        print(f"emit_a3: REFUSED ledger write — would shrink "
+              f"{prev_rows} -> {len(ledger)} (evidence loss)")
+    else:
+        with (RES / LEDGER_NAME).open("w") as f:
+            for e in ledger:
+                row = {**common, **{k: v for k, v in e.items()
+                                    if k != "shadows"}}
+                for name in SHADOWS:
+                    sh = e.get("shadows", {}).get(name, {})
+                    row[f"{name}_state"] = sh.get("state")
+                    row[f"{name}_net_pnl"] = sh.get("pnl")
+                if "a3_pnl" in row and "control_pnl" in row:
+                    row["delta_pnl"] = round(
+                        row["a3_pnl"] - row["control_pnl"], 4)
+                f.write(json.dumps(row) + "\n")
     (RES / "a3_live.json").write_text(json.dumps(doc, indent=1))
     print(f"{EXPERIMENT_ID}: live={doc['live']['state']} · eligible "
           f"{agg['eligible']} filled {agg['filled']} excluded "
