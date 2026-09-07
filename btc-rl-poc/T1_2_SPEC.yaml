@@ -1,0 +1,97 @@
+# T1.2 — FEATURE-FAMILY ABLATION #2: incumbent features vs +F-MICRO
+# STATUS: RATIFIED_PENDING_F1 (PM 2026-09-07). Ratification does
+# NOT authorize execution: F1 blocks the evidence freeze, never the
+# scientific registration. Everything below is FROZEN at
+# ratification — no feature added or removed, no threshold moved,
+# no second attempt, regardless of what any result looks like.
+version: 1.0
+experiment_id: T1.2
+program: T1T2 (T1T2_PROGRAM.yaml)
+status: RATIFIED_PENDING_F1
+ratified: 2026-09-07
+execution_blocked_on:            # blocks the FREEZE + RUN, not the
+  - F1_PASS_AT_FREEZE            # registration of the question
+  - PIT_DATASET_FROZEN
+
+# PM wording (09-07): claim exactly as strong as the experiment can
+# support — Kalshi book/trades are the TARGET MARKET'S OWN
+# microstructure, not independent/exogenous information.
+research_question: >
+  Does F-MICRO — Coinbase L2 and Kalshi order-flow/liquidity
+  state — improve the distributional forecast beyond the incumbent
+  feature set?
+context: T1.1 established that another venue's PRICE adds nothing
+  (REJECT_FOR_T1); F-MICRO tests order-flow/liquidity state.
+
+# PM 09-07: the incumbent is completely immutable between
+# registration, freeze, and evaluation — these pins define it.
+incumbent:
+  definition: feature_vector + trend_feature_vector +
+    tech_feature_vector (btc_rl/features.py), fng pinned 50
+  feature_set_sha256: af0a134396a89c8150dd78ac63fa9c1854b6b75a03fe09ea305b25ef34687bfc
+  feature_registry_sha256: c88dae1a77446344761206d0dc5c2d84ceb3069bcca913b37d0b3e4afe4ca916
+
+design:
+  unit: 15-min decision grid points, v2.1 stitched usability
+    ([t-60, t+30] outage-free), FRESH capture window at freeze —
+    T1.1 dataset reuse FORBIDDEN
+  horizons: [h5, h15, h30]
+  control:   {features: incumbent (pinned above),
+              model: linear-probe}
+  treatment: {features: incumbent + the 8 frozen F-MICRO features,
+              model: linear-probe}
+  held_identical: [architecture, loss, folds, training procedure,
+                   preprocessing, seed]
+  folds: 5 chronological walk-forward folds; train < k, eval k
+  seed: 20260906
+
+f_micro_block:   # APPROVED UNCHANGED (PM 09-07) — no ninth
+  # feature, no removal after seeing results, no post-freeze
+  # ranking/selection. Extraction in ONE sanctioned module with
+  # frozen order and per-feed staleness bounds.
+  - cb_ofi_5s
+  - cb_ofi_30s
+  - cb_book_imbalance
+  - cb_spread_bp
+  - kalshi_book_imbalance
+  - kalshi_spread_c
+  - kalshi_trade_flow_30s
+  - cb_trade_intensity_30s
+
+# PM 09-07 data rule: one universe, both arms.
+data_rule: >
+  Both arms are evaluated on the SAME frozen eligible-window
+  universe: no treatment-only complete cases, no dropping difficult
+  F-MICRO rows after inspection, no future-nearest alignment, no
+  post-hoc missingness selection, no different folds, timestamps,
+  or labels between arms.
+
+metrics:
+  distribution: [pinball_q10, pinball_q50, pinball_q90,
+                 interval_coverage_80, interval_width]
+  point: [MAE, RMSE, signed_bias]
+  robustness: [median_fold, worst_fold, fold_variance]
+  reference: martingale baseline reported alongside both arms
+
+primary_endpoint: paired mean pinball loss (q10/q50/q90 average)
+  per horizon, control minus treatment, out-of-fold
+decision_rule:   # BYTE-IDENTICAL to T1.1 — the scientific firewall
+  qualify_iff:
+    - relative improvement >= 3% with seeded block-bootstrap 95% CI
+      excluding zero, on at least 2 of 3 horizons
+    - worst-fold relative improvement > -1% on qualifying horizons
+    - interval_coverage_80 in [0.72, 0.88] for BOTH arms
+  reject_iff: CI includes zero on >= 2 horizons, or any guard fails
+  no_partial_credit: exploratory slices reported, never substituted
+  immutable: no lowering the 3%, no relaxing horizons, no changing
+    bootstrap method or seed, no second attempt
+one_shot: the frozen dataset is evaluated ONCE against this rule
+next_if_qualified: freeze winning feature set -> propagation test
+  through the UNCHANGED z-bridge BEFORE any T2 work
+next_if_rejected: >
+  T1.3 F-PATH may be proposed for PM review and separate
+  registration; rejection does not automatically authorize or
+  register T1.3. One experiment at a time — the failed experiment
+  is interpreted before the next is proposed.
+independence: no A3 result (any version) may influence this
+  experiment in either direction

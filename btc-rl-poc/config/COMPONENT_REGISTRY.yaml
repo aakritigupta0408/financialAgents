@@ -142,6 +142,12 @@ experiments:
        h5-h30 via linear probe — NOT a claim about T2 probability
        features or nonlinear extraction",
      next: "T1.2 (F-MICRO) registration per T1T2 program"}
+  - {id: T1.2, lifecycle: RATIFIED_PENDING_F1, runtime: false,
+     spec: T1_2_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     note: "incumbent vs +F-MICRO (8 features approved unchanged,
+       PM 09-07); incumbent pinned by sha256; decision rule
+       byte-identical to T1.1; execution blocked on F1 PASS at
+       freeze + fresh PIT dataset; no automatic T1.3 on rejection"}
   - {id: T1T2, lifecycle: SPEC_ONLY, runtime: false,
      spec: T1T2_PROGRAM.yaml, dependency_class: ZERO_DECISION_IMPACT,
      note: "forecast-quality-first program (PM 09-01) — the research
