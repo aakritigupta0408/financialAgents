@@ -91,8 +91,29 @@ def t3_normal_settle_clean():
     print("  3. ordinary settles -> clean (no regression)")
 
 
+def t4_late_settle_idempotent():
+    """PM 09-07: late settlement must be idempotent across restarts.
+    In the daemon the guard is `if t["actual"] is not None: continue`
+    (a settled row is never re-settled, so cash is credited exactly
+    once); here we prove the AUDIT side — re-running reconcile over
+    the same late-settled ledger yields the same clean verdict, and
+    the credit is applied exactly once even though the pre-scan runs
+    fresh each time."""
+    rows = [settled(1000, 500, 200, 100200),
+            {**BASE, "made_ts": 2000, "close_ts": 2900,
+             "ticker": "TZ", "stake_c": 300, "pnl_c": 700,
+             "bankroll_c": 99900, "actual": 0, "win": 1,
+             "late_settle_ts": 95000},
+            settled(96000, 400, 100, 101000)]
+    b1 = run_fixture(rows)
+    b2 = run_fixture(rows)
+    assert b1["mismatches"] == 0 and b2["mismatches"] == 0, (b1, b2)
+    print("  4. late settlement idempotent across audit re-runs")
+
+
 if __name__ == "__main__":
     t1_zombie_flags()
     t2_late_settle_clean()
     t3_normal_settle_clean()
-    print("bankroll-recovery: 3/3 pass")
+    t4_late_settle_idempotent()
+    print("bankroll-recovery: 4/4 pass")

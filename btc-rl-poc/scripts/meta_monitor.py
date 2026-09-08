@@ -269,7 +269,39 @@ def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
                 and not inv.get("failed")
         except Exception:
             pass
-        ok = hb_ok and singleton
+        # PM LAW (09-07, from the zombie-position SEV): operational
+        # recovery and STATE recovery are different properties. A
+        # post-sleep recovery may not reach RESTORED while matured
+        # unresolved positions exist or bankroll conservation fails.
+        state_ok = True
+        state_why = None
+        try:
+            recon = json.loads((res / "reconciliation.json")
+                               .read_text())
+            bank = next((c for c in recon.get("checks", [])
+                         if c.get("name") == "bankroll-conservation"),
+                        None)
+            if bank and bank.get("status") != "OK":
+                state_ok = False
+                state_why = "bankroll-conservation FAIL"
+        except Exception:
+            pass                     # missing auditor != proof of bad
+        try:
+            for fname in ("pt_trades.jsonl", "pt3_trades.jsonl"):
+                for _l in (res / fname).open():
+                    _r = json.loads(_l)
+                    if (_r.get("actual") is None
+                            and _r.get("close_ts")
+                            and now - _r["close_ts"] > 7200):
+                        state_ok = False
+                        state_why = (f"matured unresolved position "
+                                     f"{_r.get('ticker')} in {fname}")
+                        raise StopIteration
+        except StopIteration:
+            pass
+        except Exception:
+            pass
+        ok = hb_ok and singleton and state_ok
         verdict = {"ts": round(now, 3),
                    "repair_id": r.get("repair_id"),
                    "verifies_attempt_ts": r["ts"],
@@ -281,6 +313,8 @@ def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
                    else round(hb_age),
                    "singleton": singleton, "processes": n_proc,
                    "audit_progress": audit_progress,
+                   "state_conservation": state_ok,
+                   "state_conservation_why": state_why,
                    "scientific_unchanged": sci}
     # append verdict + terminal state
         with heal.open("a") as f:
