@@ -28,6 +28,17 @@ P_ON_TRACK = 0.70
 P_SLOW = 0.30
 BOOT = 2000
 SEED = 20260907
+# PM 09-07: every P(hit gate) MUST carry these three, or it is
+# pseudo-precision a professor can rightly reject. Where the unit
+# structure is awkward, emit p=null + PACE_UNKNOWN, never a number.
+REPRO_ID = "traj-lcg-v1-seed20260907-boot2000"
+
+
+def evidence(n_units, has_bootstrap, independence):
+    """Mandatory metadata block beside any trajectory probability."""
+    return {"n_independent_units": n_units,
+            "bootstrap": (REPRO_ID if has_bootstrap else None),
+            "independence_satisfied": independence}
 
 
 def j(name):
@@ -111,6 +122,11 @@ def a3_trajectory():
                                               if req_final else None),
             "recent_slope": round(slope, 4),
             "p_reach_zero_by_gate": round(p_hit, 3),
+            "trajectory_evidence": evidence(
+                n, True,
+                "per-window paired deltas; distinct 15-min windows "
+                "treated independent — mild regime autocorrelation "
+                "possible, so P is indicative not exact"),
             "decision_authority": dec.get("decision"),
             "state": state,
             "note": "frozen bootstrap-CI gate is the authority; "
@@ -141,15 +157,25 @@ def texec_trajectory():
             "promote_llr": round(ter.get("upper", 5.66), 2),
             "reject_llr": round(ter.get("lower", -2.30), 2),
             "recent_slope": round(slope, 4),
+            "p_reach_gate": None,
+            "trajectory_evidence": evidence(
+                len(diffs), False,
+                "SPRT statistic — deliberately NOT bootstrapped; LLR "
+                "is not linearly extrapolable, so no P is emitted"),
             "state": "PROMISING_PACE_UNKNOWN",
             "note": "SPRT is the decision authority; LLR is not "
                     "linearly extrapolable. Traffic was frozen by "
                     "the SEV — track velocity from n=375."}
 
 
-def simple(id_, tier, current, target, gap, state, note, extra=None):
+def simple(id_, tier, current, target, gap, state, note,
+           n_units=None, independence="n/a", extra=None):
     d = {"id": id_, "tier": tier, "current": current,
-         "target": target, "gap": gap, "state": state, "note": note}
+         "target": target, "gap": gap, "state": state,
+         "p_reach_gate": None,          # no honest velocity series
+         "trajectory_evidence": evidence(n_units, False,
+                                         independence),
+         "note": note}
     if extra:
         d.update(extra)
     return d
@@ -172,7 +198,8 @@ def main():
     board.append(simple(
         "kb2", "T2-probability", bss("kb2"), "> market (BSS>0 durable)",
         None, "CONTROL",
-        "serving control; ~0.998 corr with market — a thin edge"))
+        "serving control; ~0.998 corr with market — a thin edge",
+        n_units=5, independence="5 chronological walk-forward folds"))
     board.append(simple(
         "kb4", "T2-probability", bss("kb4"), "beat kb2 + market durably",
         (round(bss("kb4") - bss("kb2"), 4)
@@ -181,7 +208,9 @@ def main():
         "PROMISING_PACE_UNKNOWN",
         "challenger; only ~+0.002 BSS over kb2, no independent "
         "metric time-series to estimate arrival — needs a registered "
-        "forward paired test to earn PROVEN"))
+        "forward paired test to earn PROVEN",
+        n_units=5, independence="5 folds; no metric time-series for "
+        "a velocity estimate — P deliberately null"))
 
     # F1 — ESS vs 150
     sh = f1.get("proposed_v2_1_stitched") or {}
@@ -194,7 +223,11 @@ def main():
         "not failing — independent information accrues slowly in a "
         "trending regime; needs a registered ESS-velocity pace test "
         "before EXTEND vs IMPROVING_TOO_SLOW can be called",
-        {"verdict": f1.get("verdict")}))
+        n_units=(round(ess) if isinstance(ess, (int, float))
+                 else None),
+        independence="ESS already autocorrelation-adjusts; no stored "
+        "ESS time-series yet, so P is deliberately null",
+        extra={"verdict": f1.get("verdict")}))
 
     # T1.2 — blocked, not failing
     board.append(simple(
@@ -210,7 +243,8 @@ def main():
         "h30 retrain improved val MSE ~41%; kept ONE confirmation "
         "window — if the val gain does not show in fresh prequential "
         "out-of-sample, RETIRE",
-        {"coverage80": 0.807}))
+        independence="aggregate pinball, no per-unit series here",
+        extra={"coverage80": 0.807}))
 
     doc = {"generated_ts": int(time.time()),
            "law": "trajectory is informational; frozen gates/SPRT "

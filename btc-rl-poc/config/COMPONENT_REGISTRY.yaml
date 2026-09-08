@@ -69,14 +69,20 @@ models:
   - {id: kb2, tier: T2, lifecycle: CONTROL, runtime: true,
      note: market-anchored — NOT an independent fair-value oracle;
        serving because A3/product theses require it}
+  # THREE-FIELD SEPARATION (PM 09-08): research_status,
+  # runtime_reachability, and removal_authority are DISTINCT so no
+  # future agent sees "RETIRED" and deletes a frozen-control
+  # dependency. "Retired" never implies "deleted from every process".
   - {id: kb9, tier: T2, lifecycle: RETIRED_FROM_T2_CONTENTION,
      runtime: true, trajectory: REGRESSING,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
      dependency_class: CONTROL_DEPENDENCY, parent: PT_CHAMPION,
      note: "TimesFM — OFFLINE_FAIL (median BSS -0.021, 2/5 folds);
        no independent challenger traffic. STILL SERVES as champion
-       leader-pool member (PT_ARMS); full removal only via
-       CHAMPION-vLean (CHAMPION_VLEAN_SPEC.yaml), never a cleanup
-       edit — removing it in place would break champion parity"}
+       leader-pool member (PT_ARMS); removing it in place would break
+       champion parity"}
   # M3 corrections (08-30): the dependency map proved several
   # "retired" arms are LOAD-BEARING for frozen registered policies —
   # the M3 gate "A3/champion byte-equivalent" itself forbids removing
@@ -86,10 +92,12 @@ models:
   - {id: kb3, tier: T2, lifecycle: ACTIVE, runtime: true,
      role: CONTROL_INTERNAL, parent: PT_CHAMPION,
      dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
      independent_serving_role: false, decision_impact: true,
-     note: frozen champion leader-pool member — cannot retire without
-       a NEW champion registration; also INCUMBENT CANDIDATE
-       pending M2}
+     note: frozen champion leader-pool member — no independent T2
+       value, but cannot retire without CHAMPION-vLean; still serves}
   - {id: kb4, tier: T2, lifecycle: ACTIVE, runtime: true,
      role: CONTROL_INTERNAL, parent: PT_CHAMPION,
      dependency_class: CONTROL_DEPENDENCY,
@@ -106,11 +114,18 @@ models:
   - {id: kb7, tier: T2, lifecycle: ACTIVE, runtime: true,
      role: CONTROL_INTERNAL, parent: PT_CHAMPION,
      dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
      independent_serving_role: false, decision_impact: true,
-     note: leader-pool member + Conviction Book stream 2}
+     note: leader-pool member + Conviction Book stream 2; worst
+       fold -0.18 as an independent arm, still serves champion}
   - {id: kb8, tier: T2, lifecycle: ACTIVE, runtime: true,
      role: CONTROL_INTERNAL, parent: PT_CHAMPION,
      dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
      independent_serving_role: false, decision_impact: true}
   - {id: kbf, tier: T2, lifecycle: ARCHIVED, runtime: false,
      reason: accuracy without monetizability — forecast arrives too late;
