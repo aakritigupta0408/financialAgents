@@ -2587,6 +2587,10 @@ def run(once: bool = False) -> None:
     last_bars: list[dict] = []
     last_bars_ts = 0.0
     _backfilled_close: set = set()   # INC 09-07: one-shot per close_ts
+    _zombie_bars: dict = {}          # recovered settle candles, kept
+    #   across loops AND re-merged after every by_ts rebuild (the
+    #   _merge_synth path rebuilds by_ts from `bars`, which would
+    #   otherwise drop these)
     while True:
         try:
             now = datetime.now(tz=config.PACIFIC)
@@ -2630,10 +2634,10 @@ def run(once: bool = False) -> None:
                     except Exception:
                         continue     # transient — RETRY next loop,
                         #              never dedup a failed fetch
-                    for _b in _fetched:
-                        by_ts.setdefault(_b["ts"], _b)
-                    # dedup only once the settle candle is in hand
-                    if (_cts - 60) in by_ts:
+                    _sb = next((b for b in _fetched
+                                if b["ts"] == _cts - 60), None)
+                    if _sb is not None:
+                        _zombie_bars[_cts - 60] = _sb
                         _backfilled_close.add(_cts)
             except Exception:
                 pass
@@ -2650,6 +2654,11 @@ def run(once: bool = False) -> None:
                         del synth_px[k]
                 bars = _merge_synth(bars, synth_px, now_ts)
                 by_ts = {b["ts"]: b for b in bars}
+            # re-merge recovered zombie candles AFTER the final by_ts
+            # rebuild (INC 09-07): _merge_synth rebuilds by_ts from
+            # `bars`, which does not contain these, so the settle
+            # loops below would otherwise never see them
+            by_ts.update(_zombie_bars)
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
             book = fetch_book_stats()
