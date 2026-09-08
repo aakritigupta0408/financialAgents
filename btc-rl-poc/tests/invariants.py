@@ -250,6 +250,32 @@ def _a3_v1_frozen():
     return not bad, bad
 
 
+@check("publisher-page-coverage",
+       "INC 09-07 (explicit-page-list defect, permanent) — every "
+       "page reachable from the nav spine must exist in site/ AND "
+       "appear in the publisher's PAGES list; silent omission of a "
+       "public page is a deployment defect class, not a style issue")
+def _publisher_coverage():
+    import re
+    nav = (ROOT / "site" / "nav.js").read_text()
+    m = re.search(r"var PRIMARY = \[(.*?)\];", nav, re.S)
+    m2 = re.search(r"var MORE = \[(.*?)\];", nav, re.S)
+    hrefs = re.findall(r'href:\s*"([^"]+\.html)"',
+                       (m.group(1) if m else "")
+                       + (m2.group(1) if m2 else ""))
+    pub = (ROOT / "scripts" / "publish_dashboard.py").read_text()
+    pm = re.search(r"PAGES = \[(.*?)\]", pub, re.S)
+    pages = set(re.findall(r'"([^"]+)"', pm.group(1) if pm else ""))
+    bad = []
+    for h in hrefs:
+        if not (ROOT / "site" / h).exists():
+            bad.append(f"{h} linked in nav but missing from site/")
+        if h not in pages:
+            bad.append(f"{h} linked in nav but NOT in publisher "
+                       "PAGES list")
+    return not bad, bad
+
+
 @check("registered-ledger-never-shrinks",
        "PM 09-06 (INC 09-05, permanent) — a registered experiment "
        "ledger may never lose rows; a shrink fails closed AND "

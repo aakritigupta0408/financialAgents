@@ -175,7 +175,24 @@ def main():
         running = traders[trader][1]
         savings_running = 0
 
+        # INC 2026-09-07 (zombie positions): a row settled LATE (its
+        # candle recovered by targeted backfill after a long sleep)
+        # carries late_settle_ts. Its payout reached CASH only at
+        # that moment, so the walk credits payout (pnl+stake) at the
+        # first row made at/after late_settle_ts — the row's own
+        # position contributes nothing, and every historical stamp
+        # in between stays exactly as recorded. Evidence unchanged;
+        # accounting semantics made explicit.
+        late_credits = sorted(
+            (int(r["late_settle_ts"]),
+             int(r.get("pnl_c", 0) or 0) + int(r.get("stake_c", 0)
+                                               or 0))
+            for r in rows if r.get("late_settle_ts"))
+
         for idx, row in enumerate(rows):
+            while late_credits and late_credits[0][0] <= int(
+                    row.get("made_ts", 0) or 0):
+                running += late_credits.pop(0)[1]
             skipped = is_skipped(row)
             contracts = int(row.get("contracts", 0) or 0)
             stake_c = int(row.get("stake_c", 0) or 0)
@@ -298,7 +315,14 @@ def main():
                                  actual, row.get("win")))
 
             # ---------------- bankroll walk ------------------------------
-            running += pnl_c - skim_c - wd_c
+            if row.get("late_settle_ts"):
+                # the preserved stamp is ENTRY-time cash (stake
+                # already debited, payout not yet received); the
+                # full payout (pnl+stake) is credited at
+                # late_settle_ts by the pre-scan schedule
+                running += -stake_c - skim_c - wd_c
+            else:
+                running += pnl_c - skim_c - wd_c
             savings_running += skim_c
             if "bankroll_c" in row:
                 ledger_bank = int(row["bankroll_c"])

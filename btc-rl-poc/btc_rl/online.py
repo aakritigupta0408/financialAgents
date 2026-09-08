@@ -2586,6 +2586,7 @@ def run(once: bool = False) -> None:
 
     last_bars: list[dict] = []
     last_bars_ts = 0.0
+    _backfilled_close: set = set()   # INC 09-07: one-shot per close_ts
     while True:
         try:
             now = datetime.now(tz=config.PACIFIC)
@@ -2601,6 +2602,34 @@ def run(once: bool = False) -> None:
                     raise
                 bars = last_bars
             by_ts = {b["ts"]: b for b in bars}
+            # INC 2026-09-07 (zombie positions): a machine sleep
+            # longer than the rolling window leaves open rows whose
+            # settle bar [close_ts-60] can never reappear in `bars`,
+            # locking their stake out of cash forever. Targeted
+            # one-shot backfill of the authoritative candle for any
+            # matured open row older than the window; the settle
+            # convention itself is unchanged.
+            try:
+                _stale = set()
+                for _led in (pt_trades, pt3_trades, pt6_trades, kb):
+                    for _t in _led:
+                        _cts = _t.get("close_ts")
+                        if (_t.get("actual") is None and _cts
+                                and now_ts >= _cts
+                                and (_cts - 60) not in by_ts
+                                and _cts < now_ts
+                                - BACKFILL_HOURS * 3600):
+                            _stale.add(_cts)
+                for _cts in sorted(_stale - _backfilled_close):
+                    _backfilled_close.add(_cts)
+                    for _b in fetch_range(
+                            datetime.fromtimestamp(
+                                _cts - 240, tz=config.PACIFIC),
+                            datetime.fromtimestamp(
+                                _cts + 120, tz=config.PACIFIC)):
+                        by_ts.setdefault(_b["ts"], _b)
+            except Exception:
+                pass
             fng = fetch_fear_greed().get(now.date().isoformat())
 
             # 0a. stream a live-feature snapshot (t3's extra context)
@@ -3910,7 +3939,14 @@ def run(once: bool = False) -> None:
                 payout = t["contracts"] * 100 if t["win"] else 0
                 t["pnl_c"] = payout - t["stake_c"]
                 pt_bankroll_c += payout
-                t["bankroll_c"] = pt_bankroll_c
+                # INC 09-07: LATE settle (bar recovered by targeted
+                # backfill) — cash receives the payout NOW, but the
+                # row's entry-time stamp stays historically true;
+                # reconcile credits the payout at late_settle_ts.
+                if now_ts - t["close_ts"] > BACKFILL_HOURS * 3600:
+                    t["late_settle_ts"] = now_ts
+                else:
+                    t["bankroll_c"] = pt_bankroll_c
                 pt_changed = True
             if pt_changed or (pt_trades and pt_trades[-1]["actual"] is None
                               and pt_trades[-1]["made_ts"] >= now_ts - 90):
@@ -3960,7 +3996,11 @@ def run(once: bool = False) -> None:
                 payout = t["contracts"] * 100 if t["win"] else 0
                 t["pnl_c"] = payout - t["stake_c"]
                 pt3_bankroll_c += payout
-                t["bankroll_c"] = pt3_bankroll_c
+                # INC 09-07: late settle — see pt loop above
+                if now_ts - t["close_ts"] > BACKFILL_HOURS * 3600:
+                    t["late_settle_ts"] = now_ts
+                else:
+                    t["bankroll_c"] = pt3_bankroll_c
                 pt3_changed = True
             if pt3_changed or (pt3_trades
                                and pt3_trades[-1]["actual"] is None
