@@ -5,7 +5,18 @@
 # Enforced by tests/invariants.py (retired-roster-frozen,
 # one-control-one-treatment) and consumed by emitters/agents/UI.
 
-version: 1.1.0
+version: 1.2.0
+# PLANES (PM 09-08) — WHAT responsibility a component carries, an
+# axis orthogonal to `tier` (WHERE in the lifecycle). Full map:
+# docs/ARCHITECTURE_TIERS_PLANES.md. The Teaching plane (F) observes
+# and explains but must NEVER mutate canonical research state.
+planes:
+  A: DATA                # what happened
+  B: MODEL               # what we believe
+  C: DECISION_EXECUTION  # what we do
+  D: RESEARCH            # what we are testing
+  E: RELIABILITY_GOVERNANCE  # whether we can trust any of it
+  F: TEACHING            # how we understand/explain it
 budgets:
   max_active_traders: 5          # one slot deliberately EMPTY
   max_serving_model_roles: 3     # ROLES, not physical artifacts —
