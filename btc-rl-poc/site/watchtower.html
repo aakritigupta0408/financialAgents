@@ -3,286 +3,237 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — Control Tower</title>
+<title>Quant Universe — Watchtower</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---------- header strip ---------- */
-.hstrip { display: grid; gap: 10px; margin-top: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
-.hs { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 9px 13px; }
-.hs .k { font-size: 9.5px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); }
-.hs .v { font-size: 14px; font-weight: 750; margin-top: 3px;
-  font-variant-numeric: tabular-nums; line-height: 1.35; }
-.weakline { margin-top: 12px; font-size: 13px; color: var(--ink-2);
-  border-left: 3px solid var(--w-amber, #8f6000); padding: 4px 12px; }
-:root { --w-green: #0c8a4d; --w-amber: #8f6000; --w-red: #d13c3c; }
-/* ---------- lights ---------- */
-.hdot { display: inline-block; width: 10px; height: 10px;
-  border-radius: 50%; background: var(--faint); vertical-align: -1px; }
-.hdot.green { background: var(--w-green); }
-.hdot.amber, .hdot.none { background: var(--w-amber); }
-.hdot.red { background: var(--w-red);
-  box-shadow: 0 0 0 4px rgba(209,60,60,.15); }
-.stw { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; }
-.stw.green { color: var(--w-green); } .stw.amber, .stw.none { color: var(--w-amber); }
-.stw.red { color: var(--w-red); }
-/* ---------- plane rows ---------- */
-.plane { display: grid; grid-template-columns: 14px 92px 130px 1fr;
-  gap: 4px 12px; align-items: baseline; padding: 7px 0;
-  border-bottom: 1px solid var(--grid); font-size: 13px; }
-.plane:last-child { border-bottom: 0; }
-.plane .pname { font-weight: 700; }
-.plane .pwhy { color: var(--muted); font-size: 12px; }
-/* ---------- change detection ---------- */
-.chg { margin-top: 12px; }
-.chg .h, .subh { font-size: 10.5px; font-weight: 800;
-  letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
-  margin: 14px 0 6px; }
-.chgrow { display: flex; gap: 10px; align-items: baseline;
-  padding: 4px 0; font-size: 12.5px; border-bottom: 1px solid var(--grid);
-  font-variant-numeric: tabular-nums; }
-.chgrow:last-child { border-bottom: 0; }
-.chgrow b { min-width: 110px; }
-.chgrow.moved { background: rgba(143,96,0,.06); border-radius: 6px;
-  padding-left: 8px; }
-.evch { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
-.qtag { font-size: 10px; font-weight: 800; letter-spacing: .07em;
-  border: 1px solid var(--border); border-radius: 6px; padding: 3px 9px;
-  color: var(--ink-2); background: var(--surface-2); }
-.qtag.green { color: var(--w-green); border-color: rgba(12,138,77,.4); }
-.qtag.red { color: var(--w-red); border-color: rgba(209,60,60,.45); }
-.qtag.amber { color: var(--w-amber); border-color: rgba(143,96,0,.4); }
-/* ---------- card 2 ---------- */
-.blkr { display: flex; gap: 10px; padding: 8px 0; align-items: baseline;
-  border-bottom: 1px solid var(--grid); font-size: 12.5px;
+/* ---------- local palette ---------- */
+:root { --w-green: #0c8a4d; --w-amber: #8f6000; --w-red: #d13c3c;
+  --w-dark-red: #7a1010; }
+
+/* ---------- card 1 · status lights ---------- */
+.lights { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.light { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; }
+.light .top { display: flex; align-items: center; gap: 8px; }
+.light .emo { font-size: 17px; line-height: 1; }
+.light .nm { font-size: 11px; font-weight: 800; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink); }
+.light .why { font-size: 12px; color: var(--muted); margin-top: 6px;
   line-height: 1.5; }
-.blkr:last-child { border-bottom: 0; }
-.blkr .r { font-size: 15px; font-weight: 800; color: var(--faint);
-  flex: none; width: 18px; font-variant-numeric: tabular-nums; }
-.blkr b { text-transform: uppercase; font-size: 12px;
-  letter-spacing: .04em; }
-.blkr .why { color: var(--muted); font-size: 12px; display: block; }
-.rchip { font-size: 10px; font-weight: 800; border-radius: 5px;
-  padding: 2px 7px; letter-spacing: .05em; }
-.r-red { color: var(--w-red); background: rgba(209,60,60,.1); }
-.r-amber { color: var(--w-amber); background: rgba(143,96,0,.12); }
-.r-blue { color: var(--series-2); background: rgba(36,97,184,.1); }
-.r-green { color: var(--w-green); background: rgba(12,138,77,.1); }
-.sevchip { font-size: 10px; font-weight: 800; border-radius: 5px;
-  padding: 2px 8px; color: #fff; }
-.sevchip.s0 { background: #7a1010; } .sevchip.s1 { background: var(--w-red); }
-.sevchip.s2 { background: var(--w-amber); } .sevchip.s3 { background: var(--series-1); }
-.increow { display: flex; gap: 10px; align-items: baseline;
-  padding: 7px 0; border-bottom: 1px solid var(--grid); font-size: 13px; }
-.increow:last-child { border-bottom: 0; }
-.increow .st { margin-left: auto; font-size: 11px; color: var(--muted); }
-.qualbox { display: grid; gap: 10px; margin-top: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.qb { background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 12px; padding: 11px 14px; }
-.qb .k { font-size: 10px; font-weight: 800; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); }
-.qb .v { font-size: 22px; font-weight: 800; margin-top: 4px;
-  font-variant-numeric: tabular-nums; }
-.qb .m { font-size: 11.5px; color: var(--muted); margin-top: 3px;
-  line-height: 1.5; }
-details.drawer { margin-top: 12px; background: var(--surface-2);
-  border: 1px dashed var(--border); border-radius: 10px;
-  padding: 9px 13px; }
-details.drawer > summary { cursor: pointer; font-size: 12px;
-  font-weight: 800; letter-spacing: .06em; color: var(--ink-2); }
-.qblk { font-size: 12px; color: var(--ink-2); max-width: 40ch; }
-/* ---------- card 3 ---------- */
-.act { display: flex; gap: 12px; padding: 9px 12px; margin-top: 8px;
-  border: 1px solid rgba(209,60,60,.4); background: rgba(209,60,60,.05);
-  border-radius: 10px; font-size: 13px; line-height: 1.55;
-  align-items: baseline; }
-.act.warn { border-color: rgba(143,96,0,.4);
+.light.red { border-color: rgba(209,60,60,.5);
+  background: rgba(209,60,60,.05); }
+.light.yellow { border-color: rgba(143,96,0,.4);
   background: rgba(143,96,0,.05); }
-.act .r { font-size: 15px; font-weight: 800; color: var(--faint);
-  flex: none; }
-.act .meta { color: var(--muted); font-size: 11.5px; display: block; }
-.okline { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
-.okline b { color: var(--w-green); }
-.qrow { display: flex; gap: 10px; align-items: baseline; padding: 5px 0;
+.verdict { margin-top: 16px; font: 500 21px/1.35 var(--display);
+  letter-spacing: .01em; }
+.verdict.ok { color: var(--w-green); }
+.verdict.warn { color: var(--w-amber); }
+.verdict.bad { color: var(--w-red); }
+.fresh { margin-top: 12px; border-top: 1px solid var(--grid);
+  padding-top: 8px; }
+.fresh .fr { display: flex; gap: 10px; align-items: baseline;
+  padding: 3px 0; font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.fresh .fr b { color: var(--ink-2); font-weight: 650; min-width: 210px; }
+
+/* ---------- card 2 · agents ---------- */
+.agentrow { display: grid; gap: 4px 14px; align-items: baseline;
+  grid-template-columns: 170px 64px 1fr auto; padding: 10px 0;
   border-bottom: 1px solid var(--grid); font-size: 12.5px; }
-.qrow:last-child { border-bottom: 0; }
-.qrow .why { color: var(--muted); font-size: 11.5px; }
-.qd { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
-  border-radius: 4px; padding: 2px 7px; color: var(--muted);
-  background: rgba(124,134,149,.14); flex: none; }
-/* roster */
-.roster { width: 100%; border-collapse: collapse; font-size: 12.5px;
-  margin-top: 8px; min-width: 640px; }
-.roster th { font-size: 9.5px; font-weight: 800; letter-spacing: .09em;
-  text-transform: uppercase; color: var(--muted); text-align: left;
-  border-bottom: 1px solid var(--axis); padding: 4px 10px 4px 0; }
-.roster td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--grid);
-  vertical-align: top; }
-.canact { font-size: 9.5px; font-weight: 800; letter-spacing: .06em;
-  border-radius: 4px; padding: 1.5px 6px; }
-.canact.yes { color: var(--series-2); background: rgba(36,97,184,.1); }
-.canact.no { color: var(--muted); background: rgba(124,134,149,.14); }
-/* cadence clock */
-.crow2 { display: grid; gap: 4px 12px; align-items: baseline;
-  grid-template-columns: 64px 1fr auto; padding: 6px 0;
-  border-bottom: 1px solid var(--grid); font-size: 12.5px; }
-.crow2:last-child { border-bottom: 0; }
-.crow2 .cb { font: 700 11px ui-monospace, Menlo, monospace;
-  color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--grid); border-radius: 6px; padding: 2px 6px;
-  text-align: center; }
-.crow2 .rt { color: var(--muted); font-size: 11.5px; text-align: right;
+.agentrow:last-child { border-bottom: 0; }
+.agentrow .anm { font-weight: 700; color: var(--ink); }
+.agentrow .aage { color: var(--muted); font-size: 11.5px;
   font-variant-numeric: tabular-nums; white-space: nowrap; }
-/* events */
-.evrow { display: grid; grid-template-columns: 110px 1fr; gap: 10px;
-  padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; }
-.evrow:last-child { border-bottom: 0; }
-.evrow .t { color: var(--muted); font-variant-numeric: tabular-nums;
-  font-size: 11.5px; }
-.evrow .b { color: var(--ink-2); }
-.evrow .b b { color: var(--ink); }
-.fchips { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 2px; }
-.fchip { font-size: 10px; font-weight: 800; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--muted); cursor: pointer;
+.agentrow .abody { color: var(--ink-2); line-height: 1.55; }
+.agentrow .abody .rec { color: var(--muted); display: block;
+  font-size: 12px; }
+.achip { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; border-radius: 5px; padding: 2.5px 8px;
+  white-space: nowrap; align-self: center; }
+.achip.quiet { color: var(--muted); background: rgba(124,134,149,.14); }
+.achip.act { color: var(--series-2); background: rgba(36,97,184,.10); }
+.achip.warn { color: var(--w-amber); background: rgba(143,96,0,.12); }
+.achip.block { color: var(--w-red); background: rgba(209,60,60,.10); }
+.subh { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin: 18px 0 6px; }
+
+/* recovery strip */
+.healwrap { overflow-x: auto; }
+.heal { display: flex; align-items: center; gap: 0; margin-top: 10px;
+  min-width: 560px; }
+.hstep { flex: 1; text-align: center; font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--faint);
   border: 1px solid var(--border); background: var(--surface-2);
-  border-radius: 999px; padding: 3px 10px; }
-.fchip.on { color: var(--ink); border-color: var(--series-2);
-  background: rgba(36,97,184,.10); }
-/* registry (evicted from Research per TA order) */
-.reg-row { display: flex; gap: 9px; align-items: baseline;
-  padding: 6px 0; border-bottom: 1px solid var(--grid); font-size: 12.5px; }
-.reg-row:last-child { border-bottom: 0; }
-.reg-row .why { color: var(--muted); font-size: 11.5px; }
-.reg-h { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); margin: 12px 0 2px; }
-.tchip { font-size: 9px; font-weight: 800; letter-spacing: .09em;
-  border-radius: 4px; padding: 1.5px 6px; white-space: nowrap;
-  flex: none; color: var(--ink-2); background: var(--surface-2);
-  border: 1px solid var(--grid); }
-@media (max-width: 640px) {
-  .plane { grid-template-columns: 14px 84px 1fr; }
-  .plane .pwhy { grid-column: 2 / -1; }
+  padding: 8px 4px; position: relative; }
+.hstep:first-child { border-radius: 8px 0 0 8px; }
+.hstep:last-child { border-radius: 0 8px 8px 0; }
+.hstep + .hstep { border-left: 0; }
+.hstep.hit { color: var(--w-green); background: rgba(12,138,77,.08);
+  border-color: rgba(12,138,77,.35); }
+.hstep.hit + .hstep.hit { border-left: 0; }
+.hstep .t { display: block; font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0; text-transform: none; color: var(--muted);
+  margin-top: 2px; font-variant-numeric: tabular-nums; }
+.healline { margin-top: 12px; font-size: 13px; color: var(--ink-2);
+  border-left: 3px solid var(--w-green); padding: 4px 12px;
+  line-height: 1.6; }
+.healline b { color: var(--w-green); }
+.healnote { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+/* ---------- card 3 · attention ---------- */
+.sev { font-size: 10px; font-weight: 800; border-radius: 5px;
+  padding: 2px 8px; color: #fff; white-space: nowrap; flex: none; }
+.sev.s0 { background: var(--w-dark-red); }
+.sev.s1 { background: var(--w-red); }
+.sev.s2 { background: var(--w-amber); }
+.sev.s3 { background: var(--series-1); }
+.increw { display: flex; gap: 10px; align-items: baseline; padding: 8px 0;
+  border-bottom: 1px solid var(--grid); font-size: 13px;
+  line-height: 1.5; }
+.increw:last-child { border-bottom: 0; }
+.increw .st { color: var(--muted); font-size: 11.5px; display: block; }
+.watchchip { font-size: 14px; flex: none; }
+.qnote { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* ---------- sev taxonomy ---------- */
+.taxrow { display: grid; grid-template-columns: 74px 1fr; gap: 14px;
+  align-items: baseline; padding: 9px 0;
+  border-bottom: 1px solid var(--grid); font-size: 13px;
+  line-height: 1.6; color: var(--ink-2); }
+.taxrow:last-child { border-bottom: 0; }
+.taxrow b { color: var(--ink); }
+.lifecycle { display: flex; flex-wrap: wrap; gap: 6px 4px;
+  align-items: center; margin-top: 12px; font-size: 11px;
+  font-weight: 800; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--ink-2); }
+.lifecycle .lc { border: 1px solid var(--border);
+  background: var(--surface-2); border-radius: 999px; padding: 5px 13px; }
+.lifecycle .ar { color: var(--faint); font-weight: 600; }
+.closingline { margin-top: 14px; font-size: 13px; color: var(--ink-2);
+  max-width: 72ch; line-height: 1.65; }
+
+footer { max-width: 72rem; margin: 26px auto 0; text-align: center;
+  letter-spacing: .06em; }
+
+@media (max-width: 680px) {
+  .agentrow { grid-template-columns: 1fr auto; }
+  .agentrow .aage { order: 3; }
+  .agentrow .abody { grid-column: 1 / -1; }
+  .fresh .fr b { min-width: 0; }
 }
 </style>
 </head>
 <body>
 
-<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">control tower</span></nav>
-<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a></nav>
+<div class="research-banner">🎓 <b>University research study</b> — all trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
-    operations · <span id="asof">reading…</span></div>
-  <h1>Control Tower</h1>
-  <p class="sub small">System health, incidents, readiness, agents, and
-  operational risk. What is broken, what is at risk, who owns it, and
-  what happens next — everything else lives in drawers. When this page
-  is nearly empty, operations are healthy; that is the goal.</p>
-  <div class="hstrip" id="hstrip"></div>
-  <div class="weakline" id="weakline">reading weakest plane…</div>
+    mission control · <span id="asof">reading…</span></div>
+  <h1>Watchtower — is the machine healthy?</h1>
+  <p class="sub small">One honest answer, continuously recomputed from the
+  system's own monitoring artifacts. Green here is earned, not asserted:
+  a stopped monitor cannot certify the thing it watches, and UNKNOWN is
+  never green.</p>
 </header>
 
-<!-- CARD 1 ─ SYSTEM STATE -->
+<!-- CARD 1 ─ SYSTEM HEALTH -->
 <section>
-  <div class="eyebrow">card 1 · system state</div>
-  <h2>Health</h2>
-  <div id="planes"><p class="mini">reading live signals…</p></div>
-  <div class="chg"><div class="h">changed since your last check
-    <span class="mini" id="chg-when" style="display:inline"></span></div>
-    <div id="changes"><p class="mini">first visit this browser — no
-      previous snapshot to diff against</p></div></div>
-  <div class="subh">evidence health</div>
-  <div class="evch" id="evch"><span class="mini">loading…</span></div>
+  <div class="eyebrow">card 1 · system health</div>
+  <h2>Five lights</h2>
+  <div class="lights" id="lights"><p class="mini">reading
+    monitor_health.json…</p></div>
+  <div class="verdict" id="verdict">computing…</div>
+  <div class="fresh" id="fresh"></div>
 </section>
 
-<!-- CARD 2 ─ INCIDENTS & READINESS -->
+<!-- CARD 2 ─ THE ROBOTS -->
 <section>
-  <div class="eyebrow">card 2 · incidents &amp; readiness</div>
-  <h2>Risks &amp; blockers</h2>
-  <div class="subh">top readiness blockers</div>
-  <div id="blockers"><p class="mini">reading readiness.json…</p></div>
-  <div class="subh">open incidents</div>
-  <div id="incidents"><p class="mini">reading incidents.jsonl…</p></div>
-  <div class="subh">qualification — two independent verdicts</div>
-  <div class="qualbox" id="qual"><p class="mini">loading…</p></div>
-  <div class="evch" id="slo" style="margin-top:12px"></div>
-  <details class="drawer" data-x="matrix"><summary>Open full readiness
-    matrix →</summary>
-    <div class="scroll"><table id="q-matrix">
-      <thead><tr><th>plane</th><th>level</th><th>target</th>
-        <th>blocker to the next level</th><th>live downgrades</th></tr>
-      </thead><tbody><tr><td colspan="5" class="mini">loading…</td></tr>
-      </tbody></table></div>
-    <p class="mini">system = MIN over planes — never averaged · source
-      <code>readiness.json</code></p></details>
-  <details class="drawer" data-x="invwall"><summary>Invariant wall —
-    <span id="inv-sum">…</span></summary>
-    <div class="scroll"><table class="roster" id="inv-tbl">
-      <thead><tr><th>status</th><th>invariant</th>
-        <th>origin — the scar that created it</th></tr></thead>
-      <tbody></tbody></table></div></details>
+  <div class="eyebrow">card 2 · the robots</div>
+  <h2>What are the robots doing?</h2>
+  <p class="sub small">Five research agents watch the system on a clock
+  and write what they find to an append-only ledger. They may observe,
+  diagnose, and propose — they may never touch live policy. A separate
+  self-healing layer repairs infrastructure faults, and an independent
+  monitor must certify every repair before the system trusts itself
+  again.</p>
+  <div id="agents"><p class="mini">reading
+    agent_recommendations.jsonl…</p></div>
+  <div class="subh">recovery — the last incident the machine fixed
+    itself</div>
+  <div id="heal"><p class="mini">reading self_heal.jsonl…</p></div>
 </section>
 
-<!-- CARD 3 ─ OPERATIONS QUEUE -->
+<!-- CARD 3 ─ ATTENTION -->
 <section>
-  <div class="eyebrow">card 3 · operations queue</div>
-  <h2>What currently requires action?</h2>
-  <div id="actions"><p class="mini">computing…</p></div>
-  <div class="okline" id="okline"></div>
-  <div class="subh">observability backlog — queued, not faked</div>
-  <div id="backlog"></div>
-  <details class="drawer" data-x="agents"><summary>Agents →
-    <span id="a-sum">…</span></summary>
-    <p class="mini">The one rule above all contracts: <b>no agent can
-    change live policy</b> — every promotion, retirement or policy
-    change terminates with the human. Per-agent run/success counters
-    are queued (needs instrumentation), not faked.</p>
-    <div class="scroll"><table class="roster" id="roster">
-      <thead><tr><th>agent / service</th><th>mission</th><th>state</th>
-        <th>last</th><th>authority</th><th>can act?</th></tr></thead>
-      <tbody></tbody></table></div></details>
-  <details class="drawer" data-x="jobs"><summary>Jobs — the backend
-    clock → <span id="clk-sum">…</span></summary>
-    <p class="mini" id="clk-gen"></p>
-    <div id="cadence"></div>
-    <p class="mini" id="rt-line"></p></details>
-  <details class="drawer" data-x="tix"><summary>Tickets →
-    <span id="tix-sum">…</span></summary>
-    <div id="tickets"></div></details>
-  <details class="drawer" data-x="events"><summary>Recent events →
-    </summary>
-    <div class="fchips" id="fchips"></div>
-    <div id="events"></div></details>
-  <details class="drawer" data-x="registry"><summary>Registry —
-    <span id="reg-sum">…</span></summary>
-    <p class="mini">Everything the project contains — typed inventory
-    (moved here from the Research page: research is not inventory
-    management).</p>
-    <div id="registry"></div></details>
-  <details class="drawer" data-x="costs"><summary>Run cost →
-    <span id="bill-sum">…</span></summary>
-    <div class="scroll"><table class="roster" id="bill-tbl">
-      <thead><tr><th>item</th><th>amount</th><th>basis</th></tr></thead>
-      <tbody></tbody></table></div></details>
-  <p class="mini">deep dives: research →
-    <a href="board.html">Research Command</a> · models →
-    <a href="models.html">Models</a> · analyst log →
-    <a href="analyst.html">The Analyst</a> · raw evidence →
-    <a href="ledgers.html">Evidence Explorer</a></p>
+  <div class="eyebrow">card 3 · attention</div>
+  <h2>What needs attention?</h2>
+  <div class="subh">open</div>
+  <div id="open"><p class="mini">reading incidents.jsonl…</p></div>
+  <div class="subh">standing research watch — not incidents, just
+    patience</div>
+  <div id="watch"></div>
+  <div class="subh">recently closed</div>
+  <div id="closed"></div>
+  <div class="qnote" id="ledgernote"></div>
+</section>
+
+<!-- SEV TAXONOMY -->
+<section>
+  <div class="eyebrow">field guide</div>
+  <h2>Not every problem is a SEV</h2>
+  <p class="sub small">Severity is a claim about consequences, not about
+  noise. The taxonomy below decides how loudly a problem is allowed to
+  ring.</p>
+  <div style="margin-top:10px">
+    <div class="taxrow"><span class="sev s0">SEV-0</span><span>
+      <b>The system could produce invalid or dangerous evidence.</b>
+      Anything that threatens the truthfulness of the experiment record —
+      leakage, ledger corruption, a monitor certifying what it cannot
+      see. Everything stops until the evidence is trustworthy again.
+      </span></div>
+    <div class="taxrow"><span class="sev s1">SEV-1</span><span>
+      <b>Major degradation of capability.</b> A whole plane down — data
+      capture dead, models unable to score, execution frozen. The record
+      stays honest, but the machine is meaningfully diminished.
+      </span></div>
+    <div class="taxrow"><span class="sev s2">SEV-2</span><span>
+      <b>Important component degraded, system usable.</b> A stale
+      heartbeat, a wedged sync, a duplicate process. Most entries in the
+      incident ledger live here — and most are repaired by the machine
+      itself.</span></div>
+    <div class="taxrow"><span class="sev s3">SEV-3</span><span>
+      <b>Minor.</b> Cosmetic, observability gaps, paper cuts. Recorded
+      anyway, because unrecorded problems are how big problems are
+      born.</span></div>
+  </div>
+  <div class="subh">the lifecycle every SEV follows</div>
+  <div class="lifecycle">
+    <span class="lc">Detection</span><span class="ar">→</span>
+    <span class="lc">Triage</span><span class="ar">→</span>
+    <span class="lc">Root cause</span><span class="ar">→</span>
+    <span class="lc">Fix</span><span class="ar">→</span>
+    <span class="lc">Verification</span><span class="ar">→</span>
+    <span class="lc">Closure</span>
+  </div>
+  <p class="closingline">Every incident above carries this whole chain
+  in its record — including the two evidence-integrity incidents this
+  system caught in its own experiment ledgers.</p>
 </section>
 </main>
 
+<footer>simulated · self-monitoring · every incident recorded</footer>
+
 <script>
 "use strict";
+/* ---------------- fetch helpers (site convention) ------------------ */
 const bust = u => u + "?t=" + Math.floor(Date.now() / 15000);
-const jf = u => fetch(bust(u), { cache: "no-store" })
+const J = u => fetch(bust(u), { cache: "no-store" })
   .then(r => r.ok ? r.json() : null).catch(() => null);
-const jl = u => fetch(bust(u), { cache: "no-store" })
+const JL = u => fetch(bust(u), { cache: "no-store" })
   .then(r => r.ok ? r.text() : "").then(t => t.split("\n")
     .filter(l => l.trim()).map(l => { try { return JSON.parse(l); }
       catch { return null; } }).filter(Boolean)).catch(() => []);
@@ -293,547 +244,307 @@ const nowS = () => Date.now() / 1000;
 const ageMin = ts => (ts == null || !isFinite(ts)) ? null
   : Math.max(0, (nowS() - ts) / 60);
 const fmtAge = m => m == null ? "–"
-  : m < 1 ? "<1m" : m < 90 ? m.toFixed(0) + "m"
+  : m < 90 ? m.toFixed(0) + "m"
   : m < 48 * 60 ? (m / 60).toFixed(1) + "h"
   : (m / 1440).toFixed(1) + "d";
-const RANK = { green: 0, amber: 1, none: 1, red: 2 };
-const WORD = { green: "GREEN", amber: "AMBER", red: "RED",
-  none: "NO DATA" };
-const light = (st, w) => `<span class="hdot ${st}"></span> ` +
-  `<span class="stw ${st}">${w || WORD[st]}</span>`;
-function setKeepOpen(elx, html) {
-  const open = new Set([...document.querySelectorAll("details[data-x]")]
-    .filter(d => d.open).map(d => d.dataset.x));
-  elx.innerHTML = html;
-  for (const d of document.querySelectorAll("details[data-x]"))
-    if (open.has(d.dataset.x)) d.open = true;
-}
 
-/* ---------------- plane grading (same contracts as before) -------- */
-function planeRows(onl, aud, dec, wld, inv) {
-  const hbAge = ageMin(onl && onl.alive_at);
-  const auAge = ageMin(aud && aud.generated_ts);
-  const grade = (age, g, a) => age == null ? "none"
-    : age < g ? "green" : age < a ? "amber" : "red";
-  const region = k => (wld && wld.regions && wld.regions[k]) || null;
-  const ex = region("execution_port"), hq = region("decision_hq");
-  const ig = dec && dec.integrity;
-  return [
-    { name: "Data", st: grade(hbAge, 5, 15),
-      why: hbAge == null ? "heartbeat not fetched"
-        : "daemon heartbeat " + fmtAge(hbAge) + " (green < 5m)" },
-    { name: "Prediction", st: grade(auAge, 30, 90),
-      why: auAge == null ? "audit report not fetched"
-        : "audit " + fmtAge(auAge) + " ago (green < 30m)" },
-    { name: "Probability", st: grade(auAge, 30, 90),
-      why: auAge == null ? "audit report not fetched"
-        : "kb calibrators re-scored " + fmtAge(auAge) + " ago" },
-    { name: "Decision", st: (ig && ig.health) || "none",
-      why: ig ? ig.rows + " paired windows in ledger"
-        : "decision board not fetched" },
-    { name: "Execution", st: (ex && ex.status) || "none",
-      why: ex ? ex.why : "world map not fetched" },
-    { name: "Risk", st: (hq && hq.status) || "none",
-      why: hq ? hq.why : "world map not fetched" },
-    { name: "Governance", st: (inv && inv.health) || "none",
-      why: inv ? inv.passed + "/" + (inv.passed + inv.failed)
-          + " invariants, ran " + fmtAge(ageMin(inv.generated_ts))
-          + " ago"
-        : "invariant suite not fetched" }];
-}
+/* =================== card 1 — five status lights =================== */
+/* monitor_health.json → monitors keyed by name, each with .state
+   (HEALTHY / anything else) and .age_s. Areas group those monitors;
+   invariants.json and online_status.json can only downgrade. */
+const AREAS = [
+  { key: "DATA", mons: ["daemon_heartbeat", "event_capture",
+      "xvenue_capture", "micro_capture", "data_health", "f1_gate"] },
+  { key: "MODELS", mons: ["parity_check"] },
+  { key: "EXPERIMENT", mons: ["pm_snapshot", "audit_chain"] },
+  { key: "EXECUTION", mons: [] },              /* derived from heartbeat */
+  { key: "TRAINING", mons: ["m5_soak", "meta_monitor"] },
+];
+const RANK = { green: 0, yellow: 1, red: 2 };
+const EMOJI = { green: "🟢", yellow: "🟡", red: "🔴" };
+const monState = s => s == null ? "yellow"
+  : /^healthy$/i.test(s) ? "green"
+  : /fail|dead|crit|red/i.test(s) ? "red" : "yellow";
+const worse = (a, b) => RANK[b] > RANK[a] ? b : a;
 
-/* ------------------------- header strip --------------------------- */
-function renderHeader(rows, rdy, inv, incs, aud, wld) {
-  const worst = rows.reduce((w, r) =>
-    (RANK[r.st] ?? 1) > (RANK[w] ?? 1) ? r.st : w, "green");
-  el("dot").className = "live-dot" + (worst === "green" ? "" : " stale");
-  const sys = (rdy && rdy.system) || {};
-  const strat = (rdy && rdy.strategy) || {};
-  const open = incs.filter(i => !/closed/i.test(i.status || ""));
-  const costs = (wld && wld.costs) || [];
-  const metered = costs.filter(c => c.amount != null)
-    .reduce((a, c) => a + c.amount, 0);
-  const hs = (k, v) => `<div class="hs"><div class="k">${k}</div>` +
-    `<div class="v">${v}</div></div>`;
-  el("hstrip").innerHTML =
-    hs("system", light(worst)) +
-    hs("strategy", `<span class="stw ${/qualified/i.test(strat.status
-      || "") && !/\bno\b/i.test(strat.status || "") ? "green" : "amber"
-      }">${esc(strat.status || "UNPUBLISHED")}</span>`) +
-    hs("readiness", `${esc(sys.level || "?")} <span class="mini"
-      style="display:inline">/ R8</span>`) +
-    hs("open sev", `<span class="stw ${open.length ? "red" : "green"}">${
-      open.length}</span>`) +
-    hs("invariants", inv
-      ? `<span class="stw ${inv.failed ? "red" : "green"}">${inv.passed
-        } / ${inv.passed + inv.failed}</span>` : "—") +
-    hs("last audit", fmtAge(ageMin(aud && aud.generated_ts))) +
-    hs("run cost", `$${metered.toFixed(2)} <span class="mini"
-      style="display:inline">· ${costs.length - costs.filter(c =>
-        c.amount != null).length} not metered</span>`);
-  const weakest = rows.filter(r => r.st !== "green");
-  el("weakline").innerHTML = weakest.length
-    ? `<b>Weakest plane: ${esc(weakest.sort((a, b) =>
-        (RANK[b.st] ?? 1) - (RANK[a.st] ?? 1))[0].name)}</b> — ${
-        esc(weakest[0].why)}`
-    : `All seven planes green — nothing needs attention.`;
-  el("asof").textContent = "checked " +
-    new Date().toLocaleTimeString("en-US", { hour12: false });
-  return worst;
-}
-
-/* ------------------- card 1: planes + change diff ------------------ */
-function renderPlanes(rows) {
-  el("planes").innerHTML = rows.map(r =>
-    `<div class="plane"><span class="hdot ${r.st}"></span>` +
-    `<span class="pname">${esc(r.name)}</span>` +
-    `<span class="stw ${r.st}">${WORD[r.st]}</span>` +
-    `<span class="pwhy">${esc(r.why)}</span></div>`).join("");
-}
-
-const SNAP_KEY = "controltower.snapshot";
-function renderChanges(rows, inv, incs, rdy) {
-  const cur = {
-    ts: Date.now(),
-    planes: Object.fromEntries(rows.map(r => [r.name, r.st])),
-    inv: inv ? `${inv.passed}/${inv.passed + inv.failed}` : "?",
-    sev: incs.filter(i => !/closed/i.test(i.status || "")).length,
-    r: (rdy && rdy.system && rdy.system.level) || "?",
-  };
-  let prev = null;
-  try { prev = JSON.parse(localStorage.getItem(SNAP_KEY)); } catch {}
-  /* keep the previous snapshot for at least 5 minutes so a 15 s poll
-     doesn't immediately overwrite the baseline being diffed against */
-  if (!prev || Date.now() - prev.ts > 5 * 60 * 1000)
-    try { localStorage.setItem(SNAP_KEY, JSON.stringify(cur)); } catch {}
-  if (!prev) return;
-  el("chg-when").textContent = "· baseline " +
-    fmtAge((Date.now() - prev.ts) / 60000) + " ago";
-  const rowsH = [];
-  for (const r of rows) {
-    const was = (prev.planes || {})[r.name];
-    const moved = was && was !== r.st;
-    rowsH.push(`<div class="chgrow${moved ? " moved" : ""}"><b>${
-      esc(r.name)}</b><span>${was ? WORD[was] : "?"} → <span
-      class="stw ${r.st}">${WORD[r.st]}</span>${moved
-      ? " ⚠" : ""}</span></div>`);
+function gradeAreas(mh, inv, os) {
+  const mons = (mh && mh.monitors) || null;
+  const out = [];
+  for (const area of AREAS) {
+    let st = "green", why = [];
+    if (!mons) { st = "yellow"; why.push("monitor_health.json not fetched — cannot certify"); }
+    else for (const name of area.mons) {
+      const m = mons[name];
+      const s = monState(m && m.state);
+      if (s !== "green") {
+        st = worse(st, s);
+        why.push(m ? `${name} ${m.state} (${m.age_s}s old)`
+          : `${name} monitor missing`);
+      }
+    }
+    if (area.key === "DATA" && st === "green" && mons)
+      why.push(`all ${area.mons.length} capture monitors healthy · `
+        + `heartbeat ${mons.daemon_heartbeat.age_s}s`);
+    if (area.key === "MODELS" && st === "green" && mons)
+      why.push(`parity check healthy (${mons.parity_check.age_s}s old) — `
+        + `offline and online models agree`);
+    if (area.key === "EXPERIMENT") {
+      if (inv && inv.failed > 0) {
+        st = worse(st, "red");
+        why.unshift(`${inv.failed} invariant${inv.failed > 1 ? "s" : ""} `
+          + `FAILING — evidence cannot be trusted until they pass`);
+      } else if (inv) why.push(`${inv.passed}/${inv.passed + inv.failed
+        } invariants passing`);
+      if (os && os.runtime_state === "FREEZE_NEW_ENTRIES") {
+        st = worse(st, "yellow");
+        why.unshift("runtime FREEZE_NEW_ENTRIES"
+          + (os.runtime_state_why ? " — " + os.runtime_state_why : ""));
+      }
+    }
+    if (area.key === "EXECUTION") {
+      const hb = ageMin(os && os.alive_at);
+      const dec = os && os.kalshi_binary && os.kalshi_binary.last;
+      if (hb == null) { st = "yellow"; why = ["daemon heartbeat not fetched"]; }
+      else if (hb > 15) { st = "red"; why = [`daemon heartbeat ${fmtAge(hb)} stale`]; }
+      else if (hb > 5) { st = "yellow"; why = [`daemon heartbeat ${fmtAge(hb)} (green < 5m)`]; }
+      else why = [`daemon alive ${fmtAge(hb)} ago`
+        + (dec ? ` · last decision ${fmtAge(ageMin(dec.made_ts))} ago` : "")];
+    }
+    if (area.key === "TRAINING" && st === "green" && os)
+      why.push(`${(os.kb_logit_updates ?? 0).toLocaleString()} online `
+        + `updates this session · soak + meta-monitor healthy`);
+    out.push({ key: area.key, st,
+      why: why[0] || "all monitors healthy" });
   }
-  const pair = (k, was, now) => `<div class="chgrow${was !== now
-    ? " moved" : ""}"><b>${k}</b><span>${esc(was)} → ${esc(now)
-    }</span></div>`;
-  rowsH.push(pair("Invariants", prev.inv, cur.inv));
-  rowsH.push(pair("Open SEVs", String(prev.sev), String(cur.sev)));
-  rowsH.push(pair("Readiness", prev.r, cur.r));
-  const anyMove = /moved/.test(rowsH.join(""));
-  el("changes").innerHTML = (anyMove ? ""
-    : `<p class="mini">no new degradation since baseline</p>`)
-    + rowsH.join("");
+  return out;
 }
 
-function renderEvidence(rec, chaos, leak, bld) {
-  const tag = (name, ok, detail) => `<span class="qtag ${ok === true
-    ? "green" : ok === false ? "red" : "amber"}">${name} · ${ok === true
-    ? "PASS" : ok === false ? "FAIL" : "UNPUBLISHED"}${detail
-    ? " · " + esc(detail) : ""}</span>`;
-  el("evch").innerHTML =
-    tag("reconciliation", rec ? rec.overall === "OK" : null,
-      rec && rec.checks ? rec.checks.filter(c => c.status === "OK")
-        .length + "/" + rec.checks.length : "") +
-    tag("chaos", chaos ? chaos.overall === "PASS" : null,
-      chaos && chaos.drills ? chaos.drills.filter(d =>
-        /^PASS/.test(d.result || "")).length + "/" +
-        chaos.drills.length : "") +
-    tag("leakage", leak ? /^(ok|pass)$/i.test(leak.overall || "")
-      : null, leak && leak.checks ? leak.checks.filter(c =>
-        c.result === "PASS").length + "/" + leak.checks.length : "") +
-    tag("build scan", bld && bld.secret_scan
-      ? bld.secret_scan.clean === true : null,
-      bld ? "git " + String(bld.git_sha || "").slice(0, 7) : "");
+function renderLights(areas) {
+  el("lights").innerHTML = areas.map(a =>
+    `<div class="light ${a.st === "green" ? "" : a.st}">` +
+    `<div class="top"><span class="emo">${EMOJI[a.st]}</span>` +
+    `<span class="nm">${a.key}</span></div>` +
+    `<div class="why">${esc(a.why)}</div></div>`).join("");
+  const bad = areas.filter(a => a.st !== "green")
+    .sort((a, b) => RANK[b.st] - RANK[a.st]);
+  const v = el("verdict");
+  if (!bad.length) { v.className = "verdict ok";
+    v.textContent = "System operational"; }
+  else { v.className = "verdict " + (bad[0].st === "red" ? "bad" : "warn");
+    v.textContent = bad[0].key + " requires attention"; }
+  el("dot").className = "live-dot" + (bad.some(a => a.st === "red")
+    ? " stale" : "");
 }
 
-/* --------------- card 2: blockers, incidents, qual ----------------- */
-const rChipCls = lv => {
-  const m = /^R(\d+)/.exec(String(lv ?? "").trim().toUpperCase());
-  if (!m) return "r-amber";
-  const n = +m[1];
-  return n <= 1 ? "r-red" : n <= 3 ? "r-amber"
-    : n <= 6 ? "r-blue" : "r-green";
+function renderFresh(a3, os, mh) {
+  const row = (k, ts) => `<div class="fr"><b>${k}</b><span>${
+    ts == null ? "not fetched" : fmtAge(ageMin(ts)) + " ago"}</span></div>`;
+  el("fresh").innerHTML =
+    row("live experiment snapshot (a3_live)", a3 && a3.generated_ts) +
+    row("daemon heartbeat (online_status)", os && os.alive_at) +
+    row("health roll-up (monitor_health)", mh && mh.generated_ts);
+}
+
+/* ================= card 2 — agents + self-healing ================== */
+const AGENTS = [
+  ["research_manager", "Research Manager"],
+  ["experiment_analyst", "Experiment Analyst"],
+  ["data_reliability", "Data Reliability"],
+  ["model_researcher", "Model Researcher"],
+  ["execution_researcher", "Execution Researcher"]];
+
+const statusChip = st => {
+  const s = String(st || "").toUpperCase();
+  if (/DUPLICATE/.test(s)) return ["quiet", "no new finding"];
+  if (/REJECT/.test(s)) return ["block", s.toLowerCase()];
+  if (/ACCEPT|VALIDATED|APPLIED/.test(s)) return ["act", s.toLowerCase()];
+  if (!s) return ["quiet", "logged"];
+  return ["warn", s.toLowerCase()];
 };
-const rChip = lv => `<span class="rchip ${rChipCls(lv)}">${
-  esc(lv ?? "UNKNOWN")}</span>`;
 
-function renderBlockers(rdy) {
-  const box = el("blockers");
-  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
-  if (!planes.length) {
-    box.innerHTML = '<p class="mini">readiness.json not yet published' +
-      ' — no level is claimed (UNKNOWN is never green)</p>';
+function renderAgents(recs) {
+  if (!recs || !recs.length) {
+    el("agents").innerHTML = '<p class="mini">agent ledger not '
+      + 'published — the robots have not reported</p>';
     return;
   }
-  const lvN = p => { const m = /^R(\d+)/.exec(String(p.level || ""));
-    return m ? +m[1] : -1; };
-  const top = planes.filter(([, p]) => p.blocker)
-    .sort((a, b) => lvN(a[1]) - lvN(b[1])).slice(0, 4);
-  box.innerHTML = top.map(([name, p], i) =>
-    `<div class="blkr"><span class="r">${i + 1}</span><span>` +
-    `<b>${esc(name)}</b> ${rChip(p.level)}` +
-    `<span class="why">blocker: ${esc(p.blocker)}</span>` +
-    `</span></div>`).join("") ||
-    '<p class="mini">no blockers recorded</p>';
+  const latest = {};
+  for (const r of recs) if (r && r.agent) latest[r.agent] = r;
+  el("agents").innerHTML = AGENTS.map(([key, name]) => {
+    const r = latest[key];
+    if (!r) return `<div class="agentrow"><span class="anm">${name
+      }</span><span class="aage">—</span><span class="abody mini">no `
+      + `entries in the ledger yet</span><span></span></div>`;
+    const [cls, word] = statusChip(r.status);
+    return `<div class="agentrow"><span class="anm">${name}</span>` +
+      `<span class="aage">${fmtAge(ageMin(r.ts))} ago</span>` +
+      `<span class="abody">${esc(firstLine(r.finding))}` +
+      `<span class="rec">→ ${esc(firstLine(r.recommendation))}</span>` +
+      `</span><span class="achip ${cls}">${esc(word)}</span></div>`;
+  }).join("");
 }
+const firstLine = s => {
+  s = String(s ?? "—").split("|")[0].trim();
+  return s.length > 160 ? s.slice(0, 157) + "…" : s;
+};
+
+/* self-heal: group rows into chains (a chain starts at DETECTED),
+   find the most recent chain that reached a terminal state. */
+const HEAL_STEPS = ["DETECTED", "CONTAINED", "REPAIR_ATTEMPTED",
+  "VERIFICATION_PASS", "RESTORED"];
+function renderHeal(sh) {
+  const box = el("heal");
+  if (!sh || !sh.length) {
+    box.innerHTML = '<p class="mini">no self-healing ledger published '
+      + '— nothing has needed repair, or the layer is not running</p>';
+    return;
+  }
+  const chains = [];
+  let cur = null;
+  for (const r of sh) {
+    if (r.state === "DETECTED") { cur = []; chains.push(cur); }
+    if (cur) cur.push(r);
+  }
+  const terminal = c => c.some(r =>
+    r.state === "RESTORED" || r.state === "FAILED_CLOSED");
+  const done = chains.filter(terminal);
+  const last = done[done.length - 1];
+  const inflight = chains.length && !terminal(chains[chains.length - 1])
+    ? chains[chains.length - 1] : null;
+  if (!last) {
+    box.innerHTML = '<p class="mini">no completed repair chain in the '
+      + 'ledger yet</p>';
+    return;
+  }
+  const present = new Set(last.map(r => r.state));
+  const tsOf = st => { const r = last.find(x => x.state === st);
+    return r ? new Date(r.ts * 1000).toLocaleTimeString("en-US",
+      { hour: "2-digit", minute: "2-digit", hour12: false }) : null; };
+  const strip =
+    `<div class="healwrap"><div class="heal">` +
+    `<div class="hstep hit">FAULT<span class="t">${
+      esc(String(last[0].repair_id || "").replace(/^M6-R\d+_/, "")
+        .replace(/_/g, " ").toLowerCase()) || "detected"}</span></div>` +
+    HEAL_STEPS.map(st => `<div class="hstep${present.has(st)
+      ? " hit" : ""}">${st.replace(/_/g, " ")}<span class="t">${
+      tsOf(st) || "—"}</span></div>`).join("") +
+    `</div></div>`;
+  const restored = last.find(r => r.state === "RESTORED");
+  const failed = last.find(r => r.state === "FAILED_CLOSED");
+  let line = "";
+  if (restored) {
+    const d = new Date(restored.ts * 1000).toLocaleString("en-US",
+      { month: "short", day: "numeric", hour: "2-digit",
+        minute: "2-digit", hour12: false });
+    line = `<div class="healline"><b>Last incident recovered
+      autonomously</b> — verified by an independent monitor, zero human
+      intervention. Restored ${esc(d)}.</div>`;
+  } else if (failed) {
+    line = `<div class="healline" style="border-left-color:
+      var(--w-red)">Last chain <b style="color:var(--w-red)">failed
+      closed</b> — verification did not pass, so the system stayed
+      contained rather than trusting an unverified repair. That is the
+      contract working.</div>`;
+  }
+  const restCount = sh.filter(r => r.state === "RESTORED").length;
+  box.innerHTML = strip + line +
+    `<p class="healnote">${restCount} autonomous recoveries in the
+    ledger · a repair may only reach RESTORED with
+    scientific-evidence-unchanged proof, certified by a process other
+    than the repairer${inflight ? ` · <b>one repair currently in
+    flight</b> (${esc(inflight[inflight.length - 1].state
+      .replace(/_/g, " "))})` : ""}</p>`;
+}
+
+/* ==================== card 3 — attention queue ===================== */
+const sevNum = s => { const m = /(\d)/.exec(String(s ?? "3"));
+  return m ? Math.min(3, Math.max(0, +m[1])) : 3; };
+const sevChip = s => `<span class="sev s${sevNum(s)}">SEV-${sevNum(s)
+  }</span>`;
+const OPEN_RE = /\bopen\b|needs.human|mitigating/i;
+const CLOSED_RE = /resolved|closed/i;
 
 function renderIncidents(incs) {
-  const open = incs.filter(i => !/closed/i.test(i.status || ""));
-  el("incidents").innerHTML = (open.length ? open : []).map(i =>
-    `<div class="increow"><span class="sevchip s${Math.min(3,
-      Math.max(0, i.sev ?? 3))}">SEV-${esc(i.sev ?? "?")}</span>` +
-    `<b>${esc(i.title || "untitled")}</b>` +
-    `<span class="st">${esc(i.status || "open")}${i.page
+  incs = incs || [];
+  const open = incs.filter(i => OPEN_RE.test(String(i.status || "")));
+  const closed = incs.filter(i => CLOSED_RE.test(String(i.status || "")));
+  el("open").innerHTML = open.length ? open.map(i =>
+    `<div class="increw">${sevChip(i.sev)}<span><b>${esc(i.title
+      || "untitled")}</b><span class="st">${esc(i.status)}${i.opened
+      ? " · opened " + esc(i.opened) : ""}${i.page
       ? ` · <a href="${esc(String(i.page).replace(/^site\//, ""))
-        }">record</a>` : ""}</span></div>`).join("") ||
-    `<p class="mini">no open incidents — ${incs.length} closed stay in
-      the record</p>`;
+        }">record</a>` : ""}</span></span></div>`).join("")
+    : '<p class="mini">no open incidents</p>';
+  el("closed").innerHTML = closed.slice(-5).reverse().map(i =>
+    `<div class="increw">${sevChip(i.sev)}<span><b>${esc(i.title
+      || "untitled")}</b><span class="st">${esc(i.status)}${i.opened
+      ? " · opened " + esc(i.opened) : ""}</span></span></div>`)
+    .join("") || '<p class="mini">nothing closed yet</p>';
+  const auto = incs.length - open.length - closed.length;
+  el("ledgernote").textContent = `${incs.length} records in the `
+    + `incident ledger — ${auto > 0 ? auto + " of them are routine "
+    + "auto-repair receipts (each one paired with a verification row "
+    + "in self_heal.jsonl); " : ""}nothing is ever deleted.`;
 }
 
-function renderQual(rdy) {
-  const sys = (rdy && rdy.system) || {};
-  const strat = (rdy && rdy.strategy) || {};
-  const stratOk = /qualified/i.test(strat.status || "")
-    && !/\bno\b/i.test(strat.status || "");
-  el("qual").innerHTML =
-    `<div class="qb"><div class="k">system readiness</div>` +
-    `<div class="v">${rChip(sys.level)}</div>` +
-    `<div class="m">engineering ladder — MIN over planes, never
-      averaged · target R8</div></div>` +
-    `<div class="qb"><div class="k">strategy readiness</div>` +
-    `<div class="v"><span class="stw ${stratOk ? "green" : "amber"}"
-      style="font-size:15px">${esc(strat.status || "UNPUBLISHED")
-      }</span></div>` +
-    `<div class="m">${esc(strat.separation_note || "independent of "
-      + "system readiness — a perfect system can carry a worthless "
-      + "strategy")}</div></div>` +
-    `<div class="qb"><div class="k">deployment readiness</div>` +
-    `<div class="v" style="font-size:15px">MIN(system, strategy)</div>` +
-    `<div class="m">${sys.qualification_frozen
-      ? "QUALIFICATION FROZEN — " + esc(sys.frozen_reason || "")
-      : "both verdicts must pass before any capital discussion; "
-        + "live execution is demo-only by owner order"}</div></div>`;
+function renderWatch(rq, f1) {
+  const items = ((rq && rq.queue) || []).filter(q =>
+    q.state === "COLLECTING" || q.blocked_by);
+  const rows = items.map(q => {
+    let extra = "";
+    if (f1 && /F1/i.test(String(q.blocked_by || "") +
+        String(q.next_gate || "")))
+      extra = ` — gate verdict ${f1.verdict || "?"}, waiting for
+        independent information (ESS ${Math.round(
+        (f1.proposed_v2_1_stitched
+          && f1.proposed_v2_1_stitched.ess_min_across_horizons)
+        ?? f1.ess_min_across_horizons ?? 0)}/150)`;
+    return `<div class="increw"><span class="watchchip">🟡</span>` +
+      `<span><b>${esc(shortQ(q))}</b><span class="st">${esc(
+        q.state)}${q.blocked_by ? " · blocked by " + esc(q.blocked_by)
+        : ""} · ${esc(q.bottleneck || "")}${esc(extra)}</span>` +
+      `</span></div>`;
+  });
+  el("watch").innerHTML = rows.join("")
+    || '<p class="mini">no standing research waits</p>';
 }
-
-function renderSLO(mm) {
-  const slo = mm && mm.slo;
-  if (!slo) { el("slo").innerHTML =
-    '<span class="qtag amber">SLO snapshot unpublished</span>'; return; }
-  const parts = [`<span class="qtag ${(slo.compliant || []).length
-    ? "green" : "amber"}">${(slo.compliant || []).length} SLOs
-    compliant</span>`];
-  for (const b of (slo.breached || []))
-    parts.push(`<span class="qtag red">BREACHED · ${esc(b)}</span>`);
-  for (const u of (slo.unknown || []))
-    parts.push(`<span class="qtag amber">UNKNOWN · ${esc(u)}</span>`);
-  el("slo").innerHTML = parts.join("");
-}
-
-function renderMatrix(rdy) {
-  const tb = el("q-matrix").tBodies[0];
-  const planes = rdy && rdy.planes ? Object.entries(rdy.planes) : [];
-  if (!planes.length) { tb.innerHTML = `<tr><td colspan="5"
-    class="mini">readiness.json not yet published</td></tr>`; return; }
-  const weak = new Set((rdy.system && rdy.system.weakest_planes) || []);
-  tb.innerHTML = planes.map(([name, p]) =>
-    `<tr><td><b>${esc(name)}</b>${weak.has(name)
-      ? ' <span class="stw red">· weakest</span>' : ""}</td>` +
-    `<td>${rChip(p.level)}</td><td>${rChip(p.target ?? "R8")}</td>` +
-    `<td class="qblk">${esc(p.blocker || "—")}</td>` +
-    `<td class="qblk">${Array.isArray(p.live_downgrades)
-      && p.live_downgrades.length
-      ? p.live_downgrades.map(esc).join(" · ")
-      : '<span class="mini">none</span>'}</td></tr>`).join("");
-}
-
-function renderInvariants(inv) {
-  const tb = el("inv-tbl").tBodies[0];
-  if (!inv || !Array.isArray(inv.checks)) {
-    el("inv-sum").textContent = "unpublished"; return;
-  }
-  el("inv-sum").textContent = `${inv.passed} pass · ${inv.failed} fail
-    · ran ${fmtAge(ageMin(inv.generated_ts))} ago`;
-  tb.innerHTML = inv.checks.map(c =>
-    `<tr><td>${light(c.ok ? "green" : "red", c.ok ? "PASS" : "FAIL")
-      }</td><td><b>${esc(c.name)}</b>${!c.ok && c.detail
-      && c.detail.length ? `<br><span class="mini">${esc([].concat(
-        c.detail).join(" · "))}</span>` : ""}</td>` +
-    `<td class="qblk">${esc(c.origin || "–")}</td></tr>`).join("");
-}
-
-/* ------------------ card 3: the operations queue ------------------- */
-const QUEUED = [
-  ["Brier drift", "rolling Brier vs frozen baseline", "NEEDS DATA"],
-  ["feature PSI", "population stability on the live feature vector",
-    "NOT IMPLEMENTED"],
-  ["markout monitor", "post-fill drift as a standing monitor (A3 "
-    + "computes it per-experiment today)", "NOT IMPLEMENTED"],
-  ["SRM", "sample-ratio mismatch on treatment pairing (decision "
-    + "board computes it per-emit)", "NEEDS PROMOTION"]];
-
-function renderActions(rows, inv, incs, wld, mm, rdy) {
-  const acts = [];
-  for (const r of rows.filter(r => r.st === "red"))
-    acts.push({ sev: 0, t: `${r.name} plane RED`, m: r.why,
-      own: "operations" });
-  if (inv && inv.failed)
-    acts.push({ sev: 0, t: `${inv.failed} invariant${inv.failed > 1
-      ? "s" : ""} FAILING`, m: inv.checks.filter(c => !c.ok)
-      .map(c => c.name).join(", "), own: "auditor" });
-  for (const c of ((wld && wld.clock) || [])
-      .filter(c => c.health === "red"))
-    acts.push({ sev: 0, t: `cadence RED — ${c.what}`,
-      m: `every ${c.every || "?"} · last ${fmtAge(c.age_min)
-        } · owner ${c.owner || "?"}`, own: c.owner || "ops" });
-  if (mm && /warn|red|fail/i.test(mm.overall || ""))
-    acts.push({ sev: 1, t: "monitor-of-monitors " + mm.overall,
-      m: "inspect freshness SLOs in meta_monitors.json",
-      own: "observability" });
-  for (const b of ((mm && mm.slo && mm.slo.breached) || []))
-    acts.push({ sev: 1, t: "SLO breached", m: b, own: "observability" });
-  for (const r of rows.filter(r => r.st === "amber" || r.st === "none"))
-    acts.push({ sev: 1, t: `${r.name} plane ${WORD[r.st]}`, m: r.why,
-      own: "operations" });
-  const openSev = incs.filter(i => !/closed/i.test(i.status || ""));
-  for (const i of openSev)
-    acts.push({ sev: 1, t: `SEV-${i.sev} open — ${i.title}`,
-      m: i.status || "open", own: "owner + auditor" });
-  acts.sort((a, b) => a.sev - b.sev);
-  el("actions").innerHTML = acts.length
-    ? acts.map((a, i) => `<div class="act${a.sev ? " warn" : ""}">` +
-      `<span class="r">${i + 1}</span><span><b>${esc(a.t)}</b>` +
-      `<span class="meta">${esc(a.m)} · owner: ${esc(a.own)}</span>` +
-      `</span></div>`).join("")
-    : '<p class="mini" style="font-size:14px">🟢 nothing requires ' +
-      'action — healthy operations are boring</p>';
-  /* running-normally summary */
-  const clk = (wld && wld.clock) || [];
-  const okClk = clk.filter(c => c.health === "green").length;
-  const agents = (wld && wld.agents) || [];
-  el("okline").innerHTML = `<b>running normally:</b> ${okClk}/${
-    clk.length} cadences green · ${agents.length} agents on roster · ${
-    QUEUED.length} monitors queued`;
-  el("backlog").innerHTML = QUEUED.map(([n, why, st]) =>
-    `<div class="qrow"><span class="qd">${st}</span><b>${n}</b>` +
-    `<span class="why">${why}</span></div>`).join("");
-}
-
-/* agents roster */
-const ageText = ts => ts == null ? null : fmtAge(ageMin(ts)) + " ago";
-function renderRoster(wld) {
-  const agents = (wld && wld.agents) || [];
-  el("a-sum").textContent = agents.length + " on roster";
-  const can = a => !/read|observe|propose|advis/i.test(a.authority
-    || "") || /write|restart|publish|execute/i.test(a.authority || "");
-  el("roster").tBodies[0].innerHTML = agents.map(a =>
-    `<tr><td><b>${esc(a.name)}</b></td>` +
-    `<td class="qblk">${esc(a.role || "—")}${a.cannot
-      ? `<br><span class="mini">cannot: ${esc(a.cannot)}</span>`
-      : ""}</td>` +
-    `<td>${a.last_ts != null ? light(ageMin(a.last_ts) < 60
-      ? "green" : "amber") : '<span class="mini">session</span>'}</td>` +
-    `<td class="mini">${ageText(a.last_ts) || "—"}</td>` +
-    `<td class="qblk">${esc(a.authority || "—")}</td>` +
-    `<td><span class="canact ${can(a) ? "yes" : "no"}">${can(a)
-      ? "CAN ACT" : "CANNOT ACT"}</span></td></tr>`).join("");
-}
-
-/* backend clock */
-function parseEvery(s) {
-  const m = /([\d.]+)\s*(s|sec|m|min|h|hr)/i.exec(String(s || ""));
-  if (!m) return 9e9;
-  const v = parseFloat(m[1]);
-  return /^s/i.test(m[2]) ? v : /^m/i.test(m[2]) ? v * 60 : v * 3600;
-}
-function renderClock(wld, os) {
-  const clk = (wld && wld.clock) || [];
-  el("clk-sum").textContent = clk.length + " cadences";
-  el("clk-gen").textContent = wld ? "snapshot " +
-    (ageText(wld.generated_ts) || "—") : "world.json not fetched";
-  const sorted = clk.slice().sort((a, b) =>
-    parseEvery(a.every) - parseEvery(b.every));
-  el("cadence").innerHTML = sorted.map(c => {
-    const missed = c.health === "red";
-    return `<div class="crow2"><span class="cb">${esc(c.every || "—")
-      }</span><span>${light(c.health || "amber")} <b>${esc(c.what || "—")
-      }</b>${missed ? ' <span class="stw red">· MISSED SLA</span>' : ""
-      }<br><span class="mini">${esc(c.owner || "—")} · <code>${
-      esc(c.source || "—")}</code>${c.in_crontab === false
-      ? ' · <span class="stw red">NOT IN CRONTAB</span>' : ""
-      }</span></span>` +
-    `<span class="rt">last ${fmtAge(c.age_min)}</span></div>`;
-  }).join("") || '<p class="mini">world clock not fetched</p>';
-  const rt = os && os.last_retrain;
-  if (rt && rt.arms) {
-    let kept = 0, rev = 0;
-    for (const hs of Object.values(rt.arms))
-      for (const v of Object.values(hs)) v && v.reverted ? rev++ : kept++;
-    el("rt-line").innerHTML = `last gated retrain: <b>${kept} kept · ${
-      rev} reverted</b> — dissection on
-      <a href="models.html">Models</a>.`;
-  }
-}
-
-/* tickets */
-const DONE_RE = /dead|done|shipped|folded|resolved|retired/i;
-function renderTickets(brd) {
-  if (!brd) { el("tix-sum").textContent = "—"; return; }
-  const all = (brd.workstreams || []).map(t => ({ t, c: "WORKSTREAM" }))
-    .concat((brd.mitigations || []).map(t => ({ t, c: "MITIGATION" })));
-  const act = all.filter(x => !DONE_RE.test(x.t.status || ""));
-  const done = all.length - act.length;
-  el("tix-sum").textContent = `${act.length} active · ${done} closed`;
-  el("tickets").innerHTML = act.map(x =>
-    `<div class="qrow"><span class="qd">${x.c}</span><b>${esc(x.t.id)
-      }</b><span class="why">${esc(x.t.status || "")} — ${
-      esc(x.t.note || "")}</span></div>`).join("")
-    || '<p class="mini">no active tickets</p>';
-}
-
-/* events — 5 by default, category filters */
-let EVFILTER = "ALL";
-let EVITEMS = [];
-function buildEvents(notes, treats, os, dec) {
-  const items = [];
-  for (const n of notes.slice(-10))
-    if (n.ts != null) items.push({ ts: n.ts, cat: "RESEARCH",
-      who: "Fable · " + (n.topic || "analyst note"),
-      body: String(n.text || "").slice(0, 180) });
-  for (const t of treats.slice(-8))
-    if (t.close_ts != null) items.push({ ts: t.close_ts,
-      cat: "SYSTEM", who: "Evaluator · " + (t.ticker || "window"),
-      body: "settled — leader " + (t.leader ?? "—") + ", outcome " +
-        (t.outcome === 1 ? "ABOVE" : t.outcome === 0 ? "BELOW" : "—") });
-  const rt = os && os.last_retrain;
-  if (rt && rt.at) {
-    let kept = 0, rev = 0;
-    for (const hs of Object.values(rt.arms || {}))
-      for (const v of Object.values(hs)) v && v.reverted ? rev++ : kept++;
-    items.push({ ts: Date.parse(rt.at) / 1000, cat: "TRAINING",
-      who: "Trainer", body: `gated retrain: ${kept} kept, ${rev
-        } reverted` });
-  }
-  if (dec && dec.generated_ts != null)
-    items.push({ ts: dec.generated_ts, cat: "EXPERIMENT",
-      who: "Experimenter", body: "decision board refreshed" });
-  items.sort((a, b) => b.ts - a.ts);
-  return items;
-}
-function renderEvents() {
-  const cats = ["ALL", "SYSTEM", "RESEARCH", "TRAINING", "EXPERIMENT"];
-  el("fchips").innerHTML = cats.map(c =>
-    `<button class="fchip${c === EVFILTER ? " on" : ""}"
-      data-c="${c}">${c}</button>`).join("");
-  el("fchips").querySelectorAll(".fchip").forEach(b =>
-    b.addEventListener("click", () => {
-      EVFILTER = b.dataset.c; renderEvents(); }));
-  const items = EVITEMS.filter(i => EVFILTER === "ALL"
-    || i.cat === EVFILTER).slice(0, EVFILTER === "ALL" ? 5 : 12);
-  const t = ts => new Date(ts * 1000).toLocaleString("en-US",
-    { month: "short", day: "numeric", hour: "2-digit",
-      minute: "2-digit", hour12: false, timeZone: "America/New_York" });
-  el("events").innerHTML = items.map(i =>
-    `<div class="evrow"><span class="t">${t(i.ts)} ET</span>` +
-    `<span class="b"><b>${esc(i.who)}</b> — ${esc(i.body)}</span>` +
-    `</div>`).join("") || '<p class="mini">no events</p>';
-}
-
-/* registry — evicted here from the Research page */
-function renderRegistry(brd, incs) {
-  const elx = el("registry");
-  if (!brd) { elx.innerHTML = '<p class="mini">board.json not ' +
-    'fetched</p>'; return; }
-  const row = (t, name, why) => `<div class="reg-row">` +
-    `<span class="tchip">${t}</span><span><b>${esc(name)}</b>${why
-      ? ` <span class="why">— ${esc(why)}</span>` : ""}</span></div>`;
-  let h = "", n = 0;
-  const sec = (title, items, fn) => {
-    if (!items || !items.length) return;
-    h += `<div class="reg-h">${title}</div>` + items.map(fn).join("");
-    n += items.length;
-  };
-  sec("decisions", brd.open_decisions, d => row("DECISION",
-    d.q, d.status === "resolved" ? "✓ " + (d.resolution || "resolved")
-      : (d.context || "") + " · id " + d.id));
-  sec("incidents", incs, i => row("INCIDENT",
-    `SEV-${i.sev} · ${i.title}`, i.status || ""));
-  sec("models (arms)", brd.arms, a => row("MODEL", "arm " + a.id,
-    a.status === "retired" ? "retired — " + (a.why || "")
-      : (a.role || "")));
-  sec("policies (traders)", brd.traders, t => row("POLICY", t.id,
-    t.role || ""));
-  sec("experiments (mitigations)", brd.mitigations, m =>
-    row("EXPERIMENT", m.id + " · " + m.status, m.note));
-  sec("workstreams", brd.workstreams, w => row("WORKSTREAM",
-    w.id + " · " + w.status, w.note));
-  sec("services", brd.infrastructure, i => row("SERVICE", i.id,
-    i.note));
-  elx.innerHTML = h || '<p class="mini">registry empty</p>';
-  el("reg-sum").textContent = n + " entities";
-}
-
-function renderBill(wld) {
-  const costs = (wld && wld.costs) || [];
-  const metered = costs.filter(c => c.amount != null);
-  el("bill-sum").textContent = "$" + metered.reduce((a, c) =>
-    a + c.amount, 0).toFixed(2) + " metered · " +
-    (costs.length - metered.length) + " not metered";
-  el("bill-tbl").tBodies[0].innerHTML = costs.map(c =>
-    `<tr><td>${esc(c.item ?? "—")}</td><td>${c.amount == null
-      ? '<span class="mini">not metered</span>'
-      : "$" + c.amount.toFixed(2)}</td>` +
-    `<td class="qblk">${esc(c.basis ?? "—")}</td></tr>`).join("");
-}
+const shortQ = q => {
+  const s = String(q.research_question || "");
+  const cut = s.search(/[—(:]/);
+  return (cut > 8 ? s.slice(0, cut) : s.slice(0, 70)).trim();
+};
 
 /* ============================ poll loop ============================ */
 async function poll() {
-  const [inv, wld, dec, onl, aud, incs, brd, notes, treats, rdy,
-    recon, chaos, leak, mm, os2] = await Promise.all([
-    jf("../results/invariants.json"),
-    jf("../results/world.json"),
-    jf("../results/decision_board.json"),
-    jf("../results/online_status.json"),
-    jf("../results/audit_report.json"),
-    jl("../results/incidents.jsonl"),
-    jf("../results/board.json"),
-    jl("../results/commentary.jsonl"),
-    jl("../results/treatments.jsonl"),
-    jf("../results/readiness.json"),
-    jf("../results/reconciliation.json"),
-    jf("../results/chaos_drills.json"),
-    jf("../results/leakage_canaries.json"),
-    jf("../results/meta_monitors.json"),
-    jf("../results/build_manifest.json"),
+  const [mh, inv, os, a3, incs, rq, f1] = await Promise.all([
+    J("../results/monitor_health.json"),
+    J("../results/invariants.json"),
+    J("../results/online_status.json"),
+    J("../results/a3_live.json"),
+    JL("../results/incidents.jsonl"),
+    J("../results/research_queue.json"),
+    J("../results/f1_capture_qualification.json"),
   ]);
-  const rows = planeRows(onl, aud, dec, wld, inv);
-  renderHeader(rows, rdy, inv, incs, aud, wld);
-  renderPlanes(rows);
-  renderChanges(rows, inv, incs, rdy);
-  renderEvidence(recon, chaos, leak, os2);
-  renderBlockers(rdy);
+  renderLights(gradeAreas(mh, inv, os));
+  renderFresh(a3, os, mh);
   renderIncidents(incs);
-  renderQual(rdy);
-  renderSLO(mm);
-  renderMatrix(rdy);
-  renderInvariants(inv);
-  renderActions(rows, inv, incs, wld, mm, rdy);
-  renderRoster(wld);
-  renderClock(wld, onl);
-  renderTickets(brd);
-  EVITEMS = buildEvents(notes || [], treats || [], onl, dec);
-  renderEvents();
-  renderRegistry(brd, incs);
-  renderBill(wld);
+  renderWatch(rq, f1);
+  el("asof").textContent = "checked " +
+    new Date().toLocaleTimeString("en-US", { hour12: false });
 }
-poll();
-setInterval(poll, 15000);
+/* the two ledgers are large; refresh them on a slower clock */
+async function pollSlow() {
+  const [recs, sh] = await Promise.all([
+    JL("../results/agent_recommendations.jsonl"),
+    JL("../results/self_heal.jsonl"),
+  ]);
+  renderAgents(recs);
+  renderHeal(sh);
+}
+poll(); pollSlow();
+setInterval(poll, 30000);
+setInterval(pollSlow, 180000);
 </script>
-<script src="glossary.js" defer></script>
 <script src="nav.js" defer></script>
 </body>
 </html>

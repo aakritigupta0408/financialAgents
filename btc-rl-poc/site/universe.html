@@ -3,256 +3,206 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — Map</title>
+<title>Quant Universe — Universe</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-/* ---------- header strip (board.html pattern) ---------- */
-.hstrip { display: grid; gap: 10px; margin-top: 14px;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
-.hs { background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 10px 14px; }
-.hs .k { font-size: 10px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--muted); }
-.hs .v { font-size: 15px; font-weight: 750; margin-top: 3px;
-  font-variant-numeric: tabular-nums; line-height: 1.35; }
-.hs .v small { font-weight: 600; color: var(--ink-2); font-size: 12px; }
-/* ---------- semantic state chips ---------- */
-.state { display: inline-block; font-size: 10.5px; font-weight: 800;
-  letter-spacing: .09em; text-transform: uppercase; border-radius: 6px;
-  padding: 3px 10px; white-space: nowrap; }
-.st-good { color: var(--good-text); background: rgba(12,138,77,.12); }
-.st-collect { color: var(--series-4); background: rgba(143,96,0,.12); }
-.st-kill { color: var(--down); background: rgba(209,60,60,.12); }
-.st-frozen { color: var(--muted); background: rgba(124,134,149,.14); }
-.st-live { color: var(--series-2); background: rgba(36,97,184,.10); }
-.hdot { display: inline-block; width: 8px; height: 8px;
-  border-radius: 50%; margin-right: 6px; vertical-align: 0; }
-.hdot.green { background: var(--good); }
-.hdot.amber { background: var(--series-4); }
-.hdot.red { background: var(--down); }
-.hdot.gray { background: var(--faint); }
-/* ---------- lens / tab chips ---------- */
-.chiprow { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
-.lensnote { font-size: 12.5px; color: var(--muted); margin: 6px 0 12px; }
-/* ---------- card 1: the pipeline ---------- */
-.pipe { display: flex; flex-direction: column; margin-top: 10px; }
-.plink { width: 2px; height: 24px; background: var(--axis);
+/* ─── zoom level 1 · the world map ─────────────────────────────── */
+.map { display: flex; flex-direction: column; margin-top: 14px; }
+.mlink { width: 0; border-left: 2px dashed var(--axis); height: 22px;
   margin: 0 auto; position: relative; flex: none; }
-.plink::after { content: "▾"; position: absolute; bottom: -8px; left: 50%;
-  transform: translateX(-50%); color: var(--axis); font-size: 11px;
-  line-height: 1; }
-.psplit { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.rblock { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 12px 16px; cursor: pointer; }
-.rblock:hover { border-color: var(--series-2); }
-.rblock.open { border-color: var(--series-2); background: var(--surface); }
-.rblock.dim { opacity: .45; }
-.rblock.xhl { border-color: var(--series-4);
-  box-shadow: 0 0 0 1px var(--series-4) inset; }
-.rblock.hb-green { background: rgba(12,138,77,.07); }
-.rblock.hb-amber { background: rgba(143,96,0,.09); }
-.rblock.hb-red { background: rgba(209,60,60,.09); }
-.rblock.hb-gray { background: rgba(124,134,149,.10); }
-.rhead { display: flex; gap: 8px 12px; align-items: baseline;
-  flex-wrap: wrap; }
-.rname { font-weight: 750; font-size: 14.5px; color: var(--ink); }
-.rstat { margin-left: auto; }
-.rsub { font-size: 12px; color: var(--muted); margin-top: 2px;
-  line-height: 1.5; }
-.rmeta { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12px;
-  color: var(--ink-2); margin-top: 7px;
-  font-variant-numeric: tabular-nums; }
-.rmeta .inc { color: var(--down); font-weight: 700; }
-.rmeta .inc0 { color: var(--faint); }
-.xchip { font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
-  border: 1px solid var(--series-4); color: var(--series-4);
-  border-radius: 5px; padding: 1px 6px; margin-right: 4px; }
-.rzoom { margin-top: 11px; border-top: 1px dashed var(--border);
-  padding-top: 10px; cursor: default; font-size: 12.5px;
-  color: var(--ink-2); line-height: 1.6; }
-.rzoom h4 { font-size: 10.5px; font-weight: 800; letter-spacing: .11em;
-  text-transform: uppercase; color: var(--muted); margin: 10px 0 4px; }
-.rzoom table { min-width: 460px; font-size: 12.5px; margin-top: 4px; }
-.loopnote { margin: 12px auto 0; width: max-content; max-width: 100%;
-  font-size: 12px; color: var(--series-7); border: 1px dashed
-  var(--series-7); border-radius: 999px; padding: 4px 14px;
-  text-align: center; }
-/* ---------- card 2 ---------- */
-.tabpane { display: none; }
-.tabpane.on { display: block; }
-.crow { display: grid; grid-template-columns: 116px 1fr auto;
-  gap: 4px 18px; align-items: baseline; padding: 11px 2px;
+.mlink::after { content: "▾"; position: absolute; bottom: -9px;
+  left: 50%; transform: translateX(-50%); color: var(--axis);
+  font-size: 11px; line-height: 1; }
+.region { display: grid; grid-template-columns: 52px 1fr auto;
+  gap: 4px 14px; align-items: center; border: 1px solid var(--border);
+  border-radius: 14px; background: var(--surface-2); padding: 12px 16px;
+  cursor: pointer; }
+.region:hover { border-color: var(--series-2); }
+.region.open { border-color: var(--series-2); background: var(--surface); }
+.region:focus-visible { outline: 2px solid var(--series-2);
+  outline-offset: 2px; }
+.remoji { font-size: 30px; line-height: 1; text-align: center;
+  grid-row: span 2; }
+.rname { font: 600 16px/1.3 var(--display); letter-spacing: .02em;
+  color: var(--ink); }
+.rjob { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+.rlight { font-size: 15px; grid-row: span 2; white-space: nowrap;
+  text-align: right; }
+.rlight small { display: block; font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  margin-top: 2px; }
+/* drawer — zoom level 2 */
+.rdrawer { grid-column: 1 / -1; cursor: default; margin-top: 10px;
+  border-top: 1px dashed var(--border); padding-top: 12px; }
+.dgrid { display: grid; grid-template-columns: repeat(auto-fit,
+  minmax(200px, 1fr)); gap: 12px; }
+.dcell .dk { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.dcell .dv { font-size: 12.5px; color: var(--ink-2); line-height: 1.6; }
+.art { display: inline-block; font: 11px ui-monospace, SFMono-Regular,
+  Menlo, monospace; color: var(--ink-2); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 7px;
+  margin: 2px 4px 2px 0; overflow-wrap: anywhere; }
+.rnow { font-size: 12.5px; color: var(--ink-2); margin-top: 10px;
+  font-variant-numeric: tabular-nums; border-left: 3px solid
+  var(--series-2); padding: 2px 12px; line-height: 1.6; }
+.loopnote { margin: 14px auto 0; width: max-content; max-width: 100%;
+  font-size: 12.5px; color: var(--series-7); border: 1.5px dashed
+  var(--series-7); border-radius: 999px; padding: 6px 18px;
+  text-align: center; line-height: 1.5; }
+/* ─── section 2 · the clocks ───────────────────────────────────── */
+.crow { display: grid; grid-template-columns: 110px 1fr; gap: 6px 18px;
+  align-items: baseline; padding: 11px 2px;
   border-bottom: 1px solid var(--grid); }
 .crow:last-child { border-bottom: none; }
-.crow.red { background: rgba(209,60,60,.06);
-  border-left: 3px solid var(--down); padding-left: 12px;
-  border-radius: 8px; }
-.cbadge { font: 700 11px/1.4 ui-monospace, SFMono-Regular, Menlo,
-  monospace; letter-spacing: .08em; text-transform: uppercase;
+.cbadge { font: 700 11px/1.5 ui-monospace, SFMono-Regular, Menlo,
+  monospace; letter-spacing: .07em; text-transform: uppercase;
   color: var(--ink-2); background: var(--surface-2);
   border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px;
   text-align: center; align-self: start; }
-.cwhat { font-size: 13.5px; color: var(--ink); font-weight: 600; }
-.cmeta { grid-column: 2; font-size: 12px; color: var(--muted);
-  display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
-.cright { text-align: right; font-variant-numeric: tabular-nums;
-  font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
-.owner-chip { font-size: 10px; font-weight: 700; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--ink-2);
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 999px; padding: 2px 9px; }
-.sla { font-size: 10px; font-weight: 800; letter-spacing: .08em;
-  color: var(--down); border: 1px solid var(--down); border-radius: 5px;
-  padding: 1px 6px; }
-.flow { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch;
-  margin-top: 12px; }
-.stage { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 10px 14px; min-width: 128px;
-  flex: 1 1 128px; }
-.stage b { display: block; font-size: 11.5px; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--ink); }
-.stage .scount { font-size: 22px; font-weight: 800; color: var(--ink);
-  font-variant-numeric: tabular-nums; margin-top: 4px; }
-.stage .sdesc { font-size: 11.5px; color: var(--muted); margin-top: 3px;
+.cbadge.fault { color: var(--down); border-color: rgba(209,60,60,.4);
+  background: rgba(209,60,60,.06); }
+.cwhat { font-size: 13.5px; color: var(--ink); font-weight: 600;
   line-height: 1.5; }
-.flowarr { align-self: center; color: var(--faint); font-size: 16px; }
-.lchain { display: flex; flex-direction: column; margin-top: 12px; }
-.lnode { display: grid; grid-template-columns: 160px 1fr; gap: 4px 16px;
-  padding: 9px 2px; border-bottom: 1px solid var(--grid);
-  font-size: 12.5px; align-items: baseline; }
-.lnode:last-child { border-bottom: none; }
-.lnode .lk { font: 700 11px ui-monospace, Menlo, monospace;
-  letter-spacing: .06em; color: var(--series-2); }
-.lnode .lv { color: var(--ink-2); font-variant-numeric: tabular-nums;
-  line-height: 1.55; }
-.lnode .lv b { color: var(--ink); }
-/* ---------- card 3 ---------- */
-.exbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
-  margin-top: 12px; }
-.exbar input { font: 600 13px ui-sans-serif, system-ui;
-  color: var(--ink); background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: 999px;
-  padding: 7px 16px; min-width: 220px; flex: 1 1 220px; }
-.exbar input:focus-visible { outline: 2px solid var(--series-2); }
-.exlist { margin-top: 8px; }
-.exrow { display: grid; grid-template-columns: minmax(130px,1fr) 92px
-  minmax(180px,2.2fr) 150px; gap: 8px; align-items: baseline;
-  padding: 8px 2px; border-bottom: 1px solid var(--grid);
-  font-size: 12.5px; cursor: pointer; min-width: 640px; }
-.exrow:hover { background: var(--surface-2); }
-.exrow.sel { background: rgba(36,97,184,.07); }
-.exrow b { font-size: 13px; }
-.exrow .ty { font-size: 10px; font-weight: 800; letter-spacing: .08em;
-  text-transform: uppercase; color: var(--muted); }
-.exrow .pu { color: var(--ink-2); }
-.exrow .stc { text-align: right; }
-.drawer { margin-top: 12px; background: var(--surface-2);
-  border: 1px dashed var(--border); border-radius: 10px;
-  padding: 12px 15px; }
-.dgrid { display: grid; grid-template-columns: 110px 1fr; gap: 7px 16px;
-  font-size: 13px; }
-.dgrid .dk { font-size: 10.5px; text-transform: uppercase;
-  letter-spacing: .12em; color: var(--muted); font-weight: 700;
-  padding-top: 2px; }
-.dgrid .dv { color: var(--ink-2); overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums; }
-.dgrid .dv b { color: var(--ink); }
-/* ---------- footer ---------- */
+.cwhat small { display: block; font-weight: 500; font-size: 12px;
+  color: var(--muted); margin-top: 2px; line-height: 1.55; }
+.faultpath { display: inline-flex; flex-wrap: wrap; gap: 4px 6px;
+  align-items: baseline; font: 700 10.5px ui-monospace, Menlo, monospace;
+  letter-spacing: .05em; }
+.fstep { border: 1px solid var(--border); background: var(--surface-2);
+  border-radius: 5px; padding: 2px 7px; color: var(--ink-2); }
+.fstep.good { color: var(--good-text);
+  border-color: rgba(12,138,77,.35); }
+.fstep.bad { color: var(--down); border-color: rgba(209,60,60,.35); }
+.farr { color: var(--faint); }
+.receipts { margin-top: 12px; font-size: 13px; color: var(--ink-2);
+  border-left: 3px solid var(--series-4); padding: 4px 12px;
+  line-height: 1.6; }
+/* ─── section 3 · lifecycle legend ─────────────────────────────── */
+.lcgrid { display: grid; gap: 12px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.lc { border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2); padding: 12px 15px; }
+.lc .le { font-size: 22px; }
+.lc .ln { font-weight: 700; font-size: 13.5px; color: var(--ink);
+  margin-top: 4px; }
+.lc .lct { font-size: 26px; font-weight: 750; color: var(--ink);
+  font-variant-numeric: tabular-nums; margin-top: 2px; }
+.lc .ld { font-size: 11.5px; color: var(--muted); line-height: 1.5;
+  margin-top: 3px; }
+.creed { margin-top: 14px; font: italic 500 15px/1.6 var(--display);
+  color: var(--ink-2); }
 .minifoot { font-size: 13px; color: var(--muted); }
-@media (max-width: 640px) {
-  .psplit { grid-template-columns: 1fr; }
+@media (max-width: 560px) {
+  .region { grid-template-columns: 40px 1fr auto; }
+  .remoji { font-size: 24px; }
   .crow { grid-template-columns: 1fr; }
-  .cmeta { grid-column: 1; }
-  .cright { text-align: left; }
-  .cbadge { justify-self: start; }
-  .dgrid { grid-template-columns: 1fr; gap: 2px 0; }
-  .dgrid .dk { margin-top: 8px; }
-  .lnode { grid-template-columns: 1fr; }
-  .rstat { margin-left: 0; }
 }
 </style>
 </head>
 <body>
 
-<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">world map</span></nav>
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a>
+  <a class="nav" href="home.html">Home</a><span class="spacer"></span><span class="tag">universe</span></nav>
 <div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
 
 <main>
 <header>
   <div class="eyebrow"><span class="live-dot" id="dot"></span>
-    the living system atlas · <span id="asof">loading…</span></div>
-  <h1>The Quant Universe</h1>
-  <p class="sub small">One living graph of the whole desk — every region
-  carries its real health, its open incidents and its last heartbeat.
-  Nothing here is decoration: a missing artifact renders as
-  <b>not yet published</b>, and UNKNOWN is never green.</p>
-  <div class="hstrip" id="hstrip"></div>
+    a living map, not an architecture diagram · <span id="asof">loading…</span></div>
+  <h1>Universe — how does the machine work?</h1>
+  <p class="sub small">Money-shaped weather flows in at the top, evidence
+  pools at the bottom, and lessons flow back up. A kid can follow the
+  arrows; an engineer can click any region and zoom in. Every light and
+  count on this page is read from published artifacts — nothing is
+  narrated.</p>
 </header>
 
-<!-- ═══ CARD 1 — THE SYSTEM WORLD ═══ -->
-<section aria-label="the system world">
-  <div class="eyebrow">card 1 · the system world</div>
-  <h2>The system world</h2>
-  <p class="sub small">Market data falls in at the top and learning flows
-  back up from the bottom. Five lenses re-read the same geometry; click
-  any region to zoom in without leaving the page.</p>
-  <div class="chiprow" id="lensrow" role="group" aria-label="map lens"></div>
-  <div class="lensnote" id="lensnote"></div>
-  <div class="pipe" id="pipe"><p class="mini">reading world.json…</p></div>
+<!-- ═══ SECTION 1 — THE WORLD ═══ -->
+<section aria-label="the world">
+  <div class="eyebrow">zoom level 1 · the world</div>
+  <h2>The world</h2>
+  <p class="sub small">Nine regions, one current. Click a region to open
+  it — what flows in, what flows out, and which files are its evidence.
+  Lights come from live health feeds: 🟢 fine · 🟡 watch · 🔴 trouble.</p>
+  <div class="map" id="map"><p class="mini">drawing the map…</p></div>
 </section>
 
-<!-- ═══ CARD 2 — HOW THE SYSTEM RUNS ═══ -->
-<section aria-label="how the system runs">
-  <div class="eyebrow">card 2 · how the system runs</div>
-  <h2>How the system runs</h2>
-  <p class="sub small">Three views of the same machine: what fires on a
-  timer, how an idea earns live traffic, and the real path one recent
-  decision travelled from raw tick to settled ledger row.</p>
-  <div class="chiprow" id="tabrow" role="tablist"
-    aria-label="how the system runs"></div>
-  <div class="tabpane" id="tab-runtime" role="tabpanel">
-    <p class="mini" id="clock-gen"></p>
-    <div id="cadence"><p class="mini">reading the clock…</p></div>
+<!-- ═══ SECTION 2 — THE CLOCKS ═══ -->
+<section aria-label="the clocks">
+  <div class="eyebrow">zoom level 2 · the clocks</div>
+  <h2>The clocks — what happens when you leave it alone overnight</h2>
+  <p class="sub small">Nobody sits at this desk at 3am. These cadences
+  do, and each one leaves a file behind to prove it ran.</p>
+  <div id="clocks">
+    <div class="crow"><span class="cbadge">~1 min</span>
+      <span class="cwhat">Market data + publisher refresh
+      <small>the daemon polls Bitcoin and the Kalshi book, turns raw
+      water into features, and the site republishes what it sees.</small></span></div>
+    <div class="crow"><span class="cbadge">15 min</span>
+      <span class="cwhat">A market window settles and is scored
+      <small>every Kalshi 15-minute question resolves UP or DOWN; the
+      predictions, decisions and fills for that window are scored and
+      appended to the ledgers.</small></span></div>
+    <div class="crow"><span class="cbadge">10 min</span>
+      <span class="cwhat">The audit chain runs
+      <small>independent evaluators re-derive the math from the raw
+      ledgers, invariants are re-checked, and the agent crew fires on
+      its own sub-cadences.</small></span></div>
+    <div class="crow"><span class="cbadge">hourly</span>
+      <span class="cwhat">Evidence-gated retraining
+      <small>candidate weights train, then face a holdout quiz — kept
+      if the quiz improves, reverted if not. Forgetting a bad lesson is
+      normal; keeping one is not allowed.</small></span></div>
+    <div class="crow"><span class="cbadge">5 min</span>
+      <span class="cwhat">Watchdog + independent meta-monitor
+      <small>one process watches the machine; a separate one watches
+      the watcher. UNKNOWN is never green.</small></span></div>
+    <div class="crow"><span class="cbadge fault">on fault</span>
+      <span class="cwhat"><span class="faultpath">
+        <span class="fstep">DETECT</span><span class="farr">→</span>
+        <span class="fstep">CONTAIN</span><span class="farr">→</span>
+        <span class="fstep">REPAIR</span><span class="farr">→</span>
+        <span class="fstep">INDEPENDENT VERIFY</span><span class="farr">→</span>
+        <span class="fstep good">RESTORED</span>
+        <span class="farr">or</span>
+        <span class="fstep bad">FAILED_CLOSED</span></span>
+      <small>FAILED_CLOSED is not a crash — it is the machine protecting
+      the evidence by refusing to act until a human looks.</small></span></div>
+    <div class="crow"><span class="cbadge">daily</span>
+      <span class="cwhat">Capture-quality gate recomputed
+      <small>the data harbor re-certifies its own feeds — features
+      built on bad capture never reach the models.</small></span></div>
   </div>
-  <div class="tabpane" id="tab-lifecycle" role="tabpanel">
-    <div id="funnel"><p class="mini">reading program.json…</p></div>
-  </div>
-  <div class="tabpane" id="tab-lineage" role="tabpanel">
-    <div id="lineage"><p class="mini">reading treatments.jsonl…</p></div>
-  </div>
+  <p class="receipts">The machine's overnight story is recorded, not
+  narrated — <b>self_heal</b> and <b>incident</b> ledgers hold the
+  receipts.</p>
 </section>
 
-<!-- ═══ CARD 3 — COMPONENT EXPLORER ═══ -->
-<section aria-label="component explorer">
-  <div class="eyebrow">card 3 · component explorer</div>
-  <h2>Component explorer</h2>
-  <p class="sub small">Every model, policy, experiment, agent, job and
-  monitor in one index. Fields are real or explicitly “—”; versions,
-  costs and latencies are never invented.</p>
-  <div class="exbar">
-    <input id="exq" type="search" placeholder="search components…"
-      aria-label="search components">
-  </div>
-  <div class="chiprow" id="exfilters" role="group"
-    aria-label="component type filter"></div>
-  <div class="scroll exlist" id="exlist"><p class="mini">building
-    index…</p></div>
-  <div class="drawer" id="exdrawer" hidden></div>
+<!-- ═══ SECTION 3 — LIFECYCLE LEGEND ═══ -->
+<section aria-label="lifecycle legend">
+  <div class="eyebrow">zoom level 3 · lifecycle legend</div>
+  <h2>The lifecycle legend</h2>
+  <p class="sub small">Every idea in this universe is in exactly one of
+  these states. Counts are read live from the experiment registry.</p>
+  <div class="lcgrid" id="lcgrid"><p class="mini">reading
+    program.json…</p></div>
+  <p class="creed">“We don't keep things because they're interesting.
+  We keep them because the evidence says they're useful.”</p>
 </section>
 
 <footer>
-  <p class="minifoot">Research Command → <a href="board.html">board</a>
-  · Control Tower → <a href="watchtower.html">watchtower</a>
-  · Evidence → <a href="ledgers.html">ledgers</a></p>
+  <p class="minifoot">one system, three zoom levels</p>
 </footer>
 </main>
 
 <script>
 "use strict";
-/* The Quant Universe — living system map.
-   All live values come from published artifacts; a missing file renders
-   "not yet published". UNKNOWN is never shown green. */
+/* Quant Universe — the living map. Health lights derive coarsely from
+   monitor_health.json + online_status.json (runtime_state) +
+   invariants.json. A feed we cannot read contributes nothing and the
+   region defaults to 🟢 (graceful); a monitor that IS readable but in
+   an unrecognized state shows 🟡, never green. */
 
 /* ---------------------------------------------------------- fetch -- */
 const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
@@ -275,579 +225,230 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;",
   "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const isNum = v => typeof v === "number" && isFinite(v);
 const dash = v => v == null ? "—" : esc(v);
-const cS = v => !isNum(v) ? "—"
-  : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
-const f = (v, dp) => isNum(v) ? v.toFixed(dp == null ? 1 : dp) : "—";
-const pc = v => isNum(v) ? (100 * v).toFixed(0) + "%" : "—";
+const usd = v => isNum(v)
+  ? "$" + Math.round(v).toLocaleString("en-US") : "—";
 const ageMin = ts => isNum(ts) ? (Date.now() / 1000 - ts) / 60 : null;
 const fmtAge = m => !isNum(m) ? "—"
   : m < 1 ? "<1 min ago"
   : m < 90 ? m.toFixed(m < 10 ? 1 : 0) + " min ago"
   : m < 48 * 60 ? (m / 60).toFixed(1) + " h ago"
   : (m / 1440).toFixed(1) + " d ago";
-const fmtDur = s => !isNum(s) ? "—"
-  : s < 90 ? s + " s" : s < 5400 ? Math.round(s / 60) + " min"
-  : (s / 3600).toFixed(s % 3600 ? 1 : 0) + " h";
-const whenTZ = (ts, tz, tag) => !isNum(ts) ? "—"
-  : new Date(ts * 1000).toLocaleString("en-US", { month: "short",
-      day: "numeric", hour: "numeric", minute: "2-digit", hour12: false,
-      timeZone: tz }) + " " + tag;
-const whenBoth = ts => !isNum(ts) ? "—"
-  : whenTZ(ts, "America/New_York", "ET") + " · "
-  + whenTZ(ts, "Asia/Kolkata", "IST");
-
-/* health status → dot color + word.  UNKNOWN is never green. */
-const ST_WORD = { green: "HEALTHY", amber: "WATCH", red: "CRITICAL" };
-const ST_CHIP = { green: "st-good", amber: "st-collect", red: "st-kill" };
-const dotCls = st => ({ green: "green", amber: "amber", red: "red" }[st]
-  || "gray");
-const stateChip = st => '<span class="state ' + (ST_CHIP[st] ||
-  "st-frozen") + '"><span class="hdot ' + dotCls(st) + '"></span>'
-  + (ST_WORD[st] || "UNKNOWN") + "</span>";
-const NOTPUB = '<p class="mini">not yet published</p>';
 
 /* --------------------------------------------------------- state -- */
-const S = { world: null, prog: null, a3: null, inv: null, inc: null,
-  online: null, audit: null, ready: null, board: null, treat: null };
+const S = { mon: null, online: null, inv: null, prog: null };
 const openRegions = new Set();
-let lens = "explore", tab = "runtime", exType = "all", exSel = null,
-  exQuery = "";
-try {
-  lens = localStorage.getItem("map_lens") || "explore";
-  tab = localStorage.getItem("map_tab") || "runtime";
-} catch {}
-if (!["explore", "engineer", "health", "experiments", "cost"]
-  .includes(lens)) lens = "explore";
-if (!["runtime", "lifecycle", "lineage"].includes(tab)) tab = "runtime";
 
-/* ------------------------------------------------- clock helpers -- */
-const clockRow = rx => (S.world?.clock || []).find(c =>
-  rx.test(String(c?.what || "") + " " + String(c?.source || "")))
-  || null;
+/* ------------------------------------------------ health mapping -- */
+/* worst-of over the region's monitors; monitor state strings map:
+   HEALTHY / green / ok / pass → g · fail / critical / red / down → r
+   · any other published state → a. */
+const RANK = { g: 0, a: 1, r: 2 };
+const LIGHT = { g: "🟢", a: "🟡", r: "🔴" };
+const WORD = { g: "fine", a: "watch", r: "trouble" };
+const stLight = s => s == null ? null
+  : /healthy|green|^ok$|pass/i.test(String(s)) ? "g"
+  : /fail|crit|red|missing|down|sev/i.test(String(s)) ? "r" : "a";
+const worst = arr => arr.filter(Boolean).reduce((w, l) =>
+  RANK[l] > RANK[w] ? l : w, "g");
 
-/* -------------------------------------------------- region model -- */
-/* world.json emits 6 region healths; the pipeline draws 10 blocks.
-   Unemitted blocks borrow the documented nearest feed (noted inline
-   in the zoom) or a clock-row health; missing = UNKNOWN, never green. */
-const REGIONS = [
-  { k: "ocean", ex: "Market Ocean",
-    en: "T0 · external feeds — btc_rl/online.py sources",
-    kid: "the outside sea — live prices, order books and the crowd's mood flow in as rivers",
-    ensub: "Coinbase spot + book · Kalshi 15-min quotes · alternative.me Fear & Greed" },
-  { k: "delta", ex: "Data Delta",
-    en: "feature pipeline — 30 s loop in btc_rl/online.py",
-    kid: "the river mouth — raw water is filtered into clean features every poll",
-    ensub: "candles, book, trades, quotes → features → arm inference",
-    borrow: "no separate health feed — borrows Market Ocean's (same daemon loop)" },
-  { k: "forecast", ex: "Forecast Country",
-    en: "tier-1 price arms — t2 / t6 / t7 / t8 / t9 / t10 / t11",
-    kid: "mountain watchers who each guess the future price at 1, 5, 15 and 30 minutes",
-    ensub: "μ + 80% band per horizon · h1/h5/h15/h30 · logged-only" },
-  { k: "city", ex: "Probability City",
-    en: "tier-2 kb probability arms",
-    kid: "buildings full of robots each saying how sure they are the price goes UP",
-    ensub: "P(up) each minute on the live 15-min window" },
-  { k: "republic", ex: "Decision Republic",
-    en: "policy engine — champion + M-treatment registry",
-    kid: "the town hall — bet, or sit this one out; sitting out is also an answer",
-    ensub: "champion policy + M-treatments, gates, paired SPRT arena" },
-  { k: "split" },
-  { k: "port", ex: "Execution Port",
-    en: "order path — quotes, fills, fees",
-    kid: "where decisions become orders — ships leak a little cargo on the way in",
-    ensub: "decision EV vs realized EV · A3 entry-timing experiment" },
-  { k: "island", ex: "Capital Island",
-    en: "sizing & banking — paper traders pt…pt8",
-    kid: "eight pretend traders, eight personalities — who grows the pile, who goes broke?",
-    ensub: "fractional Kelly, banking rules · simulated bankrolls",
-    borrow: "no separate health feed — borrows Decision Republic's (sizing lives inside the policy engine)" },
-  { k: "valley", ex: "Ledger Valley",
-    en: "append-only JSONL ledgers + publisher",
-    kid: "books nobody can erase — if it isn't written down, it didn't happen",
-    ensub: "ticks · predictions · trades · treatments · incidents" },
-  { k: "academy", ex: "Evaluation Academy",
-    en: "audit chain — scripts/run_audit.py (10-min cron)",
-    kid: "an inspector re-does all the math from the raw books, trusting no one",
-    ensub: "dual implementation vs the daemon · invariants · readiness",
-    borrow: "health taken from the audit clock row" },
-  { k: "factory", ex: "Training Factory",
-    en: "gated retraining — hourly, candidate vs holdout MSE",
-    kid: "hourly robot school — lessons that make the quiz worse get thrown away",
-    ensub: "keep-or-revert per arm · kept weights redeploy upstream",
-    borrow: "health taken from the retrain clock row" }
-];
-
-const LENSES = [
-  ["explore", "Explore"], ["engineer", "Engineer"], ["health", "Health"],
-  ["experiments", "Experiments"], ["cost", "Cost"]
-];
-const LENS_NOTE = {
-  explore: "friendly names + one-line explanations — for anyone twelve and up.",
-  engineer: "same geometry, real component and file names.",
-  health: "color only by live status — green HEALTHY, amber WATCH, red CRITICAL, gray UNKNOWN.",
-  experiments: "regions currently modified by LIVE experiments are outlined with their ids; everything else dims.",
-  cost: "per-region running cost from world.json.costs — “not metered” where no meter exists."
+const MON_FOR = {
+  ocean: ["daemon_heartbeat"],
+  harbor: ["event_capture", "xvenue_capture", "micro_capture",
+    "f1_gate"],
+  city: ["parity_check", "audit_chain"],
+  valley: ["audit_chain"],
+  land: [],                    /* special: invariants + runtime_state */
+  port: ["daemon_heartbeat", "data_health"],
+  bay: ["daemon_heartbeat"],
+  lake: ["audit_chain", "data_health"],
+  lab: ["audit_chain", "meta_monitor"]
 };
 
-/* which world.json region feeds each block's health */
-const HEALTH_SRC = { ocean: "market_ocean", delta: "market_ocean",
-  forecast: "forecast_country", city: "probability_city",
-  republic: "decision_hq", port: "execution_port",
-  island: "decision_hq", valley: "ledger_valley" };
-
-function regionStatus(k) {
-  if (k === "academy") return clockRow(/audit/i)?.health ?? null;
-  if (k === "factory") return clockRow(/retrain/i)?.health ?? null;
-  const r = S.world?.regions?.[HEALTH_SRC[k]];
-  return r ? (r.status ?? null) : null;
+function monLights(keys) {
+  const M = S.mon?.monitors || {};
+  return keys.map(k => stLight(M[k]?.state));
+}
+function regionLight(k) {
+  if (k === "land") {
+    const lights = [];
+    if (S.inv) lights.push(isNum(S.inv.failed) && S.inv.failed > 0
+      ? "r" : stLight(S.inv.health) || "g");
+    const rs = String(S.online?.runtime_state || "");
+    if (/FAILED_CLOSED/i.test(rs)) lights.push("r");
+    else if (rs && !/RUNNING|NORMAL|^OK/i.test(rs)) lights.push("a");
+    return worst(lights);
+  }
+  return worst(monLights(MON_FOR[k] || []));
 }
 function regionWhy(k) {
-  if (k === "academy" || k === "factory") return null;
-  return S.world?.regions?.[HEALTH_SRC[k]]?.why ?? null;
-}
-
-/* open incidents, mapped to regions by keyword */
-const openIncidents = () => (S.inc || []).filter(i =>
-  !/closed|resolved/i.test(String(i?.status || "")));
-function incidentsFor(k) {
-  const pats = {
-    port: /exec|fee|order|fill|binding|markout/i,
-    delta: /daemon|poll|heartbeat/i,
-    republic: /leader|gambler|stake|policy|treatment|win-rate/i,
-    valley: /publish|site|rebase|front.end|ledger/i,
-    forecast: /band|dispersion|calibrat/i
-  };
-  const rx = pats[k];
-  if (!rx) return [];
-  return openIncidents().filter(i =>
-    rx.test(String(i?.title || "") + " " + String(i?.rca || "")));
-}
-
-/* best BSS across kb arms (from the audit) — null if unpublished */
-function bestBSS() {
-  const t2 = S.audit?.sections?.tier2;
-  if (!t2) return null;
-  let best = null, arm = null;
-  for (const [k, v] of Object.entries(t2)) {
-    if (isNum(v?.bss_vs_market) && (best == null ||
-        v.bss_vs_market > best)) { best = v.bss_vs_market; arm = k; }
+  if (k === "land") {
+    const bits = [];
+    if (S.inv) bits.push("invariants " + dash(S.inv.passed) + "/"
+      + ((S.inv.passed ?? 0) + (S.inv.failed ?? 0)) + " passing");
+    if (S.online?.runtime_state)
+      bits.push("runtime " + esc(S.online.runtime_state));
+    return bits.join(" · ") || "health feeds not yet published — 🟢 by default";
   }
-  return best == null ? null : { bss: best, arm };
+  const M = S.mon?.monitors || {};
+  const keys = (MON_FOR[k] || []).filter(x => M[x]);
+  if (!keys.length)
+    return "no dedicated health feed readable — 🟢 by default";
+  return keys.map(x => esc(x) + " " + esc(String(M[x].state
+    || "?").toLowerCase())).join(" · ");
 }
 
-/* retrain keep/revert summary from online_status.last_retrain */
-function retrainSummary() {
-  const arms = S.online?.last_retrain?.arms;
-  if (!arms || typeof arms !== "object") return null;
-  let kept = 0, rev = 0;
-  for (const per of Object.values(arms))
-    for (const r of Object.values(per || {}))
-      if (r && r.reverted) rev++; else kept++;
-  return { kept, rev };
-}
+/* --------------------------------------------------- the regions -- */
+/* Deep pages on this site: the experiments deep page is
+   experiment_review.html (+ board.html for the portfolio). */
+const A = names => names.map(n =>
+  '<span class="art">' + esc(n) + "</span>").join("");
+const L = pairs => pairs.map(([h, t]) =>
+  '<a href="' + h + '">' + esc(t) + " →</a>").join(" · ");
 
-/* live experiments (program.json + A3) and the regions they modify */
-const EXP_REGION = { M8: ["republic"], M10: ["port"], M11: ["port"],
-  M12: ["republic"], M13: ["republic"], M9: ["republic"],
-  M1: ["republic"], M2: ["republic"], M3: ["republic"] };
-function expRegions(id) {
-  const out = new Set();
-  for (const p of String(id).split("+"))
-    for (const r of (EXP_REGION[p.trim()] || ["republic"])) out.add(r);
-  return [...out];
-}
-function liveExperiments() {
-  const out = (S.prog?.experiments || [])
-    .filter(e => /\bLIVE\b/.test(String(e?.lifecycle || "")))
-    .map(e => ({ id: e.id, regions: expRegions(e.id) }));
-  if (S.a3) out.push({ id: "A3-v1.1", regions: ["port"] });
-  for (const sh of Object.keys(S.a3?.shadows || {}))
-    out.push({ id: sh + " shadow", regions: ["port"] });
-  return out;
-}
+const REGIONS = [
+  { k: "ocean", e: "🌊", n: "Market Ocean",
+    job: "Bitcoin and the Kalshi 15-minute market — the weather we live in. We never control it; we only read it.",
+    inn: "Nothing — it is the outside world.",
+    out: "Live BTC prices, order books, and 15-minute UP/DOWN market quotes.",
+    arts: ["ticks.jsonl", "online_status.json"],
+    links: [["live_online.html", "watch it live"]] },
+  { k: "harbor", e: "📡", n: "Data Harbor",
+    job: "Where the feeds land — the Coinbase tape, Kalshi quotes and cross-venue capture dock here and get certified.",
+    inn: "Raw market water from the ocean: trades, books, quotes.",
+    out: "Clean, timestamped features and capture streams the models can trust.",
+    arts: ["live_snapshots.jsonl", "event_capture.json",
+      "xvenue_capture.json", "micro_capture.json",
+      "f1_capture_qualification.json"],
+    links: [["backend.html", "backend"]] },
+  { k: "city", e: "🧠", n: "Forecasting City",
+    job: "T1 models each predict the future BTC distribution — where the price will probably be, minutes from now.",
+    inn: "Feature snapshots from the harbor, every poll.",
+    out: "A predicted price distribution — μ and bands per horizon. Forecasts are logged, never bet directly.",
+    arts: ["prediction_log.jsonl", "audit_report.json"],
+    links: [["models.html", "models"]] },
+  { k: "valley", e: "🔮", n: "Probability Valley",
+    job: "The bridge — forecasts + the strike + time left become one number: P(close > strike). Challengers must beat the market itself.",
+    inn: "City forecasts, the window's strike, and the ticking clock.",
+    out: "A calibrated P(up) each minute; the kb2 blend is the serving control.",
+    arts: ["online_status.json", "audit_report.json"],
+    links: [["models.html", "models"],
+      ["live_online.html", "live probabilities"]] },
+  { k: "land", e: "🎯", n: "Decision Land",
+    job: "Traders decide: act, or abstain — sitting out is also a decision. One control law × one treatment law, always paired.",
+    inn: "Valley probabilities, the gates, and the registered experiment law.",
+    out: "Paired act/abstain decisions for every biddable window.",
+    arts: ["treatments.jsonl", "program.json", "invariants.json"],
+    links: [["experiment_review.html", "experiments"],
+      ["board.html", "research command"]] },
+  { k: "port", e: "⚙️", n: "Execution Port",
+    job: "Decisions become simulated fills at real quotes — and the toll the market charges on the way in is measured honestly.",
+    inn: "Decisions from the land; live bid/ask from the ocean.",
+    out: "Simulated fills, fees, and a measured execution gap in ¢ per $1.",
+    arts: ["execution_ledger.jsonl", "exec_sensitivity.json"],
+    links: [["ledgers.html", "ledgers"],
+      ["live_online.html", "live desk"]] },
+  { k: "bay", e: "💰", n: "Capital Bay",
+    job: "The scoreboard of simulated capital — play money, real accounting.",
+    inn: "Every fill and every settlement from the port.",
+    out: "Bankroll curves for the paper traders — who compounds, who sinks.",
+    arts: ["demo_account.json", "headline_scores.json"],
+    links: [["live_online.html", "scoreboard"]] },
+  { k: "lake", e: "📊", n: "Outcome Lake",
+    job: "Every 15-minute window settles UP or DOWN here. The ledgers are append-only evidence — nobody gets to edit the past.",
+    inn: "Settled windows, decisions, fills and incidents.",
+    out: "The permanent record every model and auditor is judged against.",
+    arts: ["treatments.jsonl", "prediction_log.jsonl",
+      "incidents.jsonl"],
+    links: [["ledgers.html", "ledgers"]] },
+  { k: "lab", e: "🧪", n: "Learning Lab",
+    job: "Evidence-gated retraining and registered experiments — failed ideas retire with a tombstone, not a eulogy.",
+    inn: "Settled evidence from the lake — nothing fresher, nothing softer.",
+    out: "Kept-or-reverted model weights, and lifecycle verdicts that flow back upstream to the city and the valley.",
+    arts: ["online_status.json", "program.json",
+      "experiment_analysis.json"],
+    links: [["watchtower.html", "watchtower"],
+      ["experiment_review.html", "experiments"]] }
+];
 
-/* per-region cost lines from world.json.costs */
-function costLine(k) {
-  const costs = S.world?.costs;
-  if (!Array.isArray(costs)) return "costs not yet published";
-  const pick = rx => costs.filter(c => rx.test(String(c?.item || "")));
-  const fmt = rows => rows.map(c => (isNum(c.amount)
-    ? "$" + c.amount : "not metered") + " — " + c.item).join(" · ");
-  const M = {
-    ocean: pick(/coinbase|kalshi|fear/i),
-    delta: pick(/compute/i), factory: pick(/compute/i),
-    valley: pick(/storage|publish/i),
-    academy: pick(/LLM/i)
-  };
-  const rows = M[k];
-  return rows && rows.length ? fmt(rows) : "not metered";
-}
-
-/* -------------------------------------------- region metric lines -- */
-function regionMetric(k) {
-  const facts = S.world?.facts || {};
+/* ---------------------------------------- live "right now" lines -- */
+function nowLine(k) {
+  const o = S.online;
   switch (k) {
     case "ocean": {
-      const p = S.online?.price_now;
-      return (isNum(p) ? "BTC $" + Math.round(p).toLocaleString("en-US")
-        : "BTC —") + " · poll every "
-        + (isNum(facts.poll_seconds) ? facts.poll_seconds + " s" : "—");
+      if (!o) return null;
+      const pm = o.pm || {};
+      return "right now: BTC " + usd(o.price_now) + " · window "
+        + dash(pm.ticker) + " · strike " + usd(pm.strike) + " · yes "
+        + dash(pm.yes_bid) + "/" + dash(pm.yes_ask) + "¢";
     }
-    case "delta":
-      return "daemon heartbeat " + fmtAge(ageMin(S.online?.alive_at))
-        + " · features each poll";
-    case "forecast": {
-      const t1 = S.audit?.sections?.tier1;
-      return (t1 ? Object.keys(t1).length : "—")
-        + " arms audited · retrain cadence "
-        + fmtDur(facts.retrain_every_s);
-    }
-    case "city": {
-      const t2 = S.audit?.sections?.tier2;
-      const b = bestBSS();
-      return (t2 ? Object.keys(t2).length : "—") + " kb arms · best BSS "
-        + (b ? f(b.bss, 4) + " (" + b.arm + ")" : "—");
-    }
-    case "republic": {
-      const st = S.board?.summary?.states;
-      const total = st ? Object.values(st).reduce((s, v) =>
-        s + (isNum(v) ? v : 0), 0) : null;
-      return dash(facts.windows_scored) + " paired windows · "
-        + dash(total) + " treatments racing";
-    }
-    case "port": {
-      const gap = S.board?.execution_waterfall?.execution_gap_per_1;
-      return "execution gap " + cS(gap) + "/$1 · A3 "
-        + dash(S.a3?.live?.state);
-    }
-    case "island": {
-      const tr = S.audit?.sections?.traders;
-      const ev = S.audit?.sections?.desk?.ev_per_dollar;
-      return (tr ? Object.keys(tr).length : "—")
-        + " paper traders audited · desk EV " + cS(ev) + "/$1";
-    }
+    case "harbor":
+      return o ? "right now: daemon heartbeat "
+        + fmtAge(ageMin(o.alive_at)) + " · "
+        + dash(o.predictions_total) + " predictions logged all-time"
+        : null;
     case "valley": {
-      const ig = S.board?.integrity;
-      return dash(ig?.rows) + " treatment rows · ledger "
-        + (isNum(ig?.age_min) ? f(ig.age_min, 1) + " min old" : "—");
+      const kb2 = o?.kb_treatments?.kb2;
+      if (!kb2) return null;
+      return "right now: kb2 blend Brier " + (isNum(kb2.brier)
+        ? kb2.brier.toFixed(4) : "—") + " vs market "
+        + (isNum(kb2.mkt_brier) ? kb2.mkt_brier.toFixed(4) : "—")
+        + " over the last " + dash(kb2.scored) + " windows";
     }
-    case "academy": {
-      const p = S.inv?.passed, fl = S.inv?.failed;
-      return "invariants " + (isNum(p) && isNum(fl)
-        ? p + "/" + (p + fl) + " passing" : "—")
-        + " · readiness " + dash(S.ready?.system?.level);
+    case "land":
+      return "right now: " + regionWhy("land");
+    case "lab": {
+      const arms = o?.last_retrain?.arms;
+      if (!arms || typeof arms !== "object") return null;
+      let kept = 0, rev = 0;
+      for (const per of Object.values(arms))
+        for (const r of Object.values(per || {}))
+          if (r && r.reverted) rev++; else kept++;
+      return "right now: last gated retrain kept " + kept
+        + " / reverted " + rev + " lessons";
     }
-    case "factory": {
-      const rs = retrainSummary();
-      return rs ? rs.kept + " kept / " + rs.rev
-        + " reverted last cycle" : "retrain detail not yet published";
-    }
-  }
-  return "—";
-}
-function regionAge(k) {
-  switch (k) {
-    case "ocean": case "delta": return ageMin(S.online?.alive_at);
-    case "forecast": case "factory":
-      return clockRow(/retrain/i)?.age_min ?? null;
-    case "city": case "island": case "academy":
-      return clockRow(/audit/i)?.age_min ?? null;
-    case "republic": return S.board?.integrity?.age_min ?? null;
-    case "port": return ageMin(S.a3?.generated_ts);
-    case "valley": return clockRow(/publish/i)?.age_min ?? null;
   }
   return null;
 }
 
-/* ------------------------------------------------- region zooms -- */
-function zoomHTML(k) {
-  const why = regionWhy(k);
-  const R = REGIONS.find(r => r.k === k) || {};
-  let h = why ? '<p class="mini" style="margin-top:0">why this status: '
-    + esc(why) + "</p>" : "";
-  if (R.borrow) h += '<p class="mini">' + esc(R.borrow) + ".</p>";
-  const zb = ZOOMS[k];
-  h += zb ? zb() : NOTPUB;
-  const incs = incidentsFor(k);
-  if (incs.length) {
-    h += "<h4>open incidents touching this region</h4>";
-    h += incs.map(i => "<div>· <b>" + esc(i.title) + "</b> " +
-      '<span class="mini">(sev ' + dash(i.sev) + " · " +
-      dash(i.status) + ")</span></div>").join("");
-  }
-  return h;
-}
-
-const ZOOMS = {
-  ocean() {
-    const o = S.online;
-    if (!o) return NOTPUB;
-    const bc = o.brti?.constituents || {};
-    const rows = Object.entries(bc).map(([k, v]) =>
-      "<tr><td>" + esc(k) + '</td><td class="num">' + (isNum(v)
-        ? "$" + v.toLocaleString("en-US") : "—") + "</td></tr>")
-      .join("");
-    return "<h4>the three rivers</h4>" +
-      "Coinbase spot + order book · Kalshi 15-min quotes (demo env, " +
-      "production key quarantined) · alternative.me Fear &amp; Greed " +
-      "— all $0 public feeds." +
-      "<h4>BRTI constituents (live composite)</h4>" +
-      '<div class="scroll"><table><thead><tr><th>venue</th>' +
-      '<th class="num">price</th></tr></thead><tbody>' + (rows ||
-      '<tr><td colspan="2">—</td></tr>') + "</tbody></table></div>" +
-      '<p class="mini">live 15-min market: ' + dash(o.pm?.ticker) +
-      " · strike " + (isNum(o.pm?.strike) ? "$" +
-        o.pm.strike.toLocaleString("en-US") : "—") +
-      " · yes " + dash(o.pm?.yes_bid) + "/" + dash(o.pm?.yes_ask) +
-      "¢</p>";
-  },
-  delta() {
-    const o = S.online;
-    if (!o) return NOTPUB;
-    return "daemon started " + fmtAge(ageMin(o.started_at)) +
-      " · heartbeat " + fmtAge(ageMin(o.alive_at)) +
-      " · runtime state <b>" + dash(o.runtime_state) + "</b> · " +
-      dash(o.predictions_total) + " predictions total · online " +
-      "updates this session: " + dash(o.online_updates_session);
-  },
-  forecast() {
-    const t1 = S.audit?.sections?.tier1;
-    if (!t1) return NOTPUB;
-    const rows = Object.keys(t1).sort().map(k => {
-      const a = t1[k] || {};
-      return '<tr><td><span class="arm-tag">' + esc(k) + "</span></td>" +
-        '<td class="num">' + dash(a.n) + "</td>" +
-        '<td class="num">' + f(a.mse, 0) + "</td>" +
-        '<td class="num">' + f(a.bias, 2) + "</td>" +
-        '<td class="num">' + (isNum(a.band80_cov)
-          ? (a.band80_cov * 100).toFixed(1) + "%" : "—") + "</td></tr>";
-    }).join("");
-    return "<h4>tier-1 price arms (audited)</h4>" +
-      '<div class="scroll"><table><thead><tr><th>arm</th>' +
-      '<th class="num">n</th><th class="num">MSE $²</th>' +
-      '<th class="num">bias $</th><th class="num">80% coverage</th>' +
-      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
-      '<p class="mini">Price arms are logged-only — they never place ' +
-      'bets directly. Deep dive: <a href="metrics_lab.html">Metrics ' +
-      "Lab</a>.</p>";
-  },
-  city() {
-    const t2 = S.audit?.sections?.tier2;
-    if (!t2) return NOTPUB;
-    const rows = Object.keys(t2).sort().map(k => {
-      const a = t2[k] || {};
-      return '<tr><td><span class="arm-tag">' + esc(k) + "</span></td>" +
-        '<td class="num">' + dash(a.n) + "</td>" +
-        '<td class="num">' + f(a.brier, 4) + "</td>" +
-        '<td class="num">' + f(a.mkt_brier, 4) + "</td>" +
-        '<td class="num">' + f(a.bss_vs_market, 4) + "</td></tr>";
-    }).join("");
-    const b = bestBSS();
-    const note = b == null ? "—"
-      : b.bss <= 0
-        ? "no arm beats the book yet — best BSS " + f(b.bss, 4) +
-          " (" + esc(b.arm) + "); the edge must come from " +
-          "selectivity, not clairvoyance."
-        : esc(b.arm) + " currently beats the book — BSS " + f(b.bss, 4)
-          + ".";
-    return "<h4>" + Object.keys(t2).length +
-      " active kb arms (audited)</h4>" +
-      '<div class="scroll"><table><thead><tr><th>arm</th>' +
-      '<th class="num">n</th><th class="num">Brier</th>' +
-      '<th class="num">market Brier</th>' +
-      '<th class="num">BSS vs market</th>' +
-      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
-      '<p class="mini"><b>Standing lesson:</b> ' + note + "</p>";
-  },
-  republic() {
-    const st = S.board?.summary?.states;
-    let h = "";
-    if (st) {
-      h += '<h4>treatment arena</h4><div class="legend">';
-      h += Object.entries(st).map(([k, v]) =>
-        '<span class="pill ' + (k === "BASELINE" ? "pending" :
-          k === "HOLD" ? "miss" : "ok") + '">' + esc(k) + " · " +
-        dash(v) + "</span>").join("");
-      h += "</div>";
-      const best = S.board?.summary?.best_candidate;
-      if (best) h += '<p class="mini">best candidate: <b>' + esc(best) +
-        "</b> — nothing is promoted until paired traffic earns it.</p>";
-    } else h += NOTPUB;
-    const live = liveExperiments().filter(e =>
-      e.regions.includes("republic"));
-    if (live.length) h += "<h4>live experiments here</h4><div>" +
-      live.map(e => '<span class="xchip">' + esc(e.id) + "</span>")
-        .join(" ") + "</div>";
-    return h;
-  },
-  port() {
-    const w = S.board?.execution_waterfall;
-    let h = "";
-    if (w) h += "<h4>the measured leak</h4>" +
-      "decision EV " + cS(w.decision_ev_per_1) + "/$1 → realized " +
-      cS(w.realized_ev_per_1) + "/$1 — execution gap <b>" +
-      cS(w.execution_gap_per_1) + "/$1</b> over " + dash(w.windows) +
-      " windows.";
-    else h += NOTPUB;
-    const a3 = S.a3;
-    if (a3) {
-      const fw = a3.forward || {};
-      h += "<h4>A3 — entry timing vs frozen control</h4>" +
-        "state <b>" + dash(a3.live?.state) + "</b>" +
-        (a3.live?.ticker ? " on " + esc(a3.live.ticker) : "") +
-        " · forward n=" + dash(fw.eligible) + " eligible · " +
-        "incremental " + cS(fw.incremental_per_eligible) +
-        "/eligible · spec hash " +
-        (a3.spec_hash_ok === true ? "verified" :
-         a3.spec_hash_ok === false ? "MISMATCH" : "—");
-      const shTxt = Object.entries(a3.shadows || {}).map(([k, v]) =>
-        esc(k) + " dip " + dash(v?.dip_c) + "¢ · " + dash(v?.eligible) +
-        " eligible · " + cS(v?.pnl_per_eligible) + "/eligible")
-        .join("<br>");
-      if (shTxt) h += "<h4>dip-depth shadows (logged only)</h4>" + shTxt;
-    } else h += "<h4>A3</h4>" + NOTPUB;
-    return h;
-  },
-  island() {
-    const tr = S.audit?.sections?.traders;
-    if (!tr) return NOTPUB;
-    const rows = Object.keys(tr).sort().map(k => {
-      const a = tr[k] || {};
-      return '<tr><td><span class="arm-tag">' + esc(k) + "</span> " +
-        esc(PT_NAMES[k] || "") + "</td>" +
-        '<td class="num">' + dash(a.n_settled) + "</td>" +
-        '<td class="num">' + f(a.win_pct, 1) + "%</td>" +
-        '<td class="num">' + cS(a.ev_per_dollar) + "</td>" +
-        '<td class="num">' + (isNum(a.bankroll_c)
-          ? "$" + (a.bankroll_c / 100).toLocaleString("en-US") : "—") +
-        "</td></tr>";
-    }).join("");
-    return "<h4>the paper-trader ablation (simulated)</h4>" +
-      '<div class="scroll"><table><thead><tr><th>trader</th>' +
-      '<th class="num">n</th><th class="num">win</th>' +
-      '<th class="num">EV /$1</th><th class="num">bankroll</th>' +
-      "</tr></thead><tbody>" + rows + "</tbody></table></div>" +
-      '<p class="mini">All play money — a sizing ablation, not a ' +
-      'portfolio. Full books: <a href="ledgers.html">Evidence</a>.</p>';
-  },
-  valley() {
-    const ig = S.board?.integrity;
-    const n = openIncidents().length;
-    return (ig ? "treatment ledger: " + dash(ig.rows) +
-      " rows · last close " + whenBoth(ig.last_close_ts) + " · " +
-      (isNum(ig.age_min) ? f(ig.age_min, 1) + " min old" : "—") +
-      " · health " + dash(ig.health) + "." : NOTPUB) +
-      "<h4>the books</h4>ticks.jsonl · prediction_log.jsonl · " +
-      "treatments.jsonl · incidents.jsonl (" +
-      (S.inc ? S.inc.length : "—") + " records, " + n + " open) — " +
-      "append-only, recomputed by the auditor." +
-      '<p class="mini">Storage &amp; publishing: ' +
-      esc(costLine("valley")) + "</p>";
-  },
-  academy() {
-    const inv = S.inv;
-    let h = "";
-    if (inv) {
-      h += "<h4>invariant suite — " + dash(inv.passed) + " passing, " +
-        dash(inv.failed) + " failing</h4>";
-      h += (inv.checks || []).map(c =>
-        "<div>" + (c?.ok ? "✓" : "✗") + " " + dash(c?.name) +
-        ' <span class="mini">(' + dash(c?.origin) + ")</span></div>")
-        .join("");
-    } else h += NOTPUB;
-    const sys = S.ready?.system;
-    if (sys) h += "<h4>readiness</h4><b>" + dash(sys.level) + "</b> — " +
-      dash(sys.headline) + " · strategy: " +
-      dash(S.ready?.strategy?.status);
-    return h;
-  },
-  factory() {
-    const lr = S.online?.last_retrain;
-    if (!lr) return NOTPUB;
-    const rows = Object.entries(lr.arms || {}).map(([arm, per]) =>
-      Object.entries(per || {}).map(([hz, r]) =>
-        "<tr><td>" + esc(arm) + "</td><td>" + esc(hz) + "</td>" +
-        '<td class="num">' + f(r?.val_mse_before, 1) + "</td>" +
-        '<td class="num">' + f(r?.val_mse_after, 1) + "</td>" +
-        "<td>" + (r?.reverted
-          ? '<span class="pill miss">reverted</span>'
-          : '<span class="pill ok">kept</span>') + "</td></tr>")
-        .join("")).join("");
-    return "<h4>last gated retrain — " + dash(lr.at) + "</h4>" +
-      dash(lr.train_episodes) + " train / " + dash(lr.val_episodes) +
-      " holdout episodes · " + dash(lr.epochs) + " epochs · " +
-      dash(S.online?.retrains_this_session) + " retrains this session" +
-      '<div class="scroll"><table><thead><tr><th>arm</th><th>hz</th>' +
-      '<th class="num">val MSE before</th><th class="num">after</th>' +
-      "<th>verdict</th></tr></thead><tbody>" + (rows ||
-      '<tr><td colspan="5">—</td></tr>') + "</tbody></table></div>";
-  }
-};
-
-/* ------------------------------------------------ card 1 render -- */
-function blockHTML(R) {
-  const st = regionStatus(R.k);
-  const mine = liveExperiments().filter(e => e.regions.includes(R.k));
-  let name = R.ex, sub = R.kid;
-  if (lens === "engineer") { name = R.en; sub = R.ensub; }
-  else if (lens === "health") sub = "";
-  else if (lens === "experiments")
-    sub = mine.length ? "modified by live experiments here"
-      : "no live experiment touches this region";
-  else if (lens === "cost") sub = costLine(R.k);
-  let cls = "rblock";
-  if (openRegions.has(R.k)) cls += " open";
-  if (lens === "health") cls += " hb-" + dotCls(st);
-  if (lens === "experiments") cls += mine.length ? " xhl" : " dim";
-  const nInc = incidentsFor(R.k).length;
-  const chips = (lens === "experiments" && mine.length)
-    ? '<div style="margin-top:6px">' + mine.map(e =>
-        '<span class="xchip">' + esc(e.id) + "</span>").join(" ") +
-      "</div>"
-    : "";
-  const zoom = openRegions.has(R.k)
-    ? '<div class="rzoom">' + zoomHTML(R.k) + "</div>" : "";
-  return '<div class="' + cls + '" data-r="' + R.k +
-    '" role="button" tabindex="0" aria-expanded="' +
-    openRegions.has(R.k) + '">' +
-    '<div class="rhead"><span class="rname">' + esc(name) + "</span>" +
-    '<span class="rstat">' + stateChip(st) + "</span></div>" +
-    (sub ? '<div class="rsub">' + esc(sub) + "</div>" : "") +
-    '<div class="rmeta"><span>' + esc(regionMetric(R.k)) + "</span>" +
-    '<span class="' + (nInc ? "inc" : "inc0") + '">' + nInc +
-    " open incident" + (nInc === 1 ? "" : "s") + "</span>" +
-    "<span>last event " + fmtAge(regionAge(R.k)) + "</span></div>" +
-    chips + zoom + "</div>";
+/* --------------------------------------------- section 1 render -- */
+function regionHTML(R) {
+  const lt = regionLight(R.k);
+  const open = openRegions.has(R.k);
+  const now = open ? nowLine(R.k) : null;
+  const drawer = !open ? "" :
+    '<div class="rdrawer"><div class="dgrid">' +
+    '<div class="dcell"><div class="dk">what flows in</div>' +
+    '<div class="dv">' + esc(R.inn) + "</div></div>" +
+    '<div class="dcell"><div class="dk">what flows out</div>' +
+    '<div class="dv">' + esc(R.out) + "</div></div>" +
+    '<div class="dcell"><div class="dk">evidence on disk</div>' +
+    '<div class="dv">' + A(R.arts) + "</div></div>" +
+    '<div class="dcell"><div class="dk">go deeper</div>' +
+    '<div class="dv">' + L(R.links) + "</div></div>" +
+    "</div>" +
+    (now ? '<div class="rnow">' + now + "</div>" : "") +
+    '<p class="mini">health source: ' + regionWhy(R.k) + "</p></div>";
+  return '<div class="region' + (open ? " open" : "") + '" data-r="'
+    + R.k + '" role="button" tabindex="0" aria-expanded="' + open
+    + '"><span class="remoji" aria-hidden="true">' + R.e + "</span>"
+    + '<span class="rname">' + esc(R.n) + "</span>"
+    + '<span class="rlight" title="' + esc(regionWhy(R.k)) + '">'
+    + LIGHT[lt] + "<small>" + WORD[lt] + "</small></span>"
+    + '<span class="rjob">' + esc(R.job) + "</span>"
+    + drawer + "</div>";
 }
 
 function renderMap() {
-  const el = document.getElementById("pipe");
-  if (!S.world) {
-    el.innerHTML = '<p class="mini">world.json not yet published — ' +
-      "the map draws nothing it cannot fetch.</p>";
-    return;
-  }
-  let h = "", i = 0;
-  while (i < REGIONS.length) {
-    const R = REGIONS[i];
-    if (R.k === "split") {
-      h += '<div class="plink"></div><div class="psplit">' +
-        blockHTML(REGIONS[i + 1]) + blockHTML(REGIONS[i + 2]) +
-        "</div>";
-      i += 3;
-    } else {
-      if (i > 0) h += '<div class="plink"></div>';
-      h += blockHTML(R);
-      i += 1;
-    }
-  }
-  h += '<div class="loopnote">↺ learning loop — kept weights redeploy ' +
-    "from the Training Factory back to Forecast Country &amp; " +
-    "Probability City</div>";
-  el.innerHTML = h;
-  for (const b of el.querySelectorAll(".rblock")) {
+  const el = document.getElementById("map");
+  el.innerHTML = REGIONS.map((R, i) =>
+    (i ? '<div class="mlink"></div>' : "") + regionHTML(R)).join("") +
+    '<div class="loopnote">↺ and back to the Market Ocean — lessons ' +
+    "the lab keeps redeploy upstream, and the next 15-minute window " +
+    "rolls in</div>";
+  for (const b of el.querySelectorAll(".region")) {
     const toggle = ev => {
-      if (ev.target.closest("a") || ev.target.closest(".rzoom")) return;
+      if (ev.target.closest("a") || ev.target.closest(".rdrawer"))
+        return;
       const k = b.dataset.r;
       if (openRegions.has(k)) openRegions.delete(k);
       else openRegions.add(k);
@@ -862,500 +463,57 @@ function renderMap() {
   }
 }
 
-function renderLensRow() {
-  document.getElementById("lensrow").innerHTML = LENSES.map(([k, lbl]) =>
-    '<button type="button" class="chip' + (lens === k ? " on" : "") +
-    '" data-lens="' + k + '">' + lbl + "</button>").join("");
-  document.getElementById("lensnote").textContent = LENS_NOTE[lens] || "";
-  for (const b of document.querySelectorAll("#lensrow .chip"))
-    b.addEventListener("click", () => {
-      lens = b.dataset.lens;
-      try { localStorage.setItem("map_lens", lens); } catch {}
-      renderLensRow(); renderMap();
-    });
-}
-
-/* ------------------------------------------------ card 2 render -- */
-const TABS = [["runtime", "Runtime"],
-  ["lifecycle", "Learning lifecycle"], ["lineage", "Data lineage"]];
-function renderTabs() {
-  document.getElementById("tabrow").innerHTML = TABS.map(([k, lbl]) =>
-    '<button type="button" role="tab" aria-selected="' + (tab === k) +
-    '" class="chip' + (tab === k ? " on" : "") + '" data-tab="' + k +
-    '">' + lbl + "</button>").join("");
-  for (const [k] of TABS)
-    document.getElementById("tab-" + k).classList
-      .toggle("on", tab === k);
-  for (const b of document.querySelectorAll("#tabrow .chip"))
-    b.addEventListener("click", () => {
-      tab = b.dataset.tab;
-      try { localStorage.setItem("map_tab", tab); } catch {}
-      renderTabs();
-    });
-}
-
-const parseEvery = s => {
-  const m = /([\d.]+)\s*(s|min|h)\b/.exec(String(s || ""));
-  if (!m) return Infinity;
-  const v = parseFloat(m[1]);
-  return m[2] === "s" ? v : m[2] === "min" ? v * 60 : v * 3600;
-};
-function renderRuntime() {
-  const el = document.getElementById("cadence");
-  const clock = S.world?.clock;
-  if (!Array.isArray(clock)) { el.innerHTML = NOTPUB; return; }
-  const rows = clock.slice().sort((a, b) =>
-    parseEvery(a?.every) - parseEvery(b?.every));
-  document.getElementById("clock-gen").textContent =
-    "the system clock — every cadence in the machine, fastest first · " +
-    "generated " + fmtAge(ageMin(S.world?.generated_ts));
-  el.innerHTML = rows.map(c => {
-    const red = c?.health === "red";
-    return '<div class="crow' + (red ? " red" : "") + '">' +
-      '<span class="cbadge">' + dash(c?.every) + "</span>" +
-      '<span class="cwhat">' + dash(c?.what) + "</span>" +
-      '<span class="cright"><span class="hdot ' + dotCls(c?.health) +
-      '"></span>' + (c?.health ? (ST_WORD[c.health] || esc(c.health))
-        : "UNKNOWN") + " · " + fmtAge(c?.age_min) + "</span>" +
-      '<span class="cmeta">' +
-      '<span class="owner-chip">' + dash(c?.owner) + "</span>" +
-      (c?.in_crontab === true ? "<span>in crontab ✓</span>" :
-        c?.in_crontab === false ?
-        '<span style="color:var(--series-4)">not in crontab</span>' :
-        "") +
-      (red ? '<span class="sla">MISSED SLA</span>' : "") +
-      (c?.source ? "<span>" + esc(c.source) + "</span>" : "") +
-      "</span></div>";
-  }).join("");
-}
-
-function renderLifecycle() {
-  const el = document.getElementById("funnel");
+/* --------------------------------------------- section 3 render -- */
+const LC_BUCKETS = [
+  { e: "🌱", n: "Alive",
+    d: "the control law and active incumbents — carrying live traffic",
+    rx: /^(CONTROL|ACTIVE|LIVE)/i },
+  { e: "🧪", n: "Testing",
+    d: "treatments — paired against the control, earning (or losing) their seat",
+    rx: /^TREATMENT/i },
+  { e: "💤", n: "Shadow",
+    d: "watching the same tape, deciding nothing — diagnostic streams",
+    rx: /^SHADOW/i },
+  { e: "🪦", n: "Retired",
+    d: "retired, archived or closed — kept only as institutional memory",
+    rx: /^(RETIRED|ARCHIVED|CLOSED|REDESIGN)/i }
+];
+function renderLegend() {
+  const el = document.getElementById("lcgrid");
   const exps = S.prog?.experiments;
-  if (!Array.isArray(exps)) { el.innerHTML = NOTPUB; return; }
-  const lc = e => String(e?.lifecycle || "");
-  const liveIds = exps.filter(e => /\bLIVE\b/.test(lc(e)))
-    .map(e => e.id);
-  const retired = exps.filter(e => /^RETIRED/.test(lc(e)));
-  const redesign = exps.filter(e => /^REDESIGN/.test(lc(e)));
-  const offline = exps.filter(e => isNum(e?.n) && e.n > 0).length;
-  const shadows = Object.keys(S.a3?.shadows || {});
-  const ideas = exps.length + (S.a3 ? 1 : 0) + shadows.length;
-  const liveN = liveIds.length + (S.a3 ? 1 : 0);
-  const stg = (name, count, desc) => '<div class="stage"><b>' + name +
-    '</b><div class="scount">' + count + '</div><div class="sdesc">' +
-    desc + "</div></div>";
-  const arr = '<span class="flowarr">→</span>';
-  el.innerHTML = '<p class="mini" style="margin-top:2px">Real counts ' +
-    "from program.json + a3_live.json — every idea walks the same " +
-    "road, and nothing skips a stage.</p>" +
-    '<div class="flow">' +
-    stg("Ideas", ideas, esc(exps.length) + " M-experiments + A3" +
-      (shadows.length ? " + " + shadows.length + " dip shadows" : "")) +
-    arr +
-    stg("Offline", offline, "replay-scored against the recorded " +
-      "ledgers (n &gt; 0)") +
-    arr +
-    stg("Shadow", shadows.length, shadows.length
-      ? esc(shadows.join(" · ")) +
-        " — A3 dip-depth shadows, logged only, no orders"
-      : "none currently logging") +
-    arr +
-    stg("Live A/B", liveN, esc(liveIds.join(", ") +
-      (S.a3 ? (liveIds.length ? ", " : "") + "A3-v1.1" : "")) +
-      " — paired against the champion") +
-    arr +
-    stg("Retired", retired.length, "SPRT / dominance verdicts" +
-      (redesign.length ? " · +" + redesign.length + " in REDESIGN (" +
-        esc(redesign.map(e => e.id).join(", ")) + ")" : "")) +
-    arr +
-    stg("Promoted", 0, "0 promoted — the bar is deliberately high; " +
-      "only the owner can promote") +
-    "</div>";
-}
-
-function renderLineage() {
-  const el = document.getElementById("lineage");
-  const rows = S.treat;
-  if (!Array.isArray(rows) || !rows.length) {
-    el.innerHTML = NOTPUB; return;
-  }
-  const settled = rows.filter(r => r && r.outcome != null && r.ev);
-  const row = settled[settled.length - 1];
-  if (!row) {
-    el.innerHTML = '<p class="mini">no settled treatment row yet — ' +
-      "lineage renders once the first window settles.</p>";
-    return;
-  }
-  const idx = rows.indexOf(row) + 1;
-  const evKeys = Object.keys(row.ev || {});
-  const node = (k, v) => '<div class="lnode"><span class="lk">' + k +
-    '</span><span class="lv">' + v + "</span></div>";
-  el.innerHTML = '<p class="mini" style="margin-top:2px">One real ' +
-    "decision, traced end-to-end — the latest settled window, <b>" +
-    esc(row.ticker) + "</b>, closed " + whenBoth(row.close_ts) +
-    ".</p>" +
-    '<div class="lchain">' +
-    node("1 · tick", "Coinbase + Kalshi polls append to " +
-      "<b>ticks.jsonl</b> throughout the 15-minute window ending " +
-      esc(whenTZ(row.close_ts, "America/New_York", "ET"))) +
-    node("2 · snapshot", "the pipeline snapshots features (candles, " +
-      "book, tape, quotes) into <b>live_snapshots.jsonl</b>") +
-    node("3 · forecast arm", "tier-1 price arms emit μ + bands per " +
-      "horizon into <b>prediction_log.jsonl</b> (logged-only)") +
-    node("4 · kb probability", "tier-2 arms state P(up) for the " +
-      "window; the seated arm was <b>" + dash(row.leader) + "</b>") +
-    node("5 · leader", "<b>" + dash(row.leader) + "</b> holds the " +
-      "seat under the live selection rule") +
-    node("6 · gates", "trailing market regime accuracy <b>" +
-      (isNum(row.regime_acc) ? (row.regime_acc * 100).toFixed(0) + "%"
-        : "—") + "</b> checked against the regime floor") +
-    node("7 · decision", "champion decision EV <b>" +
-      cS(row.ev?.champion) + "/$1</b>" +
-      (isNum(row.ev?.champion_real) ? " · realized " +
-        cS(row.ev.champion_real) + "/$1" : "")) +
-    node("8 · settlement", "outcome <b>" +
-      (row.outcome === 1 ? "UP — the YES side settled" :
-       row.outcome === 0 ? "DOWN — the NO side settled" :
-       dash(row.outcome)) + "</b> at " + whenBoth(row.close_ts)) +
-    node("9 · experiment row", "appended as row " + idx + " of " +
-      rows.length + " in <b>treatments.jsonl</b>, scoring " +
-      evKeys.length + " policies in parallel — the paired evidence " +
-      'behind <a href="board.html">Research Command</a>') +
-    "</div>";
-}
-
-/* ------------------------------------------------ card 3 render -- */
-const EX_TYPES = [["all", "All"], ["model", "Models"],
-  ["policy", "Policies"], ["experiment", "Experiments"],
-  ["agent", "Agents"], ["job", "Jobs"], ["monitor", "Monitors"]];
-
-const T1_ROLES = { t2: "LinUCB linear bandit (baseline)",
-  t6: "LinUCB + live-only microstructure features",
-  t7: "LinUCB variant (per-horizon)", t8: "DQN (deep Q-network)",
-  t9: "LSTM sequence model",
-  t10: "live-only-signal arm (batch-vs-persistence gated)",
-  t11: "t2 + live feedback (equals t2 until feedback flows)",
-  cal: "Platt-calibrated blend", consensus: "cross-arm consensus",
-  ctl: "persistence control", rp: "random-policy baseline",
-  h15: "champion 15-min head" };
-const KB_ROLES = { kb: "base online probability arm",
-  kb2: "market blend — w·p_cal + (1−w)·market mid",
-  kb3: "direct online logistic on the binary task", kb4: "—",
-  kb5: "train-where-you-trade arm",
-  kb6: "fast-information arm (perp lead, tape, whale)",
-  kb7: "zero-shot foundation model (Chronos)",
-  kb8: "calibrated decorrelation stack on kb7",
-  kb9: "second foundation family (TimesFM)", kbf: "—" };
-const PT_NAMES = { pt: "Follower", pt2: "Ladder", pt3: "Disciplined",
-  pt4: "Gambler", pt5: "Saver", pt6: "MLE", pt7: "Patient",
-  pt8: "Ideal" };
-
-function buildIndex() {
-  const ix = [];
-  const t1 = S.audit?.sections?.tier1;
-  const t1keys = t1 ? Object.keys(t1)
-    : ["t2", "t6", "t7", "t8", "t9", "t10", "t11"];
-  for (const k of t1keys.sort()) {
-    const a = t1?.[k];
-    ix.push({ id: "m1-" + k, name: k, type: "model", tier: "T1",
-      purpose: T1_ROLES[k] || "—",
-      status: a ? "ACTIVE — audited every 10 min"
-        : "roster (no audit row published)",
-      health: regionStatus("forecast"),
-      inputs: "engineered features from the 30 s pipeline",
-      outputs: "μ + 80% band per horizon (logged-only)",
-      stats: a ? "n " + dash(a.n) + " · MSE " + f(a.mse, 0) +
-        " $² · 80% cov " + (isNum(a.band80_cov)
-          ? (a.band80_cov * 100).toFixed(1) + "%" : "—") : "—",
-      evidence: ["metrics_lab.html", "Metrics Lab"] });
-  }
-  const t2 = S.audit?.sections?.tier2;
-  const t2keys = t2 ? Object.keys(t2)
-    : ["kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7", "kb8", "kb9"];
-  for (const k of t2keys.sort()) {
-    const a = t2?.[k];
-    ix.push({ id: "m2-" + k, name: k, type: "model", tier: "T2",
-      purpose: KB_ROLES[k] || "—",
-      status: a ? "ACTIVE — audited every 10 min"
-        : "roster (no audit row published)",
-      health: regionStatus("city"),
-      inputs: "tier-1 forecasts + live market state",
-      outputs: "P(up) for the live 15-min window",
-      stats: a ? "n " + dash(a.n) + " · Brier " + f(a.brier, 4) +
-        " · BSS " + f(a.bss_vs_market, 4) : "—",
-      evidence: ["metrics_lab.html", "Metrics Lab"] });
-  }
-  const tr = S.audit?.sections?.traders;
-  for (const k of Object.keys(PT_NAMES)) {
-    const a = tr?.[k];
-    ix.push({ id: "p-" + k, name: k + " · " + PT_NAMES[k],
-      type: "policy", tier: "—",
-      purpose: "paper-trader ablation personality (simulated bankroll)",
-      status: "ACTIVE — paper trading",
-      health: regionStatus("island"),
-      inputs: "leader signal + own sizing/banking rules",
-      outputs: "simulated orders, fills, bankroll ledger",
-      stats: a ? "n " + dash(a.n_settled) + " · win " +
-        f(a.win_pct, 1) + "% · EV " + cS(a.ev_per_dollar) +
-        "/$1 · bankroll " + (isNum(a.bankroll_c)
-          ? "$" + (a.bankroll_c / 100).toLocaleString("en-US") : "—")
-        : "—",
-      evidence: ["ledgers.html", "Evidence"] });
-  }
-  for (const e of (S.prog?.experiments || [])) {
-    ix.push({ id: "x-" + e.id,
-      name: e.id + " — " + (e.name || "—"),
-      type: "experiment", tier: e.tier_path ?? "—",
-      purpose: e.hypothesis || e.problem || "—",
-      status: e.lifecycle ?? "—",
-      health: null,
-      inputs: "paired windows vs the champion (same windows, " +
-        "same theses)",
-      outputs: "paired Δ + SPRT evidence in treatments.jsonl",
-      stats: "effect " + cS(e.effect) + " · P(Δ>0) " + pc(e.p_gt0) +
-        " · n " + dash(e.n) + " · rec " +
-        (e.analysis_recommendation ?? "—"),
-      evidence: ["board.html", "Research Command"] });
-  }
-  if (S.a3) {
-    const fw = S.a3.forward || {};
-    ix.push({ id: "x-a3",
-      name: "A3-v1.1 — entry timing vs frozen control",
-      type: "experiment", tier: "—",
-      purpose: "does waiting for a ≥10¢ valid dip beat buying the " +
-        "moment the thesis fires?",
-      status: "LIVE — " + (S.a3.live?.state ?? "—"),
-      health: null,
-      inputs: "executable event-tape asks (modeled asks forbidden)",
-      outputs: "paired PnL per eligible window",
-      stats: "n " + dash(fw.eligible) + " eligible · incremental " +
-        cS(fw.incremental_per_eligible) + "/eligible · spec hash " +
-        (S.a3.spec_hash_ok === true ? "verified" : "MISMATCH"),
-      evidence: ["board.html", "Research Command"] });
-    for (const [k, v] of Object.entries(S.a3.shadows || {})) {
-      ix.push({ id: "x-sh-" + k, name: k + " — A3 dip-depth shadow",
-        type: "experiment", tier: "—",
-        purpose: "shadow of A3 at a " + (v?.dip_c ?? "—") +
-          "¢ dip trigger — logged only, no orders",
-        status: "SHADOW — collecting",
-        health: null,
-        inputs: "the same A3 event tape",
-        outputs: "shadow fills + PnL per eligible",
-        stats: "eligible " + dash(v?.eligible) + " · filled " +
-          dash(v?.filled) + " · " + cS(v?.pnl_per_eligible) +
-          "/eligible",
-        evidence: ["board.html", "Research Command"] });
-    }
-  }
-  for (const a of (S.world?.agents || [])) {
-    ix.push({ id: "a-" + a.name, name: a.name ?? "—", type: "agent",
-      tier: "—",
-      purpose: (a.role ?? "—") + " — " + (a.trigger ?? "—"),
-      status: a.last_ts != null ? "last active " +
-        fmtAge(ageMin(a.last_ts)) : "session-based / on demand",
-      health: null,
-      inputs: "authority: " + (a.authority ?? "—"),
-      outputs: "cannot: " + (a.cannot ?? "—") + " · evidence: " +
-        (a.evidence ?? "—"),
-      stats: "—", evidence: ["watchtower.html", "Control Tower"] });
-  }
-  for (const c of (S.world?.clock || [])) {
-    ix.push({ id: "j-" + (c.source || c.what), name: c.what ?? "—",
-      type: "job", tier: "—",
-      purpose: "runs every " + (c.every ?? "—") + " · owner " +
-        (c.owner ?? "—"),
-      status: c.in_crontab === true ? "in crontab" :
-        c.in_crontab === false ? "NOT in crontab" : "self-scheduled",
-      health: c.health ?? null,
-      inputs: c.source ?? "—", outputs: c.detail ?? "—",
-      stats: "last ran " + fmtAge(c.age_min),
-      evidence: ["watchtower.html", "Control Tower"] });
-  }
-  /* monitors: real ones from the clock + invariants, then the queue */
-  const wd = clockRow(/watchdog/i), au = clockRow(/audit/i);
-  if (wd) ix.push({ id: "mon-wd", name: "Watchdog", type: "monitor",
-    tier: "—",
-    purpose: "restart the daemon when the heartbeat is stale >5 min",
-    status: "ACTIVE — every " + (wd.every ?? "—"),
-    health: wd.health ?? null, inputs: "online_status.alive_at",
-    outputs: "daemon restarts (logs only when it acts)",
-    stats: "last ran " + fmtAge(wd.age_min),
-    evidence: ["watchtower.html", "Control Tower"] });
-  if (au) ix.push({ id: "mon-au", name: "Auditor (prequential)",
-    type: "monitor", tier: "—",
-    purpose: "recompute every published metric from raw ledgers — " +
-      "dual implementation vs the daemon",
-    status: "ACTIVE — every " + (au.every ?? "—"),
-    health: au.health ?? null, inputs: "raw JSONL ledgers",
-    outputs: "audit_report.json + boards",
-    stats: "last ran " + fmtAge(au.age_min),
-    evidence: ["watchtower.html", "Control Tower"] });
-  if (S.inv) ix.push({ id: "mon-inv", name: "Invariant suite",
-    type: "monitor", tier: "—",
-    purpose: "structural laws distilled from past incidents (fee " +
-      "parity, one-decision-per-window, …)",
-    status: dash(S.inv.passed) + " passing / " + dash(S.inv.failed) +
-      " failing",
-    health: S.inv.health ?? null,
-    inputs: "all ledgers", outputs: "invariants.json",
-    stats: "generated " + fmtAge(ageMin(S.inv.generated_ts)),
-    evidence: ["watchtower.html", "Control Tower"] });
-  const QUEUED = [
-    ["Brier drift monitor", "alert when a kb arm's rolling Brier " +
-      "degrades vs its own history", "NOT IMPLEMENTED"],
-    ["Feature PSI monitor", "population-stability index on the live " +
-      "feature distributions", "NOT IMPLEMENTED"],
-    ["Markout monitor", "post-fill 10 s / 60 s markout tracking on " +
-      "every entry", "NEEDS DATA"],
-    ["SRM monitor", "sample-ratio mismatch check on paired " +
-      "experiment traffic", "NOT IMPLEMENTED"]];
-  for (const [nm, pu, stt] of QUEUED)
-    ix.push({ id: "mon-q-" + nm, name: nm, type: "monitor", tier: "—",
-      purpose: pu, status: stt, health: null, inputs: "—",
-      outputs: "—", stats: "queued workstream",
-      evidence: ["watchtower.html", "Control Tower"] });
-  return ix;
-}
-
-function exStateChip(it) {
-  if (it.health) return stateChip(it.health);
-  const s = String(it.status || "");
-  if (/NOT IMPLEMENTED|NEEDS DATA/.test(s))
-    return '<span class="state st-frozen">' + esc(s) + "</span>";
-  if (/^LIVE|^ACTIVE/.test(s))
-    return '<span class="state st-live">LIVE</span>';
-  if (/^RETIRED|^FROZEN/.test(s))
-    return '<span class="state st-frozen">' +
-      esc(s.split(" ")[0].split("(")[0]) + "</span>";
-  if (/SHADOW/.test(s))
-    return '<span class="state st-collect">SHADOW</span>';
-  if (/^REDESIGN/.test(s))
-    return '<span class="state st-collect">REDESIGN</span>';
-  return '<span class="state st-frozen">—</span>';
-}
-
-function renderExplorer() {
-  document.getElementById("exfilters").innerHTML =
-    EX_TYPES.map(([k, lbl]) => '<button type="button" class="chip' +
-      (exType === k ? " on" : "") + '" data-t="' + k + '">' + lbl +
-      "</button>").join("");
-  for (const b of document.querySelectorAll("#exfilters .chip"))
-    b.addEventListener("click", () => {
-      exType = b.dataset.t; renderExplorer();
-    });
-  const ix = buildIndex();
-  const q = exQuery.trim().toLowerCase();
-  const rows = ix.filter(it =>
-    (exType === "all" || it.type === exType) &&
-    (!q || (it.name + " " + it.purpose + " " + it.status)
-      .toLowerCase().includes(q)));
-  document.getElementById("exlist").innerHTML = rows.length
-    ? rows.map(it => '<div class="exrow' +
-        (exSel === it.id ? " sel" : "") + '" data-id="' + esc(it.id) +
-        '" role="button" tabindex="0"><b>' + esc(it.name) + "</b>" +
-        '<span class="ty">' + esc(it.type) + "</span>" +
-        '<span class="pu">' + esc(it.purpose) + "</span>" +
-        '<span class="stc">' + exStateChip(it) + "</span></div>")
-      .join("")
-    : '<p class="mini">no components match.</p>';
-  for (const r of document.querySelectorAll(".exrow")) {
-    const open = () => {
-      exSel = exSel === r.dataset.id ? null : r.dataset.id;
-      renderExplorer();
-    };
-    r.addEventListener("click", open);
-    r.addEventListener("keydown", ev => {
-      if (ev.key === "Enter" || ev.key === " ") {
-        ev.preventDefault(); open();
-      }
-    });
-  }
-  const dr = document.getElementById("exdrawer");
-  const it = ix.find(x => x.id === exSel);
-  if (!it) { dr.hidden = true; dr.innerHTML = ""; return; }
-  dr.hidden = false;
-  const drow = (k, v) => '<div class="dk">' + k +
-    '</div><div class="dv">' + v + "</div>";
-  dr.innerHTML = '<div class="dgrid">' +
-    drow("name", "<b>" + esc(it.name) + "</b>") +
-    drow("type", esc(it.type)) +
-    drow("tier", esc(it.tier)) +
-    drow("purpose", esc(it.purpose)) +
-    drow("status", esc(it.status)) +
-    drow("health", it.health ? stateChip(it.health)
-      : "— (not separately monitored)") +
-    drow("inputs", esc(it.inputs)) +
-    drow("outputs", esc(it.outputs)) +
-    drow("live stats", esc(it.stats)) +
-    drow("evidence", '<a href="' + esc(it.evidence[0]) + '">' +
-      esc(it.evidence[1]) + " →</a>") +
-    "</div>";
-}
-
-/* ------------------------------------------------- header strip -- */
-function renderStrip() {
-  const el = document.getElementById("hstrip");
-  const hs = (k, v) => '<div class="hs"><div class="k">' + k +
-    '</div><div class="v">' + v + "</div></div>";
-  const regs = S.world?.regions;
-  let regTxt = "—";
-  if (regs) {
-    const vals = Object.values(regs);
-    const green = vals.filter(r => r?.status === "green").length;
-    regTxt = green + "/" + vals.length +
-      " <small>regions healthy</small>";
-  }
-  const openInc = S.inc ? String(openIncidents().length) : "—";
-  el.innerHTML =
-    hs("system world", regTxt) +
-    hs("open incidents", openInc +
-      ' <small><a href="watchtower.html">Control Tower →</a></small>') +
-    hs("paired windows", dash(S.world?.facts?.windows_scored) +
-      " <small>scored</small>") +
-    hs("readiness", dash(S.ready?.system?.level) + " <small>" +
-      dash(S.ready?.strategy?.status) + "</small>") +
-    hs("daemon heartbeat", fmtAge(ageMin(S.online?.alive_at)));
+  const counts = Array.isArray(exps)
+    ? LC_BUCKETS.map(b => exps.filter(e =>
+        b.rx.test(String(e?.lifecycle || ""))).length)
+    : null;
+  el.innerHTML = LC_BUCKETS.map((b, i) =>
+    '<div class="lc"><span class="le" aria-hidden="true">' + b.e +
+    '</span><div class="ln">' + esc(b.n) + "</div>" +
+    '<div class="lct">' + (counts ? counts[i] : "—") + "</div>" +
+    '<div class="ld">' + esc(b.d) + "</div></div>").join("") +
+    (counts ? "" : '<p class="mini" style="grid-column:1/-1">' +
+      "program.json not yet published — counts render when it is.</p>");
 }
 
 /* ---------------------------------------------------------- poll -- */
 async function poll() {
-  const [world, prog, a3, inv, inc, online, audit, ready, board,
-    treat] = await Promise.all([
-      J("../results/world.json"), J("../results/program.json"),
-      J("../results/a3_live.json"), J("../results/invariants.json"),
-      JL("../results/incidents.jsonl"),
-      J("../results/online_status.json"),
-      J("../results/audit_report.json"),
-      J("../results/readiness.json"),
-      J("../results/decision_board.json"),
-      JL("../results/treatments.jsonl")]);
-  Object.assign(S, { world, prog, a3, inv, inc, online, audit, ready,
-    board, treat });
-  const gen = world?.generated_ts;
-  document.getElementById("asof").textContent = isNum(gen)
-    ? "world snapshot " + fmtAge(ageMin(gen))
-    : "world.json not yet published";
-  const stale = !isNum(gen) || ageMin(gen) > 10;
+  const [mon, online, inv, prog] = await Promise.all([
+    J("../results/monitor_health.json"),
+    J("../results/online_status.json"),
+    J("../results/invariants.json"),
+    J("../results/program.json")
+  ]);
+  S.mon = mon; S.online = online; S.inv = inv; S.prog = prog;
+  const m = ageMin(mon?.generated_ts ?? online?.alive_at);
   document.getElementById("dot").className =
-    "live-dot" + (stale ? " stale" : "");
-  renderStrip();
-  renderLensRow();
+    "live-dot" + (!isNum(m) || m > 30 ? " stale" : "");
+  document.getElementById("asof").textContent = isNum(m)
+    ? "health read " + fmtAge(m) : "health feeds not yet published";
   renderMap();
-  renderRuntime();
-  renderLifecycle();
-  renderLineage();
-  renderExplorer();
+  renderLegend();
 }
-renderTabs();
-document.getElementById("exq").addEventListener("input", ev => {
-  exQuery = ev.target.value || "";
-  renderExplorer();
-});
 poll();
-setInterval(poll, 15000);
+setInterval(poll, 30000);
 </script>
-<script src="glossary.js" defer></script>
 <script src="nav.js" defer></script>
 </body>
 </html>
