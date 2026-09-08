@@ -2,7 +2,7 @@
 
 **Date opened:** 2026-09-07 (auditor flag; fail-closed active since ~2026-09-03)
 **Severity:** SEV-1 (contained; scientific record not invalidated)
-**Status:** FIXED_AWAITING_LIVE_VERIFICATION
+**Status:** CLOSED (2026-09-07, live-verified)
 **Remediation class:** `FIELD_CORRECTION_PROVABLE / LATE_SETTLEMENT`
 
 ## One-sentence lesson
@@ -112,19 +112,37 @@ distinct properties.
 - **Idempotence** — repeating recovery cannot repeat the economic
   effect.
 
-## Live verification chain — CLOSURE GATE
+## Live verification chain — CLOSURE GATE (all proven live)
 
-- [ ] both zombies late-settle (daemon, corrected code)
-- [ ] matured-unresolved count = 0
-- [ ] bankroll residual = 0 · live reconcile = PASS
-- [ ] verification restart → NO second payout, NO replay, NO bankroll
-      change (idempotence on real repaired state)
-- [ ] machine-controlled reopen (daemon reads reconciliation itself;
-      no human flips the switch)
-- [ ] first reopened window opens, settles, reconciles normally →
-      n=375 (the SEV interval stays a recorded zero-exposure pause;
-      no backfill, no reset)
-- [ ] SEV-1 CLOSED + REGRESSION_INVARIANT
+- [x] both zombies late-settle — pt WON pnl 810¢, pt3 WON pnl 1150¢
+- [x] matured-unresolved staked positions = 0
+- [x] bankroll residual = 0 · live reconcile = PASS (overall OK,
+      bankroll-conservation 0/1941)
+- [x] verification restart → rows byte-identical, reconcile OK — NO
+      second payout, NO replay, NO bankroll change
+- [x] machine-controlled reopen — FREEZE cleared automatically when
+      reconciliation went OK; no human flipped the switch
+- [x] first reopened window opens/settles/reconciles → champion
+      n=374 → 375, reconcile OK (SEV interval recorded as a
+      zero-exposure pause; no backfill, no reset)
+- [x] SEV-1 CLOSED + REGRESSION_INVARIANT (`no-zombie-positions`,
+      suite 27/27; `test_bankroll_recovery` 4/4)
 
-*The four verification lines above are intentionally unchecked: they
-are proven live, not asserted from unit tests.*
+## Root cause was found in FOUR layers (verification discipline)
+
+Three hypotheses were wrong before instrumentation found the truth,
+and the SEV never closed on green unit tests:
+1. fail-closed gate skipping settlement — FALSIFIED (gate blocks
+   only entries, not settles);
+2. dedup-before-fetch permanently skipping a transient failure —
+   real bug, fixed, but not the whole story;
+3. `_merge_synth` rebuilding `by_ts` from `bars` AFTER the backfill,
+   discarding recovered candles — THE root cause, found by a
+   one-loop debug print after the standalone repro kept passing
+   (it never exercised the `_merge_synth` rebuild the live loop did);
+4. a fourth, 16-day-old zombie in a *different* ledger (kb_bets),
+   surfaced by the new permanent invariant — turned out non-staked
+   (economically inert), which sharpened the invariant's scope.
+
+Lesson: a standalone reproduction that omits a production code path
+is not a live verification. Instrument the real loop early.
