@@ -15,12 +15,16 @@ while True:
             'results/f1_capture_qualification.json'))['verdict']
         if seen_f1 is None:
             seen_f1 = f1
-        # post-n=50 CONTINUE (2026-09-01): watch for the decision
-        # RESOLVING — CI leaving zero -> REJECT or QUALIFY
+        # A3-v2.1 (2026-09-07): fire at the n>=50 registered gate
+        # (whatever the verdict — it gets recorded) or on resolution
+        if n >= 50:
+            print(f"GATE: A3-v2.1 reached decision gate n={n} "
+                  f"(decision {dec.get('decision')})")
+            break
         if dec.get('decision') not in (None, 'INSUFFICIENT_EVIDENCE',
                                        'CONTINUE'):
-            print(f"GATE: A3-v2 decision resolved: {dec['decision']} "
-                  f"at n={dec['eligible_n']}")
+            print(f"GATE: A3-v2.1 decision resolved: "
+                  f"{dec['decision']} at n={dec['eligible_n']}")
             break
         if f1 != seen_f1:
             print(f"GATE: F1 verdict changed {seen_f1} -> {f1}")
