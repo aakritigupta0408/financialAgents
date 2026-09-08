@@ -17,7 +17,7 @@ while True:
             seen_f1 = f1
         # A3-v2.1 (2026-09-07): fire at the n>=50 registered gate
         # (whatever the verdict — it gets recorded) or on resolution
-        if n >= 50:
+        if n >= 200:  # far cap; primary signal is resolution below
             print(f"GATE: A3-v2.1 reached decision gate n={n} "
                   f"(decision {dec.get('decision')})")
             break
