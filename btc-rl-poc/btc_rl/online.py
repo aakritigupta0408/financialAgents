@@ -2621,13 +2621,20 @@ def run(once: bool = False) -> None:
                                 - BACKFILL_HOURS * 3600):
                             _stale.add(_cts)
                 for _cts in sorted(_stale - _backfilled_close):
-                    _backfilled_close.add(_cts)
-                    for _b in fetch_range(
+                    try:
+                        _fetched = fetch_range(
                             datetime.fromtimestamp(
                                 _cts - 240, tz=config.PACIFIC),
                             datetime.fromtimestamp(
-                                _cts + 120, tz=config.PACIFIC)):
+                                _cts + 120, tz=config.PACIFIC))
+                    except Exception:
+                        continue     # transient — RETRY next loop,
+                        #              never dedup a failed fetch
+                    for _b in _fetched:
                         by_ts.setdefault(_b["ts"], _b)
+                    # dedup only once the settle candle is in hand
+                    if (_cts - 60) in by_ts:
+                        _backfilled_close.add(_cts)
             except Exception:
                 pass
             fng = fetch_fear_greed().get(now.date().isoformat())
