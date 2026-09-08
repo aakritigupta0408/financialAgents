@@ -1,0 +1,15 @@
+{
+ "closed_ts": 1788889326,
+ "experiment": "A3-v2.1",
+ "lifecycle": "CLOSED_REJECTED",
+ "final_verdict": "REJECT at registered gate (n=86): paired delta -6.35c/eligible, 95% bootstrap CI [-12.5,-0.0] excludes zero from below",
+ "mechanism": "44 missed winners, DIFFUSE (mean 27.9c, median 26.3c, top-1 4.6%, top-3 12.6% of miss cost) \u2014 uniform miss cost overwhelms fill improvement; not tail-driven, not state-dependent",
+ "a3_line_conclusion": "fixed wait-for-dip does not create value: v1.1 REJECT (10c), v2 INVALIDATED (evidence integrity), v2.1 REJECT (5c). Three registrations, consistent verdict.",
+ "a4_unlock_check": "A4/EntryValue learned-wait is NOT unlocked: its unlock condition required HETEROGENEOUS state-dependent miss cost; observed miss cost is DIFFUSE/uniform, so a learned state-dependent waiter has no state signal to exploit. A3 line closes WITHOUT a successor treatment.",
+ "preserved_immutable": {
+  "a3_v21_final.json": "94e62ab1db7c1f3f",
+  "a3_v21_decision_final.json": "9931dec8f298b492",
+  "a3_v21_final_ledger.jsonl": "039b4b97680e4b56"
+ },
+ "reopen": "NEVER as v2.1"
+}

@@ -162,6 +162,14 @@ def run_shadow(dip_c, q, up, reg_ts, call_ask, conf_at, cutoff_ts):
 
 
 def main():
+    # CLOSED (2026-09-08): A3-v2.1 REJECTED at its registered gate
+    # (n=86). The experiment is over; its evidence is frozen in
+    # a3_v21_closure.json + sha-guarded final artifacts. The
+    # evaluator no-ops so the forward counter never accrues past the
+    # closed gate and the final REJECT stands. This closes the whole
+    # A3 wait-for-dip line (v1.1 REJECT, v2 INVALIDATED, v2.1 REJECT).
+    if (RES / "a3_v21_closure.json").exists():
+        return
     now = int(time.time())
     rows = [json.loads(l) for l in
             (RES / "kalshi_binary_log.jsonl").open() if l.strip()]

@@ -237,7 +237,12 @@ def _a3_v1_frozen():
             "a3_v2_final.json": "6103e2458f7b3cea",
             "a3_v2_decision_final.json": "a378a2a60b9a9045",
             "a3_v2_final_ledger.jsonl": "833681ed3a59c3dc",
-            "a3_v2_closure.json": "4d3ed4ffd27fdde9"}
+            "a3_v2_closure.json": "4d3ed4ffd27fdde9",
+            # A3-v2.1 CLOSED_REJECTED (PM 09-08) — frozen forever
+            "a3_v21_final.json": "94e62ab1db7c1f3f",
+            "a3_v21_decision_final.json": "9931dec8f298b492",
+            "a3_v21_final_ledger.jsonl": "039b4b97680e4b56",
+            "a3_v21_closure.json": "7d060eaa9cd97565"}
     bad = []
     for name, want in WANT.items():
         p = RES / name

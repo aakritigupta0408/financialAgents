@@ -71,3 +71,18 @@ anti_unlock: sophistication is not a reason; "sounds like the next
 
 next_decision_point: whichever fires first — A3-v2 n>=50 verdict or
   Gate F1 — determines whether A4 becomes an experiment at all
+
+# UNLOCK CHECK (2026-09-08, A3 line CLOSED):
+# A3-v2.1 REJECTED at n=86 (delta -6.35c, CI [-12.5,-0.0]). The
+# missed-winner magnitude is DIFFUSE, not state-dependent: 44 misses,
+# mean 27.9c, top-1 only 4.6% / top-3 12.6% of miss cost. Condition 1
+# (heterogeneous state-dependent miss-cost) is therefore NOT met —
+# fixed waiting loses UNIFORMLY, so a learned state-dependent waiter
+# has no state signal to exploit. Condition 2 (v2 positive) NOT met
+# (v2 invalidated; v2.1 negative). Condition 3 (F-XVENUE early
+# resolution) NOT met — F-XVENUE was REJECT_FOR_T1.
+# => NONE of the three unlock conditions hold. A4 stays SPEC_ONLY;
+#    the A3 line closes WITHOUT a learned-wait successor. Any future
+#    entry-timing work needs a NEW mechanism hypothesis and its own
+#    registration — not a resurrection of wait-for-dip.
+unlock_status: NOT_UNLOCKED (verified from a3_v21_closure.json)

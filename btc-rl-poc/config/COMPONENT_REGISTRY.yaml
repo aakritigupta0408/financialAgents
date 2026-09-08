@@ -203,13 +203,22 @@ experiments:
      evidence: "a3_v2_closure.json + 4 sha-frozen artifacts
        (invariant-guarded); n=50 CONTINUE artifact in git 7b99d6d",
      reopen: NEVER as v2}
-  - {id: A3-v2.1, lifecycle: TREATMENT, runtime: true, control: C0,
-     treatment: T05, shadows: [T10-diagnostic], frozen: true,
-     spec: A3_V2_1_SPEC.yaml, registered: 2026-09-06,
-     note: "scientifically identical to v2 (same thresholds, gates,
-       decision rule); fresh n=0, no inherited rows; re-registered
-       ONLY for evidence-chain integrity, protected by union
-       persistence + registered-ledger-never-shrinks invariant"}
+  - {id: A3-v2.1, lifecycle: CLOSED_REJECTED, runtime: false,
+     control: C0, treatment: T05, spec: A3_V2_1_SPEC.yaml,
+     tier: T3, plane: D,
+     final_verdict: "REJECT at registered gate n=86: paired delta
+       -6.35c/eligible, 95% CI [-12.5,-0.0] excludes zero from below;
+       44 diffuse missed winners (mean 27.9c, top-1 4.6%) overwhelm
+       fill improvement",
+     evidence: "a3_v21_closure.json + 3 sha-frozen artifacts
+       (invariant-guarded)",
+     line_conclusion: "closes the A3 wait-for-dip line — v1.1 REJECT
+       (10c), v2 INVALIDATED, v2.1 REJECT (5c); fixed waiting does
+       not create value",
+     a4_unlock: "NOT met — miss cost is DIFFUSE not state-dependent,
+       so learned Value-of-Wait has no state signal to exploit",
+     registered: 2026-09-06, shadows: [T10-diagnostic],
+     reopen: NEVER as v2.1}
   - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
      control: t_exec, treatment: t_exec_reg,
      note: the ONE legacy pair; after verdict archive loser, close family}
