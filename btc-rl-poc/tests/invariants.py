@@ -250,6 +250,42 @@ def _a3_v1_frozen():
     return not bad, bad
 
 
+@check("no-zombie-positions",
+       "INC 09-07 (permanent regression) — no paper position may sit "
+       "matured-but-unresolved beyond a settlement grace: a position "
+       "whose settle candle fell outside the routine fetch window "
+       "must be late-settled by targeted backfill, never left open "
+       "forever with its stake locked out of cash")
+def _no_zombie_positions():
+    import time as _t
+    now = _t.time()
+    GRACE_S = 3 * 3600      # > BACKFILL_HOURS(6)? no — settle should
+    #   happen within a couple loops of maturity + backfill; 3h is a
+    #   generous ceiling that still catches a true zombie early
+    bad = []
+    for fname in ("pt_trades.jsonl", "pt3_trades.jsonl",
+                  "pt6_trades.jsonl", "kb_bets.jsonl"):
+        p = RES / fname
+        if not p.exists():
+            continue
+        for line in p.open():
+            try:
+                r = json.loads(line)
+            except Exception:
+                continue
+            cts = r.get("close_ts")
+            # only STAKED positions lock cash — a null/zero stake is
+            # a skip/observation row, economically inert, never a
+            # zombie (its settlement completing changes no bankroll)
+            if (r.get("actual") is None and cts
+                    and (r.get("stake_c") or 0) > 0
+                    and now - cts > GRACE_S):
+                bad.append(f"{fname}:{r.get('ticker')} matured "
+                           f"{round((now - cts) / 3600, 1)}h ago, "
+                           "still unresolved (zombie)")
+    return not bad, bad[:5]
+
+
 @check("publisher-page-coverage",
        "INC 09-07 (explicit-page-list defect, permanent) — every "
        "page reachable from the nav spine must exist in site/ AND "
