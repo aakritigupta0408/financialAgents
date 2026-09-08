@@ -69,9 +69,14 @@ models:
   - {id: kb2, tier: T2, lifecycle: CONTROL, runtime: true,
      note: market-anchored — NOT an independent fair-value oracle;
        serving because A3/product theses require it}
-  - {id: kb9, tier: T2, lifecycle: TREATMENT, runtime: true,
-     note: TimesFM fusion challenger; temporary — not proof of
-       long-term fair-value correctness}
+  - {id: kb9, tier: T2, lifecycle: RETIRED_FROM_T2_CONTENTION,
+     runtime: true, trajectory: REGRESSING,
+     dependency_class: CONTROL_DEPENDENCY, parent: PT_CHAMPION,
+     note: "TimesFM — OFFLINE_FAIL (median BSS -0.021, 2/5 folds);
+       no independent challenger traffic. STILL SERVES as champion
+       leader-pool member (PT_ARMS); full removal only via
+       CHAMPION-vLean (CHAMPION_VLEAN_SPEC.yaml), never a cleanup
+       edit — removing it in place would break champion parity"}
   # M3 corrections (08-30): the dependency map proved several
   # "retired" arms are LOAD-BEARING for frozen registered policies —
   # the M3 gate "A3/champion byte-equivalent" itself forbids removing
@@ -130,6 +135,14 @@ experiments:
      note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
        unlock conditions in-spec; evidence decides, not roadmap;
        also on the T1T2 program BLOCK list (PM 09-01)"}
+  - {id: CHAMPION-vLean, lifecycle: SPEC_ONLY, runtime: false,
+     spec: CHAMPION_VLEAN_SPEC.yaml, tier: T3,
+     dependency_class: TREATMENT_DEPENDENCY,
+     note: "PM 09-07 lean directive — the REGISTERED vehicle to drop
+       kb3/kb7/kb8/kb9 from the champion leader pool; SPEC_ONLY
+       because a load-bearing arm is retired by a registered champion
+       change, never a cleanup edit (protects model-parity). Waits
+       for the one downstream slot (held by t_exec_reg)"}
   - {id: T1.1, lifecycle: CLOSED_REJECTED, runtime: false,
      spec: T1_1_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
      final_verdict: "REJECT at registered one-shot gate (09-05):

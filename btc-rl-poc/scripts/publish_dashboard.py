@@ -109,6 +109,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("m6_soak.json", None),
     ("repair_dependency_state.json", None),
     ("a3_decision.json", None),
+    ("trajectory_board.json", None),
     ("a3v21_window_evaluation.jsonl", None),
     ("a3_v2_closure.json", None),
     ("t1_1_result.json", None),
