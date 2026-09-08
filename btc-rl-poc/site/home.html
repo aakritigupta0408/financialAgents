@@ -3,1481 +3,272 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BTC 7PM Oracle — Playground</title>
+<title>Quant Universe — a living ML laboratory</title>
 <link rel="stylesheet" href="theme.css">
+<script src="nav.js" defer></script>
 <style>
-/* ---- three-card home: live product · executive state · learning ---- */
-main { gap: 16px; }
-main > section { padding: 18px 22px; }
-.card-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-.card-tag b { color: var(--ink); }
+  /* HOME — sells the idea and the system, never trading performance.
+     Owner brief 09-07: kid-readable at zoom-out, evidence underneath. */
+  .hero { text-align: center; padding: 30px 8px 6px; }
+  .hero h1 { font: italic 500 54px/1.1 var(--display); letter-spacing: .01em; }
+  .hero .sub { font: italic 400 21px/1.45 var(--display); color: var(--ink-2);
+    margin-top: 14px; }
+  .hero .tag { max-width: 44rem; margin: 14px auto 0; color: var(--muted);
+    font-size: 15.5px; }
+  .badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px;
+    flex-wrap: wrap; }
+  .badge { font-size: 11.5px; font-weight: 700; letter-spacing: .14em;
+    padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
+    color: var(--ink-2); background: var(--surface); }
+  .badge.live { color: var(--good-text); border-color: rgba(12,138,77,.35); }
 
-/* ===== card 1 · the live product ===== */
-.hero-q { font: 400 clamp(25px, 4.2vw, 40px)/1.18 var(--display);
-  color: var(--ink); margin: 6px 0 10px; max-width: 22em; }
-.hero-sub { color: var(--ink-2); max-width: 66ch; font-size: 14.5px; }
-.badges { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
-.badge { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
-  text-transform: uppercase; padding: 5px 12px; border-radius: 999px;
-  border: 1px solid var(--border); background: var(--surface-2); color: var(--ink-2); }
-.badge.b-live { color: var(--good-text); border-color: rgba(12,138,77,.4);
-  background: rgba(12,138,77,.08); }
-.badge.b-fake { color: var(--series-4); border-color: rgba(143,96,0,.4);
-  background: rgba(143,96,0,.07); }
-.badge.b-exp { color: var(--series-2); border-color: rgba(36,97,184,.4);
-  background: rgba(36,97,184,.07); }
-.badge.b-nfa { color: var(--down); border-color: rgba(209,60,60,.35);
-  background: rgba(209,60,60,.06); }
-.winstrip { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
-  gap: 10px; margin: 8px 0 4px; }
-.strip-label { font-size: 10px; font-weight: 800; letter-spacing: .18em;
-  text-transform: uppercase; color: var(--muted); margin: 16px 0 0; }
-.thesis-chip { display: inline-block; font: 800 15px/1 ui-sans-serif, system-ui;
-  letter-spacing: .07em; padding: 8px 13px; border-radius: 999px;
-  border: 2px solid var(--border); color: var(--muted); margin-top: 4px; }
-.deskrow { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-  gap: 10px; margin-top: 12px; }
-.dtile { border: 1px solid var(--border); border-radius: 14px;
-  background: var(--surface-2); padding: 12px 15px 11px; }
-.dtile .dk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--muted); line-height: 1.6; }
-.action-word { font: 800 30px/1.15 var(--display); letter-spacing: .05em;
-  margin-top: 4px; }
-.action-sub { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
-.watchkv { display: grid; grid-template-columns: 1fr auto; gap: 3px 16px;
-  font-size: 12.5px; margin-top: 9px; border-top: 1px dashed var(--border);
-  padding-top: 8px; }
-.watchkv .k { color: var(--muted); }
-.watchkv .v { font-weight: 700; color: var(--ink);
-  font-variant-numeric: tabular-nums; text-align: right; }
-.dtile .dnote { font-size: 11px; color: var(--muted); margin-top: 8px;
-  line-height: 1.55; }
-.hl3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-  margin-top: 9px; }
-.hl3 .hv { font: 700 clamp(19px, 2.4vw, 25px)/1.1 var(--display);
-  font-variant-numeric: tabular-nums; color: var(--ink); }
-.hl3 .hv.big { font-size: clamp(23px, 3vw, 30px); }
-.hl3 .hk { font-size: 9px; font-weight: 800; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--muted); margin-top: 3px;
-  line-height: 1.45; }
-.ws { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 9px 13px; }
-.ws .wk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--muted); }
-.ws .wv { font: 650 21px/1.25 var(--display); color: var(--ink);
-  font-variant-numeric: tabular-nums; margin-top: 2px; }
-.ws .wv.yes { color: var(--good-text); } .ws .wv.no { color: var(--down); }
-.ws .wv.mut { color: var(--muted); }
-.ws .wm { font-size: 11px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
-.playq { font: 400 clamp(19px, 2.6vw, 26px)/1.25 var(--display); color: var(--ink);
-  margin-top: 16px; }
-.pickrow { display: flex; gap: 12px; margin: 12px 0 6px; }
-.pickbtn { flex: 0 1 190px; font: 800 20px/1 ui-sans-serif, system-ui;
-  letter-spacing: .06em; padding: 16px 10px; border-radius: 16px;
-  border: 2px solid var(--border); background: var(--surface);
-  cursor: pointer; color: var(--ink-2);
-  transition: transform .12s ease, border-color .12s ease; }
-.pickbtn:hover { transform: translateY(-2px); }
-.pickbtn.yes { border-color: rgba(12,138,77,.5); color: var(--good-text); }
-.pickbtn.no  { border-color: rgba(209,60,60,.5); color: var(--down); }
-.pickbtn.picked { background: var(--surface-2); border-width: 3px; transform: none; }
-.pickbtn:disabled { opacity: .45; cursor: default; transform: none; }
-.pickbtn small { display: block; font-size: 10px; font-weight: 700;
-  letter-spacing: .14em; color: var(--muted); margin-top: 6px; }
-.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px; margin-top: 12px; }
-.compare > div { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 10px 14px; }
-.compare .who { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--muted); }
-.compare .say { font: 650 22px/1.25 var(--display); color: var(--ink);
-  font-variant-numeric: tabular-nums; }
-.compare .say.yes { color: var(--good-text); } .compare .say.no { color: var(--down); }
-.compare .say.mut { color: var(--muted); }
-.lasttime { margin-top: 12px; border-left: 3px solid var(--series-2);
-  padding: 6px 14px; font-size: 13.5px; color: var(--ink-2);
-  background: var(--surface-2); border-radius: 0 10px 10px 0; }
-.lasttime b.right { color: var(--good-text); } .lasttime b.wrong { color: var(--down); }
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 22px 22px 18px;
+    display: flex; flex-direction: column; gap: 10px; }
+  .card .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em;
+    color: var(--muted); }
+  .card h2 { font: italic 500 24px/1.2 var(--display); }
+  .card p { color: var(--ink-2); font-size: 14.5px; }
+  .card .go { margin-top: auto; padding-top: 10px; font-weight: 650;
+    font-size: 14px; color: var(--series-2); text-decoration: none; }
+  .card .go:hover { text-decoration: underline; }
 
-/* wallet drawer (inside card 1) */
-details.drawer { margin-top: 14px; border: 1px dashed var(--border);
-  border-radius: 12px; padding: 10px 14px; background: var(--surface-2); }
-details.drawer[open] { background: var(--surface); }
-.rulechips { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
-.walletline { display: flex; gap: 24px; flex-wrap: wrap; align-items: baseline;
-  margin-top: 8px; }
-.walletline .final { font: 650 32px/1 var(--display);
-  font-variant-numeric: tabular-nums; }
-#wallet-chart .rule-path { stroke-dasharray: 2200; stroke-dashoffset: 0; }
-@media (prefers-reduced-motion: no-preference) {
-  #wallet-chart .rule-path.animate { animation: drawline 1.6s ease-out; }
-  @keyframes drawline { from { stroke-dashoffset: 2200; } to { stroke-dashoffset: 0; } }
-}
+  /* the machine flow (card 2) */
+  .flow { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; }
+  .flow a { display: block; text-align: center; text-decoration: none;
+    color: var(--ink); background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 9px;
+    padding: 7px 10px; font-size: 13.5px; font-weight: 600; }
+  .flow a:hover { border-color: var(--series-2); color: var(--series-2); }
+  .flow .arr { text-align: center; color: var(--faint); font-size: 12px;
+    line-height: 1; }
 
-/* ===== card 2 · executive state ===== */
-.exec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(212px, 1fr));
-  gap: 10px; margin-top: 10px; }
-.xt { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 10px 14px; }
-.xt .xk { font-size: 9.5px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; color: var(--muted); }
-.xt .xv { font: 650 19px/1.3 var(--display); color: var(--ink); margin-top: 3px; }
-.xt .xm { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; line-height: 1.45; }
-.xt .xm code { font-size: 10.5px; }
-.viz3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr));
-  gap: 12px; margin-top: 14px; }
-.viz { border: 1px solid var(--border); border-radius: 12px;
-  background: var(--surface-2); padding: 11px 13px 8px; }
-.viz .vt { font: 650 15px/1.25 var(--display); color: var(--ink); }
-.viz .vs { font-size: 11px; color: var(--muted); margin: 2px 0 6px; }
-svg .qlab { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
-  fill: var(--faint); }
-svg .vnum { font-size: 11px; font-weight: 700; fill: var(--ink-2);
-  font-variant-numeric: tabular-nums; }
-svg .vlab { font-size: 11px; fill: var(--ink-2); }
-.wmap-frame { border: 1px solid var(--border); border-radius: 14px;
-  background: var(--surface-2); padding: 8px 10px 4px; margin-top: 8px; }
+  /* scoreboard (card 3) */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat { background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; }
+  .stat .v { font-size: 21px; font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+  .stat .k { font-size: 11px; color: var(--muted); letter-spacing: .05em;
+    font-weight: 650; margin-top: 2px; }
+  .honest { font-size: 13.5px; color: var(--ink-2); font-style: italic;
+    border-left: 3px solid var(--border); padding-left: 10px; }
 
-/* ===== card 3 · learning tabs ===== */
-.tabbar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px;
-  border-bottom: 1px solid var(--border); padding-bottom: 0; }
-.tabbtn { font: 700 13px/1 ui-sans-serif, system-ui; color: var(--muted);
-  background: none; border: none; border-bottom: 3px solid transparent;
-  padding: 9px 13px 10px; cursor: pointer; letter-spacing: .02em; }
-.tabbtn:hover { color: var(--ink); }
-.tabbtn.on { color: var(--ink); border-bottom-color: var(--series-2); }
-.tabpane { display: none; padding-top: 12px; }
-.tabpane.on { display: block; }
-/* believe */
-.blf { display: grid; gap: 8px; }
-.blf > div { border: 1px solid var(--border); border-left-width: 4px;
-  border-radius: 10px; background: var(--surface-2); padding: 9px 13px; }
-.blf .bstat { font-size: 9px; font-weight: 800; letter-spacing: .16em;
-  text-transform: uppercase; }
-.blf .bclaim { font: 650 15px/1.35 var(--display); color: var(--ink); margin: 2px 0; }
-.blf .bev { font: 400 11.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--ink-2); }
-/* changed feed */
-.feed { display: grid; gap: 6px; }
-.feedrow { display: flex; gap: 12px; align-items: baseline; font-size: 13.5px;
-  color: var(--ink-2); border-bottom: 1px solid var(--grid); padding: 6px 0; }
-.feedrow .fwho { flex: 0 0 96px; font-weight: 700; color: var(--ink); }
-.feedrow .fage { flex: 0 0 72px; font-size: 11px; color: var(--muted);
-  font-variant-numeric: tabular-nums; }
-/* failed */
-.museum3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 12px; }
-.mus { border: 1px solid var(--border); border-radius: 14px; padding: 13px 16px;
-  background: var(--surface-2); color: inherit; display: block; }
-a.mus { border-bottom: 1px solid var(--border) !important; }
-a.mus:hover { border-color: var(--series-2) !important; }
-.mus .mt { font: 650 17px/1.2 var(--display); color: var(--ink); }
-.mus .mv { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--down); }
-.mus p { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.55; }
-/* traders */
-.crew { display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
-  gap: 12px; margin-top: 4px; }
-.trader { border: 1px solid var(--border); border-radius: 14px;
-  padding: 12px 15px 10px; background: var(--surface-2); position: relative;
-  border-top: 3px solid var(--border); }
-.trader .face { font-size: 25px; line-height: 1; }
-.trader .tname { font: 650 18px/1.2 var(--display); color: var(--ink); margin-top: 4px; }
-.trader .tgrp { font-size: 9.5px; font-weight: 800; letter-spacing: .14em;
-  text-transform: uppercase; color: var(--muted); }
-.trader .tsay { font-size: 12.5px; color: var(--ink-2); font-style: italic;
-  margin: 5px 0 7px; }
-.trader .teq { font-variant-numeric: tabular-nums; font-weight: 700;
-  font-size: 15px; color: var(--ink); }
-.trader .tret { font-variant-numeric: tabular-nums; font-weight: 700; }
-.tret.up { color: var(--good-text); } .tret.dn { color: var(--down); }
-.trader .oops { font-size: 11.5px; color: var(--muted); margin-top: 8px;
-  border-top: 1px dashed var(--border); padding-top: 7px; line-height: 1.5; }
-.trader .oops b { font-size: 9px; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--faint); display: block; margin-bottom: 2px; }
-/* explore row */
-.xplore { display: flex; gap: 8px 6px; flex-wrap: wrap; align-items: baseline;
-  margin-top: 16px; border-top: 1px solid var(--border); padding-top: 12px;
-  font-size: 13px; }
-.xplore .xh { font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
-  font-size: 10.5px; color: var(--muted); margin-right: 6px; }
-.xplore a { font-weight: 700; }
-.xplore .sep { color: var(--faint); }
+  /* the journey */
+  .journey-wrap { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px 20px; }
+  .journey-wrap h2, .prove h2 { font: italic 500 28px/1.2 var(--display);
+    text-align: center; margin-bottom: 6px; }
+  .journey-wrap .lede, .prove .lede { text-align: center; color: var(--muted);
+    font-size: 14px; margin-bottom: 18px; }
+  .journey { display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 6px 4px; align-items: center; }
+  .jstep { background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 7px 14px; font-size: 13.5px;
+    font-weight: 600; white-space: nowrap; }
+  .jarr { color: var(--faint); font-size: 13px; padding: 0 2px; }
+  .jloop { color: var(--series-2); font-weight: 700; }
 
-@media (max-width: 560px) {
-  main > section { padding: 15px 14px; }
-  .pickbtn { flex: 1 1 40%; }
-  .walletline .final { font-size: 26px; }
-  .winstrip { grid-template-columns: repeat(2, 1fr); }
-}
-@media (prefers-reduced-motion: reduce) { * { animation: none !important;
-  transition: none !important; } }
+  /* proof section */
+  .prove { background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 26px 22px; }
+  .lessons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-top: 14px; }
+  @media (max-width: 900px) { .lessons { grid-template-columns: 1fr; } }
+  .lesson { border: 1px solid var(--border); border-radius: 11px;
+    padding: 14px 15px; background: var(--surface-2); }
+  .lesson b { display: block; font-size: 14.5px; margin-bottom: 6px; }
+  .lesson span { font-size: 13px; color: var(--ink-2); }
+  .lesson .case { display: block; margin-top: 9px; font-size: 12px;
+    color: var(--muted); font-style: italic; }
+
+  .foot { text-align: center; color: var(--muted); font-size: 12.5px;
+    padding-top: 8px; }
 </style>
 </head>
 <body>
-<nav class="topnav">
-  <a class="brand" href="home.html">BTC 7PM Oracle</a>
-  <a class="nav here" href="home.html">Home</a>
-  <a class="nav" href="ab_dashboard.html">Results</a>
-  <a class="nav" href="live_online.html">Live desk</a>
-  <a class="nav" href="experiment_review.html">Experiment lab</a>
-  <a class="nav" href="index.html">Backtest</a>
-  <a class="nav" href="live_training.html">Training</a>
-  <a class="nav" href="metrics_lab.html">Metrics Lab</a>
-  <a class="nav" href="sev0.html">SEV-0</a>
-  <a class="nav" href="board.html">Board</a>
-  <a class="nav" href="analyst.html">Analyst</a>
-  <span class="spacer"></span>
-  <span class="tag">Live experiment</span>
-</nav>
-<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a></nav>
 
 <main>
-
-<!-- ============ CARD 1 · THE LIVE PRODUCT ============ -->
-<section>
-  <div class="eyebrow"><span class="live-dot" id="dot"></span>
-    The Quant Universe · <span id="asof">loading…</span></div>
-  <h1 class="hero-q">Can AI learn when to predict — and when to wait for a better price?</h1>
-  <p class="hero-sub">A real research desk trading <b>fake money</b> on a
-  <b>real market</b> — Bitcoin, every 15 minutes, around the clock.
-  The machine first decides whether it has a strong view; then comes the harder
-  call — <b>buy now, wait for a better price, or do nothing</b>. Every decision
-  is logged before the outcome is known, and every strategy races a frozen
-  control. Everything below is fetched live; nothing is made up.</p>
-  <div class="badges">
-    <span class="badge b-live">● Live data</span>
-    <span class="badge b-fake">Fake money</span>
-    <span class="badge b-exp">Real experiments</span>
-    <span class="badge b-exp">Forward tested</span>
-    <span class="badge b-nfa">Not financial advice</span>
-  </div>
-
-  <div class="strip-label">This window</div>
-  <div class="winstrip" id="winstrip">
-    <div class="ws"><div class="wk">BTC now</div><div class="wv" id="ws-px">—</div><div class="wm">Coinbase spot</div></div>
-    <div class="ws"><div class="wk">The line (strike)</div><div class="wv" id="ws-strike">—</div><div class="wm">finish above = YES</div></div>
-    <div class="ws"><div class="wk">Window closes in</div><div class="wv" id="ws-left">—</div><div class="wm">15-minute contract</div></div>
-  </div>
-
-  <div class="strip-label">The thesis — does the machine have a strong view?</div>
-  <div class="winstrip">
-    <div class="ws"><div class="wk">Model view</div><div class="wv" id="ws-mod">—</div><div class="wm" id="ws-mod-m">kb2 primary caller · <code>online_status.json .pm</code></div></div>
-    <div class="ws"><div class="wk">Market view</div><div class="wv" id="ws-mkt">—</div><div class="wm" id="ws-mkt-m">mid of yes bid/ask</div></div>
-    <div class="ws"><div class="wk">Thesis state</div><div><span class="thesis-chip" id="ws-thesis">—</span></div><div class="wm" id="ws-thesis-m">reading a3_live.json…</div></div>
-  </div>
-
-  <div class="deskrow">
-    <div class="dtile" id="desk-tile">
-      <div class="dk">🎯 The desk — what A3 is doing right now</div>
-      <p class="mini">reading a3_live.json…</p>
+  <header class="hero">
+    <h1>Quant Universe</h1>
+    <div class="sub">A living machine-learning laboratory for
+      understanding markets.</div>
+    <p class="tag">Watch models learn, compete, fail, recover and
+      improve — using simulated money.</p>
+    <div class="badges">
+      <span class="badge live">LIVE</span>
+      <span class="badge">SIMULATED</span>
+      <span class="badge">EDUCATIONAL</span>
     </div>
-    <div class="dtile" id="ab-tile">
-      <div class="dk">Control vs Treatment — CONTROL buy-at-call vs TREATMENT A3 wait-for-dip</div>
-      <p class="mini">reading a3_live.json…</p>
+  </header>
+
+  <section class="cards">
+    <div class="card">
+      <div class="eyebrow">CARD 1</div>
+      <h2>The World</h2>
+      <p><b>Bitcoin is our laboratory.</b> Market data flows in every
+        second. The system observes it, predicts what might happen
+        next, estimates its own uncertainty — and compares its
+        beliefs with a real prediction market's odds, every
+        15&nbsp;minutes.</p>
+      <a class="go" href="universe.html">Explore the Universe →</a>
     </div>
-  </div>
 
-  <details class="drawer" id="whywait">
-    <summary>🤔 Why wait for a better price? — the research behind A3</summary>
-    <p class="sub small" style="margin-top:8px">In replay research, <b>33% of
-    confident 0.75–0.80 calls later got ≥20¢ cheaper</b> — and those windows
-    still won <b>82%</b> of the time. The price you pay matters as much as the
-    call. The elegant version — a stability-gated entry — <b>FAILED</b> its
-    test: −7.9% per $1 (n=10). The simple rule survived: n=35, 71% won,
-    +10.9% per $1; on the kb9-det subset n=25, 76% won, +18.4%.</p>
-    <p class="mini">Small exploratory samples, not qualified performance. A3 was
-    frozen (<code>A3_SPEC.yaml</code>) before forward testing began and must
-    beat the incumbent prequentially, after costs, to earn anything.</p>
-  </details>
+    <div class="card">
+      <div class="eyebrow">CARD 2</div>
+      <h2>The Machine</h2>
+      <div class="flow">
+        <a href="models.html">🧠 Models — predict the future</a>
+        <div class="arr">↓</div>
+        <a href="universe.html">🔮 Probability — beliefs vs the market</a>
+        <div class="arr">↓</div>
+        <a href="experiments.html">🎮 Decisions — act or abstain</a>
+        <div class="arr">↓</div>
+        <a href="universe.html">⚙️ Execution — simulated fills, real quotes</a>
+        <div class="arr">↓</div>
+        <a href="watchtower.html">🤖 Learning — retrain, verify, repair</a>
+      </div>
+      <p style="font-size:13px;color:var(--muted)">Click any part to
+        zoom in.</p>
+    </div>
 
-  <h2 class="playq" id="play-q">Will Bitcoin finish this window above <span id="play-strike">$—</span>?</h2>
-  <div class="pickrow">
-    <button class="pickbtn yes" id="btn-yes" type="button">YES ⬆<small>finishes above</small></button>
-    <button class="pickbtn no" id="btn-no" type="button">NO ⬇<small>finishes below</small></button>
-  </div>
-  <div id="compare-card"></div>
-  <div id="lasttime"></div>
-  <div id="play-chart"></div>
-  <p class="mini" id="a3-cap" style="margin:2px 0 0"></p>
-  <p class="mini" id="play-src">strike + model probability from
-  <code>online_status.json .pm</code> · desk state from
-  <code>a3_live.json</code> · gate τ from
-  <code>site_manifest.json .config</code> · your pick stays in your browser only</p>
+    <div class="card">
+      <div class="eyebrow">CARD 3</div>
+      <h2>The Scoreboard</h2>
+      <div class="stats">
+        <div class="stat"><div class="v" id="s-bss">—</div>
+          <div class="k">BEST BSS vs MARKET</div></div>
+        <div class="stat"><div class="v" id="s-ev">—</div>
+          <div class="k">BEST PAIRED ΔEV / $1</div></div>
+        <div class="stat"><div class="v" id="s-exp">—</div>
+          <div class="k">LIVE EXPERIMENT</div></div>
+        <div class="stat"><div class="v" id="s-health">—</div>
+          <div class="k">SYSTEM HEALTH</div></div>
+      </div>
+      <p class="honest" id="s-honest">Today: the system is learning,
+        but has not yet demonstrated durable market-beating
+        information.</p>
+      <a class="go" href="experiments.html">See the evidence →</a>
+    </div>
+  </section>
 
-  <details class="drawer" id="wallet-drawer">
-    <summary>💵 Try your own rule — the $1,000 lab (replay the real last <span id="w-n">—</span> windows)</summary>
-    <p class="sub small" style="margin-top:8px">Start with $1,000 of fake money and
-    bet $100 a window on the desk's own predictions — but <i>your</i> rule decides
-    which windows to sit out. Same real windows, same real prices; only the rule
-    differs.</p>
-    <div class="rulechips" id="rulechips" role="radiogroup" aria-label="wallet rule"></div>
-    <div id="wallet-chart"><p class="mini">reading treatments.jsonl…</p></div>
-    <div class="walletline" id="walletline"></div>
-    <div class="scroll" id="wallet-table"></div>
-    <p class="mini">EV series per policy from <code>results/treatments.jsonl</code>
-    (null = that rule skipped the window) · a wallet that hits $0 is busted and stops</p>
-  </details>
-</section>
+  <section class="journey-wrap">
+    <h2>What happens inside?</h2>
+    <p class="lede">The whole thesis in one loop — repeated every
+      15-minute market window, around the clock.</p>
+    <div class="journey">
+      <span class="jstep">Observe</span><span class="jarr">→</span>
+      <span class="jstep">Predict</span><span class="jarr">→</span>
+      <span class="jstep">Estimate uncertainty</span><span class="jarr">→</span>
+      <span class="jstep">Compare with market</span><span class="jarr">→</span>
+      <span class="jstep">Decide</span><span class="jarr">→</span>
+      <span class="jstep">Simulate trade</span><span class="jarr">→</span>
+      <span class="jstep">Measure outcome</span><span class="jarr">→</span>
+      <span class="jstep">Learn</span><span class="jarr">→</span>
+      <span class="jstep jloop">Try again</span>
+    </div>
+  </section>
 
-<!-- ============ CARD 2 · EXECUTIVE STATE ============ -->
-<section>
-  <div class="card-tag"><b>02 · Executive state</b> · the whole desk in one card — live, not marketing</div>
-  <div class="exec-grid" id="exec-grid"><p class="mini">reading the audit…</p></div>
-  <div class="viz3">
-    <div class="viz"><div class="vt">Execution waterfall</div>
-      <div class="vs">where each decided cent goes, per $1 staked · <code>decision_board.execution_waterfall</code></div>
-      <div id="viz-waterfall"><p class="mini">loading…</p></div></div>
-    <div class="viz"><div class="vt">Top-3 experiments — effect ± 95% CI</div>
-      <div class="vs">¢ per $1 per window vs champion · ranked by P(Δ&gt;0) · <code>program.json</code></div>
-      <div id="viz-top3"><p class="mini">loading…</p></div></div>
-    <div class="viz"><div class="vt">EV vs coverage — every live experiment</div>
-      <div class="vs">a great effect at 15% coverage is not deployable · <code>program.json</code></div>
-      <div id="viz-scatter"><p class="mini">loading…</p></div></div>
-  </div>
-  <details class="drawer">
-    <summary>🗺 The system as a map — drawn live from <code>world.json</code></summary>
-    <a href="universe.html" aria-label="open the full world map" style="border:none">
-      <div class="wmap-frame" id="wmap"></div>
-      <div class="mini" style="text-align:center;margin:6px 0 2px;color:var(--series-2);font-weight:700">walk the full map →</div>
-    </a>
-  </details>
-</section>
+  <section class="prove">
+    <h2>The machine doesn't assume it's right.</h2>
+    <p class="lede">It has to prove every step — and most ideas
+      don't survive the proof.</p>
+    <div class="lessons">
+      <div class="lesson">
+        <b>A model can predict price well and still fail
+          economically.</b>
+        <span>Accuracy is not money. A forecast that arrives after
+          the market has already moved is trivia, not edge.</span>
+        <span class="case">Case: kbf — accurate, too late,
+          retired.</span>
+      </div>
+      <div class="lesson">
+        <b>A strategy can make money temporarily and still fail
+          statistically.</b>
+        <span>Small samples flatter. Every result must survive its
+          pre-registered sample size and confidence interval.</span>
+        <span class="case">Case: t_cheap — +13¢/$1 on 36 bets;
+          verdict: keep collecting.</span>
+      </div>
+      <div class="lesson">
+        <b>A model can look promising and still be retired.</b>
+        <span>Shadow arms flip sign week to week. Only frozen
+          decision gates speak — and their verdicts are
+          recorded forever.</span>
+        <span class="case">Case: A3-v1.1 — rejected at its gate;
+          the failure taught us more than a win would have.</span>
+      </div>
+    </div>
+  </section>
 
-<!-- ============ CARD 3 · WHAT IS THE SYSTEM LEARNING? ============ -->
-<section>
-  <div class="card-tag"><b>03 · What is the system learning?</b> · beliefs, changes, funerals, and the eight traders</div>
-  <div class="tabbar" role="tablist" aria-label="learning views">
-    <button class="tabbtn" data-tab="believe" role="tab" type="button">What we believe</button>
-    <button class="tabbtn" data-tab="changed" role="tab" type="button">What changed (24h)</button>
-    <button class="tabbtn" data-tab="failed" role="tab" type="button">What failed</button>
-    <button class="tabbtn" data-tab="traders" role="tab" type="button">The traders</button>
-  </div>
-  <div class="tabpane" id="pane-believe" role="tabpanel">
-    <div class="blf" id="believe-list"><p class="mini">reading program.json…</p></div>
-    <p class="mini">the desk's current beliefs with the evidence that earned them —
-    from <code>program.json .system_knowledge</code> · full program on <a href="board.html">the board</a></p>
-  </div>
-  <div class="tabpane" id="pane-changed" role="tabpanel">
-    <div class="feed" id="changed-feed"><p class="mini">reading the last 24 hours…</p></div>
-  </div>
-  <div class="tabpane" id="pane-failed" role="tabpanel">
-    <div class="museum3" id="tombs"><p class="mini">reading program.json…</p></div>
-    <p class="mini">every dead idea keeps its plaque — <a href="museum.html">visit the Museum of Failures</a></p>
-  </div>
-  <div class="tabpane" id="pane-traders" role="tabpanel">
-    <div class="crew" id="crew"><p class="mini">reading the eight ledgers…</p></div>
-    <p class="mini">equity = start capital + every settled paper bet in that robot's
-    append-only ledger (<code>results/pt*_trades.jsonl</code>) · Gambler shows
-    policy v3 only · abstentions and unfilled limit orders excluded from money ·
-    withdrawals (<code>wd_c</code>/<code>skim_c</code>) are earnings, not stake ·
-    full race on <a href="instrument.html">the Instrument</a></p>
-  </div>
-  <div class="xplore">
-    <span class="xh">Explore →</span>
-    <a href="universe.html">universe</a><span class="sep">·</span>
-    <a href="models.html">models</a><span class="sep">·</span>
-    <a href="board.html">board</a><span class="sep">·</span>
-    <a href="watchtower.html">watchtower</a><span class="sep">·</span>
-    <a href="ledgers.html">ledgers</a><span class="sep">·</span>
-    <a href="paper.html">paper</a><span class="sep">·</span>
-    <a href="archive.html">archive</a>
-  </div>
-</section>
-
-<footer>Research study for education — not financial advice · BTC 7PM Oracle ·
-NYU Deep Learning course project · data: Coinbase, Kalshi, OKX, Deribit
-(public, no-auth) · paper trading only</footer>
+  <p class="foot">simulated capital · registered experiments ·
+    every number traces to a ledger ·
+    <a href="paper.html" style="color:var(--muted)">read the paper</a></p>
 </main>
 
 <script>
 "use strict";
-/* helpers — same conventions as the instrument page */
-const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" +
-  Math.floor(Date.now() / 15000) * 15;
-async function jget(p) {
-  try { const r = await fetch(bust(p), { cache: "no-store" });
-    return r.ok ? await r.json() : null; } catch { return null; }
-}
-async function jsonl(p) {
-  try {
-    const r = await fetch(bust(p));
-    if (!r.ok) return [];
-    return (await r.text()).trim().split("\n").map(l => {
-      try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
-  } catch { return []; }
-}
-const $id = i => document.getElementById(i);
-const moneyC = c => (c < 0 ? "−$" : "$") +
-  Math.abs(c / 100).toLocaleString(undefined, { maximumFractionDigits: 0 });
-const money = v => (v < 0 ? "−$" : "$") +
-  Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 0 });
-const fmtPT = ts => new Date(ts * 1000).toLocaleTimeString("en-US",
-  { timeZone: "America/Los_Angeles", hour: "2-digit", minute: "2-digit",
-    hour12: false });
-const esc = s => String(s).replace(/[&<>]/g,
-  c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-const ageTxt = s => s < 0 ? "future-stamped" : s < 90 ? Math.round(s) + "s ago"
-  : s < 5400 ? Math.round(s / 60) + "m ago" : s < 172800
-  ? (s / 3600).toFixed(1) + "h ago" : Math.round(s / 86400) + "d ago";
-const cents = v => (v < 0 ? "−" : "+") + Math.abs(100 * v).toFixed(1) + "¢";
-
-/* the eight desks — same starts, cuts and skip rules as the instrument page */
-const DESKS = [
-  { id: "pt",  name: "Follower", emo: "🦊", grp: "Momentum / selection",
-    say: "“I follow whoever's been hottest.”", start: 100000, c: "var(--series-1)",
-    oops: "I chased the arms that just echoed the market — a hot streak isn't skill." },
-  { id: "pt2", name: "Ladder", emo: "🐢", grp: "Compounding",
-    say: "“I climb by compounding.”", start: 100000, c: "var(--series-8)",
-    oops: "Compounding grew my stakes right into the Aug 27 losing streak — the ladder works both ways." },
-  { id: "pt3", name: "Disciplined", emo: "🦉", grp: "Selective prediction",
-    say: "“I wait for high confidence.”", start: 100000, c: "var(--series-2)",
-    skips: false,
-    oops: "I only bet at ≥77% confidence — but my confident entries cost more than my win rate paid back." },
-  { id: "pt4", name: "Gambler", emo: "🐉", grp: "Sizing / variance",
-    say: "“Good predictions can still go badly if I bet too big.”",
-    /* v3: cut + start come from site_manifest.json .config
-       (PT4_RESET2_TS / PT4_RESET_C) — never hardcoded here */
-    start: 1000000, c: "var(--series-3)",
-    oops: "I put $1,911 on one window at negative edge. The prediction was fine. The bet size wasn't." },
-  { id: "pt5", name: "Saver", emo: "🐿️", grp: "Capital protection",
-    say: "“I bank my wins.”", start: 1000000, c: "var(--series-4)",
-    oops: "I skimmed every win into the bank — while my table stakes kept bleeding a little every window." },
-  { id: "pt7", name: "Patient", emo: "🦩", grp: "Execution / limit orders",
-    say: "“I bid low and wait.”", start: 100000, c: "var(--series-5)", skips: true,
-    oops: "My low bids got filled exactly when the market repriced against me. A cheap fill is a warning." },
-  { id: "pt6", name: "MLE", emo: "🤖", grp: "Learned abstention",
-    say: "“I learned when to say no.”", start: 100000, c: "var(--series-7)", skips: true,
-    oops: "My biggest early mistake was betting at all. Now I say no 84% of the time — and it's my whole edge." },
-  { id: "pt8", name: "Ideal", emo: "👑", grp: "All lessons stacked",
-    say: "“All the lessons, stacked.”", start: 100000, c: "var(--series-6)", skips: true,
-    oops: "Almost every window fails one of my tests — so I barely trade. Doing nothing is a position too." },
-];
-
-/* wallet rules → EV keys in treatments.jsonl */
-const RULES = [
-  { k: "champion", name: "Follow every window",
-    kid: "bet the desk's call every single window" },
-  { k: "t_regime", name: "Skip shaky markets",
-    kid: "sit out when the market itself has been guessing badly" },
-  { k: "t_knife",  name: "Skip coin-flips",
-    kid: "sit out when the price is basically 50/50" },
-  { k: "t_cheap",  name: "Only cheap prices",
-    kid: "only bet when the contract is cheap" },
-  { k: "t_limit",  name: "Bid low & wait",
-    kid: "post a lower price and hope someone takes it" },
-];
-
-let TAU = null, TAU_SRC = "";
-let cdTimer = null, cdClose = null;
-let S = {};                      /* latest fetched data */
-let walletRule = "t_regime";
-let walletFirstDraw = true;
-
-/* ---------- card 1 · window strip + play ---------- */
-const PICK_KEY = "oracle_playground_pick";
-function getPick() {
-  try { return JSON.parse(localStorage.getItem(PICK_KEY)); } catch { return null; }
-}
-function setPick(p) { try { localStorage.setItem(PICK_KEY, JSON.stringify(p)); } catch {} }
-
-function leaderArm() {
-  const w = S.st && S.st.fshare_w;
-  if (!w) return null;
-  let bk = null, bv = -Infinity;
-  for (const [k, v] of Object.entries(w)) if (v > bv) { bv = v; bk = k; }
-  return bk ? { arm: bk, w: bv } : null;
-}
-
-function drawStrip() {
-  const st = S.st, pm = (st || {}).pm || null;
-  const px = st && (st.price_now || (st.brti && st.brti.price));
-  $id("ws-px").textContent = px
-    ? "$" + px.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
-  const mkt = pm && pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
-  const p = pm ? pm.model_p_up : null;
-  $id("ws-strike").textContent = pm && pm.strike != null
-    ? "$" + pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "—";
-  const em = $id("ws-mkt");
-  em.textContent = mkt == null ? "—" : (100 * mkt).toFixed(0) + "% YES";
-  em.className = "wv" + (mkt == null ? "" : mkt >= 0.5 ? " yes" : " no");
-  $id("ws-mkt-m").textContent = mkt == null ? "yes bid/ask absent" : "mid of yes bid/ask";
-  const eo = $id("ws-mod");
-  eo.textContent = p == null ? "—" : "kb2 " + (100 * p).toFixed(0) + "% YES";
-  eo.className = "wv" + (p == null ? "" : p >= 0.5 ? " yes" : " no");
-}
-
-/* ---------- A3 thesis engine (a3_live.json) ---------- */
-const A3_STATES = {
-  NO_THESIS:   { col: "var(--muted)",     sub: "confidence never cleared 75%" },
-  WATCHING:    { col: "var(--series-2)",  sub: "thesis registered — waiting for price" },
-  TRIGGERED:   { col: "var(--good-text)", sub: "dip reached — A3 paper-bought" },
-  INVALIDATED: { col: "var(--down)",      sub: "confidence fell below 65% — cancelled" },
-  MISSED:      { col: "var(--series-4)",  sub: "settled without a qualifying entry" },
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
+  + Math.floor(Date.now() / 15000);
+const J = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? r.json() : null; } catch { return null; }
 };
-const DESK_LINES = {
-  WATCHING: "strong view, waiting for a better price",
-  TRIGGERED: "dip reached — paper-bought below the call",
-  NO_THESIS: "no strong view — doing nothing",
-  INVALIDATED: "thesis cancelled — confidence fell",
-  MISSED: "settled without a qualifying entry",
-};
-const deskAction = st => st === "WATCHING" ? "WAIT"
-  : st === "TRIGGERED" ? "BUY" : st ? "PASS" : "—";
-const c1 = v => String(Math.round(v * 10) / 10);
-function a3Ctx() {
-  const a3 = S.a3 || null, lv = (a3 && a3.live) || null;
-  const pm = (S.st && S.st.pm) || null;
-  const mkt = pm && pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
-  const p = pm ? pm.model_p_up : null;
-  const side = lv && lv.side ? lv.side : null;
-  const sideP = p == null ? null
-    : side === "DOWN" ? 1 - p : side === "UP" ? p : Math.max(p, 1 - p);
-  /* live contract ask, A3 convention: 100·p + 2.5¢ spread, side-adjusted */
-  const curAsk = mkt == null ? null
-    : side === "DOWN" ? 100 * (1 - mkt) + 2.5 : 100 * mkt + 2.5;
-  return { a3, lv, pm, mkt, p, side, sideP, curAsk };
-}
-function drawThesisDesk() {
-  const { a3, lv, side, sideP, curAsk } = a3Ctx();
-  const stt = lv && lv.state ? lv.state : null;
-  /* thesis-state chip */
-  const chip = $id("ws-thesis"), chipM = $id("ws-thesis-m");
-  const meta = stt && A3_STATES[stt];
-  if (!meta) {
-    chip.textContent = "—";
-    chip.style.color = "var(--muted)"; chip.style.borderColor = "var(--border)";
-    chipM.textContent = "a3_live.json unavailable — no state is invented";
-  } else {
-    chip.textContent = stt.replace(/_/g, " ") + (side ? " · " + side : "");
-    chip.style.color = meta.col; chip.style.borderColor = meta.col;
-    chipM.textContent = meta.sub;
-  }
-  /* 🎯 the desk tile */
-  const dbox = $id("desk-tile");
-  const dhead = `<div class="dk">🎯 The desk — what A3 is doing right now</div>`;
-  if (!stt) {
-    dbox.innerHTML = dhead +
-      '<p class="mini">a3_live.json unavailable — the desk shows nothing it cannot fetch</p>';
-  } else {
-    const act = deskAction(stt);
-    const acol = act === "BUY" ? "var(--good-text)"
-      : act === "WAIT" ? "var(--series-2)" : "var(--muted)";
-    let panel = "";
-    if (stt === "WATCHING" || stt === "TRIGGERED") {
-      const kv = (k, v) => `<div class="k">${k}</div><div class="v">${v}</div>`;
-      const dip = lv.call_ask != null && curAsk != null ? lv.call_ask - curAsk : null;
-      panel = `<div class="watchkv">` +
-        kv("call price (incumbent paid)",
-          lv.call_ask != null ? c1(lv.call_ask) + "¢" : "—") +
-        kv("current ask (live)", curAsk != null ? c1(curAsk) + "¢" : "—") +
-        kv("dip from call", dip == null ? "—" :
-          `<span style="color:${dip >= 10 ? "var(--good-text)" : dip < 0 ? "var(--down)" : "var(--ink)"}">${
-            (dip >= 0 ? "+" : "−") + c1(Math.abs(dip))}¢</span>`) +
-        kv("trigger", lv.trigger_ask != null ? "≤ " + c1(lv.trigger_ask) + "¢" : "—") +
-        (stt === "TRIGGERED" && lv.entry_ask != null
-          ? kv("A3 entry", c1(lv.entry_ask) + "¢" + (lv.improvement_c != null
-              ? ` (${c1(lv.improvement_c)}¢ better)` : "")) : "") +
-        kv("confidence", sideP == null ? "—" :
-          `<span style="color:${sideP >= 0.65 ? "var(--good-text)" : "var(--down)"}">${
-            (100 * sideP).toFixed(0)}%</span> vs floor 65%`) +
-        `</div>`;
+(async () => {
+  const [q, os, a3, mh] = await Promise.all([
+    J("../results/model_qualification.json"),
+    J("../results/online_status.json"),
+    J("../results/a3_live.json"),
+    J("../results/monitor_health.json")]);
+
+  // best market-relative BSS (median fold) across model arms
+  if (q && q.models) {
+    let best = null;
+    for (const [id, m] of Object.entries(q.models)) {
+      const b = m.walk_forward && m.walk_forward.median_fold_bss;
+      if (typeof b === "number" && (best === null || b > best.b))
+        best = { id, b };
     }
-    dbox.innerHTML = dhead +
-      `<div class="action-word" style="color:${acol}">${act}</div>` +
-      `<div class="action-sub">${DESK_LINES[stt] || ""}</div>` + panel +
-      `<div class="dnote">incumbent buys at the call; A3 waits for a ≥10¢ better
-      price while the thesis stays alive.</div>`;
-  }
-  /* control-vs-treatment tile — the three headline numbers */
-  const abox = $id("ab-tile");
-  const ahead = `<div class="dk">Control vs Treatment —
-    <b style="color:var(--ink)">CONTROL</b> buy-at-call vs
-    <b style="color:var(--ink)">TREATMENT</b> A3 wait-for-dip</div>`;
-  const fwd = a3 && a3.forward;
-  if (!fwd) {
-    abox.innerHTML = ahead +
-      '<p class="mini">a3_live.json unavailable — no scoreboard is invented</p>';
-  } else {
-    const inc = fwd.incremental_per_eligible;
-    const incCol = inc == null ? "var(--muted)"
-      : inc > 0 ? "var(--good-text)" : inc < 0 ? "var(--down)" : "var(--ink)";
-    const imp = fwd.mean_entry_improvement_c, mr = fwd.miss_rate;
-    const three = `<div class="hl3">
-      <div><div class="hv big" style="color:${incCol}">${inc == null ? "—" : cents(inc)}</div>
-        <div class="hk">incremental P&amp;L / $1 / eligible window — the North Star</div></div>
-      <div><div class="hv">${imp == null ? "—" : (imp >= 0 ? "+" : "−") + c1(Math.abs(imp)) + "¢"}</div>
-        <div class="hk">mean entry improvement${imp == null ? " — no entries yet" : ""}</div></div>
-      <div><div class="hv">${mr == null ? "—" : (100 * mr).toFixed(0) + "%"}</div>
-        <div class="hk">miss rate — theses that never got their price</div></div>
-    </div>`;
-    const days = a3.registered_ts != null
-      ? Math.max(0, (Date.now() / 1000 - a3.registered_ts) / 86400) : null;
-    const nline = `n=${fwd.eligible != null ? fwd.eligible : "—"} eligible since registration` +
-      (fwd.eligible != null && fwd.eligible < 30
-        ? ` · <b>collecting — ${days == null ? "?" : days < 1
-            ? "under a day" : Math.floor(days) + "d"} old, too early to judge</b>` : "");
-    const rp = a3.replay || null;
-    const rline = rp ? `legacy replay — does not count: incremental ${
-        rp.incremental_per_eligible != null ? cents(rp.incremental_per_eligible) : "—"}/$1 ·
-      improvement ${rp.mean_entry_improvement_c != null
-        ? c1(rp.mean_entry_improvement_c) + "¢" : "—"} · miss ${
-        rp.miss_rate != null ? (100 * rp.miss_rate).toFixed(0) + "%" : "—"} (n=${
-        rp.eligible != null ? rp.eligible : "—"})` : "";
-    abox.innerHTML = ahead + three +
-      `<div class="dnote">${nline}${rline ? "<br>" + rline : ""}</div>`;
-  }
-  /* chart caption — trigger lives in contract ¢, not price dollars */
-  const cap = $id("a3-cap");
-  if (cap) {
-    if (lv && (stt === "WATCHING" || stt === "TRIGGERED") && lv.trigger_ask != null)
-      cap.innerHTML = `🎯 A3 trigger: ${side === "DOWN" ? "NO" : "YES"} ≤ ${
-        c1(lv.trigger_ask)}¢${curAsk != null ? ` (currently ${c1(curAsk)}¢)` : ""}
-        — the chart tracks price vs strike; the trigger lives in contract ¢`;
-    else cap.textContent = "";
-  }
-}
-
-function drawPlay() {
-  const st = S.st, pm = (st || {}).pm || null;
-  const closeTs = pm && pm.close_time ? Date.parse(pm.close_time) / 1000 : null;
-  const live = pm && pm.strike != null && pm.model_p_up != null
-    && !(closeTs && closeTs * 1000 < Date.now());
-  const by = $id("btn-yes"), bn = $id("btn-no");
-  if (!live) {
-    $id("play-q").innerHTML = "Between windows — the next 15-minute question arrives in a moment.";
-    $id("ws-left").textContent = "—";
-    by.disabled = bn.disabled = true;
-    $id("compare-card").innerHTML =
-      '<p class="mini">no live contract in online_status.json right now — nothing to bet on, so we say so</p>';
-  } else {
-    const strike = "$" + pm.strike.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    $id("play-q").innerHTML = "Will Bitcoin finish this window above <span id=\"play-strike\">" + strike + "</span>?";
-    by.disabled = bn.disabled = false;
-    cdClose = closeTs;
-    if (!cdTimer) cdTimer = setInterval(() => {
-      if (!cdClose) return;
-      const s = Math.max(0, cdClose - Date.now() / 1000);
-      $id("ws-left").textContent =
-        Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0");
-    }, 1000);
-    const s0 = Math.max(0, closeTs - Date.now() / 1000);
-    $id("ws-left").textContent =
-      Math.floor(s0 / 60) + ":" + String(Math.floor(s0 % 60)).padStart(2, "0");
-    drawCompare();
-  }
-  drawStrip();
-  drawLastTime();
-  drawPlayChart();
-}
-
-function pickSide(side) {
-  const pm = S.st && S.st.pm;
-  if (!pm || pm.model_p_up == null) return;
-  const mkt = pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
-  setPick({ ticker: pm.ticker, side, strike: pm.strike,
-    model_p: pm.model_p_up, mkt, ts: Math.floor(Date.now() / 1000) });
-  drawCompare();
-}
-$id("btn-yes").onclick = () => pickSide("yes");
-$id("btn-no").onclick = () => pickSide("no");
-
-function drawCompare() {
-  const pm = S.st && S.st.pm, box = $id("compare-card");
-  const pick = getPick();
-  const by = $id("btn-yes"), bn = $id("btn-no");
-  by.classList.remove("picked"); bn.classList.remove("picked");
-  if (!pm || !pick || pick.ticker !== pm.ticker) {
-    box.innerHTML = '<p class="mini">pick a side — then see whether the crowd and the model agree with you</p>';
-    return;
-  }
-  (pick.side === "yes" ? by : bn).classList.add("picked");
-  const p = pm.model_p_up;
-  const conf = Math.max(p, 1 - p);
-  const mkt = pm.yes_bid != null && pm.yes_ask != null
-    ? (pm.yes_bid + pm.yes_ask) / 200 : null;
-  const gated = TAU != null && conf >= TAU;
-  const deskSide = p >= 0.5 ? "YES" : "NO";
-  const cell = (who, say, cls, sub) =>
-    `<div><div class="who">${who}</div><div class="say ${cls || ""}">${say}</div>` +
-    `<div class="mini" style="margin-top:2px">${sub}</div></div>`;
-  box.innerHTML = `<div class="compare">` +
-    cell("You chose", pick.side.toUpperCase(), pick.side, "locked for this window") +
-    cell("Market says", mkt == null ? "no quote" : (100 * mkt).toFixed(0) + "% YES",
-      mkt == null ? "" : mkt >= 0.5 ? "yes" : "no",
-      mkt == null ? "yes_bid/ask absent" : "mid of yes bid/ask") +
-    cell("Model says", (100 * p).toFixed(0) + "% YES", p >= 0.5 ? "yes" : "no",
-      "leader arm, this window") +
-    (() => {
-      const lv = S.a3 && S.a3.live;
-      const st2 = lv && lv.state ? lv.state : null;
-      const act = deskAction(st2);
-      return cell("🎯 Desk", act,
-        act === "BUY" ? "yes" : act === "WAIT" ? "" : "mut",
-        st2 ? (DESK_LINES[st2] || "") : "a3_live.json unavailable");
-    })() +
-    cell("The gate", TAU == null ? "GATE?" : gated ? "TRADE " + deskSide : "ABSTAIN",
-      TAU == null ? "" : gated ? (deskSide === "YES" ? "yes" : "no") : "",
-      TAU == null ? "τ missing from manifest"
-        : `confidence ${(100 * conf).toFixed(0)}% vs gate τ ${TAU}`) +
-    `</div>`;
-}
-
-function drawLastTime() {
-  const box = $id("lasttime");
-  const pick = getPick();
-  const pm = S.st && S.st.pm;
-  if (!pick) { box.innerHTML = ""; return; }
-  if (pm && pick.ticker === pm.ticker) { box.innerHTML = ""; return; }
-  const row = (S.treatments || []).find(r => r.ticker === pick.ticker);
-  if (!row) {
-    box.innerHTML = `<div class="lasttime">your last pick
-      (<code>${esc(pick.ticker || "?")}</code>) isn't in the settled ledger —
-      either it settles in a moment or that window wasn't scored</div>`;
-    return;
-  }
-  const yesWon = row.outcome === 1;
-  const right = (pick.side === "yes") === yesWon;
-  const mktRight = pick.mkt == null ? null : (pick.mkt >= 0.5) === yesWon;
-  const modRight = pick.model_p == null ? null : (pick.model_p >= 0.5) === yesWon;
-  const verd = v => v == null ? "?" : v ? "right" : "wrong";
-  box.innerHTML = `<div class="lasttime"><b>Last time:</b> you chose
-    ${pick.side.toUpperCase()} and were
-    <b class="${right ? "right" : "wrong"}">${right ? "RIGHT" : "WRONG"}</b>
-    (BTC finished ${yesWon ? "above" : "below"} the line) · the market
-    (${pick.mkt == null ? "?" : (100 * pick.mkt).toFixed(0) + "% YES"}) was
-    ${verd(mktRight)} · the model
-    (${pick.model_p == null ? "?" : (100 * pick.model_p).toFixed(0) + "% YES"}) was
-    ${verd(modRight)} · settled ${fmtPT(row.close_ts)} PT</div>`;
-}
-
-/* slim live tape with the strike line */
-function drawPlayChart() {
-  const box = $id("play-chart");
-  const prices = S.prices, st = S.st, pm = st && st.pm;
-  if (!prices || prices.length < 10) {
-    box.innerHTML = '<p class="mini">price series unavailable (recent_prices.json)</p>';
-    return;
-  }
-  let series = prices.slice();
-  if (st && st.brti && st.brti.price && st.alive_at
-      && st.alive_at > series[series.length - 1].ts)
-    series = series.concat([{ ts: st.alive_at, c: st.brti.price }]);
-  const t1 = series[series.length - 1].ts;
-  const pts = series.filter(q => q.ts >= t1 - 90 * 60);
-  const W = 920, H = 132, L = 10, R = 64, T = 12, B = 20;
-  const xmin = pts[0].ts, xmax = t1;
-  let ymin = Infinity, ymax = -Infinity;
-  for (const q of pts) { ymin = Math.min(ymin, q.c); ymax = Math.max(ymax, q.c); }
-  if (pm && pm.strike) { ymin = Math.min(ymin, pm.strike); ymax = Math.max(ymax, pm.strike); }
-  const pad = (ymax - ymin) * .12 || 10; ymin -= pad; ymax += pad;
-  const X = x => L + (x - xmin) / Math.max(1, xmax - xmin) * (W - L - R);
-  const Y = y => T + (1 - (y - ymin) / (ymax - ymin)) * (H - T - B);
-  const last = pts[pts.length - 1].c;
-  const above = pm && pm.strike ? last >= pm.strike : null;
-  const col = above == null ? "var(--ink-2)" : above ? "var(--up)" : "var(--down)";
-  let d = "";
-  for (let i = 0; i < pts.length; i++)
-    d += (i ? "L" : "M") + X(pts[i].ts).toFixed(1) + "," + Y(pts[i].c).toFixed(1);
-  let g = "";
-  for (let i = 1; i <= 2; i++) {
-    const v = ymin + (ymax - ymin) * i / 3, y = Y(v);
-    g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gridline"/>` +
-      `<text x="${W - R + 8}" y="${y + 4}">$${Math.round(v).toLocaleString()}</text>`;
-  }
-  for (let ts = Math.ceil(xmin / 1800) * 1800; ts <= xmax; ts += 1800)
-    g += `<text x="${X(ts)}" y="${H - 4}" text-anchor="middle">${fmtPT(ts)}</text>`;
-  if (pm && pm.strike) {
-    const ys = Y(pm.strike);
-    g += `<line x1="${L}" x2="${W - R}" y1="${ys}" y2="${ys}"
-      stroke="var(--series-4)" stroke-dasharray="5 5" stroke-width="1.4"/>` +
-      `<text x="${L + 4}" y="${ys - 5}" style="fill:var(--series-4)">the line · $${Math.round(pm.strike).toLocaleString()}</text>`;
-  }
-  g += `<path d="${d}" fill="none" stroke="${col}" stroke-width="2"
-    stroke-linejoin="round" stroke-linecap="round"/>` +
-    `<circle cx="${X(xmax)}" cy="${Y(last)}" r="4" fill="${col}"/>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="BTC price over the last 90 minutes against the window strike">${g}</svg>`;
-}
-
-/* ---------- wallet lab (drawer in card 1) ---------- */
-function replayRule(rows, key) {
-  /* bank_{i+1} = bank_i + 100·ev_i ; null ev ⇒ skip; floor at 0 = busted */
-  let bank = 1000, busted = false, active = 0, skipped = 0;
-  const pts = [{ i: 0, bank }];
-  rows.forEach((r, idx) => {
-    const ev = busted ? null : (r.ev ? r.ev[key] : null);
-    if (ev == null || busted) { skipped += busted ? 0 : 1; }
-    else {
-      bank += 100 * ev; active++;
-      if (bank <= 0) { bank = 0; busted = true; }
-    }
-    pts.push({ i: idx + 1, bank });
-  });
-  return { pts, final: bank, busted, active, skipped };
-}
-function drawWallet() {
-  const rows = S.treatments;
-  const box = $id("wallet-chart");
-  if (!rows || !rows.length) {
-    box.innerHTML = '<p class="mini">treatments.jsonl unavailable — the lab can\'t replay what it can\'t fetch, so nothing is shown</p>';
-    $id("walletline").innerHTML = ""; $id("wallet-table").innerHTML = "";
-    $id("rulechips").innerHTML = "";
-    return;
-  }
-  const sorted = rows.slice().sort((a, b) => a.close_ts - b.close_ts);
-  $id("w-n").textContent = sorted.length;
-  const res = {};
-  for (const r of RULES) res[r.k] = replayRule(sorted, r.k);
-  /* chips */
-  $id("rulechips").innerHTML = RULES.map(r =>
-    `<button class="chip${r.k === walletRule ? " on" : ""}" data-rule="${r.k}"
-      role="radio" aria-checked="${r.k === walletRule}" type="button"
-      title="${esc(r.kid)}">${r.name}</button>`).join("");
-  for (const b of $id("rulechips").querySelectorAll("button"))
-    b.onclick = () => { walletRule = b.dataset.rule; walletFirstDraw = true; drawWallet(); };
-  /* chart: chosen rule vs follow-every baseline */
-  const chosen = res[walletRule], base = res.champion;
-  const W = 920, H = 215, L = 52, R = 16, T = 14, B = 24;
-  let ymin = 0, ymax = 1000;
-  for (const s of [chosen, base]) for (const p of s.pts)
-    { ymin = Math.min(ymin, p.bank); ymax = Math.max(ymax, p.bank); }
-  const pad = (ymax - ymin) * .08 || 40; ymax += pad;
-  const N = sorted.length;
-  const X = i => L + i / Math.max(1, N) * (W - L - R);
-  const Y = v => T + (1 - (v - ymin) / (ymax - ymin)) * (H - T - B);
-  let g = "";
-  for (let i = 0; i <= 4; i++) {
-    const v = ymin + (ymax - ymin) * i / 4, y = Y(v);
-    g += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" class="gridline"/>` +
-      `<text x="${L - 6}" y="${y + 4}" text-anchor="end">$${Math.round(v).toLocaleString()}</text>`;
-  }
-  g += `<line x1="${L}" x2="${W - R}" y1="${Y(1000)}" y2="${Y(1000)}"
-    stroke="var(--axis)" stroke-dasharray="3 4"/>` +
-    `<text x="${W - R - 4}" y="${Y(1000) - 5}" text-anchor="end" class="qlab">start $1,000</text>`;
-  const path = s => s.pts.map((p, j) =>
-    (j ? "L" : "M") + X(p.i).toFixed(1) + "," + Y(p.bank).toFixed(1)).join("");
-  if (walletRule !== "champion")
-    g += `<path d="${path(base)}" fill="none" stroke="var(--series-1)"
-      stroke-width="1.6" stroke-dasharray="5 4" opacity=".75"/>`;
-  g += `<path class="rule-path${walletFirstDraw ? " animate" : ""}" d="${path(chosen)}"
-    fill="none" stroke="var(--series-2)" stroke-width="2.4"
-    stroke-linejoin="round" pathLength="2200"/>`;
-  const mark = s => {
-    const lastP = s.pts[s.pts.length - 1];
-    return `<circle cx="${X(lastP.i)}" cy="${Y(lastP.bank)}" r="4" fill="var(--series-2)"/>` +
-      (s.busted ? `<text x="${X(lastP.i) - 6}" y="${Y(0) - 8}" text-anchor="end"
-        style="fill:var(--down);font-weight:800">BUSTED 💥</text>` : "");
-  };
-  g += mark(chosen);
-  g += `<text x="${L}" y="${H - 4}" class="qlab">window 1</text>` +
-    `<text x="${W - R}" y="${H - 4}" text-anchor="end" class="qlab">window ${N}</text>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="your $1,000 bankroll replayed under the chosen rule versus betting every window">${g}</svg>
-    <div class="legend"><span><span class="sw" style="background:var(--series-2)"></span>${
-      esc(RULES.find(r => r.k === walletRule).name)}</span>${
-      walletRule !== "champion" ? `<span><span class="sw" style="background:var(--series-1)"></span>Follow every window (baseline)</span>` : ""}</div>`;
-  walletFirstDraw = false;
-  const rr = RULES.find(r => r.k === walletRule);
-  $id("walletline").innerHTML =
-    `<span class="final" style="color:${chosen.busted ? "var(--down)" :
-      chosen.final >= 1000 ? "var(--good-text)" : "var(--ink)"}"
-      id="wallet-final">${chosen.busted ? "$0" : money(chosen.final)}</span>
-    <span class="mini" style="margin:0">${esc(rr.kid)} — ${chosen.busted
-      ? `you went bust after ${chosen.active} bets`
-      : `${chosen.active} bets taken · ${chosen.skipped} windows skipped`}</span>`;
-  $id("wallet-table").innerHTML =
-    `<table style="min-width:640px" id="wallet-tbl"><thead><tr><th>rule</th>
-    <th>kid translation</th><th class="num">final wallet</th><th class="num">bets</th>
-    <th class="num">skipped</th><th>result</th></tr></thead><tbody>` +
-    RULES.map(r => { const s = res[r.k];
-      return `<tr${r.k === walletRule ? ' style="background:var(--surface-2)"' : ""}>
-      <td><b>${r.name}</b></td><td class="muted">${r.kid}</td>
-      <td class="num" data-rule-final="${r.k}" style="color:${s.busted ? "var(--down)" :
-        s.final >= 1000 ? "var(--good-text)" : "var(--ink-2)"}">${s.busted ? "$0" : money(s.final)}</td>
-      <td class="num">${s.active}</td><td class="num">${s.skipped}</td>
-      <td>${s.busted ? '<span class="pill bad">BUSTED</span>'
-        : s.final >= 1000 ? '<span class="pill ok">AHEAD</span>'
-        : '<span class="pill miss">BEHIND</span>'}</td></tr>`; }).join("") +
-    `</tbody></table>`;
-}
-
-/* ---------- traders (tab in card 3 + exec tile) ---------- */
-function deskSeries(rows, d) {
-  const settled = rows.filter(r => r.actual != null)
-    .sort((a, b) => a.close_ts - b.close_ts);
-  let eq = d.start;
-  for (const r of settled) eq += (r.pnl_c || 0);
-  return { eq, n: settled.length };
-}
-const moneyC2 = c => (c < 0 ? "−$" : "$") + Math.abs(c / 100).toLocaleString(
-  undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-function deskStats(d) {
-  const raw = S.ledgers;
-  if (!raw) return null;
-  const cfg = (S.man && S.man.config) || {};
-  let rows = raw[d.id] || [];
-  if (d.cut) rows = rows.filter(r => r.made_ts >= d.cut);
-  if (d.skips) rows = rows.filter(r => !r.skipped);
-  let hasData = rows.length > 0;
-  let s, start = d.start, betNote = "", extra = "",
-    noDataMsg = "ledger unavailable";
-  if (d.id === "pt4") {
-    /* v3 era only — baseline + cutover fetched from the manifest.
-       bankroll = reset capital + Σ(pnl − withdrawal) over settled v3 rows
-                  − stakes still on the table (open v3 rows);
-       withdrawn cash is real earnings, permanently out of play.
-       equity = bankroll + withdrawn. */
-    const rst = cfg.PT4_RESET2_TS, rc = cfg.PT4_RESET_C;
-    if (rst == null || rc == null) {
-      s = { eq: d.start, n: 0 }; hasData = false;
-      noDataMsg = "manifest unavailable — v3 baseline unknown";
-    } else {
-      const v3 = rows.filter(r => (r.made_ts || 0) >= rst);
-      const settled = v3.filter(r => r.actual != null);
-      const open = v3.filter(r => r.actual == null);
-      const withdrawn = settled.reduce((a, r) => a + (r.wd_c || 0), 0);
-      const bankroll = rc
-        + settled.reduce((a, r) => a + ((r.pnl_c || 0) - (r.wd_c || 0)), 0)
-        - open.reduce((a, r) => a + (r.stake_c || 0), 0);
-      start = rc;
-      s = { eq: bankroll + withdrawn, n: v3.length };
-      hasData = true;
-      const since = new Date(rst * 1000).toLocaleDateString("en-US",
-        { timeZone: "America/Los_Angeles", month: "2-digit", day: "2-digit" })
-        .replace("/", "-");
-      betNote = ` <span class="muted">(v3 · since ${since})</span>`;
-      extra = `<div class="mini" style="margin:3px 0 0">💰 withdrawn ${
-        moneyC2(withdrawn)} — banked forever, never re-staked</div>`;
-    }
-  } else {
-    s = deskSeries(rows, d);
-    if (d.id === "pt5") {
-      /* banked savings — last settled row's running savings_c
-         (fallback: Σ skim_c); equity already = bankroll + savings
-         because each settled pnl_c is pre-skim */
-      const settled = rows.filter(r => r.actual != null)
-        .sort((a, b) => a.close_ts - b.close_ts);
-      const lastSav = [...settled].reverse().find(r => r.savings_c != null);
-      const banked = lastSav ? lastSav.savings_c
-        : settled.reduce((a, r) => a + (r.skim_c || 0), 0);
-      if (settled.length)
-        extra = `<div class="mini" style="margin:3px 0 0">💰 banked ${
-          moneyC2(banked)}</div>`;
+    if (best) {
+      const el = document.getElementById("s-bss");
+      el.textContent = (best.b >= 0 ? "+" : "") + best.b.toFixed(3);
+      el.style.color = best.b > 0 ? "var(--up)" : "var(--down)";
+      el.title = best.id;
     }
   }
-  return { hasData, s, start, betNote, extra, noDataMsg };
-}
-function drawCrew() {
-  if (!S.ledgers) return;
-  $id("crew").innerHTML = DESKS.map(d => {
-    const st = deskStats(d);
-    if (!st) return "";
-    const { hasData, s, start, betNote, extra, noDataMsg } = st;
-    const ret = 100 * (s.eq - start) / start;
-    const up = ret >= 0;
-    return `<div class="trader" style="border-top-color:${d.c}">
-      <div class="face">${d.emo}</div>
-      <div class="tname">${d.name}</div>
-      <div class="tgrp">${d.grp}</div>
-      <div class="tsay">${d.say}</div>
-      <div>${hasData
-        ? `<span class="teq">${moneyC(s.eq)}</span>
-           <span class="tret ${up ? "up" : "dn"}">${up ? "+" : ""}${ret.toFixed(1)}%</span>
-           <span class="mini" style="margin:0">· ${s.n} bets${betNote}</span>${extra}`
-        : `<span class="mini" style="margin:0">${noDataMsg}</span>`}</div>
-      <div class="oops"><b>My biggest mistake</b>${d.oops}</div>
-    </div>`;
-  }).join("");
-}
-
-/* ---------- card 2 · executive state grid ---------- */
-function drawExecGrid() {
-  const tiles = [];
-  const tile = (k, v, m) => tiles.push(
-    `<div class="xt"><div class="xk">${k}</div><div class="xv">${v}</div>` +
-    `<div class="xm">${m}</div></div>`);
-  /* production qualification — real-money-equivalent readiness (§77);
-     level = MIN over planes, strategy verdict is independent (§83) */
-  const rd = S.readiness;
-  if (rd && rd.system && rd.system.level != null) {
-    const lvl = String(rd.system.level);
-    const rm = /^R(\d+)/.exec(lvl.toUpperCase());
-    const rn = rm ? +rm[1] : null;
-    const col = rn == null ? "var(--series-4)" : rn <= 1 ? "var(--down)"
-      : rn <= 3 ? "var(--series-4)" : rn <= 6 ? "var(--series-2)"
-      : "var(--good-text)";
-    const stratTxt = (rd.strategy && rd.strategy.status) || "STATUS UNPUBLISHED";
-    const stratCol = /qualified/i.test(stratTxt) && !/\bno\b/i.test(stratTxt)
-      ? "var(--good-text)" : "var(--series-4)";
-    const weak = (rd.system.weakest_planes || []).map(esc).join(", ");
-    const sev0 = Array.isArray(rd.sev0_open) ? rd.sev0_open.length : null;
-    const frozen = rd.system.qualification_frozen === true;
-    tile("Production qualification",
-      `<span style="color:${col};font-size:24px">${esc(lvl)}</span>` +
-      `<span style="font-size:12px;color:var(--muted)"> / R8 target · MIN over planes</span>` +
-      (frozen ? ` <span style="font-size:11px;font-weight:800;color:var(--down)">FROZEN</span>` : ""),
-      `strategy: <b style="color:${stratCol}">${esc(stratTxt)}</b>` +
-      (weak ? ` · weakest: ${weak}` : "") +
-      ` · ${sev0 == null ? "SEV-0 count unknown"
-        : sev0 ? `<b style="color:var(--down)">${sev0} SEV-0 open</b>`
-        : "0 SEV-0 open"}` +
-      (rd.live_execution ? " · live execution: demo-only" : "") +
-      ` · <a href="watchtower.html">qualification board</a>`);
-  } else {
-    tile("Production qualification", "NOT PUBLISHED",
-      `readiness.json not yet published — no level is claimed without ` +
-      `evidence · <a href="watchtower.html">watchtower</a>`);
-  }
-  /* model skill — best BSS across tier-2 arms in the audit */
-  let skillV = "NOT ESTABLISHED", skillM = "market-relative audit not published";
-  const t2 = S.audit && S.audit.sections && S.audit.sections.tier2;
-  if (t2) {
-    let bk = null, bv = -Infinity;
-    for (const [k, v] of Object.entries(t2))
-      if (v && v.bss_vs_market != null && v.bss_vs_market > bv) {
-        bv = v.bss_vs_market; bk = k; }
-    if (bk != null)
-      skillM = `best arm vs market: BSS ${bv >= 0 ? "+" : "−"}${Math.abs(bv).toFixed(3)}
-        (${esc(bk)})${bv > 0 ? " — positive this sample, no significance yet" : ""}
-        · <a href="metrics_lab.html">audit</a>`;
-  }
-  tile("Model skill", skillV, skillM);
-  /* best experiment — Δ / CI / LLR / state from decision_board */
-  const db = S.db;
-  let bev = "—", bem = "decision_board.json unavailable";
-  if (db && db.summary && db.summary.best_candidate) {
-    const key = db.summary.best_candidate;
-    const t = (db.treatments || []).find(x => x.key === key) || {};
-    const ci = t.boot_ci95 || t.ci95;
-    bev = esc(t.label || key);
-    bem = (t.mean != null ? `Δ ${cents(t.mean)}/$1` : "Δ —") +
-      (ci ? ` · CI [${cents(ci[0])}, ${cents(ci[1])}]` : "") +
-      (t.llr != null ? ` · LLR ${t.llr.toFixed(2)}` : "") +
-      (t.state ? ` · <b>${esc(t.state)}</b>` : "") +
-      ` · <a href="metrics_lab.html">board</a>`;
-  }
-  tile("Best experiment", bev, bem);
-  /* positive-EV policies — desks above their start capital */
-  if (S.ledgers) {
-    let pos = 0, tot = 0;
-    for (const d of DESKS) {
-      const st = deskStats(d);
-      if (st && st.hasData) { tot++; if (st.s.eq > st.start) pos++; }
-    }
-    tile("Positive-EV policies", tot ? `${pos} of ${tot}` : "—",
-      tot ? `trader desks above start capital, per their append-only ledgers` +
-        ` · <a href="instrument.html">the race</a>` : "ledgers unavailable");
-  } else tile("Positive-EV policies", "—", "ledgers unavailable");
-  /* system health — worst region in world.json */
-  let hv = "—", hm = "world.json unavailable";
-  if (S.world && S.world.regions) {
-    const rank = { green: 0, amber: 1, red: 2 };
-    let worst = null;
-    for (const [, r] of Object.entries(S.world.regions))
-      if (!worst || (rank[r.status] || 0) > (rank[worst.status] || 0)) worst = r;
-    if (worst) {
-      const c = worst.status === "green" ? "var(--good-text)"
-        : worst.status === "amber" ? "var(--series-4)" : "var(--down)";
-      hv = `<span style="color:${c}">${worst.status.toUpperCase()}</span>`;
-      hm = (worst.status === "green" ? "all regions green"
-        : esc(worst.label || "")) + ` · <a href="universe.html">world map</a>`;
+  // best paired treatment effect among trader arms
+  if (os && Array.isArray(os.treatments)) {
+    let best = null;
+    for (const t of os.treatments)
+      if (t.verdict !== "baseline" &&
+          (best === null || t.mean_diff > best.mean_diff)) best = t;
+    if (best) {
+      const el = document.getElementById("s-ev");
+      el.textContent = (best.mean_diff >= 0 ? "+" : "")
+        + (best.mean_diff * 100).toFixed(1) + "¢";
+      el.style.color = best.mean_diff > 0 ? "var(--up)" : "var(--down)";
+      el.title = best.key + " · n=" + best.n + " · still collecting";
     }
   }
-  tile("System health", hv, hm);
-  /* open SEVs */
-  const inc = S.incidents || [];
-  const open = inc.filter(i => String(i.status || "").toLowerCase() !== "closed");
-  tile("Open SEVs",
-    inc.length ? String(open.length) : "—",
-    inc.length
-      ? (open.length ? `worst: SEV-${Math.min(...open.map(i => i.sev))} · ` : "no open incidents · ")
-        + `<a href="sev0.html">SEV log</a>`
-      : "incidents.jsonl unavailable");
-  /* program counts — decisions waiting + experiments */
-  const pc = S.prog && S.prog.counts;
-  tile("Research program",
-    pc ? `${pc.decisions_waiting != null ? pc.decisions_waiting : "—"} waiting · ${
-      pc.live != null ? pc.live : "—"} live` : "—",
-    pc ? `decisions waiting on the human · live experiments${
-      pc.retire_candidates != null ? ` · ${pc.retire_candidates} retire candidates` : ""}` +
-      ` · <a href="board.html">board</a>` : "program.json unavailable");
-  /* cost */
-  const costs = (S.world && S.world.costs) || null;
-  if (costs) {
-    const metered = costs.filter(c => c.amount != null)
-      .reduce((a, c) => a + c.amount, 0);
-    const unmetered = costs.filter(c => c.amount == null);
-    tile("Cost to run", "$" + metered.toLocaleString(),
-      (unmetered.length ? unmetered.map(c => esc(c.item)).join(", ") +
-        " not metered — shown as null, not invented" : "all line items metered") +
-      ` · <a href="universe.html">cost table</a>`);
-  } else tile("Cost to run", "—", "world.json unavailable");
-  $id("exec-grid").innerHTML = tiles.join("");
-}
-
-/* ---------- card 2 · visual (a): execution waterfall ---------- */
-function drawWaterfall() {
-  const box = $id("viz-waterfall");
-  const ew = S.db && S.db.execution_waterfall;
-  if (!ew || ew.decision_ev_per_1 == null || ew.realized_ev_per_1 == null) {
-    box.innerHTML = '<p class="mini">execution_waterfall not published in decision_board.json</p>';
-    return;
+  // live registered experiment
+  if (a3) {
+    const n = a3.forward && a3.forward.eligible;
+    document.getElementById("s-exp").textContent =
+      (a3.experiment_id || "A3") + " · n=" + (n ?? "—");
+    document.getElementById("s-exp").style.fontSize = "16px";
   }
-  const dec = ew.decision_ev_per_1, gap = ew.execution_gap_per_1 != null
-    ? ew.execution_gap_per_1 : ew.realized_ev_per_1 - dec;
-  const rea = ew.realized_ev_per_1;
-  const W = 440, H = 190, L = 14, R = 14, T = 16, B = 34;
-  const vals = [0, dec, dec + gap, rea];
-  let vmin = Math.min(...vals), vmax = Math.max(...vals);
-  const pad = (vmax - vmin) * .18 || .02; vmin -= pad; vmax += pad;
-  const Y = v => T + (1 - (v - vmin) / (vmax - vmin)) * (H - T - B);
-  const bw = (W - L - R) / 3 - 18;
-  const xs = i => L + 9 + i * ((W - L - R) / 3);
-  const y0 = Y(0);
-  const bar = (i, from, to, color, name, val) => {
-    const yA = Y(Math.max(from, to)), yB = Y(Math.min(from, to));
-    const h = Math.max(2, yB - yA);
-    return `<rect x="${xs(i)}" y="${yA}" width="${bw}" height="${h}"
-      rx="3" fill="${color}" opacity=".85"/>
-    <text x="${xs(i) + bw / 2}" y="${yA - 6}" text-anchor="middle" class="vnum">${cents(val)}</text>
-    <text x="${xs(i) + bw / 2}" y="${H - 18}" text-anchor="middle" class="vlab">${name}</text>
-    <text x="${xs(i) + bw / 2}" y="${H - 5}" text-anchor="middle" class="qlab">per $1</text>`;
-  };
-  let g = `<line x1="${L}" x2="${W - R}" y1="${y0}" y2="${y0}"
-    stroke="var(--axis)" stroke-width="1.2"/>
-    <text x="${W - R}" y="${y0 - 5}" text-anchor="end" class="qlab">$0 line</text>`;
-  /* connector from decision bar end to gap bar start */
-  g += `<line x1="${xs(0) + bw}" x2="${xs(1)}" y1="${Y(dec)}" y2="${Y(dec)}"
-    stroke="var(--faint)" stroke-dasharray="3 3"/>`;
-  g += `<line x1="${xs(1) + bw}" x2="${xs(2)}" y1="${Y(dec + gap)}" y2="${Y(dec + gap)}"
-    stroke="var(--faint)" stroke-dasharray="3 3"/>`;
-  g += bar(0, 0, dec, "var(--series-2)", "decision EV", dec);
-  g += bar(1, dec, dec + gap, "var(--series-4)", "execution gap", gap);
-  g += bar(2, 0, rea, rea < 0 ? "var(--down)" : "var(--good)", "realized", rea);
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="waterfall: decision EV, execution gap, realized EV per dollar">${g}</svg>
-    <p class="mini" style="margin:4px 0 0">${ew.windows != null
-      ? ew.windows + " paired windows — " : ""}the quotes we decide on vs the
-    fills we actually get</p>`;
-}
-
-/* ---------- card 2 · visual (b): top-3 experiments, mean ± CI ---------- */
-function progExps() {
-  const ex = (S.prog && S.prog.experiments) || [];
-  return ex.filter(e => e.effect != null && e.p_gt0 != null);
-}
-function drawTop3() {
-  const box = $id("viz-top3");
-  const ex = progExps().slice().sort((a, b) => b.p_gt0 - a.p_gt0).slice(0, 3);
-  if (!ex.length) {
-    box.innerHTML = '<p class="mini">no experiments with effect estimates in program.json</p>';
-    return;
-  }
-  const W = 440, H = 172, L = 96, R = 58, T = 14, B = 26;
-  let vmin = 0, vmax = 0;
-  for (const e of ex) { const ci = e.ci95_boot || [e.effect, e.effect];
-    vmin = Math.min(vmin, ci[0], e.effect); vmax = Math.max(vmax, ci[1], e.effect); }
-  const pad = (vmax - vmin) * .12 || .02; vmin -= pad; vmax += pad;
-  const X = v => L + (v - vmin) / (vmax - vmin) * (W - L - R);
-  const rowH = (H - T - B) / ex.length;
-  let g = `<line x1="${X(0)}" x2="${X(0)}" y1="${T - 4}" y2="${H - B + 4}"
-    stroke="var(--axis)" stroke-dasharray="3 3"/>
-    <text x="${X(0)}" y="${H - 8}" text-anchor="middle" class="qlab">0¢ = champion</text>`;
-  ex.forEach((e, i) => {
-    const y = T + rowH * (i + .5);
-    const ci = e.ci95_boot;
-    const col = e.effect >= 0 ? "var(--good)" : "var(--down)";
-    g += `<text x="${L - 8}" y="${y - 2}" text-anchor="end" class="vlab"
-      style="font-weight:700">${esc(e.id)}</text>
-    <text x="${L - 8}" y="${y + 11}" text-anchor="end" class="qlab">${esc((e.key || "").replace(/^t_/, ""))}</text>`;
-    if (ci) g += `<line x1="${X(ci[0])}" x2="${X(ci[1])}" y1="${y}" y2="${y}"
-      stroke="${col}" stroke-width="2.5" opacity=".45" stroke-linecap="round"/>
-      <line x1="${X(ci[0])}" x2="${X(ci[0])}" y1="${y - 5}" y2="${y + 5}" stroke="${col}" stroke-width="1.6"/>
-      <line x1="${X(ci[1])}" x2="${X(ci[1])}" y1="${y - 5}" y2="${y + 5}" stroke="${col}" stroke-width="1.6"/>`;
-    g += `<circle cx="${X(e.effect)}" cy="${y}" r="5" fill="${col}"/>
-    <text x="${W - R + 6}" y="${y - 2}" class="vnum">${cents(e.effect)}</text>
-    <text x="${W - R + 6}" y="${y + 11}" class="qlab">P ${(100 * e.p_gt0).toFixed(0)}%</text>`;
-  });
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="top three experiments: mean effect with 95 percent confidence intervals">${g}</svg>`;
-}
-
-/* ---------- card 2 · visual (c): EV vs coverage scatter ---------- */
-function drawScatter() {
-  const box = $id("viz-scatter");
-  const ex = progExps().filter(e => e.coverage != null);
-  if (!ex.length) {
-    box.innerHTML = '<p class="mini">no experiments with coverage in program.json</p>';
-    return;
-  }
-  const W = 440, H = 190, L = 46, R = 14, T = 14, B = 34;
-  let vmin = 0, vmax = 0;
-  for (const e of ex) { vmin = Math.min(vmin, e.effect); vmax = Math.max(vmax, e.effect); }
-  const pad = (vmax - vmin) * .18 || .02; vmin -= pad; vmax += pad;
-  const X = c => L + c * (W - L - R);
-  const Y = v => T + (1 - (v - vmin) / (vmax - vmin)) * (H - T - B);
-  let g = "";
-  for (const cv of [0, .25, .5, .75, 1])
-    g += `<line x1="${X(cv)}" x2="${X(cv)}" y1="${T}" y2="${H - B}" class="gridline"/>
-      <text x="${X(cv)}" y="${H - 18}" text-anchor="middle" class="qlab">${100 * cv}%</text>`;
-  g += `<line x1="${L}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}"
-    stroke="var(--axis)" stroke-width="1.2"/>
-    <text x="${L - 4}" y="${Y(0) + 4}" text-anchor="end" class="qlab">0¢</text>
-    <text x="${L - 4}" y="${T + 6}" text-anchor="end" class="vnum">${cents(vmax - pad)}</text>
-    <text x="${L - 4}" y="${H - B}" text-anchor="end" class="vnum">${cents(vmin + pad)}</text>
-    <text x="${(L + W - R) / 2}" y="${H - 5}" text-anchor="middle" class="qlab">coverage — share of windows the policy actually bets</text>`;
-  for (const e of ex) {
-    const col = e.effect >= 0 ? "var(--good)" : "var(--down)";
-    const x = X(e.coverage), y = Y(e.effect);
-    g += `<circle cx="${x}" cy="${y}" r="4.5" fill="${col}" opacity=".85"/>
-    <text x="${x + 6}" y="${y - 5}" class="qlab" style="fill:var(--ink-2)">${esc(e.id)}</text>`;
-  }
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="scatter of experiment effect versus coverage">${g}</svg>`;
-}
-
-/* ---------- card 2 · miniature world (drawer) ---------- */
-function drawWorldMini() {
-  const regs = (S.world && S.world.regions) || {};
-  const dot = id => { const r = regs[id];
-    const c = !r ? "var(--faint)" : r.status === "green" ? "var(--good)"
-      : r.status === "amber" ? "var(--series-4)" : "var(--down)";
-    return c; };
-  const W = 920, H = 250;
-  $id("wmap").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img"
-    aria-label="miniature map: market ocean flowing into forecast mountains and probability city, into decision HQ, execution port and capital town, down to ledger valley, with a learning loop back up">
-  <!-- ocean -->
-  <rect x="14" y="10" width="892" height="52" rx="12" fill="var(--series-2)" opacity=".09"/>
-  <path d="M30 42 q14 -8 28 0 q14 8 28 0 q14 -8 28 0" fill="none" stroke="var(--series-2)" stroke-width="1.4" opacity=".5"/>
-  <text x="34" y="30" style="font-weight:700;fill:var(--ink-2)">Market Ocean</text>
-  <text x="34" y="54" class="qlab">real BTC prices + real Kalshi quotes flow in</text>
-  <circle cx="886" cy="30" r="5" fill="${dot("market_ocean")}"/>
-  <!-- rivers down -->
-  <path d="M240 62 v22" stroke="var(--series-2)" stroke-width="1.6" stroke-dasharray="4 4"/>
-  <path d="M660 62 v22" stroke="var(--series-2)" stroke-width="1.6" stroke-dasharray="4 4"/>
-  <!-- mountains -->
-  <g><path d="M80 132 l38 -44 l30 34 l22 -22 l34 32 z" fill="var(--series-7)" opacity=".22"/>
-  <path d="M80 132 l38 -44 l30 34 l22 -22 l34 32" fill="none" stroke="var(--series-7)" stroke-width="1.5"/>
-  <text x="88" y="152" style="font-weight:700;fill:var(--ink-2)">Forecast Mountains</text>
-  <text x="88" y="168" class="qlab">price-guessing robots</text>
-  <circle cx="216" cy="96" r="5" fill="${dot("forecast_country")}"/></g>
-  <!-- city -->
-  <g><rect x="560" y="96" width="18" height="36" fill="var(--series-3)" opacity=".3"/>
-  <rect x="584" y="84" width="18" height="48" fill="var(--series-3)" opacity=".45"/>
-  <rect x="608" y="104" width="18" height="28" fill="var(--series-3)" opacity=".3"/>
-  <text x="560" y="152" style="font-weight:700;fill:var(--ink-2)">Probability City</text>
-  <text x="560" y="168" class="qlab">yes/no-odds robots</text>
-  <circle cx="648" cy="92" r="5" fill="${dot("probability_city")}"/></g>
-  <!-- HQ -->
-  <g><rect x="330" y="92" width="150" height="52" rx="10" fill="var(--surface)" stroke="var(--ink-2)" stroke-width="1.6"/>
-  <text x="405" y="114" text-anchor="middle" style="font-weight:800;fill:var(--ink)">DECISION HQ</text>
-  <text x="405" y="132" text-anchor="middle" class="qlab">trade or do nothing?</text>
-  <circle cx="470" cy="102" r="5" fill="${dot("decision_hq")}"/></g>
-  <path d="M204 116 h118" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
-  <path d="M556 116 h-68" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
-  <!-- port + town -->
-  <g><path d="M700 196 h90 M712 196 v-16 M745 196 v-24 M778 196 v-16" stroke="var(--series-5)" stroke-width="2"/>
-  <text x="700" y="216" style="font-weight:700;fill:var(--ink-2)">Execution Port</text>
-  <text x="700" y="232" class="qlab">where bets meet real prices</text>
-  <circle cx="800" cy="184" r="5" fill="${dot("execution_port")}"/></g>
-  <g><circle cx="120" cy="196" r="12" fill="var(--series-4)" opacity=".3"/>
-  <path d="M108 196 a12 12 0 0 1 24 0" fill="none" stroke="var(--series-4)" stroke-width="1.6"/>
-  <text x="94" y="222" style="font-weight:700;fill:var(--ink-2)">Capital Town</text>
-  <text x="94" y="238" class="qlab">how much to risk</text></g>
-  <path d="M405 144 q-140 30 -250 42" fill="none" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
-  <path d="M405 144 q180 20 285 40" fill="none" stroke="var(--axis)" stroke-width="1.4" marker-end="url(#mmarr)"/>
-  <!-- valley -->
-  <g><path d="M330 226 q75 -26 150 0" fill="none" stroke="var(--series-8)" stroke-width="1.8"/>
-  <text x="345" y="216" style="font-weight:700;fill:var(--ink-2)">Ledger Valley</text>
-  <text x="345" y="243" class="qlab">every bet written down forever</text>
-  <circle cx="490" cy="214" r="5" fill="${dot("ledger_valley")}"/></g>
-  <!-- learning loop back up -->
-  <path d="M330 232 Q40 240 46 132" fill="none" stroke="var(--series-7)"
-    stroke-width="1.6" stroke-dasharray="7 6" marker-end="url(#mmarr2)"/>
-  <text x="26" y="80" class="qlab" style="fill:var(--series-7)">the loop: results retrain the robots</text>
-  <defs>
-    <marker id="mmarr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L8,4L0,8z" fill="var(--axis)"/></marker>
-    <marker id="mmarr2" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0L8,4L0,8z" fill="var(--series-7)"/></marker>
-  </defs></svg>`;
-}
-
-/* ---------- card 3 · tab: what we believe ---------- */
-const BELIEF_COLORS = {
-  "supported": ["var(--good-text)", "rgba(12,138,77,.5)"],
-  "developing": ["var(--series-2)", "rgba(36,97,184,.5)"],
-  "under pressure": ["var(--series-4)", "rgba(143,96,0,.5)"],
-  "rejected implementation": ["var(--down)", "rgba(209,60,60,.5)"],
-  "unknown": ["var(--muted)", "var(--border)"],
-};
-function drawBelieve() {
-  const box = $id("believe-list");
-  const sk = S.prog && S.prog.system_knowledge;
-  if (!sk || !sk.length) {
-    box.innerHTML = '<p class="mini">system_knowledge not published in program.json</p>';
-    return;
-  }
-  box.innerHTML = sk.map(b => {
-    const [ink, bord] = BELIEF_COLORS[b.status] || BELIEF_COLORS.unknown;
-    return `<div style="border-left-color:${bord}">
-      <span class="bstat" style="color:${ink}">${esc(b.status || "unknown")}</span>
-      <div class="bclaim">${esc(b.claim || "")}</div>
-      <div class="bev">${esc(b.evidence || "")}</div></div>`;
-  }).join("");
-}
-
-/* ---------- card 3 · tab: what changed (24h) ---------- */
-function drawChanged() {
-  const box = $id("changed-feed");
-  const now = Date.now() / 1000;
-  const items = [];
-  /* analyst notes < 24h */
-  for (const c of (S.commentary || []))
-    if (c.ts && now - c.ts < 86400 && now - c.ts >= -3600)
-      items.push({ ts: c.ts, who: "Analyst",
-        html: `new research note — “${esc(c.topic || "untitled")}” · <a href="analyst.html">read it</a>` });
-  /* last retrain (kept vs reverted) */
-  const lr = S.st && S.st.last_retrain;
-  if (lr && lr.at) {
-    const ts = Date.parse(lr.at) / 1000;
-    if (now - ts < 86400) {
-      let kept = 0, rev = 0;
-      for (const arm of Object.values(lr.arms || {}))
-        for (const h of Object.values(arm)) h.reverted ? rev++ : kept++;
-      items.push({ ts, who: "Trainer",
-        html: `gated retrain — kept <b>${kept}</b> model updates, reverted <b>${rev}</b>
-        (worse on holdout) · <a href="live_training.html">training</a>` });
-    }
-  }
-  /* decision board refresh + best candidate */
-  const db = S.db;
-  if (db && db.generated_ts && now - db.generated_ts < 86400
-      && db.summary && db.summary.best_candidate) {
-    const key = db.summary.best_candidate;
-    const t = (db.treatments || []).find(x => x.key === key) || {};
-    items.push({ ts: db.generated_ts, who: "Board",
-      html: `best candidate is <b>${esc(t.label || key)}</b>${t.mean != null
-        ? ` at Δ ${cents(t.mean)}/$1` : ""}${t.state
-        ? ` (${esc(t.state)})` : ""} · <a href="metrics_lab.html">decision board</a>` });
-  }
-  if (!items.length) {
-    box.innerHTML = `<p class="mini">a quiet day — no analyst notes, retrains or
-    board refreshes landed in the last 24 hours. The desk kept trading; the
-    ledgers kept growing.</p>`;
-    return;
-  }
-  items.sort((a, b) => b.ts - a.ts);
-  box.innerHTML = items.map(i =>
-    `<div class="feedrow"><span class="fage">${ageTxt(now - i.ts)}</span>
-    <span class="fwho">${i.who}</span><span>${i.html}</span></div>`).join("");
-}
-
-/* ---------- card 3 · tab: what failed ---------- */
-function drawFailed() {
-  const box = $id("tombs");
-  const tb = S.prog && S.prog.tombstones;
-  if (!tb || !tb.length) {
-    box.innerHTML = '<p class="mini">tombstones not published in program.json</p>';
-    return;
-  }
-  box.innerHTML = tb.map(t =>
-    `<a class="mus" href="museum.html"><span class="mv">${esc(t.type || "retired")}
-      · ${esc(t.retired || "")}</span>
-    <div class="mt">${esc(t.id || "?")}</div>
-    <p><b>Looked good:</b> ${esc(t.looked_good || "—")}<br>
-    <b>Failed:</b> ${esc(t.failed || "—")}<br>
-    <b>Lesson:</b> ${esc(t.lesson || "—")}</p></a>`).join("");
-}
-
-/* ---------- card 3 · tabs ---------- */
-const TAB_KEY = "oracle_home_tab";
-function showTab(name, save) {
-  const valid = ["believe", "changed", "failed", "traders"];
-  if (!valid.includes(name)) name = "believe";
-  for (const b of document.querySelectorAll(".tabbtn")) {
-    const on = b.dataset.tab === name;
-    b.classList.toggle("on", on);
-    b.setAttribute("aria-selected", on ? "true" : "false");
-  }
-  for (const v of valid)
-    $id("pane-" + v).classList.toggle("on", v === name);
-  if (save) try { localStorage.setItem(TAB_KEY, name); } catch {}
-}
-for (const b of document.querySelectorAll(".tabbtn"))
-  b.onclick = () => showTab(b.dataset.tab, true);
-(function initTab() {
-  let t = null; try { t = localStorage.getItem(TAB_KEY); } catch {}
-  showTab(t || "believe", false);
+  // health chip
+  const h = document.getElementById("s-health");
+  let state = "🟢 OK";
+  if (os && os.runtime_state && os.runtime_state !== "OK" &&
+      os.runtime_state !== "NORMAL") state = "🟡 " + "guarded";
+  if (mh && mh.overall && /red|crit/i.test(String(mh.overall)))
+    state = "🔴 attention";
+  h.textContent = state; h.style.fontSize = "17px";
 })();
-
-/* ---------- header status ---------- */
-function drawAsOf() {
-  const st = S.st, now = Date.now() / 1000;
-  const stale = !st || (now - (st.alive_at || 0)) > 300;
-  $id("dot").className = "live-dot" + (stale ? " stale" : "");
-  $id("asof").textContent = st && st.alive_at
-    ? "updated " + fmtPT(st.alive_at) + " PT · refreshes every 15 s"
-    : "status unavailable";
-}
-
-/* ---------- boot ---------- */
-async function boot() {
-  const [st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, ptr, pt2r, pt3r, pt4r, pt5r, pt6r, pt7r, pt8r, readiness,
-    a3] =
-    await Promise.all([
-      jget("../results/online_status.json"),
-      jget("../results/site_manifest.json"),
-      jget("../results/recent_prices.json"),
-      jget("../results/audit_report.json"),
-      jget("../results/decision_board.json"),
-      jget("../results/board.json"),
-      jget("../results/world.json"),
-      jget("../results/program.json"),
-      jsonl("../results/incidents.jsonl"),
-      jsonl("../results/treatments.jsonl"),
-      jsonl("../results/commentary.jsonl"),
-      jsonl("../results/pt_trades.jsonl"),
-      jsonl("../results/pt2_trades.jsonl"),
-      jsonl("../results/pt3_trades.jsonl"),
-      jsonl("../results/pt4_trades.jsonl"),
-      jsonl("../results/pt5_trades.jsonl"),
-      jsonl("../results/pt6_trades.jsonl"),
-      jsonl("../results/pt7_trades.jsonl"),
-      jsonl("../results/pt8_trades.jsonl"),
-      jget("../results/readiness.json"),
-      jget("../results/a3_live.json"),
-    ]);
-  const cfg = man && man.config ? man.config : {};
-  if (cfg.PT_TAU != null) { TAU = cfg.PT_TAU; TAU_SRC = "config.PT_TAU"; }
-  else if (cfg.REGIME_FLOOR != null) { TAU = cfg.REGIME_FLOOR; TAU_SRC = "config.REGIME_FLOOR"; }
-  else { TAU = null; TAU_SRC = ""; }
-  S = { st, man, prices, audit, db, board, world, prog, incidents, treatments,
-    commentary, readiness, a3,
-    ledgers: { pt: ptr, pt2: pt2r, pt3: pt3r, pt4: pt4r, pt5: pt5r,
-      pt6: pt6r, pt7: pt7r, pt8: pt8r } };
-  try { drawAsOf(); } catch (e) {}
-  try { drawPlay(); } catch (e) {}
-  try { drawThesisDesk(); } catch (e) {}
-  try { drawWallet(); } catch (e) {}
-  try { drawExecGrid(); } catch (e) {}
-  try { drawWaterfall(); } catch (e) {}
-  try { drawTop3(); } catch (e) {}
-  try { drawScatter(); } catch (e) {}
-  try { drawWorldMini(); } catch (e) {}
-  try { drawBelieve(); } catch (e) {}
-  try { drawChanged(); } catch (e) {}
-  try { drawFailed(); } catch (e) {}
-  try { drawCrew(); } catch (e) {}
-}
-boot();
-setInterval(boot, 15000);
 </script>
-<script src="glossary.js" defer></script>
-<script src="nav.js" defer></script>
 </body>
 </html>

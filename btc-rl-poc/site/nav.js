@@ -15,28 +15,38 @@
      pages — Home / Map / Models / Experiments / Watchtower. Every
      other page stays published (append-only history) but lives in
      the Archive, the slim More menu, drawers, and search. */
-  /* Two-product IA (master contract 08-30): Home is the public MVP,
-     Backend is the one internal console. Everything else stays
-     published for link integrity and depth drill-downs, reachable
-     via More and in-app links — not primary navigation. */
+  /* Five-worlds IA (owner brief 09-07): the five primary pages are
+     the five worlds — Home sells the vision, Universe explains the
+     machine, Models proves what it learned, Experiments proves what
+     it is testing, Watchtower proves it can be trusted. Everything
+     else (ledgers, metrics lab, agents, museum, backend, play) is a
+     drill-down that lives INSIDE those worlds and in More/search. */
   var PRIMARY = [
-    { label: "Home",    href: "home.html" },
-    { label: "Backend", href: "backend.html" }
+    { label: "Home",        href: "home.html" },
+    { label: "Universe",    href: "universe.html" },
+    { label: "Models",      href: "models.html" },
+    { label: "Experiments", href: "experiments.html" },
+    { label: "Watchtower",  href: "watchtower.html" }
   ];
 
   var MORE = [
-    { label: "Map",           href: "universe.html" },
-    { label: "Models",        href: "models.html" },
-    { label: "Research",      href: "board.html" },
-    { label: "Control Tower", href: "watchtower.html" },
-    { label: "Evidence",      href: "ledgers.html" },
-    { label: "The Paper",     href: "paper.html" },
-    { label: "Archive",       href: "archive.html" }
+    { label: "Play",       href: "play.html" },
+    { label: "Backend",    href: "backend.html" },
+    { label: "Research",   href: "board.html" },
+    { label: "Evidence",   href: "ledgers.html" },
+    { label: "Museum",     href: "museum.html" },
+    { label: "The Paper",  href: "paper.html" },
+    { label: "Archive",    href: "archive.html" }
   ];
 
   /* Static search index: every page, 3-6 honest keywords each. */
   var PAGE_INDEX = [
-    { title: "Play — the Playground", href: "home.html",
+    { title: "Home — what are we building?", href: "home.html",
+      kw: "home, vision, laboratory, simulated, scoreboard, journey" },
+    { title: "Experiments — one control × one treatment",
+      href: "experiments.html",
+      kw: "experiments, ab test, a3, control, treatment, hypothesis, evidence, decision gate, history" },
+    { title: "Play — the Playground", href: "play.html",
       kw: "playground, forecast, oracle, 7pm, horizons, live price" },
     { title: "Backend — the operating console", href: "backend.html",
       kw: "backend, overview, models, experiments, data, operations, agents, registry, console" },
