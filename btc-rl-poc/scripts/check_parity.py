@@ -27,6 +27,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
 TOL = 1e-4          # logged predictions are rounded to 4 decimals
+PREDICTION_GRID = 10000        # 4-decimal quantization
+MAX_BOUNDARY_QUANTA = 1        # documented boundary ambiguity: at
+#   most ONE quantum (replay from snapshot-rounded inputs can flip
+#   the last digit at a .xxxx5 boundary); >=2 quanta is a divergence
 
 
 def replay_kb2(feat):
@@ -77,20 +81,23 @@ def main(sample_kb9=0):
             continue
         checked += 1
         st["checked"] += 1
-        diff = abs(rep - r["prediction"]) if rep is not None else None
-        # INC 2026-09-10: predictions are quantized to 4 decimals, so
-        # compare AT that precision. A raw float subtraction of two
-        # 4dp values carries representation error (0.3385-0.3384 =
-        # 1e-4 + 4.5e-17), which tripped a strict `diff <= 1e-4`.
-        # More importantly, replaying from snapshot-ROUNDED inputs can
-        # land one output-quantum away from a value the live code
-        # computed from full-precision inputs at a .xxxx5 boundary.
-        # Rounding the diff to the output precision tolerates exactly
-        # that quantization noise floor (<=1 quantum) while still
-        # FAILING any real formula divergence (>=2 quanta = 2e-4).
-        # This does NOT widen the tolerance — it removes float noise
-        # and states the criterion at the data's real resolution.
-        ok = diff is not None and round(diff, 4) <= TOL
+        # INC 2026-09-10: predictions are stored on a 4-decimal grid,
+        # so compare in INTEGER PREDICTION QUANTA — this removes
+        # binary-float behavior entirely (PM 09-10). Replaying from
+        # snapshot-ROUNDED inputs can land one output-quantum away
+        # from a value the live code computed at a .xxxx5 boundary;
+        # the contract permits AT MOST ONE quantum of boundary
+        # ambiguity, and >=2 quanta is a real divergence that FAILS.
+        if rep is None:
+            diff = None
+            quanta = None
+            ok = False
+        else:
+            q_live = round(r["prediction"] * 10000)
+            q_rep = round(rep * 10000)
+            quanta = abs(q_rep - q_live)
+            diff = quanta / 10000.0
+            ok = quanta <= MAX_BOUNDARY_QUANTA
         if ok:
             passed += 1
             st["pass"] += 1
@@ -102,6 +109,7 @@ def main(sample_kb9=0):
                 "prediction_logged": r["prediction"],
                 "prediction_replayed": rep,
                 "abs_diff": diff,
+                "quanta": quanta,
                 "feature_hash": r.get("feature_hash")})
     state = ("NO_SNAPSHOTS" if not rows else
              "FAIL" if failed else

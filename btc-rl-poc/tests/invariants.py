@@ -291,6 +291,39 @@ def _no_zombie_positions():
     return not bad, bad[:5]
 
 
+@check("freeze-state-convergence",
+       "INC 09-10 (permanent) — when the invariant wall is GREEN and "
+       "has been for longer than the daemon's fail-closed cache SLA, "
+       "the desk must NOT still be holding a FREEZE that blames the "
+       "invariant wall. Liveness of the safety state itself: a stale "
+       "cached FREEZE after the wall recovers is a convergence bug.")
+def _freeze_convergence():
+    import json as _j
+    import time as _t
+    CACHE_SLA_S = 60          # daemon _FC_CACHE ttl
+    POLL_S = 30               # daemon loop cadence
+    GRACE = CACHE_SLA_S + POLL_S + 30
+    try:
+        inv = _j.loads((RES / "invariants.json").read_text())
+        st = _j.loads((RES / "online_status.json").read_text())
+    except Exception:
+        return True, ["artifacts unreadable — skip (not a failure)"]
+    # only meaningful when THIS run is green and the published wall is
+    # green and has been stable a while
+    wall_green = inv.get("health") == "green"
+    wall_age = _t.time() - (RES / "invariants.json").stat().st_mtime
+    rs = st.get("runtime_state")
+    why = str(st.get("runtime_state_why") or "")
+    hb_fresh = _t.time() - (st.get("alive_at") or 0) < 300
+    if (wall_green and wall_age > GRACE and hb_fresh
+            and rs == "FREEZE_NEW_ENTRIES"
+            and "invariant" in why.lower()):
+        return False, [f"wall GREEN for {round(wall_age)}s but desk "
+                       f"still FREEZE on '{why}' — did not converge "
+                       f"within {GRACE}s SLA"]
+    return True, []
+
+
 @check("publisher-page-coverage",
        "INC 09-07 (explicit-page-list defect, permanent) — every "
        "page reachable from the nav spine must exist in site/ AND "

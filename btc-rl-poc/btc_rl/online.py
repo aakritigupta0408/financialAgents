@@ -2659,6 +2659,14 @@ def run(once: bool = False) -> None:
             # `bars`, which does not contain these, so the settle
             # loops below would otherwise never see them
             by_ts.update(_zombie_bars)
+            # INC 2026-09-10 (freeze-state-convergence): refresh the
+            # fail-closed cache EVERY loop so a RED->GREEN invariant
+            # wall lets the desk leave FREEZE within the 60s cache
+            # SLA even in quiet minutes. Previously this was only
+            # recomputed inside the biddable-window block, so on quiet
+            # minutes the desk held a stale FREEZE long after the wall
+            # went green. Cheap (60s-internally-cached).
+            _fail_closed_state()
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
             book = fetch_book_stats()
