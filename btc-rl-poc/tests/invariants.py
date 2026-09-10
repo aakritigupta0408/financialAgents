@@ -409,12 +409,21 @@ def _repair_integrity():
                 and time.time() - r.get("ts", 0) > 7200 \
                 and r.get("ts") not in verd:
             bad.append(f"dangling repair attempt @{r.get('ts')}")
-    # retry law: never >2 attempts inside any 30-min window
+    # retry law: never >2 attempts inside any 30-min window. This
+    # guards against an ACTIVE runaway loop, so evaluate over a
+    # TRAILING window — the 3rd attempt of the cluster must be recent
+    # (INC 09-10 fix: an all-time scan flagged a RESOLVED 2h-old
+    # cluster forever; that cluster was R2 reacting to rapid manual
+    # artifact regeneration during incident maintenance — real, but
+    # not an active runaway. Historical clusters stay in the ledger
+    # as evidence; the live invariant tracks only active thrash).
+    now = time.time()
     at = sorted(r["ts"] for r in hr
                 if r.get("state") == "REPAIR_ATTEMPTED")
     for i in range(len(at) - 2):
-        if at[i + 2] - at[i] < 1800:
-            bad.append(f"3 attempts within 30min @{round(at[i])}")
+        if at[i + 2] - at[i] < 1800 and at[i + 2] > now - 1800:
+            bad.append(f"3 active attempts within 30min "
+                       f"@{round(at[i])}")
     return not bad, bad[:5]
 
 
