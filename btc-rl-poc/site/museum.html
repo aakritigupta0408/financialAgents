@@ -225,6 +225,35 @@ body.mode-engineer .plaque.kid { order: 1; opacity: .58; }
     <code>btc_rl/treatments.py VAR_FLOOR comment</code></div>
 </section>
 
+<!-- ————————————— EXHIBIT 7 ————————————— -->
+<section class="room">
+  <div class="stamp">One part in ten thousand<small>verdict · fixed</small></div>
+  <div class="room-head"><span class="room-no"><b>7</b>exhibit</span>
+    <h2>The Rounding-Boundary Ghost</h2>
+    <span class="lesson">representation ≠ divergence</span></div>
+  <div class="plaques">
+    <div class="plaque kid"><div class="ptag">Kid plaque</div>
+      <p>The safety system froze the whole desk because one prediction
+      out of ten thousand replayed as 0.3385 instead of 0.3384 — a
+      difference in the very last digit. It turned out the number had
+      landed exactly on a rounding fence; the maths was never wrong.</p></div>
+    <div class="plaque eng"><div class="ptag">Engineer plaque</div>
+      <p>kb2 blend raw = 0.33845001750000003, 1.75e-7 above the .xxxx5
+      boundary. Live logged 0.3384 (full-precision inputs); replay
+      from snapshot-rounded inputs rounded to 0.3385 — exactly one
+      4-decimal quantum. The strict float check <code>diff&lt;=1e-4</code>
+      also tripped on subtraction noise (1e-4+4.5e-17). Fixed by
+      comparing in INTEGER quanta (round(p·10⁴)); ≤1 boundary quantum
+      passes, ≥2 fails. No history rewritten. Pulling the thread also
+      exposed a freeze-state-convergence bug (the desk only re-checked
+      its safety state inside the biddable-window block) — now a
+      permanent invariant.</p></div>
+  </div>
+  <div class="evline">evidence:
+    <code>tests/test_parity_quantization.py</code> ·
+    <code>docs/POSTMORTEM — quantization-boundary parity</code></div>
+</section>
+
 <section class="exit-note">
   <h2>Why this room exists</h2>
   <p class="sub small">The falsification record <em>is</em> the
