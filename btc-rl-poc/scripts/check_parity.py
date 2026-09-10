@@ -78,7 +78,19 @@ def main(sample_kb9=0):
         checked += 1
         st["checked"] += 1
         diff = abs(rep - r["prediction"]) if rep is not None else None
-        ok = diff is not None and diff <= TOL
+        # INC 2026-09-10: predictions are quantized to 4 decimals, so
+        # compare AT that precision. A raw float subtraction of two
+        # 4dp values carries representation error (0.3385-0.3384 =
+        # 1e-4 + 4.5e-17), which tripped a strict `diff <= 1e-4`.
+        # More importantly, replaying from snapshot-ROUNDED inputs can
+        # land one output-quantum away from a value the live code
+        # computed from full-precision inputs at a .xxxx5 boundary.
+        # Rounding the diff to the output precision tolerates exactly
+        # that quantization noise floor (<=1 quantum) while still
+        # FAILING any real formula divergence (>=2 quanta = 2e-4).
+        # This does NOT widen the tolerance — it removes float noise
+        # and states the criterion at the data's real resolution.
+        ok = diff is not None and round(diff, 4) <= TOL
         if ok:
             passed += 1
             st["pass"] += 1
