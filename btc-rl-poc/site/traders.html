@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>Trader Dashboard</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+main { max-width: 78rem; }
+.roster { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px; margin-top: 18px; }
+.tcard { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 17px; }
+.tcard.open { border-color: var(--series-2); box-shadow: 0 6px 22px rgba(22,32,44,.07); }
+.thead { display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; cursor: pointer; }
+.tname { font: italic 500 20px var(--display); color: var(--ink); }
+.tpersona { font-size: 12px; color: var(--muted); margin-left: 8px; font-style: normal; }
+.klass { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 6px; white-space: nowrap; }
+.klass.control { color: var(--ink-2); background: rgba(124,134,149,.14); }
+.klass.thesis  { color: var(--series-7); background: rgba(13,122,78,.12); }
+.klass.shadow  { color: var(--series-2); background: rgba(36,97,184,.12); }
+.klass.retired { color: var(--muted); background: rgba(124,134,149,.10); }
+.tstats { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 6px;
+  font-variant-numeric: tabular-nums; }
+.tstats div { font-size: 12px; color: var(--muted); }
+.tstats b { display: block; font-size: 16px; font-weight: 650; color: var(--ink);
+  font-variant-numeric: tabular-nums; }
+.curbid { display: flex; align-items: center; gap: 8px; margin: 10px 0 2px;
+  font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.model { font-size: 12.5px; color: var(--ink-2); line-height: 1.5;
+  border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
+.model .m-src { color: var(--muted); font-size: 11.5px; margin-top: 6px; }
+table.bids { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 12px; }
+table.bids th, table.bids td { padding: 5px 7px; border-bottom: 1px solid var(--grid);
+  text-align: right; font-variant-numeric: tabular-nums; }
+table.bids th { color: var(--faint); font-weight: 600; font-size: 10px;
+  letter-spacing: .04em; text-transform: uppercase; }
+table.bids td.l, table.bids th.l { text-align: left; }
+.why { color: var(--muted); max-width: 210px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; }
+.pos { color: var(--up); } .neg { color: var(--down); }
+.hint { font-size: 11.5px; color: var(--faint); }
+.filters { display: flex; gap: 8px; align-items: center; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav here" href="traders.html">Traders</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiments.html">Experiments</a><a class="nav" href="models.html">Models</a><a class="nav" href="board.html">Board</a><span class="spacer"></span><span class="tag">paper desk</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing here is financial advice.</div>
+
+<main>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">The $1K Desk</h1>
+  <p style="color:var(--ink-2);max-width:64ch;">Every paper trader in the protocol on one view — its current bid and status,
+  its last 20 resolved bids with the thesis behind each entry, and the model it uses to decide.
+  Each trader starts with $1,000 of simulated capital and bets one 15-minute Kalshi BTC window at a time at the real ask + fee.</p>
+  <div class="filters">
+    <button class="chip on" id="f-active">Active roster</button>
+    <button class="chip" id="f-all">Show retired too</button>
+    <span class="hint" id="stamp"></span>
+  </div>
+</header>
+
+<div class="roster" id="roster"></div>
+<p class="hint" style="margin-top:20px">Current bid status: <b>active</b> = open, not yet settled · <b>skipped</b> = declined this window (limit unfilled / gate not met) · <b>resolved</b> = settled.
+  Thesis text is the post-hoc loss review where available, else the entry provenance (which arm was followed and its trailing record). Click a trader to expand its model.</p>
+</main>
+
+<script>
+const TRADERS = [
+  {id:"pt",  name:"Follower",    persona:"the control", klass:"control", active:true,
+   prov:"leader",
+   model:"Follows the current best-bidding arm — the prediction arm leading over its last 10 settled, gate-clearing decisions. Enters that arm's side when confidence ≥ 0.62, sizes at 10% of bankroll, one bid per window at the real ask + fee.",
+   src:"btc_rl/online.py · pt_trades.jsonl · fields leader, rec10, p_arm"},
+  {id:"pt3", name:"Disciplined", persona:"the thesis trader", klass:"thesis", active:true,
+   prov:"src",
+   model:"Bids only when the source arm's confidence ≥ 0.77 (top-44% conviction tier); otherwise stands down. 10% sizing. Records which source arm (src) and policy version (pv) drove each entry.",
+   src:"pt3_trades.jsonl · fields src, pv, p_arm · PT3_TAU=0.77"},
+  {id:"pt6", name:"MLE",         persona:"the meta-learner (shadow)", klass:"shadow", active:true,
+   prov:"leader",
+   model:"A supervised meta-trader: learns P(a leader-side bet wins) online via a 7-dim logistic model, bets when EV > 0 at the real ask, sizes by half-Kelly capped at 10%, min edge 10¢. SHADOW mode: stakes nothing, logs the would-be trade so it can be scored without risk.",
+   src:"pt6_trades.jsonl · pt6_logit.json (7-dim) · fields p_win, trained, would_*"},
+  {id:"pt2", name:"Ladder",      persona:"profit-banking", klass:"retired", active:false,
+   prov:"leader",
+   model:"Follower entries plus a profit-banking ladder: at 11× the current level it withdraws one level and keeps 10×; level scales ×10 ($100→$1k→$10k bid cap). Retired — log frozen, open rows still settle.",
+   src:"pt2_trades.jsonl (retired)"},
+  {id:"pt4", name:"Gambler",     persona:"aggressive sizing", klass:"retired", active:false,
+   prov:"leader",
+   model:"33% of capital per leader entry (~1.6× Kelly), $500 depth cap; later versions add the 0.77 gate, a min-edge floor, and profit-sweep withdrawals. Retired.",
+   src:"pt4_trades.jsonl (retired)"},
+  {id:"pt5", name:"Saver",       persona:"skim-to-savings", klass:"retired", active:false,
+   prov:"leader",
+   model:"Stakes 10% of the playing bankroll and skims 25% of every win into non-returning savings; losses hit the bankroll in full. Started at $10k. Retired.",
+   src:"pt5_trades.jsonl (retired)"},
+  {id:"pt7", name:"Patient",     persona:"limit-order execution", klass:"retired", active:false,
+   prov:"leader",
+   model:"Execution experiment: same selection and 10% sizing as Follower, but rests a LIMIT order 2¢ inside the quoted ask; it fills only if a later minute's ask drops to it, otherwise the window is skipped. Retired.",
+   src:"pt7_trades.jsonl · fields limit_c, quoted_c (retired)"},
+  {id:"pt8", name:"Ideal",       persona:"best-practice composite", klass:"retired", active:false,
+   prov:"leader",
+   model:"Composite best-practice execution: maker limit entry, an edge-at-fill floor, half-Kelly at 10%, a 25%-of-near-touch-depth participation cap, and a regime gate that stands down when trailing accuracy < 0.62. Retired.",
+   src:"pt8_trades.jsonl (retired)"},
+];
+
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t=" + Date.now();
+async function jsonl(u){
+  const r = await fetch(bust(u), {cache:"no-store"});
+  if(!r.ok) return [];
+  const t = await r.text();
+  return t.split("\n").filter(Boolean).map(l=>{try{return JSON.parse(l)}catch{return null}}).filter(Boolean);
+}
+const dollars = c => (c==null? null : c/100);
+const fmt$ = c => { const d=dollars(c); return d==null? "—" : (d<0?"-$":"$")+Math.abs(d).toFixed(2); };
+function etTime(ts){
+  if(!ts) return "—";
+  return new Date(ts*1000).toLocaleString("en-US",
+    {timeZone:"America/New_York",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false})+" ET";
+}
+function classify(row){
+  if(!row) return {s:"none", label:"no bids yet", cls:"miss"};
+  if(row.skipped || row.actual===-1) return {s:"skip", label:"skipped", cls:"miss"};
+  if(row.pnl_c==null || row.win==null || row.actual==null) return {s:"open", label:"active bid", cls:"pending"};
+  return {s:"done", label:"last resolved", cls:(row.win? "ok":"no")};
+}
+function pnlOf(row){ return row.pnl_c!=null ? row.pnl_c : (row.would_pnl_c!=null ? row.would_pnl_c : null); }
+function whyEnter(t, row, reviewIdx){
+  const rv = reviewIdx[t.id+"|"+row.ticker];
+  if(rv && rv.response) return rv.response;
+  if(t.prov==="src" && row.src) return "src "+row.src+(row.pv?" (v"+row.pv+")":"")+", conf≥0.77";
+  const lead = row.leader || row.src;
+  if(lead) return "followed "+lead+(row.rec10?" ("+row.rec10+")":"")+(row.p_win!=null?", p_win "+(+row.p_win).toFixed(2):"");
+  return "—";
+}
+
+let LOGS = {}, REVIEW = {}, showRetired = false;
+
+function statsFor(rows){
+  const resolved = rows.filter(r=>r.actual!=null && r.actual!==-1 && !r.skipped && pnlOf(r)!=null);
+  const wins = resolved.filter(r=>r.win).length;
+  const pnl = resolved.reduce((a,r)=>a+(pnlOf(r)||0),0);
+  const skips = rows.filter(r=>r.skipped || r.actual===-1).length;
+  const last = rows[rows.length-1];
+  const bankroll = last && last.bankroll_c!=null ? last.bankroll_c : null;
+  return {resolved, n:resolved.length, wins, pnl, skips, bankroll, last};
+}
+
+function render(){
+  const host = document.getElementById("roster");
+  host.innerHTML = "";
+  TRADERS.filter(t=>showRetired || t.active).forEach(t=>{
+    const rows = LOGS[t.id] || [];
+    const s = statsFor(rows);
+    const cb = classify(s.last);
+    const wr = s.n ? Math.round(100*s.wins/s.n) : null;
+    const card = document.createElement("div");
+    card.className = "tcard";
+    const last20 = s.resolved.slice(-20).reverse();
+    card.innerHTML = `
+      <div class="thead">
+        <div><span class="tname">${t.name}</span><span class="tpersona">${t.persona}</span></div>
+        <span class="klass ${t.klass}">${t.klass}</span>
+      </div>
+      <div class="tstats">
+        <div>bankroll<b>${fmt$(s.bankroll)}</b></div>
+        <div>net P&amp;L<b class="${s.pnl>=0?'pos':'neg'}">${fmt$(s.pnl)}</b></div>
+        <div>resolved<b>${s.n}</b></div>
+        <div>win rate<b>${wr==null?'—':wr+'%'}</b></div>
+        <div>skipped<b>${s.skips}</b></div>
+      </div>
+      <div class="curbid">Current bid:
+        <span class="pill ${cb.cls}">${cb.label}</span>
+        ${s.last && cb.s!=="none" ? `<span>${s.last.ticker? s.last.ticker.replace('KXBTC15M-','') : ''} · ${s.last.side||''} · strike ${s.last.strike!=null?('$'+Number(s.last.strike).toLocaleString()):'—'} · ask ${s.last.ask_c!=null?s.last.ask_c+'¢':'—'}</span>`:''}
+      </div>
+      <div class="details" hidden>
+        <div class="model">${t.model}<div class="m-src">${t.src}</div></div>
+        <table class="bids"><thead><tr>
+          <th class="l">Window</th><th class="l">Side</th><th>Strike</th><th>Entry ¢</th>
+          <th class="l">Entry (ET)</th><th>P&amp;L</th><th class="l">Why entered</th>
+        </tr></thead><tbody>
+        ${last20.length? last20.map(r=>{
+          const p = pnlOf(r);
+          return `<tr>
+            <td class="l">${(r.ticker||'').replace('KXBTC15M-','')}</td>
+            <td class="l">${r.side||'—'}</td>
+            <td>${r.strike!=null?'$'+Number(r.strike).toLocaleString():'—'}</td>
+            <td>${r.ask_c!=null?r.ask_c:'—'}</td>
+            <td class="l">${etTime(r.made_ts)}</td>
+            <td class="${p>=0?'pos':'neg'}">${fmt$(p)}</td>
+            <td class="l why" title="${(whyEnter(t,r,REVIEW)||'').replace(/"/g,'&quot;')}">${whyEnter(t,r,REVIEW)}</td>
+          </tr>`;
+        }).join("") : `<tr><td class="l" colspan="7" style="color:var(--faint)">no resolved bids yet</td></tr>`}
+        </tbody></table>
+      </div>`;
+    const head = card.querySelector(".thead");
+    const det = card.querySelector(".details");
+    head.addEventListener("click", ()=>{ det.hidden = !det.hidden; card.classList.toggle("open", !det.hidden); });
+    host.appendChild(card);
+  });
+}
+
+async function boot(){
+  const ids = TRADERS.map(t=>t.id);
+  const [reviews, ...logs] = await Promise.all([
+    jsonl("../results/loss_reviews.jsonl"),
+    ...ids.map(id=>jsonl(`../results/${id}_trades.jsonl`))
+  ]);
+  ids.forEach((id,i)=> LOGS[id] = logs[i]);
+  reviews.forEach(rv=>{ if(rv.trader && rv.ticker) REVIEW[rv.trader+"|"+rv.ticker] = rv; });
+  document.getElementById("stamp").textContent =
+    "· " + Object.values(LOGS).reduce((a,l)=>a+l.length,0) + " trade rows loaded";
+  render();
+}
+document.getElementById("f-active").onclick = e=>{ showRetired=false;
+  e.target.classList.add("on"); document.getElementById("f-all").classList.remove("on"); render(); };
+document.getElementById("f-all").onclick = e=>{ showRetired=true;
+  e.target.classList.add("on"); document.getElementById("f-active").classList.remove("on"); render(); };
+boot();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>
