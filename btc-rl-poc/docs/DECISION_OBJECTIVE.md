@@ -29,3 +29,23 @@ STATUS 09-11: kb2 frontier has NO FEASIBLE POINT (no edge threshold clears posit
 within the 10% bad-entry budget; highest-edge windows are the WORST). Confirms the
 bottleneck is information, not the decision rule. The frontier is the acceptance test
 for any future trader (incl. H-MICRO-EXEC once F1 clears).
+
+## Permanent empirical finding (PM 09-11)
+
+`CURRENT_EDGE_MONOTONICITY = INVERTED`
+
+Across kb2 windows, mean realized EV DECREASES as model-vs-market edge
+rises: top-10%-edge bucket -9.5c vs bottom-10% +2.1c (top-minus-bottom
+-11.65c). Current model disagreement with the market is anti-information.
+
+**System rule:** no future trader may use raw model-vs-market disagreement
+as a POSITIVE confidence signal unless the relationship is re-established
+OUT OF SAMPLE. Until then, large residual is a RISK flag, not an
+opportunity flag. Tracked by scripts/decision_frontier.py
+(edge_monotonicity block); H-MICRO-EXEC must flip it to MONOTONIC to
+count as restoring monetizable information.
+
+**Not claimed:** "the market is unbeatable." Supported claim: our
+CURRENT information set lacks enough incremental signal for a safe
+profitable trader. F1/microstructure is the next experiment that can
+change that statement.

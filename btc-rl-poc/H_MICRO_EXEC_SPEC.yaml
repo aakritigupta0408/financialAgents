@@ -19,6 +19,26 @@ hypothesis: >
   frozen execution selector already accepts — i.e. it distinguishes
   profitable from unprofitable trades among execution-safe
   opportunities. NOT "beat the market everywhere."
+sharpened_mission: >
+  (PM 09-11) Does microstructure RESTORE MONOTONICITY between
+  estimated residual advantage and realized economic value? Today
+  CURRENT_EDGE_MONOTONICITY=INVERTED — the highest model-vs-market
+  edge windows have the WORST realized EV (top-10% bucket -9.5c vs
+  bottom-10% +2.1c). This is a sharper, more falsifiable target than
+  "improve BSS": microstructure must turn edge back into a POSITIVE
+  signal, not merely raise average score.
+success_criteria_all_of:      # a real win shows ALL simultaneously
+  - BSS_vs_market improves
+  - higher predicted residual -> BETTER outcomes (monotonicity restored)
+  - decision frontier develops >=1 feasible point (bad-entry<=0.10, EV>0)
+  - realized EV at that feasible point > 0
+  - profitable-trade recall rises without breaching the bad-entry budget
+  - execution remains controlled
+outcome_fork_pm0911:
+  bss_up_but_no_feasible_point: "information found but NOT monetizable"
+  feasible_point_without_bss_gain: "conditional information / selection
+    value — may still be the trader we want"
+  neither: "close the feature family"
 
 # ATTRIBUTION DESIGN — the point is to know whether any improvement
 # came from INFORMATION or from another round of selection tuning.

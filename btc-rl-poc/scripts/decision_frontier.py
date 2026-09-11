@@ -77,6 +77,42 @@ def metrics(entered, allw):
         "n_entered": len(entered)}
 
 
+def edge_monotonicity(allw):
+    """Bucket windows by edge quantile; show whether higher predicted
+    edge corresponds to BETTER or WORSE realized EV. Diagnostic only —
+    nothing is fitted. If top buckets are worst, the disagreement
+    signal is inverted (anti-information)."""
+    xs = sorted(allw, key=lambda w: w["edge_c"])
+    n = len(xs)
+    cuts = [(0, .10, "bottom 10%"), (.10, .25, "10-25%"),
+            (.25, .50, "25-50%"), (.50, .75, "50-75%"),
+            (.75, .90, "75-90%"), (.90, 1.0, "top 10%")]
+    buckets = []
+    for lo, hi, name in cuts:
+        seg = xs[int(lo * n):int(hi * n)]
+        if not seg:
+            continue
+        evs = [w["ev_c"] for w in seg]
+        buckets.append({
+            "bucket": name, "n": len(seg),
+            "edge_range_c": [round(seg[0]["edge_c"], 1),
+                             round(seg[-1]["edge_c"], 1)],
+            "mean_realized_ev_c": round(sum(evs) / len(evs), 2),
+            "bad_entry_rate": round(sum(1 for w in seg
+                                        if not w["profitable"])
+                                    / len(seg), 3),
+            "profitable_rate": round(sum(1 for w in seg
+                                         if w["profitable"])
+                                     / len(seg), 3)})
+    # monotonicity verdict: does mean EV rise with edge bucket?
+    means = [b["mean_realized_ev_c"] for b in buckets]
+    top_vs_bottom = means[-1] - means[0] if len(means) >= 2 else 0
+    verdict = ("INVERTED" if top_vs_bottom < -0.5 else
+               "MONOTONIC" if top_vs_bottom > 0.5 else "FLAT")
+    return {"buckets": buckets, "top_minus_bottom_ev_c":
+            round(top_vs_bottom, 2), "monotonicity": verdict}
+
+
 def main():
     allw = windows()
     prof = [w for w in allw if w["profitable"]]
@@ -107,6 +143,7 @@ def main():
            "base_rate_profitable": round(len(prof) / len(allw), 3),
            "risk_budget_epsilon": EPS_BAD_ENTRY,
            "frontier": frontier,
+           "edge_monotonicity": edge_monotonicity(allw),
            "chosen_operating_point": op,
            "verdict": ("FEASIBLE_OPERATING_POINT" if op else
                        "NO_FEASIBLE_POINT — no edge threshold achieves "
