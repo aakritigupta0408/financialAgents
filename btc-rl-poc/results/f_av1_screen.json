@@ -1,0 +1,110 @@
+{
+ "generated_ts": 1789151445,
+ "spec": "F_AV1_SPEC.yaml",
+ "gate": "redundancy (partial corr | price)",
+ "n_windows": 193,
+ "features": [
+  {
+   "feature": "spy_ret_15m",
+   "n": 193,
+   "raw_corr_with_residual": 0.013,
+   "partial_corr_given_price": 0.02,
+   "ci95": [
+    -0.122,
+    0.161
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "spy_ret_60m",
+   "n": 193,
+   "raw_corr_with_residual": 0.012,
+   "partial_corr_given_price": 0.015,
+   "ci95": [
+    -0.127,
+    0.156
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "spy_rvol_30m",
+   "n": 193,
+   "raw_corr_with_residual": -0.03,
+   "partial_corr_given_price": -0.03,
+   "ci95": [
+    -0.17,
+    0.112
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "spy_staleness_min",
+   "n": 193,
+   "raw_corr_with_residual": -0.021,
+   "partial_corr_given_price": -0.021,
+   "ci95": [
+    -0.162,
+    0.121
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "spy_session_open",
+   "n": 193,
+   "raw_corr_with_residual": -0.038,
+   "partial_corr_given_price": -0.039,
+   "ci95": [
+    -0.179,
+    0.103
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "uup_ret_60m",
+   "n": 193,
+   "raw_corr_with_residual": 0.023,
+   "partial_corr_given_price": 0.023,
+   "ci95": [
+    -0.119,
+    0.164
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "yield_10y_level",
+   "n": 193,
+   "raw_corr_with_residual": -0.025,
+   "partial_corr_given_price": -0.025,
+   "ci95": [
+    -0.165,
+    0.117
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "yield_10y_chg_1d",
+   "n": 193,
+   "raw_corr_with_residual": -0.025,
+   "partial_corr_given_price": -0.025,
+   "ci95": [
+    -0.165,
+    0.117
+   ],
+   "verdict": "ELIMINATE"
+  },
+  {
+   "feature": "fed_funds_level",
+   "n": 193,
+   "raw_corr_with_residual": -0.0,
+   "partial_corr_given_price": 0.0,
+   "ci95": [
+    -0.141,
+    0.141
+   ],
+   "verdict": "ELIMINATE"
+  }
+ ],
+ "n_survivors": 0,
+ "survivors": [],
+ "verdict": "ALL_ELIMINATED \u2014 no AV feature adds information about the residual conditional on market price (expected on an efficient short horizon)"
+}

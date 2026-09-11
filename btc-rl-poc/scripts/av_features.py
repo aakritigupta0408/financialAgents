@@ -39,10 +39,17 @@ def receipt_available_ts(bar_close_epoch, source):
 
     Return an epoch (seconds). A bar is usable for a window only if this
     value <= the window's decision time.
+
+    Assumption (deliberately conservative — bias to TOO LATE so the
+    screen cannot manufacture phantom alpha):
+      equity 5-min bar: close + 180s  (AV publish lag ~1-2min + our
+        <5/min poll throttle + network + parse)
+      macro daily print: close + 30h  (not actionable until the next
+        US session)
     """
-    raise NotImplementedError(
-        "receipt_available_ts is unset — see the Learn-by-Doing handoff. "
-        "Implement the receipt-time latency model here.")
+    if source == "macro":
+        return bar_close_epoch + 30 * 3600
+    return bar_close_epoch + 180
 
 
 # ------------------------------------------------------------------ #
