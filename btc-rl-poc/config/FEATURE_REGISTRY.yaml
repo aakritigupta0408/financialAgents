@@ -26,7 +26,7 @@
 #   scripts/emit_f1_gate.py: PIT violations 0 · schema clean ·
 #   per-venue 5-min presence >=95% in-window · no in-window gap
 #   >=60min · ESS >=150 per horizon (ACF-adjusted, 15-min grid) ·
-#   MDE80(rho .95) <=8% of baseline MAE · >=5 chrono folds >=48 ·
+#   MDE80(rho .95) <=8% of the GOVERNING metric · >=5 chrono folds >=48 ·
 #   outcomes 30-70% up · >=12 six-hour blocks, no vol tercile >60%
 #   · no open capture incident · all hourly shards present.
 #   ANTI-PEEKING LAW: thresholds frozen 09-03 BEFORE any T1.1 model
@@ -43,6 +43,16 @@
 #   fixes a defective measurement, it does not ease the gate.
 #   (All-venue 5s availability is a T1.1 feature-spec concern —
 #   kraken legitimately gaps to 120s — NOT a capture criterion.)
+#   v2.2 GOVERNING-METRIC AMENDMENT (PM 2026-09-11): the MDE80
+#   sufficiency criterion is now measured on MSE (was outlier-robust
+#   MAE). RECORDED CONSEQUENCE (flagged twice before execution): MSE is
+#   outlier-SENSITIVE, its relative MDE runs ~3-4x MAE's on the same
+#   clean sample, so at the unchanged 8% threshold this RAISES the bar
+#   — under MAE F1 was at the doorstep (h5 6.8% / h15 7.7% pass, h30
+#   8.7% marginal); under MSE it needs ~20x more independent data
+#   (h5 25% / h15 35% / h30 36%). MAE/Huber stay in the report for
+#   reference but no longer gate. This is PM direction implemented as a
+#   registered amendment, not a silent swap; anti-peeking law intact.
 #   Data Reliability agent owns the gate evidence.
 #
 # BLOCKED until a family proves an information gain: TA-indicator

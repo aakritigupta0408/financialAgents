@@ -52,6 +52,27 @@ MIN_COVERAGE = 0.95
 MIN_ESS = 150
 MAX_MDE80_PCT = 8.0
 OUTAGE_TRUNCATES_MIN = 15
+# GATE_F1_V2.2 amendment (PM 2026-09-11): the GOVERNING sufficiency
+# metric is MSE, replacing the outlier-ROBUST MAE. Recorded scientific
+# consequence (I flagged this twice before executing): MSE squares the
+# errors, so a handful of fat-tail windows dominate; its relative MDE
+# runs ~3-4x the MAE MDE on the identical clean sample. The 8% threshold
+# is unchanged, so this materially RAISES the sufficiency bar — F1 now
+# needs substantially more clean ESS to clear. This is PM direction,
+# implemented as a registered amendment, not a silent metric swap.
+GOVERNING_METRIC = "MSE"
+
+
+def _gov_mde(power):
+    """Worst-horizon MDE80 (rho=0.95) as % of the governing metric."""
+    vals = []
+    for h in HORIZONS:
+        mbm = (power.get(f"h{h}", {})
+               .get("mde_by_metric_rho95", {})
+               .get(GOVERNING_METRIC, {}))
+        v = mbm.get("mde80_pct_of_metric")
+        vals.append(v if v is not None else 999)
+    return max(vals) if vals else 999
 
 
 def open_capture_incidents():
@@ -109,11 +130,7 @@ def main():
     power = body["power"]
 
     ess_min = min((power[f"h{h}"].get("ess") or 0) for h in HORIZONS)
-    mde_max = max((power[f"h{h}"]
-                   .get("min_detectable_improvement", {})
-                   .get("rho_0.95", {})
-                   .get("mde80_pct_of_mae") or 999)
-                  for h in HORIZONS)
+    mde_max = _gov_mde(power)                 # governing = MSE (PM 09-11)
     open_inc = open_capture_incidents()
     missing_shards = shards_complete(m_lo, m_hi)
 
@@ -125,7 +142,7 @@ def main():
         "coverage_95_in_window": checks["coverage_95"],
         "continuity_in_window": checks["continuity"],
         "ess_min_150": ess_min >= MIN_ESS,
-        "mde80_max_8pct": mde_max <= MAX_MDE80_PCT,
+        f"mde80_max_8pct_of_{GOVERNING_METRIC}": mde_max <= MAX_MDE80_PCT,
         "fold_viability": checks["fold_viability"],
         "outcome_nondegenerate": checks["outcome_nondegenerate"],
         "temporal_diversity": checks["temporal_diversity"],
@@ -153,9 +170,7 @@ def main():
     sb = analyze(per_min, sec_present, integ, outages=outages)
     sp = sb["power"]
     s_ess = min((sp[f"h{h}"].get("ess") or 0) for h in HORIZONS)
-    s_mde = max((sp[f"h{h}"].get("min_detectable_improvement", {})
-                 .get("rho_0.95", {}).get("mde80_pct_of_mae") or 999)
-                for h in HORIZONS)
+    s_mde = _gov_mde(sp)                       # governing = MSE (PM 09-11)
     s_checks = sb["checks"]
     s_criteria = {
         "pit_zero": s_checks["pit_zero"],
@@ -164,7 +179,7 @@ def main():
         "coverage_95_ex_outages": s_checks["coverage_95"],
         "continuity_ex_outages": s_checks["continuity"],
         "ess_min_150": s_ess >= MIN_ESS,
-        "mde80_max_8pct": s_mde <= MAX_MDE80_PCT,
+        f"mde80_max_8pct_of_{GOVERNING_METRIC}": s_mde <= MAX_MDE80_PCT,
         "fold_viability": s_checks["fold_viability"],
         "outcome_nondegenerate": s_checks["outcome_nondegenerate"],
         "temporal_diversity": s_checks["temporal_diversity"],
@@ -199,9 +214,9 @@ def main():
         "criteria": s_criteria,
         "failing": [k for k, v in s_criteria.items() if not v],
         "ess_min_across_horizons": round(s_ess, 1),
-        "mde80_worst_pct_of_mae": (round(s_mde, 1)
-                                   if s_mde < 999 else None),
         "usable_days_ex_outages": sb["span_days"],
+        f"mde80_worst_pct_of_{GOVERNING_METRIC}": (round(s_mde, 1)
+                                                   if s_mde < 999 else None),
         "power": sp}
 
     if v21_governing:
@@ -213,10 +228,20 @@ def main():
            "governing_rule": ("v2.1 stitched clean segments"
                               if v21_governing
                               else "v2 contiguous clean window"),
+           "governing_metric": GOVERNING_METRIC,
+           "governing_metric_note": (
+               "PM 2026-09-11 directive: MSE governs (was robust MAE). "
+               "MSE is outlier-SENSITIVE; on the identical clean sample "
+               "its relative MDE runs ~3-4x MAE's, so at the unchanged "
+               "8% threshold this RAISES the sufficiency bar and pushes "
+               "F1 further from PASS. Robust metrics (MAE/Huber) remain "
+               "in the report for reference but no longer gate."),
            "amendment": "PM 2026-09-03 — clean-window truncation + "
                         "pre-registered statistical sufficiency; "
                         "v1 span-coverage rule retired (rationale: "
-                        "f1_sufficiency_audit sha in commit 1caa9a9)",
+                        "f1_sufficiency_audit sha in commit 1caa9a9). "
+                        "PM 2026-09-11 — governing metric MAE->MSE "
+                        "(GATE_F1_V2.2).",
            "anti_peeking_law": "criteria frozen before any T1.1 "
                                "model result; model outcomes never "
                                "amend this gate",
@@ -237,7 +262,7 @@ def main():
                         else criteria).items() if not v],
            "projection": projection,
            "ess_min_across_horizons": round(ess_min, 1),
-           "mde80_worst_pct_of_mae": (round(mde_max, 1)
+           f"mde80_worst_pct_of_{GOVERNING_METRIC}": (round(mde_max, 1)
                                       if mde_max < 999 else None),
            "open_capture_incidents": open_inc,
            "missing_shards": missing_shards[:10],
