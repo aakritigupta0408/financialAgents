@@ -31,6 +31,7 @@
 
   var MORE = [
     { label: "Traders",    href: "traders.html" },
+    { label: "Performance",href: "perf.html" },
     { label: "Play",       href: "play.html" },
     { label: "Backend",    href: "backend.html" },
     { label: "Research",   href: "board.html" },
@@ -49,6 +50,8 @@
       kw: "experiments, ab test, a3, control, treatment, hypothesis, evidence, decision gate, history" },
     { title: "Trader Dashboard — the $1K Desk", href: "traders.html",
       kw: "traders, paper desk, follower, disciplined, mle, current bid, status, thesis, bankroll" },
+    { title: "Performance & Significance", href: "perf.html",
+      kw: "performance, confidence interval, bootstrap, significance, profit per trade, since retrain, deploy" },
     { title: "Play — the Playground", href: "play.html",
       kw: "playground, forecast, oracle, 7pm, horizons, live price" },
     { title: "Backend — the operating console", href: "backend.html",
