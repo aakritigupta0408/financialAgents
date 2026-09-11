@@ -301,6 +301,23 @@ def analyze(per_min, sec_present, integ, m_lo=None, m_hi=None,
         mae = sum(abserr) / len(abserr)
         ess, rhos_acf = acf_ess(abserr)
         sde = sd(abserr)
+        # MULTI-METRIC MDE (PM 09-11). The sufficiency test is
+        # MODEL-FREE (dataset power, no peeking), so error metrics are
+        # martingale-reference: MAE and Huber are OUTLIER-ROBUST; MSE/
+        # RMSE are outlier-SENSITIVE (a few fat-tail windows dominate).
+        # We report all four so no single choice is load-bearing; the
+        # ROBUST metrics govern (see verdict). Delta = 1.5*MAD proxy.
+        HUBER_D = 1.345 * (mae * 1.4826)     # ~1.345*sigma_robust
+        sqerr = [r * r for r in rs]
+        huberr = [(0.5 * e * e if e <= HUBER_D
+                   else HUBER_D * (e - 0.5 * HUBER_D)) for e in abserr]
+        mse = sum(sqerr) / len(sqerr)
+        base = {"MAE": (mae, sde, "robust"),
+                "Huber": (sum(huberr) / len(huberr), sd(huberr),
+                          "robust"),
+                "MSE": (mse, sd(sqerr), "outlier-sensitive"),
+                "RMSE": (mse ** 0.5, sd(sqerr) / (2 * mse ** 0.5)
+                         if mse > 0 else 0, "outlier-sensitive")}
         mde = {}
         for rho in RHOS:
             sdd = sde * math.sqrt(2 * (1 - rho))
@@ -310,6 +327,16 @@ def analyze(per_min, sec_present, integ, m_lo=None, m_hi=None,
                     100 * 2.80 * sdd / math.sqrt(ess) / mae, 1),
                 "ci95_width_bps": round(
                     2 * 1.96 * sdd / math.sqrt(ess), 2)}
+        # per-metric MDE at rho=0.95 (the gate's operating rho)
+        mde_by_metric = {}
+        for name, (mu, sdv, kind) in base.items():
+            sdd = sdv * math.sqrt(2 * (1 - 0.95))
+            pct = (100 * 2.80 * sdd / math.sqrt(ess) / mu
+                   if mu > 0 else None)
+            mde_by_metric[name] = {
+                "kind": kind,
+                "mde80_pct_of_metric": (round(pct, 1)
+                                        if pct is not None else None)}
         fold_sz = len(rs) // N_FOLDS
         fmae = [sum(abserr[i * fold_sz:(i + 1) * fold_sz]) / fold_sz
                 for i in range(N_FOLDS)]
@@ -318,6 +345,7 @@ def analyze(per_min, sec_present, integ, m_lo=None, m_hi=None,
             "ess_ratio": round(ess / len(rs), 3),
             "acf_head": rhos_acf[:5],
             "baseline_mae_bps": round(mae, 1),
+            "mde_by_metric_rho95": mde_by_metric,
             "sd_abs_err_bps": round(sde, 1),
             "min_detectable_improvement": mde,
             "folds": {"n_folds": N_FOLDS, "per_fold": fold_sz,
