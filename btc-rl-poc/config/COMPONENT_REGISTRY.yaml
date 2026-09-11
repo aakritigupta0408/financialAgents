@@ -218,10 +218,29 @@ experiments:
      a4_unlock: "NOT met — miss cost is DIFFUSE not state-dependent,
        so learned Value-of-Wait has no state signal to exploit",
      registered: 2026-09-06, shadows: [T10-diagnostic],
+     family_status: "SEALED — mechanism falsified (PM 09-10): do NOT
+       revisit under 4c/7c/adaptive/ML-selected/regime-conditioned
+       dip (research overfitting by persistence). Reopen ONLY if
+       genuinely new information invalidates the diffuse-miss
+       conclusion",
      reopen: NEVER as v2.1}
+  - {id: X1, lifecycle: SPEC_ONLY, runtime: false, tier: T4, plane: D,
+     spec: X1_EXECUTION_ATTRIBUTION_SPEC.yaml, is_treatment: false,
+     note: "P0 execution-gap attribution (PM 09-10) — DIAGNOSTIC, opens
+       no positions; decompose the ~6.6c/$1 quoted->realized gap into
+       measured components that reconcile within tolerance. No
+       execution treatment is registrable until X1 reconciles >=95%"}
   - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
      control: t_exec, treatment: t_exec_reg,
-     note: the ONE legacy pair; after verdict archive loser, close family}
+     primary_treatment: t_exec_reg, role_t_exec_reg: PRIMARY_TREATMENT,
+     role_t_exec: SHADOW_DIAGNOSTIC,
+     alpha_class: EXECUTION_UTILIZATION,   # NOT information alpha (§4)
+     note: "the ONE legacy pair; t_exec_reg is the single formal
+       downstream treatment (best paired +4.2c/$1, LLR ~1.1/5.66,
+       collecting), t_exec is shadow-diagnostic (isolates whether the
+       regime component is needed); after SPRT verdict archive loser,
+       close family. Gains are execution-utilization, never labelled
+       predictive alpha"}
   - {id: M8,  key: t_regime, lifecycle: SHADOW, runtime: true,
      note: legacy-control component reference only (§36)}
   - {id: M13, key: t_edgeband, lifecycle: SHADOW, runtime: true,

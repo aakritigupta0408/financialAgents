@@ -1,0 +1,72 @@
+# X1 — EXECUTION GAP ATTRIBUTION (PM 2026-09-10). STATUS: SPEC_ONLY.
+# The declared P0. This is DIAGNOSTIC RESEARCH, not a trading
+# treatment — it consumes the single formal-treatment slot for
+# NOTHING (it opens no position, it only decomposes existing fills).
+#
+# WHY P0: the champion looks +1.8c/$1 at quotes but is -4.8c/$1 at
+# realized fills — a ~6.6c/$1 waterfall that dwarfs every modelling
+# effect on the table. Before any execution TREATMENT is justified,
+# we must know WHERE the 6.6c goes.
+version: 0.1-spec
+id: X1
+tier: T4
+plane: D            # Research (diagnostic); reads C/Decision-Execution
+status: SPEC_ONLY
+is_treatment: false
+opens_positions: false
+
+objective: >
+  Decompose the observed quoted->realized execution gap into
+  measured components that SUM (within tolerance) to the whole. If
+  the components do not reconcile to the observed gap, execution
+  instrumentation is not finished — that is itself the finding.
+
+reconciliation_law: >
+  sum(components) ~= observed_gap within RECONCILE_TOL. A residual
+  larger than tolerance is a FAILED reconciliation and blocks any
+  claim that the gap is understood.
+reconcile_tol_c_per_$1: 0.5     # placeholder — PM ratifies exact value
+
+components:      # each measured in cents per $1, signed
+  - decision_to_submit_move   # price drift between decision ts and order ts
+  - quote_age                 # staleness of the quote acted on
+  - spread                    # half-spread paid to cross
+  - fee                       # Kalshi fee 7*p*(1-p)
+  - latency                   # submit->fill delay cost
+  - adverse_markout           # post-fill move against us (toxicity)
+  - insufficient_depth        # size beyond top-of-book depth
+  - partial_or_nonfill        # opportunity cost of missed/partial fills
+  - side_timing_residual      # everything unattributed (must be small)
+
+data_sources:   # already instrumented — X1 aggregates, invents nothing
+  - results/execution_ledger.json   # markout_summary, field_provenance, per_trader
+  - results/exec_sensitivity.json   # quote_age, execution_models
+  - results/fill_curve.json         # fill_curve, fill_logit, pacing_taker_ev
+  - results/kalshi_binary_log.jsonl # decision vs fill prices per window
+  - PIT snapshots                   # decision-time quote/depth
+
+method:
+  - "per fill — measure each component from PIT decision state vs
+    realized fill, using ONLY at-or-before information (no look-ahead)"
+  - aggregate to cents-per-$1 across the champion's realized fills
+  - "emit results/x1_execution_attribution.json with per-component
+    contribution, the observed gap, the residual, reconcile PASS/FAIL"
+  - "slice by quote_age / spread / depth / regime / time-remaining /
+    hour to locate WHERE the gap concentrates"
+
+outputs:
+  - x1_execution_attribution.json  (waterfall + reconciliation verdict)
+  - the slices that concentrate the gap = the mechanism hypothesis a
+    future registered execution treatment would target (ONE mechanism,
+    only if the data supports it)
+
+do_not:
+  - do NOT turn a discovered slice into a treatment inside X1
+  - do NOT tune any threshold
+  - do NOT merge this with information/decision/capital alpha (§4 law)
+
+exit_criterion: >
+  X1 is DONE when >=95% of the observed quoted->realized gap is
+  attributable to measured components within reconcile_tol. Until
+  then, execution is NOT understood and no execution treatment is
+  registrable.
