@@ -1,0 +1,276 @@
+# METRIC DICTIONARY v1.0.0 — 2026-08-29 (M2 P0)
+#
+# THE shared metric contract. Website, agents, offline evaluator,
+# training jobs, and online monitors consume THESE definitions — no
+# component may invent its own "Brier" or "net EV". Changing a
+# definition is a governance event (version bump + DECISIONS entry);
+# a changed definition mid-experiment is the §51 SEV-0 trigger.
+#
+# Schema per metric:
+#   formula        exact computation
+#   unit           display unit
+#   statistical_unit  what one observation is (almost always WINDOW)
+#   denominator    what divides (the eligible-set discipline)
+#   provenance     which published artifact carries the value
+#   phase          OFFLINE | SHADOW | FORWARD | LIVE_OPS  (never mix)
+#   ci_method      how uncertainty is reported
+#   freshness_s    max age before STALE
+#   owner          workstream owner
+#   gate           promotion/alert threshold if any
+
+version: 1.0.0
+
+conventions:
+  statistical_unit_default: WINDOW   # never rows/events/fills (§44)
+  phases_never_merge: [OFFLINE, SHADOW, FORWARD]
+  unknown_is_never_green: true
+  fee_formula: "ceil-free per-$1: fee = 7*p*(1-p) fractional; per
+    ORDER in trader ledgers: ceil(7*C*p*(1-p)) cents"
+  pnl_per_contract: "(100 - cost)/cost if won else -1, cost =
+    ask + fee"
+
+metrics:
+
+  # ---- PRIMARY (the North Star family) -----------------------------
+  paired_delta_pnl_per_eligible:
+    formula: "sum(PnL_T10 - PnL_C0) / N_eligible; MISSED/INVALIDATED
+      treatment = 0 trading PnL, control keeps its PnL"
+    unit: "$/1 staked per window (display c)"
+    statistical_unit: WINDOW
+    denominator: all eligible windows (never fills-only)
+    provenance: a3_live.json .forward.incremental_per_eligible
+    phase: FORWARD
+    ci_method: paired bootstrap (seeded) + SPRT when n sufficient
+    freshness_s: 900
+    owner: experiment_analyst
+    gate: "promotion requires >0 with registered statistical gate,
+      after costs, with concentration checks (§46)"
+
+  net_ev_per_dollar:
+    formula: "mean over settled bets of pnl_per_contract"
+    unit: "$/1"
+    statistical_unit: WINDOW
+    denominator: settled bets (label which set)
+    provenance: audit_report.json, decision_board.json
+    phase: FORWARD
+    ci_method: bootstrap
+    freshness_s: 900
+    owner: experiment_analyst
+
+  # ---- PREDICTION QUALITY ------------------------------------------
+  brier:
+    formula: "mean (p - y)^2, p at the decision observation, y
+      settlement"
+    unit: dimensionless (lower better)
+    statistical_unit: WINDOW
+    denominator: settled windows with a decision-time p
+    provenance: audit_report.json .sections.tier2, model_offline.json
+    phase: label OFFLINE vs FORWARD explicitly
+    ci_method: bootstrap
+    freshness_s: 900
+    owner: model_researcher
+
+  bss_vs_market:
+    formula: "1 - Brier_model / Brier_market, same windows same
+      observation minute"
+    unit: dimensionless (>0 = beats the book)
+    statistical_unit: WINDOW
+    denominator: settled windows where both p exist
+    provenance: audit_report.json .sections.tier2
+    phase: FORWARD
+    ci_method: bootstrap
+    freshness_s: 900
+    owner: model_researcher
+    gate: "alpha-model status requires >0 with CI support — a model
+      that predicts well but does not beat the market is not an
+      alpha model"
+
+  log_loss:
+    formula: "-mean[y ln p + (1-y) ln(1-p)], eps 1e-6"
+    unit: nats
+    statistical_unit: WINDOW
+    provenance: model_offline.json / model_online.json
+    phase: labeled
+    ci_method: bootstrap
+    owner: model_researcher
+
+  calibration_slope_intercept:
+    formula: "logistic recalibration fit logit(y)~a+b*logit(p);
+      slope b, intercept a"
+    unit: dimensionless (b=1, a=0 ideal)
+    statistical_unit: WINDOW
+    provenance: kb_calib.json (shadow instrument), model_offline.json
+    phase: labeled; the live Platt layer is SHADOW ONLY
+    owner: model_researcher
+
+  ece:
+    formula: "sum_k (n_k/N) |acc_k - conf_k| over 10 adaptive bins"
+    unit: dimensionless
+    statistical_unit: WINDOW
+    provenance: model_offline.json (M2)
+    phase: labeled
+    owner: model_researcher
+
+  selective_accuracy_at_coverage:
+    formula: "P(correct | claimed confidence >= c) for c in
+      .60...90; always beside coverage = P(claim >= c)"
+    unit: fraction + coverage fraction
+    statistical_unit: WINDOW
+    denominator: calls made at that threshold (accuracy) /
+      all settled windows (coverage)
+    provenance: oracle_calls.json, model_offline.json
+    phase: labeled; threshold chosen on a sample never graded on it
+    ci_method: Wilson
+    owner: model_researcher
+
+  # ---- ENTRY / TIMING (A3 family) ----------------------------------
+  entry_improvement_c:
+    formula: "call_price - fill_price, side-normalized"
+    unit: cents
+    statistical_unit: WINDOW
+    denominator: filled windows (diagnostic; NEVER treated as profit)
+    provenance: a3_live.json .forward.mean_entry_improvement_c
+    phase: FORWARD
+    ci_method: bootstrap + percentiles P25/50/75/90
+    owner: experiment_analyst
+
+  ecr:
+    formula: "(call - fill) / (call - best_valid_executable_price);
+      0 when unfilled (economic), null with NO_VALID_DIP"
+    unit: fraction
+    statistical_unit: WINDOW
+    provenance: a3_window_evaluation.jsonl .ecr
+    phase: FORWARD, DERIVED_EX_POST
+    owner: execution_researcher
+    gate: "persistently low ECR at positive delta -> unlock
+      timing/value-of-wait research (decision tree)"
+
+  wait_regret_c:
+    formula: "best_valid_improvement - captured_improvement"
+    unit: cents
+    statistical_unit: WINDOW
+    provenance: a3_window_evaluation.jsonl
+    phase: FORWARD, DERIVED_EX_POST
+    owner: execution_researcher
+
+  miss_rate:
+    formula: "(MISSED + INVALIDATED) / eligible; buckets reported
+      separately (no-dip vs invalidation vs operational)"
+    unit: fraction
+    statistical_unit: WINDOW
+    provenance: a3_live.json .forward.miss_rate
+    phase: FORWARD
+    ci_method: Wilson
+    owner: experiment_analyst
+
+  miss_cost:
+    formula: "sum control_pnl over non-filled treatment windows"
+    unit: $/1 totals + mean
+    statistical_unit: WINDOW
+    provenance: a3_live.json .forward.missed_control_pnl_total
+    phase: FORWARD
+    owner: experiment_analyst
+
+  # ---- EXECUTION ---------------------------------------------------
+  markout_h:
+    formula: "side_BID(t_fill + h) - fill_price; h in 1/5/10/30/60s;
+      first quote at-or-after target within 2s else UNAVAILABLE"
+    unit: cents
+    statistical_unit: WINDOW (one fill each)
+    provenance: a3_window_evaluation.jsonl markout_* fields
+    phase: FORWARD
+    ci_method: bootstrap + P(markout<0)
+    owner: execution_researcher
+    gate: "P(markout_10s<0) > 0.7 at n>=10 -> toxic-fill WATCH flag"
+
+  fill_rate:
+    formula: "filled / eligible"
+    unit: fraction
+    statistical_unit: WINDOW
+    provenance: a3_live.json
+    phase: FORWARD
+    ci_method: Wilson
+    owner: execution_researcher
+
+  # ---- CONCENTRATION / ROBUSTNESS ----------------------------------
+  profit_concentration:
+    formula: "delta ex-best-1, ex-best-3; top-10%-of-windows share
+      of positive delta"
+    unit: mixed
+    statistical_unit: WINDOW
+    provenance: a3_live.json .outlier_dependence
+    phase: FORWARD
+    owner: experiment_analyst
+    gate: "no promotion conclusion without this block (§39)"
+
+  regime_slice_effect:
+    formula: "metric recomputed per registered slice (time-left,
+      strike distance, vol, spread, hour, side, confidence); n<15
+      muted as underpowered"
+    unit: per-metric
+    statistical_unit: WINDOW
+    provenance: decision_board.json slices, model_offline.json (M2)
+    phase: labeled
+    ci_method: per-slice se
+    owner: model_researcher
+
+  # ---- TRAINING (M2 registry) --------------------------------------
+  train_val_gap:
+    formula: "val_metric - train_metric per run"
+    unit: per-metric
+    statistical_unit: TRAINING_RUN
+    provenance: training_runs.json (M2), metrics_history.jsonl today
+    phase: OFFLINE
+    owner: model_researcher
+
+  promotion_gap:
+    formula: "candidate's offline validation improvement vs its
+      realized next-period forward improvement — measures whether
+      the offline evaluator PREDICTS live performance"
+    unit: per-metric
+    statistical_unit: TRAINING_RUN
+    provenance: training_runs.json (M2)
+    phase: crosses OFFLINE->FORWARD by design; the one sanctioned
+      bridge, always displayed as a gap
+    owner: model_researcher
+    gate: "a persistently non-predictive offline gate must be
+      redesigned, not trusted"
+
+  keep_rate:
+    formula: "kept / (kept + reverted) per retrain cycle"
+    unit: fraction
+    statistical_unit: TRAINING_RUN
+    provenance: online_status.last_retrain, metrics_history.jsonl
+    phase: OFFLINE gate on LIVE cadence
+    owner: model_researcher
+
+  # ---- OPS / INTEGRITY ---------------------------------------------
+  parity_offline_online:
+    formula: "offline replay prediction on logged state X_t ==
+      logged live prediction within tolerance 1e-6"
+    unit: pass/fail rate
+    statistical_unit: WINDOW
+    provenance: (M2) parity check artifact
+    phase: LIVE_OPS
+    owner: data_reliability
+    gate: "mismatch = MODEL PARITY FAIL, promotion freeze"
+
+  exclusion_rate:
+    formula: "SYSTEM_EXCLUDED / potential registrations, with frozen
+      reason taxonomy"
+    unit: fraction
+    statistical_unit: WINDOW
+    provenance: a3_live.json .exclusion_monitor
+    phase: LIVE_OPS
+    owner: data_reliability
+    gate: "high rate = operationally unable to capture the
+      opportunity set (not strategy PnL)"
+
+  freshness:
+    formula: "now - artifact heartbeat/mtime vs cadence"
+    unit: seconds
+    statistical_unit: ARTIFACT
+    provenance: meta_monitors.json
+    phase: LIVE_OPS
+    owner: data_reliability
+    gate: "STALE per-artifact thresholds; UNKNOWN never green"

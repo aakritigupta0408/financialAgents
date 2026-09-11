@@ -1,0 +1,137 @@
+{
+ "generated_ts": 1788093750,
+ "models": {
+  "kb2": {
+   "by_horizon": {
+    "T-13": {
+     "n": 644,
+     "bss": -0.0009
+    },
+    "T-10": {
+     "n": 338,
+     "bss": -0.0072
+    },
+    "T-8": {
+     "n": 338,
+     "bss": -0.0093
+    },
+    "T-6": {
+     "n": 338,
+     "bss": 0.0003
+    },
+    "T-4": {
+     "n": 339,
+     "bss": -0.0053
+    },
+    "T-2": {
+     "n": 338,
+     "bss": -0.0058
+    }
+   },
+   "class": "NO_SKILL",
+   "disagreement": {
+    "ge5pp_all": {
+     "n": 52,
+     "mean_signed_market_error": -0.0373,
+     "se": 0.0581,
+     "t": -0.64
+    },
+    "ge5pp_early": {
+     "n": 20,
+     "state": "MUTED"
+    },
+    "ge10pp_all": {
+     "n": 8,
+     "state": "MUTED"
+    },
+    "ge10pp_early": {
+     "n": 3,
+     "state": "MUTED"
+    },
+    "ge20pp_all": {
+     "n": 0,
+     "state": "MUTED"
+    },
+    "ge20pp_early": {
+     "n": 0,
+     "state": "MUTED"
+    }
+   }
+  },
+  "kb9": {
+   "by_horizon": {
+    "T-13": {
+     "n": 644,
+     "bss": 0.0011
+    },
+    "T-10": {
+     "n": 338,
+     "bss": 0.0049
+    },
+    "T-8": {
+     "n": 338,
+     "bss": -0.0112
+    },
+    "T-6": {
+     "n": 338,
+     "bss": 0.0064
+    },
+    "T-4": {
+     "n": 340,
+     "bss": -0.0036
+    },
+    "T-2": {
+     "n": 338,
+     "bss": -0.038
+    }
+   },
+   "class": "EARLY_SKILL",
+   "disagreement": {
+    "ge5pp_all": {
+     "n": 1136,
+     "mean_signed_market_error": 0.0535,
+     "se": 0.0132,
+     "t": 4.06
+    },
+    "ge5pp_early": {
+     "n": 516,
+     "mean_signed_market_error": 0.0727,
+     "se": 0.0205,
+     "t": 3.54
+    },
+    "ge10pp_all": {
+     "n": 488,
+     "mean_signed_market_error": 0.076,
+     "se": 0.0209,
+     "t": 3.64
+    },
+    "ge10pp_early": {
+     "n": 213,
+     "mean_signed_market_error": 0.0936,
+     "se": 0.0329,
+     "t": 2.85
+    },
+    "ge20pp_all": {
+     "n": 68,
+     "mean_signed_market_error": 0.0562,
+     "se": 0.0578,
+     "t": 0.97
+    },
+    "ge20pp_early": {
+     "n": 21,
+     "state": "MUTED"
+    }
+   }
+  }
+ },
+ "lead_lag": {
+  "market_move_started_at": "NOT_AVAILABLE",
+  "kalshi_response_latency": "NOT_AVAILABLE",
+  "economic_opportunity_remaining": "NOT_AVAILABLE",
+  "blocked_by": "synchronized F-XVENUE tape (Gate F1, earliest 2026-09-06)"
+ },
+ "provenance": [
+  "kalshi_binary_log.jsonl",
+  "model_offline.json"
+ ]
+}

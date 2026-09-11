@@ -1,0 +1,469 @@
+{
+ "generated_ts": 1789151040,
+ "gate": "F1",
+ "gate_version": "2.1",
+ "governing_rule": "v2.1 stitched clean segments",
+ "governing_metric": "MSE",
+ "governing_metric_note": "PM 2026-09-11 directive: MSE governs (was robust MAE). MSE is outlier-SENSITIVE; on the identical clean sample its relative MDE runs ~3-4x MAE's, so at the unchanged 8% threshold this RAISES the sufficiency bar and pushes F1 further from PASS. Robust metrics (MAE/Huber) remain in the report for reference but no longer gate.",
+ "amendment": "PM 2026-09-03 \u2014 clean-window truncation + pre-registered statistical sufficiency; v1 span-coverage rule retired (rationale: f1_sufficiency_audit sha in commit 1caa9a9). PM 2026-09-11 \u2014 governing metric MAE->MSE (GATE_F1_V2.2).",
+ "anti_peeking_law": "criteria frozen before any T1.1 model result; model outcomes never amend this gate",
+ "days": 12.28,
+ "eligible_window": {
+  "start_utc": "09-11 16:28",
+  "end_utc": "09-11 18:24",
+  "days": 0.08,
+  "machine_outages_all_capture": [
+   {
+    "start_utc": "08-30 21:02",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "08-30 21:18",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "08-30 21:50",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "08-30 22:08",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "08-30 22:42",
+    "gap_min": 20
+   },
+   {
+    "start_utc": "08-31 21:53",
+    "gap_min": 1165
+   },
+   {
+    "start_utc": "09-03 10:21",
+    "gap_min": 17
+   },
+   {
+    "start_utc": "09-03 10:39",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 10:55",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 11:56",
+    "gap_min": 19
+   },
+   {
+    "start_utc": "09-03 12:16",
+    "gap_min": 22
+   },
+   {
+    "start_utc": "09-03 12:38",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 13:24",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 13:40",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 14:04",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 14:24",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 14:40",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 14:57",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 15:26",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 15:59",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 16:27",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 16:43",
+    "gap_min": 19
+   },
+   {
+    "start_utc": "09-03 17:08",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-03 17:27",
+    "gap_min": 16
+   },
+   {
+    "start_utc": "09-04 17:32",
+    "gap_min": 18
+   },
+   {
+    "start_utc": "09-07 03:42",
+    "gap_min": 661
+   },
+   {
+    "start_utc": "09-10 09:26",
+    "gap_min": 396
+   },
+   {
+    "start_utc": "09-11 16:10",
+    "gap_min": 18
+   }
+  ]
+ },
+ "criteria": {
+  "pit_zero": true,
+  "schema_clean": true,
+  "timestamps_ordered": true,
+  "coverage_95_ex_outages": true,
+  "continuity_ex_outages": true,
+  "ess_min_150": false,
+  "mde80_max_8pct_of_MSE": false,
+  "fold_viability": true,
+  "outcome_nondegenerate": true,
+  "temporal_diversity": true,
+  "regime_no_domination": true,
+  "no_open_capture_incident": true,
+  "provenance_complete": true
+ },
+ "verdict": "EXTEND_CAPTURE",
+ "failing": [
+  "ess_min_150",
+  "mde80_max_8pct_of_MSE"
+ ],
+ "projection": null,
+ "ess_min_across_horizons": 0,
+ "mde80_worst_pct_of_MSE": null,
+ "open_capture_incidents": [],
+ "missing_shards": [],
+ "window_analysis": {
+  "coverage": {
+   "binance": {
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
+   },
+   "okx": {
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
+   },
+   "kraken": {
+    "minute_presence": 1.0,
+    "five_min_presence": 1.0
+   }
+  },
+  "material_gaps": {
+   "binance": [],
+   "okx": [],
+   "kraken": []
+  },
+  "outcome_diversity": {
+   "h5": {
+    "up_frac": 0.0,
+    "median_abs_bps": 5.5
+   },
+   "h15": {
+    "up_frac": 0.0,
+    "median_abs_bps": 25.8
+   },
+   "h30": {
+    "up_frac": 0.0,
+    "median_abs_bps": 73.3
+   }
+  },
+  "power": {
+   "h5": {
+    "usable_n": 2,
+    "state": "TOO_FEW_OBS"
+   },
+   "h15": {
+    "usable_n": 2,
+    "state": "TOO_FEW_OBS"
+   },
+   "h30": {
+    "usable_n": 2,
+    "state": "TOO_FEW_OBS"
+   }
+  },
+  "temporal_blocks_6h": {
+   "n_blocks": 1,
+   "vol_tercile_share": {
+    "LOW": 1.0,
+    "MID": 0.0,
+    "HIGH": 0.0
+   },
+   "up_block_frac": 0.0,
+   "blocks": [
+    {
+     "block_utc": "09-11 12:00",
+     "block_id": 82830,
+     "vol_bps": 47.7,
+     "ret_bps": -29.1,
+     "n_min": 92,
+     "vol_tercile": "LOW"
+    }
+   ]
+  },
+  "regime_concentration_of_usable": {
+   "LOW": 1.0,
+   "MID": 0.0,
+   "HIGH": 0.0
+  }
+ },
+ "proposed_v2_1_stitched": {
+  "status": "GOVERNING \u2014 PM pre-ratified 09-04 conditional on v2.1.1 missingness PASS; condition verified from f1_missingness_audit.json",
+  "rule": "stitched clean segments \u2014 documented outages leave denominators; usable obs = clean [m-60, m+30] path",
+  "would_pass": false,
+  "criteria": {
+   "pit_zero": true,
+   "schema_clean": true,
+   "timestamps_ordered": true,
+   "coverage_95_ex_outages": true,
+   "continuity_ex_outages": true,
+   "ess_min_150": false,
+   "mde80_max_8pct_of_MSE": false,
+   "fold_viability": true,
+   "outcome_nondegenerate": true,
+   "temporal_diversity": true,
+   "regime_no_domination": true,
+   "no_open_capture_incident": true,
+   "provenance_complete": true
+  },
+  "failing": [
+   "ess_min_150",
+   "mde80_max_8pct_of_MSE"
+  ],
+  "ess_min_across_horizons": 142.8,
+  "usable_days_ex_outages": 12.25,
+  "mde80_worst_pct_of_MSE": 36.4,
+  "power": {
+   "h5": {
+    "usable_n": 942,
+    "ess": 221.7,
+    "ess_ratio": 0.235,
+    "acf_head": [
+     0.2044,
+     0.1138,
+     0.1235,
+     0.0776,
+     0.1671
+    ],
+    "baseline_mae_bps": 6.9,
+    "mde_by_metric_rho95": {
+     "MAE": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 6.8
+     },
+     "Huber": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 13.0
+     },
+     "MSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 25.2
+     },
+     "RMSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 12.6
+     }
+    },
+    "sd_abs_err_bps": 7.9,
+    "min_detectable_improvement": {
+     "rho_0.9": {
+      "mde80_bps": 0.66,
+      "mde80_pct_of_mae": 9.6,
+      "ci95_width_bps": 0.93
+     },
+     "rho_0.95": {
+      "mde80_bps": 0.47,
+      "mde80_pct_of_mae": 6.8,
+      "ci95_width_bps": 0.66
+     },
+     "rho_0.99": {
+      "mde80_bps": 0.21,
+      "mde80_pct_of_mae": 3.0,
+      "ci95_width_bps": 0.29
+     }
+    },
+    "folds": {
+     "n_folds": 5,
+     "per_fold": 188,
+     "min_required": 48,
+     "viable": true,
+     "fold_mae_bps": [
+      7.8,
+      8.2,
+      3.7,
+      6.6,
+      8.3
+     ],
+     "fold_mae_cv": 0.278
+    }
+   },
+   "h15": {
+    "usable_n": 941,
+    "ess": 188.6,
+    "ess_ratio": 0.2,
+    "acf_head": [
+     0.293,
+     0.1427,
+     0.1409,
+     0.1377,
+     0.2428
+    ],
+    "baseline_mae_bps": 11.9,
+    "mde_by_metric_rho95": {
+     "MAE": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 7.7
+     },
+     "Huber": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 15.2
+     },
+     "MSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 35.0
+     },
+     "RMSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 17.5
+     }
+    },
+    "sd_abs_err_bps": 14.2,
+    "min_detectable_improvement": {
+     "rho_0.9": {
+      "mde80_bps": 1.29,
+      "mde80_pct_of_mae": 10.9,
+      "ci95_width_bps": 1.81
+     },
+     "rho_0.95": {
+      "mde80_bps": 0.91,
+      "mde80_pct_of_mae": 7.7,
+      "ci95_width_bps": 1.28
+     },
+     "rho_0.99": {
+      "mde80_bps": 0.41,
+      "mde80_pct_of_mae": 3.4,
+      "ci95_width_bps": 0.57
+     }
+    },
+    "folds": {
+     "n_folds": 5,
+     "per_fold": 188,
+     "min_required": 48,
+     "viable": true,
+     "fold_mae_bps": [
+      13.8,
+      13.9,
+      5.6,
+      11.1,
+      15.0
+     ],
+     "fold_mae_cv": 0.319
+    }
+   },
+   "h30": {
+    "usable_n": 941,
+    "ess": 142.8,
+    "ess_ratio": 0.152,
+    "acf_head": [
+     0.4347,
+     0.2002,
+     0.1385,
+     0.2337,
+     0.1982
+    ],
+    "baseline_mae_bps": 16.8,
+    "mde_by_metric_rho95": {
+     "MAE": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 8.7
+     },
+     "Huber": {
+      "kind": "robust",
+      "mde80_pct_of_metric": 17.0
+     },
+     "MSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 36.4
+     },
+     "RMSE": {
+      "kind": "outlier-sensitive",
+      "mde80_pct_of_metric": 18.2
+     }
+    },
+    "sd_abs_err_bps": 19.8,
+    "min_detectable_improvement": {
+     "rho_0.9": {
+      "mde80_bps": 2.08,
+      "mde80_pct_of_mae": 12.4,
+      "ci95_width_bps": 2.91
+     },
+     "rho_0.95": {
+      "mde80_bps": 1.47,
+      "mde80_pct_of_mae": 8.7,
+      "ci95_width_bps": 2.06
+     },
+     "rho_0.99": {
+      "mde80_bps": 0.66,
+      "mde80_pct_of_mae": 3.9,
+      "ci95_width_bps": 0.92
+     }
+    },
+    "folds": {
+     "n_folds": 5,
+     "per_fold": 188,
+     "min_required": 48,
+     "viable": true,
+     "fold_mae_bps": [
+      19.3,
+      20.0,
+      7.3,
+      15.7,
+      21.6
+     ],
+     "fold_mae_cv": 0.34
+    }
+   }
+  }
+ },
+ "integrity_whole_capture": {
+  "binance": {
+   "rows": 32211640,
+   "pit_violations": 0,
+   "max_skew_s": 0.679,
+   "out_of_order": 11,
+   "bad_rows": 0
+  },
+  "okx": {
+   "rows": 2486464,
+   "pit_violations": 0,
+   "max_skew_s": 0.677,
+   "out_of_order": 2,
+   "bad_rows": 0
+  },
+  "kraken": {
+   "rows": 959378,
+   "pit_violations": 0,
+   "max_skew_s": 0.668,
+   "out_of_order": 1,
+   "bad_rows": 0
+  }
+ }
+}

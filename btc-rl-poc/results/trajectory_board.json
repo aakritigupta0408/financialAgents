@@ -1,0 +1,126 @@
+{
+ "generated_ts": 1788889474,
+ "law": "trajectory is informational; frozen gates/SPRT remain the decision authority",
+ "thresholds": {
+  "on_track_p": 0.7,
+  "slow_p": 0.3
+ },
+ "components": [
+  {
+   "id": "A3-v2.1",
+   "tier": "T3-entry-timing",
+   "current_c_per_eligible": -6.35,
+   "cumulative_c": -546.1,
+   "n": 86,
+   "gate_n": 50,
+   "target": "> 0 at registered gate",
+   "gap_c": 6.35,
+   "required_avg_over_remaining_c": null,
+   "recent_slope": -0.0005,
+   "p_reach_zero_by_gate": 0.0,
+   "trajectory_evidence": {
+    "n_independent_units": 86,
+    "bootstrap": "traj-lcg-v1-seed20260907-boot2000",
+    "independence_satisfied": "per-window paired deltas; distinct 15-min windows treated independent \u2014 mild regime autocorrelation possible, so P is indicative not exact"
+   },
+   "decision_authority": "REJECT",
+   "state": "REGRESSING",
+   "note": "frozen bootstrap-CI gate is the authority; trajectory is informational"
+  },
+  {
+   "id": "t_exec_reg",
+   "tier": "T4-execution",
+   "current_paired_c_per_$1": 4.8,
+   "n": 418,
+   "llr": 0.98,
+   "promote_llr": 5.66,
+   "reject_llr": -2.3,
+   "recent_slope": -0.0,
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": 202,
+    "bootstrap": null,
+    "independence_satisfied": "SPRT statistic \u2014 deliberately NOT bootstrapped; LLR is not linearly extrapolable, so no P is emitted"
+   },
+   "state": "PROMISING_PACE_UNKNOWN",
+   "note": "SPRT is the decision authority; LLR is not linearly extrapolable. Traffic was frozen by the SEV \u2014 track velocity from n=375."
+  },
+  {
+   "id": "kb2",
+   "tier": "T2-probability",
+   "current": 0.0039,
+   "target": "> market (BSS>0 durable)",
+   "gap": null,
+   "state": "CONTROL",
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": 5,
+    "bootstrap": null,
+    "independence_satisfied": "5 chronological walk-forward folds"
+   },
+   "note": "serving control; ~0.998 corr with market \u2014 a thin edge"
+  },
+  {
+   "id": "kb4",
+   "tier": "T2-probability",
+   "current": -0.0072,
+   "target": "beat kb2 + market durably",
+   "gap": -0.0111,
+   "state": "PROMISING_PACE_UNKNOWN",
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": 5,
+    "bootstrap": null,
+    "independence_satisfied": "5 folds; no metric time-series for a velocity estimate \u2014 P deliberately null"
+   },
+   "note": "challenger; only ~+0.002 BSS over kb2, no independent metric time-series to estimate arrival \u2014 needs a registered forward paired test to earn PROVEN"
+  },
+  {
+   "id": "F1",
+   "tier": "T0-capture",
+   "current": 76.1,
+   "target": ">= 150 ESS/horizon",
+   "gap": 73.9,
+   "state": "BELOW_BENCHMARK_PLAUSIBLY_ON_TRACK",
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": 76,
+    "bootstrap": null,
+    "independence_satisfied": "ESS already autocorrelation-adjusts; no stored ESS time-series yet, so P is deliberately null"
+   },
+   "note": "not failing \u2014 independent information accrues slowly in a trending regime; needs a registered ESS-velocity pace test before EXTEND vs IMPROVING_TOO_SLOW can be called",
+   "verdict": "EXTEND_CAPTURE"
+  },
+  {
+   "id": "T1.2",
+   "tier": "T1-forecast",
+   "current": null,
+   "target": "beat incumbent T1 (pinball)",
+   "gap": null,
+   "state": "BLOCKED",
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": null,
+    "bootstrap": null,
+    "independence_satisfied": "n/a"
+   },
+   "note": "awaiting F1 gate; a blocked hypothesis is not a failure"
+  },
+  {
+   "id": "t9",
+   "tier": "T1-forecast",
+   "current": "pinball ~30.87",
+   "target": "beat consensus pinball ~30.40",
+   "gap": "~+0.47 pinball (worse)",
+   "state": "BELOW_BENCHMARK_TEMP_SHADOW",
+   "p_reach_gate": null,
+   "trajectory_evidence": {
+    "n_independent_units": null,
+    "bootstrap": null,
+    "independence_satisfied": "aggregate pinball, no per-unit series here"
+   },
+   "note": "h30 retrain improved val MSE ~41%; kept ONE confirmation window \u2014 if the val gain does not show in fresh prequential out-of-sample, RETIRE",
+   "coverage80": 0.807
+  }
+ ]
+}

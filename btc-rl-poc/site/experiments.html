@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quant Universe — Experiments</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+/* ---------- header statement ---------- */
+.statement { font: 500 clamp(30px, 5.4vw, 52px)/1.12 var(--display);
+  letter-spacing: .015em; color: var(--ink); margin-top: 6px; }
+.statement .x { color: var(--muted); font-style: italic;
+  padding: 0 .12em; }
+/* ---------- status pills (state, not effect) ---------- */
+.pillbig { display: inline-flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 800; letter-spacing: .07em;
+  text-transform: uppercase; border-radius: 10px; padding: 8px 16px;
+  white-space: nowrap; }
+.pb-collect { color: var(--series-4); background: rgba(143,96,0,.12);
+  border: 1px solid rgba(143,96,0,.3); }
+.pb-good { color: var(--good-text); background: rgba(12,138,77,.10);
+  border: 1px solid rgba(12,138,77,.3); }
+.pb-kill { color: var(--down); background: rgba(209,60,60,.10);
+  border: 1px solid rgba(209,60,60,.3); }
+.pb-frozen { color: var(--muted); background: rgba(124,134,149,.12);
+  border: 1px solid var(--border); }
+/* ---------- card 1 layout ---------- */
+.exphead { display: flex; flex-wrap: wrap; gap: 12px 22px;
+  align-items: center; margin-top: 12px; }
+.expid { font-size: 15px; font-weight: 800; letter-spacing: .03em; }
+.hyp { margin-top: 12px; border-left: 3px solid var(--series-2);
+  padding: 4px 14px; font-size: 14px; line-height: 1.6;
+  color: var(--ink-2); }
+.hyp b { color: var(--ink); }
+.xgrid { display: grid; gap: 10px; margin-top: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); }
+.xcell { background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 13px; font-size: 12.5px;
+  line-height: 1.55; }
+.xcell .h { font-size: 10px; font-weight: 800; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.xcell .n { font-size: 19px; font-weight: 800;
+  font-variant-numeric: tabular-nums; }
+.xcell .d { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.gates { display: inline-flex; gap: 4px; margin-top: 4px; }
+.gates span { font-size: 10px; font-weight: 700; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 5px; padding: 1px 7px;
+  font-variant-numeric: tabular-nums; }
+.gates span.hit { color: var(--good-text);
+  border-color: rgba(12,138,77,.4); }
+.shadowline { margin-top: 10px; font-size: 11px; color: var(--faint);
+  font-variant-numeric: tabular-nums; }
+.legacy { margin-top: 14px; background: var(--surface-2);
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 9px 14px; font-size: 12.5px; line-height: 1.6;
+  color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.legacy .h { font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); }
+/* ---------- card 3 ---------- */
+.nextbig { font: 600 clamp(22px, 3.4vw, 32px)/1.2 var(--display);
+  letter-spacing: .01em; margin-top: 12px; }
+.nextwhy { margin-top: 8px; font-size: 13.5px; line-height: 1.65;
+  color: var(--ink-2); max-width: 64ch; }
+.nextwhy code { font: 12px ui-monospace, Menlo, monospace;
+  background: var(--surface-2); border: 1px solid var(--grid);
+  border-radius: 4px; padding: 1px 6px; }
+.qhead { font-size: 10.5px; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--muted); margin: 18px 0 4px; }
+.qrow { display: flex; gap: 12px; align-items: baseline; padding: 9px 0;
+  border-bottom: 1px solid var(--grid); font-size: 12.5px;
+  line-height: 1.55; }
+.qrow:last-child { border-bottom: 0; }
+.qrow .pr { flex: none; font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; color: #fff; background: var(--series-1);
+  border-radius: 5px; padding: 2.5px 7px; }
+.qrow .pr.p0 { background: var(--series-2); }
+.qrow .qq { color: var(--ink-2); }
+.qrow .qq b { color: var(--ink); }
+.qrow .mm { display: block; font-size: 11px; color: var(--muted);
+  margin-top: 2px; font-variant-numeric: tabular-nums; }
+/* ---------- history (not a card) ---------- */
+.history { margin-top: 6px; }
+.history h2 { margin-bottom: 2px; }
+.hrow { display: flex; gap: 14px; align-items: baseline;
+  padding: 11px 4px; border-bottom: 1px solid var(--border);
+  font-size: 13px; line-height: 1.6; flex-wrap: wrap; }
+.hrow .vc { flex: none; font-size: 10px; font-weight: 800;
+  letter-spacing: .08em; text-transform: uppercase; border-radius: 6px;
+  padding: 3px 10px; white-space: nowrap; }
+.vc-rej { color: var(--down); background: rgba(209,60,60,.10);
+  border: 1px solid rgba(209,60,60,.3); }
+.vc-gray { color: var(--muted); background: rgba(124,134,149,.12);
+  border: 1px solid var(--border); }
+.hrow .id { flex: none; font-weight: 800; min-width: 84px; }
+.hrow .ls { color: var(--ink-2); flex: 1 1 34ch; }
+.hrow .ls b { color: var(--ink); }
+/* ---------- chart ---------- */
+.chartwrap { overflow-x: auto; }
+.chartwrap svg { min-width: 640px; }
+svg .gate { stroke: var(--axis); stroke-width: 1;
+  stroke-dasharray: 4 4; }
+svg .zero { stroke: var(--axis); stroke-width: 1.25; }
+svg .meanline { stroke: var(--series-2); stroke-width: 2; fill: none;
+  stroke-linejoin: round; stroke-linecap: round; }
+svg .band { fill: rgba(36,97,184,.10); stroke: none; }
+svg .hoverdot { fill: var(--series-2); stroke: var(--surface);
+  stroke-width: 2; }
+.chartnote { font-size: 13px; color: var(--ink-2); margin-top: 10px;
+  max-width: 64ch; }
+.footnote { font-size: 11.5px; color: var(--faint); margin-top: 12px;
+  padding-top: 9px; border-top: 1px solid var(--grid);
+  letter-spacing: .02em; }
+footer { text-align: center; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a></nav>
+<div class="research-banner">🎓 <b>University research study</b> — all
+trading shown is <b>simulated paper trading</b> for model evaluation and
+education only. Nothing on this site is financial advice, a solicitation,
+or a recommendation to buy or sell anything.</div>
+
+<main>
+<header>
+  <div class="eyebrow"><span class="live-dot" id="dot"></span>
+    the experiment desk · <span id="asof">loading…</span></div>
+  <div class="statement">ONE CONTROL <span class="x">×</span> ONE
+    TREATMENT</div>
+  <p class="sub">The desk's scientific discipline: every question is
+  asked as a registered control-vs-treatment experiment with a frozen
+  decision rule. The rule is written before the first window settles;
+  the evidence — not a person — closes the experiment.</p>
+</header>
+
+<!-- CARD 1 ─ CURRENT EXPERIMENT -->
+<section>
+  <div class="eyebrow">card 1 · current experiment</div>
+  <h2>A3-v2.1 — entry timing</h2>
+  <div id="c1"><p class="mini">loading a3_live.json + a3_decision.json…</p></div>
+  <div class="footnote">simulated capital · registered experiments ·
+    evidence over opinion</div>
+</section>
+
+<!-- CARD 2 ─ WHAT HAPPENED? -->
+<section>
+  <div class="eyebrow">card 2 · what happened?</div>
+  <h2>Cumulative treatment effect over eligible windows</h2>
+  <p class="sub small">Running mean of the paired Δ net P&amp;L
+  (T05 − C0), ¢ per eligible window, with a ±1.96·SE band. Dashed
+  verticals mark the registered gates.</p>
+  <div id="c2"><p class="mini">loading a3v21_window_evaluation.jsonl…</p></div>
+  <p class="chartnote">Is the evidence converging? The frozen rule
+  decides at n=50 — never a human mid-stream.</p>
+  <div class="footnote">simulated capital · registered experiments ·
+    evidence over opinion</div>
+</section>
+
+<!-- CARD 3 ─ WHAT DO WE DO NEXT? -->
+<section>
+  <div class="eyebrow">card 3 · what do we do next?</div>
+  <h2>The machine's answer</h2>
+  <div id="c3"><p class="mini">loading a3_decision.json +
+    research_queue.json…</p></div>
+  <div class="footnote">simulated capital · registered experiments ·
+    evidence over opinion</div>
+</section>
+
+<!-- HISTORY — closed facts, not a card -->
+<div class="history">
+  <h2>Experiment history</h2>
+  <p class="sub small">Science is also what we stopped doing, and why.
+  These are closed facts — recorded, never re-argued.</p>
+  <div class="hrow"><span class="vc vc-rej">Rejected</span>
+    <span class="id">A3-v1.1</span>
+    <span class="ls">10¢-dip entry — rejected at n=56, Δ −10.4¢,
+    CI &lt; 0. <b>Every fill won, but missed winners dominated</b> —
+    a perfect fill record can still be a losing policy.</span></div>
+  <div class="hrow"><span class="vc vc-gray">Invalidated</span>
+    <span class="id">A3-v2</span>
+    <span class="ls">5¢-dip entry — closed
+    INVALIDATED_BY_EVIDENCE_INTEGRITY: source-log rotation destroyed
+    ~34 of 153 evidence rows. <b>The Δ at closure is not a result</b>;
+    the question re-registered as A3-v2.1.</span></div>
+  <div class="hrow"><span class="vc vc-rej">Rejected</span>
+    <span class="id">T1.1</span>
+    <span class="ls">+F-XVENUE features — cross-venue prices made the
+    forecast <b>worse at every horizon</b> (pinball h5 −4.0%,
+    h15 −3.5%, h30 −1.8%). More data is not more signal.</span></div>
+  <div class="hrow"><span class="vc vc-gray">Archived</span>
+    <span class="id">M11</span>
+    <span class="ls">Maker limit orders — standalone maker was
+    <b>adversely selected</b>: the fills you get are the fills you
+    should not want.</span></div>
+  <div class="hrow"><span class="vc vc-gray">Archived</span>
+    <span class="id">kb6</span>
+    <span class="ls">Falsified — the claimed edge did not survive its
+    own registered test. <b>A clean kill, on schedule.</b></span></div>
+  <div class="hrow"><span class="vc vc-gray">Archived</span>
+    <span class="id">kbf</span>
+    <span class="ls">Accurate but <b>too late to monetize</b> — a
+    correct forecast that arrives after the price has moved is
+    trivia, not edge.</span></div>
+</div>
+
+<footer>simulated capital · registered experiments · evidence over
+  opinion</footer>
+</main>
+
+<div id="tip"></div>
+
+<script>
+"use strict";
+/* ---------------------------------------------------------- fetch -- */
+const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
+  + Math.floor(Date.now() / 15000);
+const J = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    return r.ok ? r.json() : null; } catch { return null; }
+};
+const JL = async u => {
+  try { const r = await fetch(bust(u), { cache: "no-store" });
+    if (!r.ok) return [];
+    return (await r.text()).split("\n").filter(l => l.trim())
+      .map(l => { try { return JSON.parse(l); } catch { return null; } })
+      .filter(Boolean);
+  } catch { return []; }
+};
+
+/* ------------------------------------------------------ formatting -- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;",
+  "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+/* fraction-of-$1 → signed ¢ */
+const cS = v => v == null || !isFinite(v) ? "–"
+  : (v >= 0 ? "+" : "−") + Math.abs(100 * v).toFixed(1) + "¢";
+const f2 = v => v == null || !isFinite(v) ? "–" : v.toFixed(2);
+
+const PILL = {
+  INSUFFICIENT_EVIDENCE: ["pb-collect", "🟡 COLLECTING EVIDENCE"],
+  CONTINUE:              ["pb-collect", "🟡 COLLECTING EVIDENCE"],
+  QUALIFY:               ["pb-good",    "✅ QUALIFIED — PROMOTE"],
+  REJECT:                ["pb-kill",    "✕ REJECTED"],
+};
+
+/* -------------------------------------- CARD 1 — current experiment -- */
+function renderCard1(a3, dec, os) {
+  const el = document.getElementById("c1");
+  if (!a3 && !dec) {
+    el.innerHTML = '<p class="mini">a3_live.json / a3_decision.json ' +
+      'unavailable — the page shows nothing it cannot fetch</p>';
+    return;
+  }
+  const fwd = (a3 && a3.forward) || {};
+  const n = fwd.eligible ?? (dec && dec.eligible_n) ?? 0;
+  const reqN = (dec && dec.registered_gate_n) || 50;
+  const decision = (dec && dec.decision) || "INSUFFICIENT_EVIDENCE";
+  const [pc, pt] = PILL[decision] || ["pb-frozen", esc(decision)];
+  const ci = dec && Array.isArray(dec.ci95_bootstrap)
+    ? dec.ci95_bootstrap : null;
+  const eff = fwd.incremental_per_eligible ??
+    (dec && dec.primary_effect_per_eligible);
+  const cell = (h, body) => `<div class="xcell"><div class="h">${h
+    }</div>${body}</div>`;
+  const gate = g => `<span class="${n >= g ? "hit" : ""}">${g}</span>`;
+  const head = `<div class="exphead">` +
+    `<span class="expid">${esc((a3 && a3.experiment_id) ||
+      (dec && dec.experiment) || "A3-v2.1")}</span>` +
+    `<span class="pillbig ${pc}">${pt}</span></div>` +
+    `<div class="hyp"><b>Hypothesis.</b> Does waiting for the first
+    valid ≥5¢ discount improve after-cost P&amp;L per eligible
+    window?</div>`;
+  const grid = `<div class="xgrid">` +
+    cell("control · C0",
+      `<div class="d"><b>Immediate entry</b> — buy the moment the
+      thesis fires, at the executable ask.</div>`) +
+    cell("treatment · T05",
+      `<div class="d"><b>Wait for a ≥5¢ dip</b> — same windows, same
+      theses; only entry timing differs.</div>`) +
+    cell("primary metric",
+      `<div class="d">Paired Δ net P&amp;L per eligible window
+      (T05 − C0), after costs.</div>`) +
+    cell("evidence n",
+      `<div class="n">${n} <span style="font-size:12px;font-weight:600;
+        color:var(--muted)">/ ${reqN}</span></div>` +
+      `<div class="d">gates <span class="gates">${gate(10)}${gate(25)
+        }${gate(50)}</span><br>display · compare · decision</div>`) +
+    cell("effect",
+      `<div class="n">${cS(eff)}</div>` +
+      `<div class="d">per eligible window</div>`) +
+    cell("95% CI (bootstrap)",
+      `<div class="n" style="font-size:15px">${ci
+        ? `[${cS(ci[0])}, ${cS(ci[1])}]` : "—"}</div>` +
+      `<div class="d">${ci ? (ci[0] < 0 && ci[1] > 0
+        ? "spans zero" : ci[1] < 0 ? "entirely below zero"
+        : "entirely above zero") : "collecting"}</div>`) +
+    cell("decision",
+      `<div class="n" style="font-size:15px">${esc(decision)}</div>` +
+      `<div class="d">${esc((dec && dec.why) || "frozen rule pending")
+        }</div>`) +
+    `</div>`;
+  const sh = a3 && a3.shadows && a3.shadows.T10;
+  const shadow = sh ? `<div class="shadowline">shadow T10 (≥10¢ dip):
+    ${cS(sh.pnl_per_eligible)} / eligible over n=${sh.eligible ?? "—"}
+    — observation only, never decides.</div>` : "";
+  /* legacy model-layer pair — SPRT */
+  const t = os && (os.treatments || []).find(x =>
+    x && x.key === "t_exec_reg");
+  const legacy = `<div class="legacy"><div class="h">legacy pair ·
+    M10 vs M10+M8 (SPRT)</div>` + (t
+    ? `${esc(t.label || "M10+M8")} — Δ EV/$1 <b>${cS(t.mean_diff)
+      }</b> · n ${t.n ?? "—"} · LLR ${f2(t.llr)} / promote at ${
+      f2(t.upper)} · ${esc(t.verdict || "collecting")}`
+    : "online_status.json unavailable") + `</div>`;
+  el.innerHTML = head + grid + shadow + legacy;
+}
+
+/* ------------------------------------------ CARD 2 — the one chart -- */
+let ROWS = [];
+function renderCard2(rows) {
+  const el = document.getElementById("c2");
+  const elig = rows.filter(r => r && r.state !== "SYSTEM_EXCLUDED"
+    && typeof r.delta_pnl === "number" && isFinite(r.delta_pnl))
+    .sort((a, b) => (a.close_ts || 0) - (b.close_ts || 0));
+  ROWS = elig;
+  if (elig.length < 2) {
+    el.innerHTML = '<p class="mini">fresh experiment — the evidence ' +
+      'line draws itself as windows settle.</p>';
+    return;
+  }
+  /* running mean and ±1.96·SE band, in ¢ */
+  const pts = []; let s = 0, s2 = 0;
+  for (let i = 0; i < elig.length; i++) {
+    const d = 100 * elig[i].delta_pnl;
+    s += d; s2 += d * d;
+    const k = i + 1, m = s / k;
+    const sd = k > 1 ? Math.sqrt(Math.max(0, (s2 - k * m * m) / (k - 1)))
+      : null;
+    const se = sd != null ? sd / Math.sqrt(k) : null;
+    pts.push({ n: k, m, lo: se != null ? m - 1.96 * se : m,
+      hi: se != null ? m + 1.96 * se : m, d,
+      cls: elig[i].econ_class, st: elig[i].state,
+      ts: elig[i].close_ts });
+  }
+  /* geometry */
+  const W = 920, H = 340, L = 56, R = 18, T = 16, B = 42;
+  const iw = W - L - R, ih = H - T - B;
+  const xMax = Math.max(pts.length, 55);
+  const X = nn => L + (nn - 1) / (xMax - 1) * iw;
+  /* fit the domain to the mean line plus the matured band (n≥8) —
+     the n=2 band is ±70¢ and would flatten everything; early band
+     points clamp to the plot edge instead */
+  let yLo = 0, yHi = 0;
+  for (const p of pts) { yLo = Math.min(yLo, p.m);
+    yHi = Math.max(yHi, p.m); }
+  for (const p of pts) if (p.n >= 8) {
+    yLo = Math.min(yLo, p.lo); yHi = Math.max(yHi, p.hi); }
+  const pad = Math.max(1, (yHi - yLo) * 0.08);
+  yLo -= pad; yHi += pad;
+  const clamp = v => Math.max(yLo, Math.min(yHi, v));
+  const Y = v => T + (yHi - v) / (yHi - yLo) * ih;
+  /* y ticks — round steps */
+  const span = yHi - yLo;
+  const step = [1, 2, 5, 10, 20, 50].find(st => span / st <= 7) || 100;
+  let grid = "", ylab = "";
+  for (let v = Math.ceil(yLo / step) * step; v <= yHi; v += step) {
+    grid += `<line class="gridline" x1="${L}" x2="${W - R}"
+      y1="${Y(v)}" y2="${Y(v)}"/>`;
+    ylab += `<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end">${
+      v > 0 ? "+" : ""}${v}¢</text>`;
+  }
+  /* x ticks */
+  let xlab = "";
+  for (let nn = 10; nn <= xMax; nn += 10)
+    xlab += `<text x="${X(nn)}" y="${H - B + 16}"
+      text-anchor="middle">${nn}</text>`;
+  /* gates */
+  const GATES = [[10, "display"], [25, "compare"], [50, "decision"]];
+  const gates = GATES.map(([g, lab]) =>
+    `<line class="gate" x1="${X(g)}" x2="${X(g)}" y1="${T}"
+      y2="${T + ih}"/>` +
+    `<text x="${X(g) + 4}" y="${T + 12}">${lab} n=${g}</text>`).join("");
+  /* band (starts at n=2 where SE exists) */
+  const bp = pts.slice(1);
+  const band = `<path class="band" d="M${bp.map(p =>
+      `${X(p.n).toFixed(1)},${Y(clamp(p.hi)).toFixed(1)}`).join("L")}L${
+    bp.slice().reverse().map(p =>
+      `${X(p.n).toFixed(1)},${Y(clamp(p.lo)).toFixed(1)}`).join("L")}Z"/>`;
+  const line = `<path class="meanline" d="M${pts.map(p =>
+    `${X(p.n).toFixed(1)},${Y(p.m).toFixed(1)}`).join("L")}"/>`;
+  const zero = (0 >= yLo && 0 <= yHi)
+    ? `<line class="zero" x1="${L}" x2="${W - R}" y1="${Y(0)}"
+        y2="${Y(0)}"/>` : "";
+  const last = pts[pts.length - 1];
+  const endlab = `<text x="${Math.min(X(last.n) + 6, W - R - 4)}"
+    y="${Y(last.m) + 4}" style="fill:var(--series-2);
+    font-weight:700">${last.m > 0 ? "+" : ""}${last.m.toFixed(1)
+    }¢</text>`;
+  el.innerHTML = `<div class="chartwrap">` +
+    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Running mean
+     of paired delta P&amp;L per eligible window with 95% band"
+     id="fx">` +
+    grid + zero + gates + band + line + endlab + ylab + xlab +
+    `<text x="${L}" y="${H - 6}" style="fill:var(--muted)">eligible
+      window # (settle order)</text>` +
+    `<text x="${W - R}" y="${H - 6}" text-anchor="end"
+      style="fill:var(--muted)">running Δ, ¢ / eligible · band =
+      ±1.96·SE</text>` +
+    `<circle class="hoverdot" id="fxdot" r="4" opacity="0"/>` +
+    `<rect id="fxhit" x="${L}" y="${T}" width="${iw}" height="${ih}"
+      fill="transparent"/>` +
+    `</svg></div>`;
+  /* hover: nearest eligible index → crosshair dot + tooltip */
+  const svg = document.getElementById("fx");
+  const dot = document.getElementById("fxdot");
+  const hit = document.getElementById("fxhit");
+  const tip = document.getElementById("tip");
+  const move = ev => {
+    const box = svg.getBoundingClientRect();
+    const mx = (ev.clientX - box.left) / box.width * W;
+    const nn = Math.max(1, Math.min(pts.length,
+      Math.round(1 + (mx - L) / iw * (xMax - 1))));
+    const p = pts[nn - 1];
+    dot.setAttribute("cx", X(p.n)); dot.setAttribute("cy", Y(p.m));
+    dot.setAttribute("opacity", "1");
+    tip.style.opacity = "1";
+    tip.style.left = Math.min(ev.clientX + 14,
+      window.innerWidth - 220) + "px";
+    tip.style.top = (ev.clientY + 14) + "px";
+    tip.innerHTML = `n=${p.n} · running Δ ${p.m > 0 ? "+" : ""}${
+      p.m.toFixed(1)}¢ / eligible<br>this window: ${p.d > 0 ? "+" : ""}${
+      p.d.toFixed(1)}¢ · ${esc(p.st || "—")}<br><span
+      style="opacity:.7">${esc(p.cls || "")}</span>`;
+  };
+  const leave = () => { dot.setAttribute("opacity", "0");
+    tip.style.opacity = "0"; };
+  hit.addEventListener("mousemove", move);
+  hit.addEventListener("mouseleave", leave);
+}
+
+/* --------------------------------------------- CARD 3 — next action -- */
+function renderCard3(dec, rq) {
+  const el = document.getElementById("c3");
+  const decision = (dec && dec.decision) || null;
+  let big, why;
+  if (decision === "REJECT") {
+    big = `<div class="nextbig" style="color:var(--down)">RECORD THE
+      FAILURE</div>`;
+    why = `A clean failure is a successful research outcome. The
+      frozen rule spoke; the lesson enters the history below and the
+      threshold never gets quietly re-tuned.`;
+  } else if (decision === "QUALIFY") {
+    big = `<div class="nextbig" style="color:var(--good-text)">PROMOTE
+      </div>`;
+    why = `The treatment crossed the frozen boundary. Promotion is the
+      machine's verdict, executed — not a debate.`;
+  } else {
+    const n = dec ? dec.eligible_n : null;
+    const g = (dec && dec.registered_gate_n) || 50;
+    const ci = dec && Array.isArray(dec.ci95_bootstrap)
+      ? dec.ci95_bootstrap : null;
+    const spans = ci && ci[0] < 0 && ci[1] > 0;
+    big = `<div class="nextbig" style="color:var(--series-4)">KEEP
+      TESTING</div>`;
+    why = (n != null ? `n = ${n} of the registered decision gate ${g}. `
+        : `The registered decision gate is ${g}. `) +
+      (spans ? "The 95% CI still spans zero. " : "") +
+      (dec && dec.why ? `Machine's reason: <code>${esc(dec.why)
+        }</code>. ` : "") +
+      `No conclusion is allowed before the gate — waiting is the
+      discipline, not indecision.`;
+  }
+  const q = ((rq && rq.queue) || []).slice(0, 3);
+  const queue = q.length ? `<div class="qhead">research queue — next
+    actions</div>` + q.map(item =>
+    `<div class="qrow"><span class="pr ${String(item.priority ||
+      "").toLowerCase() === "p0" ? "p0" : ""}">${esc(item.priority ||
+      "—")}</span><span class="qq"><b>${esc(item.research_question ||
+      "")}</b><span class="mm">${esc(item.state || "—")}${item.blocked_by
+      ? ` · blocked by: ${esc(item.blocked_by)}` : ""}${item.next_gate
+      ? ` · next gate: ${esc(item.next_gate)}` : ""
+      }</span></span></div>`).join("")
+    : `<p class="mini">research_queue.json unavailable</p>`;
+  el.innerHTML = big + `<p class="nextwhy">${why}</p>` + queue;
+}
+
+/* -------------------------------------------------------------- poll -- */
+async function poll() {
+  const [a3, dec, os, rows, rq] = await Promise.all([
+    J("../results/a3_live.json"),
+    J("../results/a3_decision.json"),
+    J("../results/online_status.json"),
+    JL("../results/a3v21_window_evaluation.jsonl"),
+    J("../results/research_queue.json"),
+  ]);
+  const ts = (dec && dec.generated_ts) || (a3 && a3.generated_ts);
+  const ageS = ts ? Date.now() / 1000 - ts : 1e9;
+  document.getElementById("dot").className =
+    "live-dot" + (ageS > 7200 ? " stale" : "");
+  document.getElementById("asof").textContent = ts
+    ? "evidence " + (ageS > 7200 ? "stale" : "fresh") : "data missing";
+  renderCard1(a3, dec, os);
+  renderCard2(rows);
+  renderCard3(dec, rq);
+}
+poll();
+setInterval(poll, 15000);
+</script>
+<script src="nav.js" defer></script>
+</body>
+</html>

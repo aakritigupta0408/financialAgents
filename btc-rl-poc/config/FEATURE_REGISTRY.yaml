@@ -1,0 +1,181 @@
+# FEATURE_REGISTRY.yaml v1.0.0 — 2026-08-30
+# The canonical feature contract (feature-discovery program Phase 2).
+#
+# LAW: no model may consume a feature that is not in this registry.
+# Lifecycle: CAPTURE_ONLY -> DERIVED -> OFFLINE_TESTING -> SHADOW ->
+#            ACTIVE | REJECTED
+# Research design (Phase 7): families are tested WHOLE against the
+# incumbent feature set — one family per experiment, same
+# architecture/training/folds/policy; no combinations until one
+# family demonstrates incremental value. Qualification (Phase 8) is
+# MARKET-RELATIVE (Δ median-fold BSS + fold stability + timing), and
+# a family that only helps at T-2m after Kalshi repriced is
+# REJECT_FOR_TRADING no matter how good its Brier (Phase 9 — the kbf
+# lesson, codified).
+#
+# GATE F1 v2 (PROTOCOL AMENDMENT, PM ratified 2026-09-03):
+#   v1 ("7 calendar days · >=95% coverage over the WHOLE span") is
+#   RETIRED — a single 19.4h machine-sleep outage permanently
+#   poisoned the span ratio while the Early Sufficiency Audit
+#   (f1_sufficiency_audit.json, commit 1caa9a9) proved the clean
+#   data already carried adequate statistical power. v1 measured
+#   the laptop, not the market.
+#   v2 = a CONTIGUOUS CLEAN WINDOW (documented machine outages —
+#   all-venue gaps >15min — TRUNCATE eligibility, never poison it)
+#   satisfying PRE-REGISTERED criteria, machine-computed by
+#   scripts/emit_f1_gate.py: PIT violations 0 · schema clean ·
+#   per-venue 5-min presence >=95% in-window · no in-window gap
+#   >=60min · ESS >=150 per horizon (ACF-adjusted, 15-min grid) ·
+#   MDE80(rho .95) <=8% of the GOVERNING metric · >=5 chrono folds >=48 ·
+#   outcomes 30-70% up · >=12 six-hour blocks, no vol tercile >60%
+#   · no open capture incident · all hourly shards present.
+#   ANTI-PEEKING LAW: thresholds frozen 09-03 BEFORE any T1.1 model
+#   result exists; model outcomes never feed back into this gate.
+#   v2.1 RATIFICATION CONDITION (PM 09-03): the stitched rule
+#   becomes governing only after the missingness-selection audit
+#   (scripts/audit_missingness.py) passes. v2.1.0 of that audit
+#   ruled FAIL (frozen, git 82db163); F1-v2.1.1 amends ONLY its
+#   check E to the outage-EPISODE level (episodes = outages
+#   separated by <120min clean; >=3 episodes required; bounds
+#   [25,75] byte-identical) and must rerun PROSPECTIVELY (not
+#   before 2026-09-05 05:10 UTC, >=24h fresh capture under the
+#   sleep fix). All other criteria byte-identical — the amendment
+#   fixes a defective measurement, it does not ease the gate.
+#   (All-venue 5s availability is a T1.1 feature-spec concern —
+#   kraken legitimately gaps to 120s — NOT a capture criterion.)
+#   v2.2 GOVERNING-METRIC AMENDMENT (PM 2026-09-11): the MDE80
+#   sufficiency criterion is now measured on MSE (was outlier-robust
+#   MAE). RECORDED CONSEQUENCE (flagged twice before execution): MSE is
+#   outlier-SENSITIVE, its relative MDE runs ~3-4x MAE's on the same
+#   clean sample, so at the unchanged 8% threshold this RAISES the bar
+#   — under MAE F1 was at the doorstep (h5 6.8% / h15 7.7% pass, h30
+#   8.7% marginal); under MSE it needs ~20x more independent data
+#   (h5 25% / h15 35% / h30 36%). MAE/Huber stay in the report for
+#   reference but no longer gate. This is PM direction implemented as a
+#   registered amendment, not a silent swap; anti-peeking law intact.
+#   Data Reliability agent owns the gate evidence.
+#
+# BLOCKED until a family proves an information gain: TA-indicator
+# sweeps, sentiment/LLM feeds, paid data, random/AutoML feature
+# search, architecture search, dynamic A3 thresholds, Value-of-Wait
+# ML, new live traders.
+
+version: 1.0.0
+defaults:
+  pit_rule: "availability_timestamp = receive_ts of the LAST source
+    event entering the computation; a feature is usable at decision
+    time t only if availability <= t; no silent forward-fill —
+    missing is missing"
+  missing_value_policy: explicit null + missingness counter
+  quality_gate: "Phase 6: missingness, freshness, distribution,
+    variance, outliers, timestamp validity, drift, duplicate-info —
+    ML never adjudicates bad data"
+
+sources:
+  coinbase_tape:  {feed: F-MICRO, capture: scripts/event_capture.py,
+                   status: CAPTURING, since: 2026-08-29}
+  kalshi_quotes:  {feed: F-MICRO, capture: scripts/event_capture.py,
+                   status: CAPTURING, since: 2026-08-29,
+                   note: 1s L1 poll}
+  kalshi_book:    {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: full public REST orderbook polled 1s, stored
+                     on change — no API key required (the WS delta
+                     channel needs a key; production key deleted by
+                     owner order)}
+  kalshi_trades:  {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: public REST trades with min_ts cursor}
+  coinbase_l2:    {feed: F-MICRO, capture: scripts/capture_micro.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: public level2_batch WS, 25-level snapshots
+                     + batched deltas}
+  binance_trades: {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30,
+                   note: data-stream.binance.vision mirror
+                     (stream.binance.com is 451 geo-blocked here)}
+  okx_trades:     {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30}
+  kraken_trades:  {feed: F-XVENUE, capture: scripts/capture_xvenue.py,
+                   status: CAPTURING, since: 2026-08-30}
+  deribit_public: {feed: F-DERIV, status: NOT_CAPTURED,
+                   note: P2 per PM board}
+# CROSS-VENUE UNIVERSE FROZEN (PM 08-30): coinbase + binance + okx +
+# kraken. No additional exchanges without evidence that a missing
+# venue matters — consensus estimation, not an exchange census.
+# Synchronization: scripts/xvenue_sync.py is the ONE alignment layer
+# (latest at-or-before decision_ts, explicit age_ms, never a
+# future-nearest quote).
+
+families:
+
+  F-MICRO:      # ~12 features · targets MODEL_RESOLUTION in fast moves
+    lifecycle: CAPTURE_ONLY
+    features:
+      - {feature_id: l1_imbalance,        lookback: instant}
+      - {feature_id: l5_imbalance,        lookback: instant,
+         blocked_by: coinbase_l2 capture}
+      - {feature_id: l10_imbalance,       lookback: instant,
+         blocked_by: coinbase_l2 capture}
+      - {feature_id: microprice_deviation, lookback: instant}
+      - {feature_id: ofi_1s,              lookback: 1s}
+      - {feature_id: ofi_5s,              lookback: 5s}
+      - {feature_id: ofi_30s,             lookback: 30s}
+      - {feature_id: trade_imbalance_5s,  lookback: 5s}
+      - {feature_id: trade_imbalance_30s, lookback: 30s}
+      - {feature_id: spread_change,       lookback: 5s}
+      - {feature_id: depth_change,        lookback: 5s}
+      - {feature_id: quote_velocity,      lookback: 5s}
+
+  F-XVENUE:     # ~8 · targets early-window residual resolution —
+                # the M5.4 candidate question's family
+    # T1.1 verdict (09-05, registered one-shot): REJECT_FOR_T1 —
+    # worsened distributional forecast at h5/h15/h30 via linear
+    # probe on frozen dataset c255447862551cb5. Scope: T1 price
+    # forecasting only; T2 probability-layer use (e.g. dispersion
+    # for resolution) would need its OWN registered experiment.
+    # Capture continues (cheap, PIT record retained).
+    lifecycle: CAPTURE_ONLY
+    features:
+      - {feature_id: coinbase_return_1s,  lookback: 1s}
+      - {feature_id: kraken_return_1s,    lookback: 1s}
+      - {feature_id: binance_return_1s,   lookback: 1s}
+      - {feature_id: cross_venue_consensus_5s, lookback: 5s}
+      - {feature_id: cross_venue_dispersion_5s, lookback: 5s}
+      - {feature_id: coinbase_lead,       lookback: 30s}
+      - {feature_id: binance_lead,        lookback: 30s}
+      - {feature_id: kalshi_lag_vs_btc,   lookback: 30s}
+
+  F-PATH:       # ~8 · derivable from EXISTING data now
+    lifecycle: DERIVED
+    features:
+      - {feature_id: distance_to_strike,      lookback: instant}
+      - {feature_id: distance_to_strike_z,    lookback: instant}
+      - {feature_id: z_change_5s,             lookback: 5s}
+      - {feature_id: z_change_30s,            lookback: 30s}
+      - {feature_id: time_since_strike_cross, lookback: window}
+      - {feature_id: cross_count_3m,          lookback: 3m}
+      - {feature_id: max_favorable_excursion, lookback: window}
+      - {feature_id: max_adverse_excursion,   lookback: window}
+
+  F-THESIS:     # ~8 · the temporary-dislocation vs informative-
+                # repricing separator — future NEW registered
+                # experiment material; NEVER fed into frozen A3-v1.1
+    lifecycle: DERIVED
+    features:
+      - {feature_id: confidence_change_since_call, lookback: since_call}
+      - {feature_id: confidence_velocity,          lookback: 30s}
+      - {feature_id: market_prob_change_since_call, lookback: since_call}
+      - {feature_id: btc_return_since_call,        lookback: since_call}
+      - {feature_id: ofi_since_call,               lookback: since_call,
+         blocked_by: F-MICRO derivation}
+      - {feature_id: depth_change_since_call,      lookback: since_call}
+      - {feature_id: market_minus_structural_change, lookback: since_call}
+      - {feature_id: dip_velocity,                 lookback: 30s}
+
+dataset_contract:   # Phase 5
+  fields: [dataset_id, feature_version, source_versions, start_ts,
+           end_ts, window_count, git_sha]
+  row_semantics: "one row = one decision state at the timestamps the
+    live system actually had — never a reconstruction with
+    later-arriving data"

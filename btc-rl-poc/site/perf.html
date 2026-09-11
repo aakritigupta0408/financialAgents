@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>Performance & Significance</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+:root{ --card:#ffffff; --soft:#f5f7fa; --ink2:#4a5768; --line:rgba(20,27,36,.10);
+  --accent:#2f6df0; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+main{max-width:1080px}
+.bar{display:flex;align-items:center;gap:12px;margin:20px 0 10px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:3px}
+.seg button{font:600 12.5px system-ui;color:var(--muted);background:transparent;border:0;padding:6px 14px;border-radius:6px;cursor:pointer}
+.seg button.on{color:var(--ink);background:var(--card);box-shadow:0 1px 2px rgba(20,27,36,.08)}
+label.sel{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:7px}
+select{font:600 12.5px var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:6px 10px;cursor:pointer;max-width:360px}
+.stamp{font-size:11.5px;color:var(--faint);font-family:var(--mono);margin-left:auto}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 3px rgba(20,27,36,.05)}
+.panel h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;font-weight:650}
+.panel .sub{font-size:12.5px;color:var(--ink2);margin:0 0 14px}
+#chart{width:100%;height:260px;display:block}
+.lb{margin-top:20px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:650;padding:0 11px 10px;text-align:right;white-space:nowrap}
+th.l{text-align:left}
+td{padding:10px 11px;border-top:1px solid var(--grid);text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.l{text-align:left;font-family:system-ui}
+.sw{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:9px;vertical-align:middle}
+.tname{font-weight:600}.tp{color:var(--muted);font-size:11px;margin-left:6px}
+.ci{color:var(--muted);font-size:11px}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.sig{font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:20px;font-family:system-ui}
+.sig.yes-neg{color:var(--down);background:rgba(209,60,60,.12)}
+.sig.yes-pos{color:var(--up);background:rgba(15,157,88,.13)}
+.sig.no{color:var(--muted);background:rgba(124,135,152,.13)}
+.note{font-size:11.5px;color:var(--faint);margin-top:18px;font-family:var(--mono);line-height:1.6}
+</style>
+</head>
+<body>
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="traders.html">Traders</a><a class="nav here" href="perf.html">Performance</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="models.html">Models</a><a class="nav" href="board.html">Board</a><span class="spacer"></span><span class="tag">paper desk</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing here is financial advice.</div>
+
+<main>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">Performance &amp; Significance</h1>
+  <p style="color:var(--ink-2);max-width:66ch;">Per-trader performance measured over a chosen window — all time, or since a specific
+  retrain / feature change / deploy. Every headline number carries a <b>95% bootstrap confidence interval</b>, and a bet is
+  only called a real edge (or a real leak) when its interval clears zero.</p>
+</header>
+<div class="bar">
+  <div class="seg"><button class="on" id="fa">Active roster</button><button id="fr">All eight</button></div>
+  <label class="sel">since <select id="ref"></select></label>
+  <span class="stamp" id="stamp"></span>
+</div>
+<div class="panel">
+  <h2>Mean profit per trade — with 95% confidence interval</h2>
+  <p class="sub">Each bar is a trader's average $ per resolved bid; the whisker is the 95% bootstrap CI. Bars whose interval sits entirely left of the zero line are <b>significantly unprofitable</b>.</p>
+  <canvas id="chart"></canvas>
+  <div class="lb"><table id="tbl"></table></div>
+  <p class="note" id="note"></p>
+</div>
+</main>
+
+<script>
+const TRADERS=[
+ {id:"pt",name:"Follower",persona:"control",active:true},
+ {id:"pt3",name:"Disciplined",persona:"thesis",active:true},
+ {id:"pt6",name:"MLE",persona:"shadow",active:true},
+ {id:"pt2",name:"Ladder",persona:"retired",active:false},
+ {id:"pt4",name:"Gambler",persona:"retired",active:false},
+ {id:"pt5",name:"Saver",persona:"retired",active:false},
+ {id:"pt7",name:"Patient",persona:"retired",active:false},
+ {id:"pt8",name:"Ideal",persona:"retired",active:false},
+];
+const COLORS={pt:"#d1453b",pt3:"#2f6df0",pt6:"#0f9d58",pt2:"#c9749f",pt4:"#e6952b",pt5:"#37a9c9",pt7:"#8a6cc0",pt8:"#8a94a3"};
+const C=getComputedStyle(document.documentElement),col=k=>C.getPropertyValue(k).trim();
+const f$=c=>c==null?"—":(c<0?"-$":"$")+Math.abs(c/100).toFixed(2);
+const f0=c=>c==null?"—":(c<0?"-$":"$")+Math.abs(c/100).toFixed(0);
+const bust=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function jsonl(u){const r=await fetch(bust(u),{cache:"no-store"});if(!r.ok)return[];const t=await r.text();
+  return t.split("\n").filter(Boolean).map(l=>{try{return JSON.parse(l)}catch{return null}}).filter(Boolean);}
+const pnlOf=r=>r.pnl_c!=null?r.pnl_c:(r.would_pnl_c!=null?r.would_pnl_c:null);
+// deterministic PRNG so CIs are stable across reloads
+let _s=1234567;const rnd=()=>{_s=(_s*1103515245+12345)&0x7fffffff;return _s/0x7fffffff;};
+function bootCI(arr,B=1200){if(arr.length<2)return[null,null];const n=arr.length,means=[];
+  for(let b=0;b<B;b++){let s=0;for(let i=0;i<n;i++)s+=arr[(rnd()*n)|0];means.push(s/n);}
+  means.sort((a,b)=>a-b);return[means[(0.025*B)|0],means[(0.975*B)|0]];}
+
+let LOGS={},CHANGES=[],mode="active",refTs=0,rows=[];
+function compute(){
+  rows=[];
+  TRADERS.filter(t=>mode==="all"||t.active).forEach(t=>{
+    const all=(LOGS[t.id]||[]);
+    const inWin=all.filter(r=>r.made_ts&&r.made_ts>=refTs);
+    const resolved=inWin.filter(r=>r.actual!=null&&r.actual!==-1&&!r.skipped&&pnlOf(r)!=null);
+    const pnls=resolved.map(pnlOf);
+    const skips=inWin.filter(r=>r.skipped||r.actual===-1).length;
+    const n=pnls.length,total=pnls.reduce((a,x)=>a+x,0),mean=n?total/n:null;
+    const ci=bootCI(pnls);
+    const wins=resolved.filter(r=>r.win).length;
+    rows.push({...t,n,skips,total,mean,ci,maxwin:n?Math.max(...pnls):null,maxloss:n?Math.min(...pnls):null,
+      wr:n?Math.round(100*wins/n):null,
+      sig:(ci[0]!=null&&(ci[1]<0||ci[0]>0))?(ci[1]<0?"neg":"pos"):"no"});
+  });
+  rows.sort((a,b)=>(b.mean??-1e9)-(a.mean??-1e9));
+}
+function dpr(cv,w,h){const r=window.devicePixelRatio||1;cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);return g;}
+function chart(){
+  const cv=document.getElementById("chart"),w=cv.clientWidth||800;
+  const R=rows.filter(r=>r.mean!=null);const h=Math.max(140,R.length*34+40),g=dpr(cv,w,h);
+  cv.style.height=h+"px";
+  const pl=118,pr=18,pt=8,pb=26;
+  const vals=[];R.forEach(r=>{vals.push(r.ci[0]/100,r.ci[1]/100,r.mean/100);});
+  let x0=Math.min(-1,...vals),x1=Math.max(1,...vals);const pad=(x1-x0)*0.08||1;x0-=pad;x1+=pad;
+  const X=v=>pl+(v-x0)/(x1-x0)*(w-pl-pr),rowH=(h-pt-pb)/Math.max(1,R.length);
+  g.font="10px "+col("--mono");g.textBaseline="middle";
+  // x gridlines
+  for(let i=0;i<=4;i++){const v=x0+(x1-x0)*i/4,x=X(v);g.strokeStyle=col("--grid");g.beginPath();g.moveTo(x,pt);g.lineTo(x,h-pb);g.stroke();
+    g.fillStyle=col("--faint");g.textAlign="center";g.textBaseline="top";g.fillText("$"+v.toFixed(1),x,h-pb+6);}
+  const xz=X(0);g.strokeStyle=col("--muted");g.lineWidth=1.5;g.beginPath();g.moveTo(xz,pt);g.lineTo(xz,h-pb);g.stroke();g.lineWidth=1;
+  g.textBaseline="middle";
+  R.forEach((r,i)=>{const y=pt+rowH*(i+0.5),c=COLORS[r.id];
+    g.fillStyle=col("--ink");g.textAlign="right";g.font="600 12px system-ui";
+    g.fillText(r.name,pl-12,y);
+    const lo=X(r.ci[0]/100),hi=X(r.ci[1]/100),mx=X(r.mean/100);
+    g.strokeStyle=c;g.globalAlpha=r.sig==="no"?.5:1;g.lineWidth=2;
+    g.beginPath();g.moveTo(lo,y);g.lineTo(hi,y);g.stroke();
+    [lo,hi].forEach(x=>{g.beginPath();g.moveTo(x,y-4);g.lineTo(x,y+4);g.stroke();});
+    g.fillStyle=c;g.beginPath();g.arc(mx,y,4,0,7);g.fill();g.globalAlpha=1;});
+}
+function table(){
+  const t=document.getElementById("tbl");
+  t.innerHTML="<thead><tr><th class='l'>Trader</th><th>Trades</th><th>Skipped</th><th>Total P&L</th>"+
+    "<th class='l'>Mean / trade (95% CI)</th><th>Max win</th><th>Max loss</th><th>Win %</th><th class='l'>Verdict</th></tr></thead>";
+  const tb=document.createElement("tbody");
+  rows.forEach(r=>{
+    const sigtxt=r.n<2?"—":r.sig==="neg"?"significantly losing":r.sig==="pos"?"significantly winning":"not significant";
+    const sigcls=r.sig==="neg"?"yes-neg":r.sig==="pos"?"yes-pos":"no";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="l"><span class="sw" style="background:${COLORS[r.id]}"></span><span class="tname">${r.name}</span><span class="tp">${r.persona}</span></td>
+      <td>${r.n}</td><td>${r.skips}</td><td class="${r.total>=0?'pos':'neg'}">${f0(r.total)}</td>
+      <td class="l">${r.mean==null?'—':`<span class="${r.mean>=0?'pos':'neg'}">${f$(r.mean)}</span> <span class="ci">[${f$(r.ci[0])}, ${f$(r.ci[1])}]</span>`}</td>
+      <td class="pos">${f$(r.maxwin)}</td><td class="neg">${f$(r.maxloss)}</td><td>${r.wr==null?'—':r.wr+'%'}</td>
+      <td class="l"><span class="sig ${sigcls}">${sigtxt}</span></td>`;
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+function render(){compute();chart();table();
+  const opt=CHANGES.find(c=>c.ts===refTs);
+  document.getElementById("note").textContent=
+    "Window: "+(refTs===0?"all time":("since "+(opt?opt.label:new Date(refTs*1000).toISOString())))+
+    ". CIs are 95% bootstrap (1,200 resamples, fixed seed). “Significant” = the interval excludes $0. Mean/trade at the market-priced ask + fee.";
+}
+async function boot(){
+  const ids=TRADERS.map(t=>t.id);
+  const[chg,...logs]=await Promise.all([jsonl("../results/system_change_log.jsonl"),...ids.map(id=>jsonl(`../results/${id}_trades.jsonl`))]);
+  ids.forEach((id,i)=>LOGS[id]=logs[i]);
+  const kinds=["MODEL_DEPLOYED","MODEL_RETRAINED","RETRAIN","FEATURE_CHANGED","SCHEMA_CHANGED","PROMOTED","MODEL_PROMOTED","DEPLOY"];
+  const evs=chg.filter(c=>c.ts&&(kinds.includes(c.change_type)||/retrain|deploy|feature|promot/i.test(c.change_type||""))).slice(-14).reverse();
+  CHANGES=[{ts:0,label:"all time"},...evs.map(c=>({ts:c.ts,
+    label:new Date(c.ts*1000).toLocaleDateString("en-US",{month:"short",day:"numeric"})+" · "+(c.change_type||"")+" · "+(c.entity||"")}))];
+  const sel=document.getElementById("ref");
+  sel.innerHTML=CHANGES.map((c,i)=>`<option value="${c.ts}">${c.label}</option>`).join("");
+  refTs=0;
+  sel.onchange=e=>{refTs=+e.target.value;render();};
+  document.getElementById("stamp").textContent=Object.values(LOGS).reduce((a,l)=>a+l.length,0)+" trade rows · live";
+  render();
+}
+document.getElementById("fa").onclick=()=>{mode="active";fa.classList.add("on");fr.classList.remove("on");render();};
+document.getElementById("fr").onclick=()=>{mode="all";fr.classList.add("on");fa.classList.remove("on");render();};
+window.addEventListener("resize",()=>{if(rows.length)chart();});
+boot();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

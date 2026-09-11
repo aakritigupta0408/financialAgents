@@ -1,0 +1,1915 @@
+{
+ "generated_ts": 1788046202,
+ "config": {
+  "edge": 0.02,
+  "alpha": 0.003125,
+  "beta": 0.1,
+  "min_n": 40,
+  "boot_n": 2000,
+  "boot_seed": 20260829,
+  "slice_min_n": 15,
+  "note": "CI/P(gt0) use a normal approximation on the paired mean plus a seeded bootstrap; MDE/power use the family-wise alpha, one-sided."
+ },
+ "integrity": {
+  "rows": 222,
+  "last_close_ts": 1788045300,
+  "age_min": 15.0,
+  "health": "green"
+ },
+ "summary": {
+  "states": {
+   "BASELINE": 2,
+   "KEEP_TESTING": 11,
+   "HOLD": 2
+  },
+  "best_candidate": "t_regime"
+ },
+ "execution_waterfall": {
+  "windows": 222,
+  "decision_ev_per_1": 0.00238,
+  "realized_ev_per_1": -0.05885,
+  "execution_gap_per_1": -0.06124
+ },
+ "treatments": [
+  {
+   "key": "champion",
+   "label": "Champion \u2014 the live desk policy",
+   "basis": "model",
+   "state": "BASELINE",
+   "state_reasons": [
+    "incumbent \u2014 the yardstick"
+   ],
+   "n": 222,
+   "bets": 222,
+   "own_ev": 0.00238,
+   "mean_ev_all_windows": 0.00238
+  },
+  {
+   "n": 222,
+   "bets": 159,
+   "skips": 63,
+   "coverage": 0.716,
+   "mean": 0.04059,
+   "se": 0.02587,
+   "median": 0.0,
+   "ci95": [
+    -0.01012,
+    0.09129
+   ],
+   "boot_ci95": [
+    -0.00649,
+    0.09117
+   ],
+   "p_gt0": 0.942,
+   "p_gt0_boot": 0.946,
+   "p_gt_edge_boot": 0.772,
+   "mde": 0.10389,
+   "power_at_edge": 0.025,
+   "top3_share": 0.073,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 159,
+     "treatment_only_bet": 0,
+     "control_only_bet": 63,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 63,
+    "losses_avoided": 25,
+    "wins_forgone": 38,
+    "control_ev_on_skipped": -9.0104,
+    "net_veto_per_window": 0.04059
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.14302,
+     "se": 0.09039
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": 0.0,
+     "se": 0.0
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": 0.0,
+     "se": 0.0
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.04239,
+     "se": 0.0442
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.11368,
+     "se": 0.05969
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.02423,
+     "se": 0.06417
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.00701,
+     "se": 0.06332
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.1809,
+     "se": 0.1177
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": 0.00612,
+     "se": 0.05477
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.10384,
+     "se": 0.06466
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.125,
+     "se": 0.0594
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.02819,
+     "se": 0.04671
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb9",
+    "n": 44,
+    "mean": -0.02819,
+    "se": 0.04671
+   },
+   "powered_slices": 12,
+   "sign_consistency": "7/12",
+   "llr": 0.956,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": 0.05999,
+   "proj_windows_to_decision": 1033,
+   "key": "t_regime",
+   "label": "M8 \u00b7 regime gate",
+   "basis": "model",
+   "rationale": "stand down when trailing-20 market accuracy < 0.62",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.942"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 152,
+   "skips": 70,
+   "coverage": 0.685,
+   "mean": -0.03461,
+   "se": 0.03377,
+   "median": 0.0,
+   "ci95": [
+    -0.1008,
+    0.03159
+   ],
+   "boot_ci95": [
+    -0.10132,
+    0.0303
+   ],
+   "p_gt0": 0.153,
+   "p_gt0_boot": 0.143,
+   "p_gt_edge_boot": 0.045,
+   "mde": 0.13562,
+   "power_at_edge": 0.016,
+   "top3_share": 0.055,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 152,
+     "treatment_only_bet": 0,
+     "control_only_bet": 70,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 70,
+    "losses_avoided": 27,
+    "wins_forgone": 43,
+    "control_ev_on_skipped": 7.6827,
+    "net_veto_per_window": -0.03461
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.08117,
+     "se": 0.06213
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.08389,
+     "se": 0.04242
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.01488,
+     "se": 0.07738
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.09318,
+     "se": 0.06245
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.02047,
+     "se": 0.06999
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.05195,
+     "se": 0.05731
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.01893,
+     "se": 0.07403
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.03797,
+     "se": 0.1339
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.06977,
+     "se": 0.05889
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.00595,
+     "se": 0.09117
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.08873,
+     "se": 0.11127
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.15922,
+     "se": 0.06757
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb9",
+    "n": 44,
+    "mean": -0.15922,
+    "se": 0.06757
+   },
+   "powered_slices": 12,
+   "sign_consistency": "5/12",
+   "llr": -0.781,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.04707,
+   "proj_windows_to_decision": 408,
+   "key": "t_knife",
+   "label": "M2 \u00b7 knife-edge veto",
+   "basis": "model",
+   "rationale": "stand down when |market - 0.5| < 0.10",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.153"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 52,
+   "skips": 170,
+   "coverage": 0.234,
+   "mean": -0.02511,
+   "se": 0.05244,
+   "median": -0.11125,
+   "ci95": [
+    -0.12789,
+    0.07767
+   ],
+   "boot_ci95": [
+    -0.13026,
+    0.07643
+   ],
+   "p_gt0": 0.316,
+   "p_gt0_boot": 0.305,
+   "p_gt_edge_boot": 0.196,
+   "mde": 0.21059,
+   "power_at_edge": 0.009,
+   "top3_share": 0.069,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 52,
+     "treatment_only_bet": 0,
+     "control_only_bet": 170,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 170,
+    "losses_avoided": 63,
+    "wins_forgone": 107,
+    "control_ev_on_skipped": -6.765,
+    "net_veto_per_window": 0.03047
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.1713,
+     "se": 0.08876
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.13942,
+     "se": 0.06705
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.25249,
+     "se": 0.14073
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.02921,
+     "se": 0.09606
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.10837,
+     "se": 0.09346
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.06676,
+     "se": 0.09036
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": 0.03099,
+     "se": 0.09218
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.23918,
+     "se": 0.18664
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.07597,
+     "se": 0.10241
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.04645,
+     "se": 0.12765
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.00932,
+     "se": 0.21043
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.14304,
+     "se": 0.10171
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.25249,
+    "se": 0.14073
+   },
+   "powered_slices": 12,
+   "sign_consistency": "6/12",
+   "llr": -0.302,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.09701,
+   "proj_windows_to_decision": 1388,
+   "key": "t_cal",
+   "label": "M1 \u00b7 calibrated gate",
+   "basis": "model",
+   "rationale": "gate and side taken from p_cal, not raw p_up",
+   "state": "HOLD",
+   "state_reasons": [
+    "coverage 23% <25% \u2014 too selective to compare like-for-like"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 31,
+   "skips": 191,
+   "coverage": 0.14,
+   "mean": 0.02504,
+   "se": 0.04215,
+   "median": -0.2346,
+   "ci95": [
+    -0.05757,
+    0.10765
+   ],
+   "boot_ci95": [
+    -0.05627,
+    0.10678
+   ],
+   "p_gt0": 0.724,
+   "p_gt0_boot": 0.735,
+   "p_gt_edge_boot": 0.56,
+   "mde": 0.16926,
+   "power_at_edge": 0.012,
+   "top3_share": 0.026,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 31,
+     "treatment_only_bet": 0,
+     "control_only_bet": 191,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 191,
+    "losses_avoided": 61,
+    "wins_forgone": 130,
+    "control_ev_on_skipped": -5.5592,
+    "net_veto_per_window": 0.02504
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.04716,
+     "se": 0.08022
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": 0.00919,
+     "se": 0.05185
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.13137,
+     "se": 0.07414
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.02624,
+     "se": 0.08297
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.19141,
+     "se": 0.08183
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.05866,
+     "se": 0.08781
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.03047,
+     "se": 0.08986
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.11923,
+     "se": 0.15198
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": 0.01984,
+     "se": 0.09217
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.06797,
+     "se": 0.11332
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.16052,
+     "se": 0.10833
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.07251,
+     "se": 0.09464
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.13137,
+    "se": 0.07414
+   },
+   "powered_slices": 12,
+   "sign_consistency": "8/12",
+   "llr": 0.014,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": 0.1964,
+   "proj_windows_to_decision": 5000,
+   "key": "t_cheap",
+   "label": "M9 \u00b7 Underdog (cheap bids only)",
+   "basis": "model",
+   "rationale": "only enter at ask <= 51c, where break-even is far below 50%",
+   "state": "HOLD",
+   "state_reasons": [
+    "coverage 14% <25% \u2014 too selective to compare like-for-like"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 108,
+   "skips": 114,
+   "coverage": 0.486,
+   "mean": -0.01705,
+   "se": 0.0388,
+   "median": 0.0,
+   "ci95": [
+    -0.0931,
+    0.059
+   ],
+   "boot_ci95": [
+    -0.09283,
+    0.05611
+   ],
+   "p_gt0": 0.33,
+   "p_gt0_boot": 0.307,
+   "p_gt_edge_boot": 0.165,
+   "mde": 0.15582,
+   "power_at_edge": 0.013,
+   "top3_share": 0.039,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 108,
+     "treatment_only_bet": 0,
+     "control_only_bet": 114,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 114,
+    "losses_avoided": 41,
+    "wins_forgone": 73,
+    "control_ev_on_skipped": 3.7857,
+    "net_veto_per_window": -0.01705
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.14302,
+     "se": 0.09039
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.08389,
+     "se": 0.04242
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.01488,
+     "se": 0.07738
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.0509,
+     "se": 0.07156
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.06408,
+     "se": 0.08071
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.08621,
+     "se": 0.07687
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.02911,
+     "se": 0.08555
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.16005,
+     "se": 0.16923
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.05897,
+     "se": 0.07582
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.04527,
+     "se": 0.10313
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.11998,
+     "se": 0.1148
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.16893,
+     "se": 0.07275
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb9",
+    "n": 44,
+    "mean": -0.16893,
+    "se": 0.07275
+   },
+   "powered_slices": 12,
+   "sign_consistency": "5/12",
+   "llr": -0.411,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.03016,
+   "proj_windows_to_decision": 964,
+   "key": "t_both",
+   "label": "M2+M8 \u00b7 both vetoes",
+   "basis": "model",
+   "rationale": "stand down on knife-edge OR low-predictability regime",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.33"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 141,
+   "skips": 81,
+   "coverage": 0.635,
+   "mean": -0.06582,
+   "se": 0.04426,
+   "median": 0.0,
+   "ci95": [
+    -0.15258,
+    0.02093
+   ],
+   "boot_ci95": [
+    -0.15626,
+    0.02163
+   ],
+   "p_gt0": 0.069,
+   "p_gt0_boot": 0.067,
+   "p_gt_edge_boot": 0.027,
+   "mde": 0.17776,
+   "power_at_edge": 0.011,
+   "top3_share": 0.107,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 141,
+     "treatment_only_bet": 0,
+     "control_only_bet": 81,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 81,
+    "losses_avoided": 28,
+    "wins_forgone": 53,
+    "control_ev_on_skipped": 9.2463,
+    "net_veto_per_window": -0.04165
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.11008,
+     "se": 0.07226
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.15619,
+     "se": 0.05862
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.22506,
+     "se": 0.13339
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.05052,
+     "se": 0.06854
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.03381,
+     "se": 0.08556
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.07362,
+     "se": 0.06428
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.0381,
+     "se": 0.09153
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.17808,
+     "se": 0.13071
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.05492,
+     "se": 0.06776
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.07044,
+     "se": 0.10037
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": -0.04823,
+     "se": 0.19594
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.21262,
+     "se": 0.07798
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.22506,
+    "se": 0.13339
+   },
+   "powered_slices": 12,
+   "sign_consistency": "3/12",
+   "llr": -0.785,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.09989,
+   "proj_windows_to_decision": 405,
+   "key": "t_fshare",
+   "label": "M3 \u00b7 Fixed-Share leader",
+   "basis": "model",
+   "rationale": "leader by multiplicative expert weights, not a 10-bet streak",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.069"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 103,
+   "skips": 119,
+   "coverage": 0.464,
+   "mean": -0.05647,
+   "se": 0.04701,
+   "median": 0.0,
+   "ci95": [
+    -0.14861,
+    0.03566
+   ],
+   "boot_ci95": [
+    -0.1509,
+    0.0371
+   ],
+   "p_gt0": 0.115,
+   "p_gt0_boot": 0.11,
+   "p_gt_edge_boot": 0.05,
+   "mde": 0.18878,
+   "power_at_edge": 0.01,
+   "top3_share": 0.087,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 103,
+     "treatment_only_bet": 0,
+     "control_only_bet": 119,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 119,
+    "losses_avoided": 40,
+    "wins_forgone": 79,
+    "control_ev_on_skipped": 5.5044,
+    "net_veto_per_window": -0.02479
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.14302,
+     "se": 0.09039
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.15619,
+     "se": 0.05862
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.22506,
+     "se": 0.13339
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.01938,
+     "se": 0.07468
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.05998,
+     "se": 0.09081
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.10724,
+     "se": 0.07777
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.0615,
+     "se": 0.09516
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.26094,
+     "se": 0.14318
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.05448,
+     "se": 0.07947
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.03111,
+     "se": 0.11224
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": -0.01698,
+     "se": 0.19866
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.22233,
+     "se": 0.08236
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.22506,
+    "se": 0.13339
+   },
+   "powered_slices": 12,
+   "sign_consistency": "3/12",
+   "llr": -0.553,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.11659,
+   "proj_windows_to_decision": 663,
+   "key": "t_fs_reg",
+   "label": "M3+M8 \u00b7 Fixed-Share + regime gate",
+   "basis": "model",
+   "rationale": "the expert-weighted leader, standing down in bad regimes",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.115"
+   ]
+  },
+  {
+   "key": "champion_real",
+   "label": "Champion at REAL fills (execution baseline)",
+   "basis": "real",
+   "state": "BASELINE",
+   "state_reasons": [
+    "incumbent \u2014 the yardstick"
+   ],
+   "n": 222,
+   "bets": 222,
+   "own_ev": -0.05886,
+   "mean_ev_all_windows": -0.05885
+  },
+  {
+   "n": 222,
+   "bets": 150,
+   "skips": 72,
+   "coverage": 0.676,
+   "mean": 0.03049,
+   "se": 0.02566,
+   "median": 0.0,
+   "ci95": [
+    -0.0198,
+    0.08077
+   ],
+   "boot_ci95": [
+    -0.01843,
+    0.08231
+   ],
+   "p_gt0": 0.883,
+   "p_gt0_boot": 0.886,
+   "p_gt_edge_boot": 0.654,
+   "mde": 0.10303,
+   "power_at_edge": 0.025,
+   "top3_share": 0.069,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 150,
+     "treatment_only_bet": 0,
+     "control_only_bet": 72,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 72,
+    "losses_avoided": 25,
+    "wins_forgone": 47,
+    "control_ev_on_skipped": -6.7685,
+    "net_veto_per_window": 0.03049
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.10908,
+     "se": 0.05516
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.02621,
+     "se": 0.02811
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": 0.01758,
+     "se": 0.05905
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.05489,
+     "se": 0.04963
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.03803,
+     "se": 0.04826
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": 0.00019,
+     "se": 0.05019
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": 0.04291,
+     "se": 0.06615
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.10294,
+     "se": 0.08319
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.00868,
+     "se": 0.04331
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.04088,
+     "se": 0.04457
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.15332,
+     "se": 0.08501
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.00676,
+     "se": 0.05544
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb7",
+    "n": 31,
+    "mean": -0.04088,
+    "se": 0.04457
+   },
+   "powered_slices": 12,
+   "sign_consistency": "8/12",
+   "llr": 0.032,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.04199,
+   "proj_windows_to_decision": 5000,
+   "key": "t_exec",
+   "label": "M10 \u00b7 execution guard",
+   "basis": "real",
+   "rationale": "decline any fill worse than the quote by >3.0c",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.883"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 109,
+   "skips": 113,
+   "coverage": 0.491,
+   "mean": 0.04734,
+   "se": 0.03205,
+   "median": 0.0,
+   "ci95": [
+    -0.01547,
+    0.11015
+   ],
+   "boot_ci95": [
+    -0.0158,
+    0.11346
+   ],
+   "p_gt0": 0.93,
+   "p_gt0_boot": 0.927,
+   "p_gt_edge_boot": 0.81,
+   "mde": 0.12869,
+   "power_at_edge": 0.017,
+   "top3_share": 0.044,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 109,
+     "treatment_only_bet": 0,
+     "control_only_bet": 113,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 113,
+    "losses_avoided": 39,
+    "wins_forgone": 74,
+    "control_ev_on_skipped": -10.5095,
+    "net_veto_per_window": 0.04734
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.16846,
+     "se": 0.0865
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.02621,
+     "se": 0.02811
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": 0.01758,
+     "se": 0.05905
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.07651,
+     "se": 0.05766
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.12203,
+     "se": 0.06815
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.06574,
+     "se": 0.06486
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": 0.02532,
+     "se": 0.07546
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.21876,
+     "se": 0.13071
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.02412,
+     "se": 0.06145
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.07151,
+     "se": 0.07947
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.21582,
+     "se": 0.09219
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.05435,
+     "se": 0.06083
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 18-24",
+    "n": 48,
+    "mean": -0.06574,
+    "se": 0.06486
+   },
+   "powered_slices": 12,
+   "sign_consistency": "8/12",
+   "llr": 0.336,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.02346,
+   "proj_windows_to_decision": 3329,
+   "key": "t_exec_reg",
+   "label": "M10+M8 \u00b7 execution guard + regime gate",
+   "basis": "real",
+   "rationale": "decline bad fills AND stand down in bad regimes",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.93"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 160,
+   "skips": 62,
+   "coverage": 0.721,
+   "mean": -0.02563,
+   "se": 0.02904,
+   "median": 0.0,
+   "ci95": [
+    -0.08254,
+    0.03128
+   ],
+   "boot_ci95": [
+    -0.08351,
+    0.03315
+   ],
+   "p_gt0": 0.189,
+   "p_gt0_boot": 0.195,
+   "p_gt_edge_boot": 0.062,
+   "mde": 0.1166,
+   "power_at_edge": 0.02,
+   "top3_share": 0.102,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 160,
+     "treatment_only_bet": 0,
+     "control_only_bet": 62,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 62,
+    "losses_avoided": 3,
+    "wins_forgone": 59,
+    "control_ev_on_skipped": 29.5212,
+    "net_veto_per_window": -0.13298
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": -0.06337,
+     "se": 0.03831
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.01899,
+     "se": 0.04028
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": 0.02734,
+     "se": 0.08696
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.01884,
+     "se": 0.04711
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": -0.01915,
+     "se": 0.05095
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.0931,
+     "se": 0.05256
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.03078,
+     "se": 0.06058
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": -0.13138,
+     "se": 0.07611
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.00963,
+     "se": 0.0599
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.03522,
+     "se": 0.08197
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.06605,
+     "se": 0.09839
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.05677,
+     "se": 0.0579
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb3",
+    "n": 17,
+    "mean": -0.13138,
+    "se": 0.07611
+   },
+   "powered_slices": 12,
+   "sign_consistency": "2/12",
+   "llr": -1.089,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.03225,
+   "proj_windows_to_decision": 233,
+   "key": "t_limit",
+   "label": "M11 \u00b7 maker limit (rest 2c below, fill or skip)",
+   "basis": "model",
+   "rationale": "never cross the spread; fill only on price improvement",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.189"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 115,
+   "skips": 107,
+   "coverage": 0.518,
+   "mean": 0.03294,
+   "se": 0.03736,
+   "median": 0.0,
+   "ci95": [
+    -0.04029,
+    0.10617
+   ],
+   "boot_ci95": [
+    -0.03849,
+    0.10804
+   ],
+   "p_gt0": 0.811,
+   "p_gt0_boot": 0.803,
+   "p_gt_edge_boot": 0.614,
+   "mde": 0.15004,
+   "power_at_edge": 0.014,
+   "top3_share": 0.068,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 115,
+     "treatment_only_bet": 0,
+     "control_only_bet": 107,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 107,
+    "losses_avoided": 28,
+    "wins_forgone": 79,
+    "control_ev_on_skipped": 12.2342,
+    "net_veto_per_window": -0.05511
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.14302,
+     "se": 0.09039
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.01899,
+     "se": 0.04028
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": 0.02734,
+     "se": 0.08696
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": 0.03191,
+     "se": 0.06161
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": 0.12229,
+     "se": 0.07412
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.0833,
+     "se": 0.07862
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": 0.00431,
+     "se": 0.08073
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.08828,
+     "se": 0.14591
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": 0.02213,
+     "se": 0.07772
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": 0.05925,
+     "se": 0.10428
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": 0.19105,
+     "se": 0.11259
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.07804,
+     "se": 0.069
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 18-24",
+    "n": 48,
+    "mean": -0.0833,
+    "se": 0.07862
+   },
+   "powered_slices": 12,
+   "sign_consistency": "9/12",
+   "llr": 0.362,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": 0.06819,
+   "proj_windows_to_decision": 3075,
+   "key": "t_limit_reg",
+   "label": "M11+M8 \u00b7 maker limit + regime gate",
+   "basis": "model",
+   "rationale": "the Ideal trader's execution core, SPRT-verified",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend winning, P(\u0394>0)\u22480.811"
+   ]
+  },
+  {
+   "n": 222,
+   "bets": 146,
+   "skips": 76,
+   "coverage": 0.658,
+   "mean": -0.08024,
+   "se": 0.04357,
+   "median": 0.0,
+   "ci95": [
+    -0.16564,
+    0.00515
+   ],
+   "boot_ci95": [
+    -0.16764,
+    0.00497
+   ],
+   "p_gt0": 0.033,
+   "p_gt0_boot": 0.032,
+   "p_gt_edge_boot": 0.007,
+   "mde": 0.17497,
+   "power_at_edge": 0.011,
+   "top3_share": 0.114,
+   "completeness": {
+    "evaluable": 222,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 146,
+     "treatment_only_bet": 0,
+     "control_only_bet": 76,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 222,
+    "observed": 222,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 76,
+    "losses_avoided": 26,
+    "wins_forgone": 50,
+    "control_ev_on_skipped": 10.0969,
+    "net_veto_per_window": -0.04548
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 63,
+     "mean": 0.0705,
+     "se": 0.07109
+    },
+    {
+     "name": "regime>=floor",
+     "n": 141,
+     "mean": -0.18121,
+     "se": 0.05604
+    },
+    {
+     "name": "ET 00-06",
+     "n": 45,
+     "mean": -0.19245,
+     "se": 0.14033
+    },
+    {
+     "name": "ET 06-12",
+     "n": 63,
+     "mean": -0.00725,
+     "se": 0.07243
+    },
+    {
+     "name": "ET 12-18",
+     "n": 66,
+     "mean": -0.0682,
+     "se": 0.07016
+    },
+    {
+     "name": "ET 18-24",
+     "n": 48,
+     "mean": -0.08739,
+     "se": 0.07175
+    },
+    {
+     "name": "leader:kb2",
+     "n": 49,
+     "mean": -0.04552,
+     "se": 0.09271
+    },
+    {
+     "name": "leader:kb3",
+     "n": 17,
+     "mean": 0.25093,
+     "se": 0.11395
+    },
+    {
+     "name": "leader:kb4",
+     "n": 49,
+     "mean": -0.14758,
+     "se": 0.05028
+    },
+    {
+     "name": "leader:kb7",
+     "n": 31,
+     "mean": -0.13447,
+     "se": 0.08468
+    },
+    {
+     "name": "leader:kb8",
+     "n": 32,
+     "mean": -0.10719,
+     "se": 0.20514
+    },
+    {
+     "name": "leader:kb9",
+     "n": 44,
+     "mean": -0.11406,
+     "se": 0.08197
+    }
+   ],
+   "worst_slice": {
+    "name": "ET 00-06",
+    "n": 45,
+    "mean": -0.19245,
+    "se": 0.14033
+   },
+   "powered_slices": 12,
+   "sign_consistency": "2/12",
+   "llr": -1.195,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": -0.11839,
+   "proj_windows_to_decision": 194,
+   "key": "t_evlead",
+   "label": "M12 \u00b7 EV-ranked leader (costs, not win rate)",
+   "basis": "model",
+   "rationale": "follow the arm with the best trailing EV/$1 at real costs",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend losing, P(\u0394>0)\u22480.033"
+   ]
+  },
+  {
+   "n": 34,
+   "bets": 5,
+   "skips": 29,
+   "coverage": 0.147,
+   "mean": 0.01906,
+   "se": 0.10956,
+   "median": -0.16995,
+   "ci95": [
+    -0.19569,
+    0.23381
+   ],
+   "boot_ci95": [
+    -0.18249,
+    0.23004
+   ],
+   "p_gt0": 0.569,
+   "p_gt0_boot": 0.549,
+   "p_gt_edge_boot": 0.485,
+   "mde": 0.44,
+   "power_at_edge": 0.005,
+   "top3_share": 0.173,
+   "completeness": {
+    "evaluable": 34,
+    "pct": 1.0,
+    "activity": {
+     "both_bet": 5,
+     "treatment_only_bet": 0,
+     "control_only_bet": 29,
+     "note": "skips are scored decisions (EV 0), not missing data"
+    }
+   },
+   "srm": {
+    "expected": 34,
+    "observed": 34,
+    "deficit": 0,
+    "duplicates": 0,
+    "missing_outcomes": 0,
+    "ok": true
+   },
+   "veto": {
+    "skips_scored": 29,
+    "losses_avoided": 9,
+    "wins_forgone": 20,
+    "control_ev_on_skipped": -0.6481,
+    "net_veto_per_window": 0.01906
+   },
+   "slices": [
+    {
+     "name": "regime<floor",
+     "n": 12,
+     "mean": -0.07402,
+     "se": 0.16136
+    },
+    {
+     "name": "regime>=floor",
+     "n": 22,
+     "mean": 0.06983,
+     "se": 0.14617
+    },
+    {
+     "name": "ET 06-12",
+     "n": 5,
+     "mean": -0.1553,
+     "se": 0.31364
+    },
+    {
+     "name": "ET 12-18",
+     "n": 24,
+     "mean": 0.06401,
+     "se": 0.13379
+    },
+    {
+     "name": "ET 18-24",
+     "n": 5,
+     "mean": -0.02234,
+     "se": 0.26573
+    },
+    {
+     "name": "leader:kb2",
+     "n": 18,
+     "mean": -0.09489,
+     "se": 0.14993
+    },
+    {
+     "name": "leader:kb4",
+     "n": 2,
+     "mean": 0.16665,
+     "se": 0.83335
+    },
+    {
+     "name": "leader:kb8",
+     "n": 5,
+     "mean": 0.2269,
+     "se": 0.34088
+    },
+    {
+     "name": "leader:kb9",
+     "n": 9,
+     "mean": 0.0987,
+     "se": 0.17978
+    }
+   ],
+   "worst_slice": {
+    "name": "leader:kb2",
+    "n": 18,
+    "mean": -0.09489,
+    "se": 0.14993
+   },
+   "powered_slices": 3,
+   "sign_consistency": "2/3",
+   "llr": 0.074,
+   "upper": 5.663,
+   "lower": -2.299,
+   "sprt_verdict": "collecting",
+   "own_ev": 0.43726,
+   "proj_windows_to_decision": 1661,
+   "key": "t_edgeband",
+   "label": "M13 \u00b7 edge band (enough edge, not too much)",
+   "basis": "model",
+   "rationale": "enter only when claimed edge is 2-12c \u2014 a huge stated edge is a model-error signature, not opportunity",
+   "state": "KEEP_TESTING",
+   "state_reasons": [
+    "collecting \u2014 trend uncertain, P(\u0394>0)\u22480.569"
+   ]
+  }
+ ]
+}

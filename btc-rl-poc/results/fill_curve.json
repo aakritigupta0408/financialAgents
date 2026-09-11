@@ -1,0 +1,106 @@
+{
+ "generated_ts": 1788002582,
+ "basis": "model quotes (mkt_p_up + 2.5c) \u2014 same family as M11/t_limit; NOT real fills",
+ "windows": 168,
+ "fill_curve": [
+  {
+   "delta_c": 0,
+   "n": 168,
+   "fill_rate": 1.0,
+   "win_rate_given_fill": 0.679,
+   "ev_per_$1_attempted": -0.0538
+  },
+  {
+   "delta_c": 1,
+   "n": 168,
+   "fill_rate": 0.708,
+   "win_rate_given_fill": 0.555,
+   "ev_per_$1_attempted": -0.0722
+  },
+  {
+   "delta_c": 2,
+   "n": 168,
+   "fill_rate": 0.673,
+   "win_rate_given_fill": 0.531,
+   "ev_per_$1_attempted": -0.0872
+  },
+  {
+   "delta_c": 3,
+   "n": 168,
+   "fill_rate": 0.655,
+   "win_rate_given_fill": 0.518,
+   "ev_per_$1_attempted": -0.0769
+  },
+  {
+   "delta_c": 4,
+   "n": 168,
+   "fill_rate": 0.655,
+   "win_rate_given_fill": 0.518,
+   "ev_per_$1_attempted": -0.0711
+  },
+  {
+   "delta_c": 5,
+   "n": 168,
+   "fill_rate": 0.637,
+   "win_rate_given_fill": 0.505,
+   "ev_per_$1_attempted": -0.0607
+  },
+  {
+   "delta_c": 6,
+   "n": 168,
+   "fill_rate": 0.607,
+   "win_rate_given_fill": 0.48,
+   "ev_per_$1_attempted": -0.0684
+  },
+  {
+   "delta_c": 7,
+   "n": 168,
+   "fill_rate": 0.607,
+   "win_rate_given_fill": 0.48,
+   "ev_per_$1_attempted": -0.0596
+  },
+  {
+   "delta_c": 8,
+   "n": 168,
+   "fill_rate": 0.595,
+   "win_rate_given_fill": 0.47,
+   "ev_per_$1_attempted": -0.0519
+  }
+ ],
+ "fill_logit": {
+  "bias": 11.8939,
+  "per_delta_c": -0.1641,
+  "per_min_left": -0.8893,
+  "note": "fill_prob = sigmoid(bias + per_delta_c*delta + per_min_left*ml)"
+ },
+ "pacing_taker_ev": [
+  {
+   "bucket": "12-9m",
+   "n": 168,
+   "ev_per_$1": -0.0562,
+   "win_rate": 0.679
+  },
+  {
+   "bucket": "3-0.5m",
+   "n": 97,
+   "ev_per_$1": -0.0679,
+   "win_rate": 0.784
+  },
+  {
+   "bucket": "6-3m",
+   "n": 151,
+   "ev_per_$1": -0.1203,
+   "win_rate": 0.742
+  },
+  {
+   "bucket": "9-6m",
+   "n": 166,
+   "ev_per_$1": -0.0178,
+   "win_rate": 0.765
+  }
+ ],
+ "recommendation": {
+  "ev_argmax_delta_c": 8,
+  "caveat": "evidence for a FUTURE M13 treatment only \u2014 nothing changes live without an SPRT win (champion law); adverse selection is visible in win_rate_given_fill falling with delta"
+ }
+}

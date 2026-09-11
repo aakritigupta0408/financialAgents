@@ -1,0 +1,266 @@
+{
+ "frozen_ts": 1788549387,
+ "mode": "DRY_RUN",
+ "gate_state_at_freeze": {
+  "missingness": "PENDING_PROSPECTIVE_RERUN",
+  "stitched_would_pass": true,
+  "stitched_governing": true
+ },
+ "spec": "T1_1_SPEC.yaml",
+ "spec_sha": "9cf7e653189c2e33",
+ "extractor_shas": {
+  "xvenue_sync.py": "e6ff02833149d84d",
+  "t1_freeze_dataset.py": "904a3a362fafe6fb",
+  "btc_rl/features.py": "af0a134396a89c81"
+ },
+ "xv_feature_order": [
+  "binance_ret_5s_bps",
+  "okx_ret_5s_bps",
+  "kraken_ret_30s_bps",
+  "consensus_30s_bps",
+  "dispersion_bps",
+  "binance_lead_bps",
+  "okx_lead_bps",
+  "n_venues_fresh_30s"
+ ],
+ "grid": {
+  "step_min": 15,
+  "path_rule": "[m-60, m+30] outage-free",
+  "span_utc": [
+   "08-30 12:32",
+   "09-04 19:15"
+  ]
+ },
+ "machine_outages": [
+  [
+   29802062,
+   29802078
+  ],
+  [
+   29802078,
+   29802094
+  ],
+  [
+   29802110,
+   29802126
+  ],
+  [
+   29802128,
+   29802144
+  ],
+  [
+   29802162,
+   29802182
+  ],
+  [
+   29803553,
+   29804718
+  ],
+  [
+   29807181,
+   29807198
+  ],
+  [
+   29807199,
+   29807215
+  ],
+  [
+   29807215,
+   29807231
+  ],
+  [
+   29807276,
+   29807295
+  ],
+  [
+   29807296,
+   29807318
+  ],
+  [
+   29807318,
+   29807334
+  ],
+  [
+   29807364,
+   29807380
+  ],
+  [
+   29807380,
+   29807396
+  ],
+  [
+   29807404,
+   29807420
+  ],
+  [
+   29807424,
+   29807440
+  ],
+  [
+   29807440,
+   29807456
+  ],
+  [
+   29807457,
+   29807473
+  ],
+  [
+   29807486,
+   29807502
+  ],
+  [
+   29807519,
+   29807535
+  ],
+  [
+   29807547,
+   29807563
+  ],
+  [
+   29807563,
+   29807582
+  ],
+  [
+   29807588,
+   29807604
+  ],
+  [
+   29807607,
+   29807623
+  ],
+  [
+   29809052,
+   29809070
+  ]
+ ],
+ "n_rows": 362,
+ "dropped": {
+  "bars": 0,
+  "xv": 1,
+  "label": 0
+ },
+ "folds": {
+  "n": 5,
+  "sizes": [
+   72,
+   72,
+   72,
+   72,
+   74
+  ]
+ },
+ "fng_pinned": 50,
+ "label": "coinbase 1m candle close, forward log-return bps",
+ "dataset_sha": "10dc6c2956f94164",
+ "shard_shas": {
+  "xvenue-20260830-12.jsonl": "63e6568e71801a23",
+  "xvenue-20260830-13.jsonl": "27cfeee89455988b",
+  "xvenue-20260830-14.jsonl": "054d3a6b394c7514",
+  "xvenue-20260830-15.jsonl": "bc2c06108a6149b9",
+  "xvenue-20260830-16.jsonl": "1a321524087de385",
+  "xvenue-20260830-17.jsonl": "ab273872c565ba8f",
+  "xvenue-20260830-18.jsonl": "06c6696deddb1a30",
+  "xvenue-20260830-19.jsonl": "a265053ff7c78d1d",
+  "xvenue-20260830-20.jsonl": "dbc387e93e422942",
+  "xvenue-20260830-21.jsonl": "185df554b9a38d8c",
+  "xvenue-20260830-22.jsonl": "e798d7f07578a584",
+  "xvenue-20260830-23.jsonl": "c7dbdf4ee059452b",
+  "xvenue-20260831-00.jsonl": "c83860ec35fea335",
+  "xvenue-20260831-01.jsonl": "cd0364fd68ee19f2",
+  "xvenue-20260831-02.jsonl": "c336e7a936cbd482",
+  "xvenue-20260831-03.jsonl": "6f2d6c6efe53b495",
+  "xvenue-20260831-04.jsonl": "5a9b426a0b9f41aa",
+  "xvenue-20260831-05.jsonl": "173a33a8a83fd8da",
+  "xvenue-20260831-06.jsonl": "401f58d8f2d70e31",
+  "xvenue-20260831-07.jsonl": "e546460b51ebc8d1",
+  "xvenue-20260831-08.jsonl": "a66ce6b17fb66484",
+  "xvenue-20260831-09.jsonl": "ebcbec53a2b1fa33",
+  "xvenue-20260831-10.jsonl": "a916ebce62fc1f41",
+  "xvenue-20260831-11.jsonl": "71c069cd7f2a6189",
+  "xvenue-20260831-12.jsonl": "2818c2b547d1590d",
+  "xvenue-20260831-13.jsonl": "3c1a2db2f4eebebe",
+  "xvenue-20260831-14.jsonl": "de1e7f207565d40f",
+  "xvenue-20260831-15.jsonl": "31f1b952ee1ecb54",
+  "xvenue-20260831-16.jsonl": "a52a158357cb47e9",
+  "xvenue-20260831-17.jsonl": "51da78642a20fc14",
+  "xvenue-20260831-18.jsonl": "f4bab1061d7ef3a9",
+  "xvenue-20260831-19.jsonl": "4efa7671f9965ab2",
+  "xvenue-20260831-20.jsonl": "69ebb8d25fb159c1",
+  "xvenue-20260831-21.jsonl": "e343137051426837",
+  "xvenue-20260901-17.jsonl": "4884434ac2accb15",
+  "xvenue-20260901-18.jsonl": "66052b0ba5af6f64",
+  "xvenue-20260901-19.jsonl": "0d7ca2e20729ce4c",
+  "xvenue-20260901-20.jsonl": "e14cd689f35c0f40",
+  "xvenue-20260901-21.jsonl": "b44784602f5f610b",
+  "xvenue-20260901-22.jsonl": "7ce066bdcfe2658d",
+  "xvenue-20260901-23.jsonl": "e741fa53c7a3ece7",
+  "xvenue-20260902-00.jsonl": "588b007a96302301",
+  "xvenue-20260902-01.jsonl": "474e34083cfd6be1",
+  "xvenue-20260902-02.jsonl": "813084abe048bf73",
+  "xvenue-20260902-03.jsonl": "08e66d9ade8167d3",
+  "xvenue-20260902-04.jsonl": "5134c48a1fa716b3",
+  "xvenue-20260902-05.jsonl": "6bb4985495340eb0",
+  "xvenue-20260902-06.jsonl": "bd07652500168195",
+  "xvenue-20260902-07.jsonl": "61747bba2fd26c57",
+  "xvenue-20260902-08.jsonl": "590580a5aff5e825",
+  "xvenue-20260902-09.jsonl": "898c3a454276f91e",
+  "xvenue-20260902-10.jsonl": "b731b76279474049",
+  "xvenue-20260902-11.jsonl": "9a365ee5959bddee",
+  "xvenue-20260902-12.jsonl": "aa8b803e6213ad98",
+  "xvenue-20260902-13.jsonl": "2e4a4ec79d7dd62d",
+  "xvenue-20260902-14.jsonl": "6ff9908965c888bb",
+  "xvenue-20260902-15.jsonl": "00bd1037fdda6f98",
+  "xvenue-20260902-16.jsonl": "a603f429426bcb12",
+  "xvenue-20260902-17.jsonl": "f9be4e067d42c498",
+  "xvenue-20260902-18.jsonl": "39eefa8fb5da16d4",
+  "xvenue-20260902-19.jsonl": "a1cf0d47da1b8338",
+  "xvenue-20260902-20.jsonl": "a798d5677f57bf14",
+  "xvenue-20260902-21.jsonl": "05b382315b750e34",
+  "xvenue-20260902-22.jsonl": "4c1a0024bb67ba07",
+  "xvenue-20260902-23.jsonl": "91b85835ea16fc6a",
+  "xvenue-20260903-00.jsonl": "6ac468c4e2586039",
+  "xvenue-20260903-01.jsonl": "339109ad29670eb8",
+  "xvenue-20260903-02.jsonl": "8cb9f23296e1ae76",
+  "xvenue-20260903-03.jsonl": "3ff1300f2a29539c",
+  "xvenue-20260903-04.jsonl": "40c7c87800399004",
+  "xvenue-20260903-05.jsonl": "7f9f34a4030a2ebf",
+  "xvenue-20260903-06.jsonl": "d8a6dc829e12aede",
+  "xvenue-20260903-07.jsonl": "7880f5e2c7408fdc",
+  "xvenue-20260903-08.jsonl": "01e913fa0d3b0c2d",
+  "xvenue-20260903-09.jsonl": "a53cea8423907ad9",
+  "xvenue-20260903-10.jsonl": "6696b9bee35cfab3",
+  "xvenue-20260903-11.jsonl": "449480a0a4eb4a4f",
+  "xvenue-20260903-12.jsonl": "01765463b4e0aa5b",
+  "xvenue-20260903-13.jsonl": "124d640307ff3f3a",
+  "xvenue-20260903-14.jsonl": "e75c601ce326e101",
+  "xvenue-20260903-15.jsonl": "b9ad6011485c3a8b",
+  "xvenue-20260903-16.jsonl": "0e7241e50fdb0ed3",
+  "xvenue-20260903-17.jsonl": "ff7bc4fb8c041405",
+  "xvenue-20260903-18.jsonl": "e1ec6dbaad4092fd",
+  "xvenue-20260903-19.jsonl": "8998252ec0c79b54",
+  "xvenue-20260903-20.jsonl": "0dcd157e71abbb18",
+  "xvenue-20260903-21.jsonl": "bb8a99f3221b9a61",
+  "xvenue-20260903-22.jsonl": "a65abec265f57dc9",
+  "xvenue-20260903-23.jsonl": "a40f916d61a10b15",
+  "xvenue-20260904-00.jsonl": "516497769b40e814",
+  "xvenue-20260904-01.jsonl": "4cc908b729b157ae",
+  "xvenue-20260904-02.jsonl": "6cd01ccc7256c7a7",
+  "xvenue-20260904-03.jsonl": "e5696b84de51da6f",
+  "xvenue-20260904-04.jsonl": "dba103961eebf738",
+  "xvenue-20260904-05.jsonl": "b63a1fa5bf922d83",
+  "xvenue-20260904-06.jsonl": "81fd10d5a9a8a6bd",
+  "xvenue-20260904-07.jsonl": "81d21f9240a97679",
+  "xvenue-20260904-08.jsonl": "ae0a1f8c516e3c70",
+  "xvenue-20260904-09.jsonl": "afe1681f8affbd70",
+  "xvenue-20260904-10.jsonl": "ca2590197ae04536",
+  "xvenue-20260904-11.jsonl": "17cda841b17e9a22",
+  "xvenue-20260904-12.jsonl": "37c44e68a7c18c10",
+  "xvenue-20260904-13.jsonl": "e0fba64a1a8506d6",
+  "xvenue-20260904-14.jsonl": "dce3621cafda683e",
+  "xvenue-20260904-15.jsonl": "5378380a5504d155",
+  "xvenue-20260904-16.jsonl": "46f7b2e28e9391fa",
+  "xvenue-20260904-17.jsonl": "f4f99c07bdd1a797",
+  "xvenue-20260904-18.jsonl": "a15a8a593c524d47",
+  "xvenue-20260904-19.jsonl": "376d9e14092a38fc"
+ }
+}

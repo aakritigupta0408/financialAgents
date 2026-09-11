@@ -1,0 +1,82 @@
+{
+ "generated_ts": 1788095817,
+ "agents": {
+  "research_manager": {
+   "submissions": 10,
+   "new_findings": 1,
+   "duplicates": 9,
+   "duplicate_rate": 0.9,
+   "proposals": 0,
+   "stale_input_count": 0,
+   "firewall_rejections": 0,
+   "accepted": 0,
+   "implemented": 0,
+   "validated_helpful": 0,
+   "validated_not_helpful": 0,
+   "helpful_per_implemented": null,
+   "quality": "UNKNOWN \u2014 insufficient outcomes (0/10 validated)"
+  },
+  "experiment_analyst": {
+   "submissions": 9,
+   "new_findings": 1,
+   "duplicates": 8,
+   "duplicate_rate": 0.889,
+   "proposals": 0,
+   "stale_input_count": 0,
+   "firewall_rejections": 0,
+   "accepted": 0,
+   "implemented": 0,
+   "validated_helpful": 0,
+   "validated_not_helpful": 0,
+   "helpful_per_implemented": null,
+   "quality": "UNKNOWN \u2014 insufficient outcomes (0/10 validated)"
+  },
+  "data_reliability": {
+   "submissions": 6,
+   "new_findings": 1,
+   "duplicates": 5,
+   "duplicate_rate": 0.833,
+   "proposals": 0,
+   "stale_input_count": 0,
+   "firewall_rejections": 0,
+   "accepted": 0,
+   "implemented": 1,
+   "validated_helpful": 1,
+   "validated_not_helpful": 0,
+   "helpful_per_implemented": 1.0,
+   "quality": "UNKNOWN \u2014 insufficient outcomes (1/10 validated)"
+  },
+  "model_researcher": {
+   "submissions": 12,
+   "new_findings": 2,
+   "duplicates": 10,
+   "duplicate_rate": 0.833,
+   "proposals": 6,
+   "stale_input_count": 0,
+   "firewall_rejections": 0,
+   "accepted": 0,
+   "implemented": 0,
+   "validated_helpful": 0,
+   "validated_not_helpful": 0,
+   "helpful_per_implemented": null,
+   "quality": "UNKNOWN \u2014 insufficient outcomes (0/10 validated)"
+  },
+  "execution_researcher": {
+   "submissions": 4,
+   "new_findings": 1,
+   "duplicates": 3,
+   "duplicate_rate": 0.75,
+   "proposals": 0,
+   "stale_input_count": 0,
+   "firewall_rejections": 0,
+   "accepted": 0,
+   "implemented": 0,
+   "validated_helpful": 0,
+   "validated_not_helpful": 0,
+   "helpful_per_implemented": null,
+   "quality": "UNKNOWN \u2014 insufficient outcomes (0/10 validated)"
+  }
+ },
+ "law": "never rank by volume; AGENT_QUALITY stays UNKNOWN below the outcome gate; a high duplicate rate on unchanged evidence is HEALTHY",
+ "provenance": "agent_recommendations.jsonl"
+}

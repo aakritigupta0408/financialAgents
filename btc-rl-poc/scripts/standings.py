@@ -1,4 +1,6 @@
-"""Current A/B standings: MAE ranking + DM + paired wins, per horizon/era.
+"""Current A/B standings: MSE ranking + DM + paired wins, per horizon/era.
+(Docstring corrected 2026-08-28 after the MAE->MSE metric switch —
+flagged by the docs team's consistency audit.)
 Usage: python scripts/standings.py"""
 import json
 import math

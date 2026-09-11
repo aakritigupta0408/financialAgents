@@ -1,0 +1,53 @@
+{
+ "generated_ts": 1789100087,
+ "attack": "1-execution-selection",
+ "alpha_class": "EXECUTION_UTILIZATION (not information alpha)",
+ "n_bets": 1635,
+ "split_ts": {
+  "train": [
+   1787259427,
+   1788392828
+  ],
+  "val": [
+   1788394511,
+   1788728431
+  ],
+  "holdout": [
+   1788729361,
+   1789098503
+  ]
+ },
+ "seed": 20260910,
+ "one_shot_holdout": true,
+ "frozen_gate": {
+  "coverage_min": 0.2,
+  "top3_max_share": 0.5
+ },
+ "model": "logistic",
+ "gate": 0.66,
+ "holdout_coverage": 0.248,
+ "selective": {
+  "n": 81,
+  "mean_ev_per_$1_c": -5.8,
+  "total_pnl_c": -377.0,
+  "win_rate": 0.704,
+  "max_drawdown_c": 399.0,
+  "top3_share_of_gains": 0.073
+ },
+ "champion_trade_all": {
+  "n": 327,
+  "mean_ev_per_$1_c": -12.65,
+  "total_pnl_c": -1182.0,
+  "win_rate": 0.502,
+  "max_drawdown_c": 1521.0,
+  "top3_share_of_gains": 0.027
+ },
+ "gate_checks": {
+  "realized_ev_positive": false,
+  "beats_champion": true,
+  "coverage_ge_20pct": true,
+  "top3_below_50pct": true,
+  "drawdown_le_champion": true
+ },
+ "verdict": "NO_CANDIDATE"
+}

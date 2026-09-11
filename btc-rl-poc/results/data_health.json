@@ -1,0 +1,79 @@
+{
+ "generated_ts": 1788092644,
+ "overall": "HEALTHY",
+ "feeds": {
+  "daemon_heartbeat": {
+   "age_s": 8,
+   "state": "HEALTHY"
+  },
+  "event_capture": {
+   "age_s": 4,
+   "state": "HEALTHY",
+   "errors": 1
+  },
+  "kb_inference": {
+   "age_s": 65,
+   "state": "HEALTHY"
+  },
+  "pit_snapshot": {
+   "age_s": 41,
+   "state": "HEALTHY"
+  }
+ },
+ "pit_store": {
+  "snapshots": 480,
+  "variants": [
+   "kb2",
+   "kb9"
+  ],
+  "expected_since_golive": 478,
+  "missing": 0,
+  "completeness": 1.0,
+  "state": "HEALTHY"
+ },
+ "timestamps": {
+  "violations_in_sample": 0,
+  "state": "HEALTHY"
+ },
+ "missingness": {
+  "mkt_p_up_null_rate": 0.0,
+  "ask_c_null_rate": 0.94,
+  "state": "HEALTHY"
+ },
+ "schema": {
+  "kb_missing_fields": [],
+  "pit_missing_fields": [],
+  "pit_wrong_schema_version": 0,
+  "state": "HEALTHY"
+ },
+ "parity_prereq": {
+  "parity_state": "PASS",
+  "snapshots_available": true,
+  "state": "HEALTHY"
+ },
+ "slo_seconds": {
+  "daemon_heartbeat": [
+   120,
+   600
+  ],
+  "event_capture": [
+   120,
+   600
+  ],
+  "kb_inference": [
+   180,
+   900
+  ],
+  "pit_snapshot": [
+   300,
+   1200
+  ]
+ },
+ "provenance": [
+  "online_status.json",
+  "event_capture.json",
+  "kalshi_binary_log.jsonl",
+  "feature_snapshots.jsonl",
+  "parity.json"
+ ]
+}

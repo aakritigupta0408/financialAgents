@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>System Health</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+:root{ --card:#ffffff; --soft:#f5f7fa; --ink2:#4a5768; --line:rgba(20,27,36,.10);
+  --accent:#2f6df0; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+main{max-width:1080px}
+.hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:2px;background:var(--line);border:1px solid var(--line);border-radius:13px;overflow:hidden;margin-top:16px}
+.hero div{background:var(--soft);padding:15px 17px}
+.hero .k{font-size:10px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
+.hero .v{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;font-family:var(--mono);margin-top:3px}
+.g{color:var(--up)}.r{color:var(--down)}.a{color:#b26a00}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 3px rgba(20,27,36,.05);margin-top:14px}
+.panel h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;font-weight:650}
+.panel .sub{font-size:12.5px;color:var(--ink2);margin:0 0 14px;max-width:78ch}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px}
+.chk{display:flex;align-items:center;gap:8px;font-size:12px;font-family:var(--mono);padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--soft)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+.inc{border-top:1px solid var(--grid);padding:9px 0;display:flex;gap:10px;align-items:baseline}
+.inc:first-child{border-top:0}
+.sev{font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;font-family:var(--mono);flex:none}
+.sev.s0{color:#fff;background:var(--down)}.sev.s1{color:var(--down);background:rgba(209,60,60,.14)}
+.sev.s2{color:#b26a00;background:rgba(230,149,43,.16)}.sev.s3{color:var(--ink2);background:rgba(124,135,152,.16)}
+.inc .t{font-size:12.5px;flex:1}.inc .st{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+.lst{list-style:none;padding:0;margin:0}
+.lst li{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--grid);font-size:12.5px}
+.lst li:first-child{border-top:0}
+.lst .meta{color:var(--muted);font-size:11px;font-family:var(--mono)}
+.tag2{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:5px;font-family:system-ui}
+.tag2.retired{color:var(--muted);background:rgba(124,135,152,.14)}
+.tag2.shadow{color:#7a5cc0;background:rgba(122,92,192,.13)}
+.tag2.testing{color:var(--accent);background:rgba(47,109,240,.12)}
+.roll{width:100%;border-collapse:collapse;font-size:12.5px}
+.roll td{padding:8px 10px;border-top:1px solid var(--grid);text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+.roll td.l{text-align:left;font-family:system-ui}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.note{font-size:11.5px;color:var(--faint);margin-top:14px;font-family:var(--mono);line-height:1.6}
+.stamp{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+h3.sec{font-size:13px;font-weight:650;margin:0 0 8px}
+</style>
+</head>
+<body>
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="traders.html">Traders</a><a class="nav" href="tiers.html">Tiers</a><a class="nav" href="features.html">Features</a><a class="nav here" href="health.html">Health</a><a class="nav" href="board.html">Board</a><span class="spacer"></span><span class="tag">reliability</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing here is financial advice.</div>
+
+<main>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">System Health</h1>
+  <p style="color:var(--ink-2);max-width:70ch;">One page for whether the machine is honest and alive: integrity invariants, open SEVs and
+  performance concerns, the self-healing log, and the two ends of the model lifecycle — the Graveyard of retired ideas and the Incubator of candidates still under test.</p>
+</header>
+<span class="stamp" id="stamp"></span>
+<div class="hero" id="hero"></div>
+
+<div class="panel"><h2>Integrity invariants</h2>
+  <p class="sub">Machine-checked properties that must always hold. A red invariant is the system succeeding at detection — it means a real defect was caught, not that the dashboard is broken.</p>
+  <div class="checks" id="checks"></div>
+</div>
+
+<div class="two">
+  <div class="panel"><h2>SEVs &amp; incidents</h2>
+    <p class="sub">Open first, then most-recently resolved.</p>
+    <div id="incidents"></div>
+  </div>
+  <div class="panel"><h2>Self-heal &amp; monitors</h2>
+    <p class="sub">Autonomous repair events and monitor state.</p>
+    <div id="monitors"></div>
+    <h3 class="sec" style="margin-top:14px">Recent self-heal</h3>
+    <ul class="lst" id="selfheal"></ul>
+  </div>
+</div>
+
+<div class="two">
+  <div class="panel"><h2>⚰️ Graveyard — retired</h2>
+    <p class="sub">Ideas killed by the evidence. Logs frozen; open positions still settle.</p>
+    <ul class="lst" id="grave"></ul>
+  </div>
+  <div class="panel"><h2>🌱 Incubator — in evaluation</h2>
+    <p class="sub">Candidates and shadows accumulating evidence before any promotion.</p>
+    <ul class="lst" id="incub"></ul>
+  </div>
+</div>
+
+<div class="panel"><h2>Trader rollup</h2>
+  <p class="sub">Active roster at a glance — full detail on <a href="traders.html">Traders</a> and <a href="perf.html">Performance</a>.</p>
+  <table class="roll" id="roll"></table>
+</div>
+<p class="note" id="foot"></p>
+</main>
+
+<script>
+const bust=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function jget(u){const r=await fetch(bust(u),{cache:"no-store"});return r.ok?r.json():null;}
+async function jsonl(u){const r=await fetch(bust(u),{cache:"no-store"});if(!r.ok)return[];const t=await r.text();
+  return t.split("\n").filter(Boolean).map(l=>{try{return JSON.parse(l)}catch{return null}}).filter(Boolean);}
+const C=getComputedStyle(document.documentElement),col=k=>C.getPropertyValue(k).trim();
+const f0=c=>c==null?"—":(c<0?"-$":"$")+Math.abs(c/100).toFixed(0);
+const isOpen=r=>{const s=String(r.status||"");return /open|mitigat|investigat|active|ongoing|firing/i.test(s)&&!/resolv|closed|done/i.test(s)&&r.resolved==null;};
+const isResolved=r=>/resolv|closed|benign|human_closure|done/i.test(String(r.status||""))||r.resolved!=null;
+const RETIRED=[["Ladder","pt2 · profit-banking ladder"],["Gambler","pt4 · 1.6× Kelly sizing"],
+  ["Saver","pt5 · skim-to-savings"],["Patient","pt7 · limit-order execution"],["Ideal","pt8 · best-practice composite"]];
+
+function hero(inv,dh,inc){
+  const openInc=inc.filter(isOpen);
+  const sev0=openInc.filter(r=>(+r.sev||9)===0).length;
+  document.getElementById("hero").innerHTML=`
+    <div><div class="k">Invariants</div><div class="v ${inv&&inv.failed===0?'g':'r'}">${inv?inv.passed+'/'+(inv.passed+inv.failed):'—'}</div></div>
+    <div><div class="k">Health</div><div class="v ${inv&&inv.health==='green'?'g':'a'}">${inv?inv.health:'—'}</div></div>
+    <div><div class="k">Open SEVs</div><div class="v ${openInc.length?'a':'g'}">${openInc.length}</div></div>
+    <div><div class="k">SEV-0 open</div><div class="v ${sev0?'r':'g'}">${sev0}</div></div>
+    <div><div class="k">Data feeds</div><div class="v ${dh&&dh.overall==='HEALTHY'?'g':'a'}">${dh?dh.overall:'—'}</div></div>`;
+}
+function checks(inv){const h=document.getElementById("checks");if(!inv){h.textContent="invariants.json not found";return;}
+  h.innerHTML="";(inv.checks||[]).forEach(c=>{h.innerHTML+=`<div class="chk"><span class="dot" style="background:${c.ok?col('--up'):col('--down')}"></span>${c.name}</div>`;});}
+function incidents(inc){const h=document.getElementById("incidents");
+  const open=inc.filter(isOpen);
+  const closed=inc.filter(isResolved).slice(-6).reverse();
+  const rowsH=(r)=>{const s=(+r.sev)||3;return `<div class="inc"><span class="sev s${Math.min(3,s)}">SEV-${s}</span>
+    <span class="t">${(r.title||r.finding||r.trigger||'(untitled)').replace(/^(CLOSED|RESOLVED)[^:]*:\s*/i,'')}</span><span class="st">${isResolved(r)?'resolved':(r.status||'open')}</span></div>`;};
+  h.innerHTML=(open.length?open.map(rowsH).join(""):`<div class="inc"><span class="sev s3">none</span><span class="t">No open incidents.</span></div>`)
+    +`<h3 class="sec" style="margin:14px 0 4px">Recently resolved</h3>`+closed.map(rowsH).join("");
+}
+function monitors(mh,mm){const h=document.getElementById("monitors");
+  const line=(lbl,d)=>d?`<div class="chk"><span class="dot" style="background:${/HEALTH|GREEN|OK/i.test(d.overall||'')?col('--up'):'#b26a00'}"></span>${lbl}: ${d.overall||'—'}</div>`:'';
+  h.innerHTML=`<div class="checks">${line('monitor health',mh)}${line('meta-monitors',mm)}</div>`;
+}
+function selfheal(sh){const h=document.getElementById("selfheal");
+  h.innerHTML=(sh.slice(-6).reverse()).map(r=>`<li><span>${r.repair_id||r.repair||'repair'}</span>
+    <span class="meta">${r.state||''}${r.heartbeat_age_s!=null?' · '+Math.round(r.heartbeat_age_s)+'s':''}</span></li>`).join("")
+    ||`<li><span class="meta">no self-heal events</span></li>`;
+}
+function graveIncub(tb,mr){
+  document.getElementById("grave").innerHTML=RETIRED.map(([n,d])=>
+    `<li><span>${n} <span class="tag2 retired">retired</span></span><span class="meta">${d.split('· ')[1]||''}</span></li>`).join("");
+  const cands=[];
+  (tb&&tb.treatments||[]).forEach(t=>{const v=(t.verdict||"").toLowerCase();
+    if(/keep_testing|testing|candidate|best/.test(v)||(t.llr!=null&&t.upper!=null&&t.llr>0&&t.llr<t.upper&&t.key!=="champion"))
+      cands.push({name:t.label||t.key,tag:"testing",meta:`n=${t.n||0} · LLR ${t.llr!=null?t.llr.toFixed(2):'—'}`});});
+  [["kb7 · Chronos-Bolt","shadow","frozen foundation model"],["kb9 · TimesFM","shadow","frozen foundation model"],
+   ["pt6 · MLE","shadow","meta-trader, stakes nothing"]].forEach(([n,tag,m])=>cands.push({name:n,tag,meta:m}));
+  if(mr&&mr.recommended_action)cands.push({name:"Research recommendation",tag:"testing",meta:String(mr.recommended_action).slice(0,60)});
+  document.getElementById("incub").innerHTML=cands.slice(0,10).map(c=>
+    `<li><span>${c.name} <span class="tag2 ${c.tag}">${c.tag}</span></span><span class="meta">${c.meta}</span></li>`).join("")
+    ||`<li><span class="meta">no candidates in eval</span></li>`;
+}
+async function boot(){
+  const[inv,dh,inc,sh,mh,mm,tb,mr,pt,pt3,pt6]=await Promise.all([
+    jget("../results/invariants.json"),jget("../results/data_health.json"),
+    jsonl("../results/incidents.jsonl"),jsonl("../results/self_heal.jsonl"),
+    jget("../results/monitor_health.json"),jget("../results/meta_monitors.json"),
+    jget("../results/treatments_board.json"),jget("../results/model_research.json"),
+    jsonl("../results/pt_trades.jsonl"),jsonl("../results/pt3_trades.jsonl"),jsonl("../results/pt6_trades.jsonl")]);
+  document.getElementById("stamp").textContent="live · invariants "+(inv?inv.health:'—')+" · "+inc.length+" incidents on record";
+  hero(inv,dh,inc);checks(inv);incidents(inc);monitors(mh,mm);selfheal(sh);graveIncub(tb,mr);
+  const roll=[["Follower",pt,"control"],["Disciplined",pt3,"thesis"],["MLE",pt6,"shadow"]];
+  const pnlOf=r=>r.pnl_c!=null?r.pnl_c:(r.would_pnl_c!=null?r.would_pnl_c:null);
+  const t=document.getElementById("roll");t.innerHTML="<thead><tr><th class='l' style='text-align:left;color:var(--faint);font-size:10px;text-transform:uppercase;padding:0 10px 8px'>Trader</th><th style='text-align:right;color:var(--faint);font-size:10px;text-transform:uppercase;padding:0 10px 8px'>Bankroll</th><th style='text-align:right;color:var(--faint);font-size:10px;text-transform:uppercase;padding:0 10px 8px'>Net P&L</th><th style='text-align:right;color:var(--faint);font-size:10px;text-transform:uppercase;padding:0 10px 8px'>Resolved</th></tr></thead>";
+  const tb2=document.createElement("tbody");
+  roll.forEach(([n,rows,role])=>{const res=rows.filter(r=>r.actual!=null&&r.actual!==-1&&!r.skipped&&pnlOf(r)!=null);
+    const pnl=res.reduce((a,r)=>a+(pnlOf(r)||0),0),last=rows[rows.length-1];
+    tb2.innerHTML+=`<tr><td class="l">${n} <span class="tag2 ${role==='shadow'?'shadow':'testing'}" style="${role==='control'?'background:rgba(124,135,152,.16);color:var(--ink2)':''}">${role}</span></td>
+      <td>${f0(last?last.bankroll_c:null)}</td><td class="${pnl>=0?'pos':'neg'}">${f0(pnl)}</td><td>${res.length}</td></tr>`;});
+  t.appendChild(tb2);
+  document.getElementById("foot").textContent="Sources: invariants.json · incidents.jsonl · self_heal.jsonl · monitor_health.json · meta_monitors.json · treatments_board.json · model_research.json · pt logs.";
+}
+boot();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

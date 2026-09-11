@@ -1,0 +1,473 @@
+{
+ "generated_ts": 1787985103.371,
+ "source": "btc_rl/metrics.py",
+ "contract": "site/lib.js must reproduce every `out` byte-identically after JSON round-trip, including nulls",
+ "fixtures": {
+  "mase": [
+   {
+    "in": {
+     "abs_errs": [
+      10.0,
+      20.0,
+      30.0
+     ],
+     "naive_abs_errs": [
+      20.0,
+      20.0,
+      20.0
+     ]
+    },
+    "out": 1.0
+   },
+   {
+    "in": {
+     "abs_errs": [
+      5.0,
+      7.5
+     ],
+     "naive_abs_errs": [
+      2.0,
+      3.0
+     ]
+    },
+    "out": 2.5
+   },
+   {
+    "in": {
+     "abs_errs": [],
+     "naive_abs_errs": [
+      1.0
+     ]
+    },
+    "out": null
+   }
+  ],
+  "msse": [
+   {
+    "in": {
+     "abs_errs": [
+      10.0,
+      20.0,
+      30.0
+     ],
+     "naive_abs_errs": [
+      20.0,
+      20.0,
+      20.0
+     ]
+    },
+    "out": 1.1666666666666667
+   },
+   {
+    "in": {
+     "abs_errs": [
+      3.0,
+      4.0
+     ],
+     "naive_abs_errs": [
+      0.0,
+      0.0
+     ]
+    },
+    "out": null
+   }
+  ],
+  "rmse": [
+   {
+    "in": {
+     "errs": [
+      3.0,
+      -4.0
+     ]
+    },
+    "out": 3.5355339059327378
+   },
+   {
+    "in": {
+     "errs": [
+      -1.5,
+      2.5,
+      0.0,
+      1.0
+     ]
+    },
+    "out": 1.541103500742244
+   },
+   {
+    "in": {
+     "errs": []
+    },
+    "out": null
+   }
+  ],
+  "pinball": [
+   {
+    "in": {
+     "actual": 77400.0,
+     "lo": 77350.0,
+     "hi": 77475.0
+    },
+    "out": 6.249999999999999
+   },
+   {
+    "in": {
+     "actual": 77300.0,
+     "lo": 77350.0,
+     "hi": 77475.0
+    },
+    "out": 31.25
+   },
+   {
+    "in": {
+     "actual": 77500.0,
+     "lo": 77350.0,
+     "hi": 77475.0,
+     "q_lo": 0.05,
+     "q_hi": 0.95
+    },
+    "out": 15.625
+   }
+  ],
+  "sharpness": [
+   {
+    "in": {
+     "los": [
+      77350.0,
+      77245.0
+     ],
+     "his": [
+      77475.0,
+      77519.0
+     ]
+    },
+    "out": 199.5
+   },
+   {
+    "in": {
+     "los": [],
+     "his": []
+    },
+    "out": null
+   }
+  ],
+  "pt_test": [
+   {
+    "in": {
+     "pred_up": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true
+     ],
+     "actual_up": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true
+     ]
+    },
+    "out": 3.0749470595835846
+   },
+   {
+    "in": {
+     "pred_up": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "actual_up": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ]
+    },
+    "out": null
+   },
+   {
+    "in": {
+     "pred_up": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+     ],
+     "actual_up": [
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true,
+      false,
+      true
+     ]
+    },
+    "out": null
+   }
+  ],
+  "brier_skill": [
+   {
+    "in": {
+     "brier": 0.2,
+     "reference": 0.25
+    },
+    "out": 0.19999999999999996
+   },
+   {
+    "in": {
+     "brier": 0.3,
+     "reference": 0.25
+    },
+    "out": -0.19999999999999996
+   },
+   {
+    "in": {
+     "brier": 0.2,
+     "reference": 0.0
+    },
+    "out": null
+   }
+  ],
+  "calibration_bins": [
+   {
+    "in": {
+     "ps": [
+      0.05,
+      0.15,
+      0.15,
+      0.55,
+      0.55,
+      0.55,
+      0.95,
+      1.0
+     ],
+     "ys": [
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      1
+     ]
+    },
+    "out": [
+     {
+      "mid": 0.05,
+      "p_mean": 0.05,
+      "y_freq": 0.0,
+      "n": 1
+     },
+     {
+      "mid": 0.15,
+      "p_mean": 0.15,
+      "y_freq": 0.5,
+      "n": 2
+     },
+     {
+      "mid": 0.55,
+      "p_mean": 0.55,
+      "y_freq": 0.6667,
+      "n": 3
+     },
+     {
+      "mid": 0.95,
+      "p_mean": 0.975,
+      "y_freq": 1.0,
+      "n": 2
+     }
+    ]
+   },
+   {
+    "in": {
+     "ps": [
+      0.1,
+      0.3,
+      0.6,
+      0.9
+     ],
+     "ys": [
+      0,
+      1,
+      1,
+      1
+     ],
+     "n_bins": 4
+    },
+    "out": [
+     {
+      "mid": 0.125,
+      "p_mean": 0.1,
+      "y_freq": 0.0,
+      "n": 1
+     },
+     {
+      "mid": 0.375,
+      "p_mean": 0.3,
+      "y_freq": 1.0,
+      "n": 1
+     },
+     {
+      "mid": 0.625,
+      "p_mean": 0.6,
+      "y_freq": 1.0,
+      "n": 1
+     },
+     {
+      "mid": 0.875,
+      "p_mean": 0.9,
+      "y_freq": 1.0,
+      "n": 1
+     }
+    ]
+   }
+  ],
+  "kalshi_fee_c": [
+   {
+    "in": {
+     "price_c": 50.0
+    },
+    "out": 2.0
+   },
+   {
+    "in": {
+     "price_c": 60.0
+    },
+    "out": 2.0
+   },
+   {
+    "in": {
+     "price_c": 99.0
+    },
+    "out": 1.0
+   }
+  ],
+  "max_drawdown": [
+   {
+    "in": {
+     "cum": [
+      0.0,
+      5.0,
+      3.0,
+      8.0,
+      1.0,
+      4.0
+     ]
+    },
+    "out": 7.0
+   },
+   {
+    "in": {
+     "cum": [
+      0.0,
+      1.0,
+      2.0,
+      3.0
+     ]
+    },
+    "out": 0.0
+   },
+   {
+    "in": {
+     "cum": []
+    },
+    "out": 0.0
+   }
+  ]
+ }
+}

@@ -1,0 +1,94 @@
+{
+ "generated_ts": 1788285382,
+ "maintained_by": "agent_research_manager (script-backed)",
+ "queue": [
+  {
+   "priority": "P0",
+   "research_question": "A3-v2 forward qualification \u2014 does waiting for a >=5c dip beat immediate entry after costs? (fresh prospective test motivated by A3-v1.1's clean REJECT: fills always won, misses dominated at 10c)",
+   "bottleneck": "evidence n=38 (compare 25, decision 50; fresh counter from 2026-08-30 registration)",
+   "evidence": "a3_live.json (v2); a3_v1_final.json (closed predecessor); A3_V2_SPEC.yaml registration rationale",
+   "estimated_impact": "decides the desk's entry policy",
+   "state": "COLLECTING",
+   "blocked_by": "evidence N",
+   "owner": "market clock",
+   "next_gate": "registered decision gate at n>=50"
+  },
+  {
+   "priority": "P0",
+   "research_question": "Feature-discovery program Phase 1: free-data CAPTURE_ONLY (F-MICRO existing tape; F-XVENUE binance/okx/kraken live 08-30)",
+   "bottleneck": "Gate F1 \u2014 >=7 days capture, >=95% coverage, zero unresolved ts/schema issues (eligible >= 09-06)",
+   "evidence": "xvenue_capture.json heartbeat; config/FEATURE_REGISTRY.yaml sources",
+   "estimated_impact": "the one-sentence objective: one compact free feature family with stable PIT market-relative information early enough to monetize",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "data_reliability",
+   "next_gate": "Gate F1"
+  },
+  {
+   "priority": "P1",
+   "research_question": "T1T2 program (PM 09-01, T1T2_PROGRAM.yaml): improve forecast quality first, then probability quality. At F1: freeze PIT dataset, then T1 CONTROL vs T1 + F-XVENUE (distributional metrics), then propagation through the UNCHANGED probability bridge, then ONE T2 challenger",
+   "bottleneck": "capture Gate F1 (then PIT-dataset freeze)",
+   "evidence": "model_research.json \u2014 kb9 EARLY_SKILL; resolution is the bottleneck (0/10 arms beat market); kb2 redundancy 0.998 sanity-confirmed (partial)",
+   "estimated_impact": "the desk's core ML objective \u2014 beat Kalshi's probability early (market-relative resolution)",
+   "state": "ACTIVE",
+   "blocked_by": "Gate F1",
+   "owner": "model_researcher",
+   "next_gate": "F1 -> P0 freeze PIT dataset -> T1.1 family-level walk-forward ablation"
+  },
+  {
+   "priority": "P2",
+   "research_question": "Legacy M10 vs M10+M8 closure",
+   "bottleneck": "paired increment P(\u0394>0) 77% \u2014 unclear",
+   "evidence": "program.json incremental; decision_board.json",
+   "estimated_impact": "closes the legacy experiment family",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "experiment_analyst",
+   "next_gate": "SPRT verdict"
+  },
+  {
+   "priority": "P3",
+   "research_question": "Maintenance/observability: feature PSI + prediction-drift instrumentation",
+   "bottleneck": "declared NOT INSTRUMENTED gaps",
+   "evidence": "backend Data module gap rows",
+   "estimated_impact": "drift visibility before label decay",
+   "state": "ACTIVE",
+   "blocked_by": null,
+   "owner": "data_reliability (M5.3, not yet active)",
+   "next_gate": null
+  }
+ ],
+ "blocked": [
+  {
+   "item": "T3 decision-layer optimization",
+   "reason": "T1T2 program law \u2014 return to the trading algorithm only after BOTH T1 and T2 are materially improved out of sample"
+  },
+  {
+   "item": "Learned dip / entry-timing tuning",
+   "reason": "A3-v2 is COLLECT ONLY to its registered gate; threshold frozen at 5c"
+  },
+  {
+   "item": "Value-of-Wait ML (A4)",
+   "reason": "SPEC_ONLY (A4_SPEC.yaml) \u2014 blocked on A3-v2 close + Gate F1 AND on the T1T2 BLOCK list; unlock conditions in-spec"
+  },
+  {
+   "item": "Sizing research",
+   "reason": "positive durable alpha not established; T5 in the T1T2 hierarchy"
+  },
+  {
+   "item": "Execution research (incl. passive)",
+   "reason": "standalone maker already failed (M11); T4 in the T1T2 hierarchy"
+  },
+  {
+   "item": "Champion simplification (CHAMPION-vLean)",
+   "reason": "would mutate the frozen control \u2014 the leader pool (kb3/kb4/kb7/kb8) is a CONTROL_DEPENDENCY; requires a registered CHAMPION-vCurrent vs CHAMPION-vLean experiment, and only after current research resolves (PM 08-30)"
+  }
+ ],
+ "provenance": [
+  "a3_live.json",
+  "experiment_analysis.json",
+  "model_qualification.json",
+  "program.json",
+  "agent_recommendations.jsonl"
+ ]
+}

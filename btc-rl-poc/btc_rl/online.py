@@ -28,8 +28,64 @@ from pathlib import Path
 from . import config
 from . import metrics as M
 from .history import append_history
+from . import treatments
 from .agents import (BinaryLogit, DistDQNAgent, LinearQAgent, LinUCBAgent,
-                     LSTMDistAgent, TabularQAgent)
+                     LSTMDistAgent, PlattCalibrator, TabularQAgent)
+
+# --- M1 (2026-08-28): per-arm calibration layer, SHADOW MODE ---------
+# Every kb row carries p_cal beside p_up; nothing reads p_cal to trade
+# yet. The shadow week answers one question with data: does calibrating
+# beat not calibrating (decayed log-loss, prequential)? Only then does
+# the decision tier switch over. See docs/SEV0_REMEDIATION.md M1.
+KB_CALIB_NAME = "kb_calib.json"
+KB_CALIB_ARMS = ("kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7",
+                 "kb8", "kb9")
+
+# --- Champion/challenger routing (2026-08-28) ------------------------
+# Every improvement runs as a TREATMENT on real live windows, paired
+# against the incumbent desk policy, and is promoted only when the live
+# stream clears a sequential test. Nothing is adopted on backtest
+# evidence alone — the 08/26 audit's tier-1 root cause and the 09h
+# "toxic hour" both looked convincing offline and were wrong.
+TREAT_STATE_NAME = "treatments.json"
+TREAT_LOG_NAME = "treatments.jsonl"
+TREAT_MIN_N = 40               # no verdict before this many windows
+TREAT_EDGE = 0.02              # the win size worth switching for (EV/$1)
+# FAMILY-WISE ERROR CONTROL (2026-08-28, research-baseline gap #1):
+# running ~14 concurrent SPRTs each at alpha=0.05 while watching the
+# best of them is the same multiple-testing trap that killed the M7
+# hour policy, one layer up (Bailey & Lopez de Prado's selection-bias
+# point). Per-treatment alpha is Bonferroni-split across a REGISTERED
+# concurrency cap, so promote boundaries are pre-set and conservative:
+# alpha 0.05/16 -> upper boundary log(0.9/0.003125) ~ 5.66 (was 2.89).
+# Existing LLRs are unchanged; they are simply judged honestly now.
+TREAT_MAX_CONCURRENT = 16
+TREAT_ALPHA = 0.05 / TREAT_MAX_CONCURRENT
+REGIME_LOOKBACK = 20           # windows for the market-accuracy signal
+REGIME_FLOOR = 0.62            # stand down below this (M8)
+KNIFE_BAND = 0.10
+# M13 edge band (2026-08-29, D-edge-band ratified): pre-registered,
+# never fitted. Floor 2c = the Gambler v2.1 evidence (stated edge
+# below fees+spread loses); ceiling 12c = the anti-signal evidence
+# (claimed edges beyond ~12c live where kb5/pt6 regressions say the
+# model, not the market, is wrong).
+M13_MIN_EDGE_C = 2.0
+M13_MAX_EDGE_C = 12.0
+# LEAN MACHINE (owner, 2026-08-29): per horizon exactly ONE control
+# (the h-family feeding path) and ONE treatment, selected on val-MSE:
+#   h1: t9-h1 (LSTM 277 vs 280) · h5: t10-h5 (1003 vs 1094)
+#   h15: t7-h15 (1642 vs 2322) · h30: t9-h30 (1581 vs 2701)
+# All other arms FREEZE: weights kept and serving, no hourly retrain,
+# no further selection attention. Same upstream (sigma feed) and
+# downstream (kb bridge) untouched.
+LEAN_RETRAIN = {"h1", "h5", "h15", "h30",
+                "t9-h1", "t10-h5", "t7-h15", "t9-h30"}              # |mkt_p_up - 0.5| veto width (M2)
+# M10: decline a fill worse than the decision-time quote by more than
+# this. Motivated by measurement, not by tuning: execution costs 2.70
+# points of EV (real fills -9.73% vs model quotes -7.02%), more than
+# double the best paired treatment edge, and the worst 10% of fills
+# (mean slip +24c) lost $524 on their own.
+EXEC_MAX_SLIP_C = 3.0
 
 BANDIT_TYPES = (LinUCBAgent, LinearQAgent, DistDQNAgent)  # shared select API
 from .env import build_episodes, reward
@@ -266,6 +322,676 @@ KB_LOG_NAME = "kalshi_binary_log.jsonl"  # binary-call arm: own log — a
 KB_MAX_ROWS = 20_000
 KB_BET_LOG_NAME = "kb_bets.jsonl"  # one-shot paper bets on KXBTC15M
 PB_BET_LOG_NAME = "pb_bets.jsonl"  # Conviction Book: kb5-gated entries only
+
+# The $1K Desk (TA spec, 2026-08-25): a paper trader starting at $1,000
+# that risks at most 10% of current funds per bid and always follows the
+# CURRENT BEST BIDDER — the arm leading over its last 10 settled
+# gate-clearing decisions. One entry per window, real asks + fees.
+PT_LOG_NAME = "pt_trades.jsonl"
+# Trader 2, the LADDER: same entries, but banks profits — on reaching
+# 11x his current level he withdraws one level (starting level $1,000),
+# keeps playing with 10x, and the level itself scales x10. His 10% bid
+# limit therefore steps $100 -> $1,000 -> $10,000 as he climbs.
+PT2_LOG_NAME = "pt2_trades.jsonl"
+# Trader 3, the DISCIPLINED. Policy v1 (pre-registered 2026-08-25):
+# bids ONLY when kb7's confidence >= 0.77 — the measured top-44% tier
+# of its biddable entries. Policy v2 (2026-08-25, stamped pv:2 on
+# rows): ALSO takes the follower's leader-based entry when the LEADER's
+# confidence clears the same 0.77 bar (the follower himself enters at
+# 0.62). One bid per window, 10% of funds, real ask + fee, ask 5-80c.
+# The threshold stays FROZEN; version changes are dated in NOTES.md.
+PT3_LOG_NAME = "pt3_trades.jsonl"
+PT3_TAU = 0.77
+# Trader 4, the GAMBLER (2026-08-25; amended same day from 100% to 33%
+# before any meaningful history): 33% of capital on every leader entry,
+# capped by ~$500 near-touch depth. ~1.6x full Kelly at the desk's
+# typical 75c asks — wild swings, deep drawdowns, but never a one-bet
+# bust. The aggressive end of the sizing curriculum.
+PT4_LOG_NAME = "pt4_trades.jsonl"
+PT4_FRAC = 0.33
+PT4_CAP_C = 50_000            # $500 depth-saturation stake ceiling
+# Gambler policy v2 (2026-08-26): adopts the Disciplined's >=0.77
+# confidence gate (all-entries 33% staking bled -$1,092 on 08/26 while
+# the gated tier ran 79.4%), and his funds RESET to $10k at the cutover.
+# History stays in the log untouched; rows made before PT4_RESET_TS
+# simply don't count toward the v2 bankroll. v2 rows are stamped pv:2.
+PT4_TAU = 0.77
+PT4_MIN_EDGE_C = 2.0   # v2.1 (2026-08-28): stated edge at the actual
+                       # fill must clear spread+fee noise — a constant
+                       # confidence gate alone can (and did) buy
+                       # negative-EV entries when price ran ahead
+PT4_RESET_TS = 1_787_788_353  # 2026-08-26 16:52 PT — v2 cutover
+PT4_RESET_C = 1_000_000       # $10,000 fresh v2 bankroll
+# v3 (2026-08-29, owner decision D-gambler-sizing): the 33% stake
+# STAYS — the aggressive curriculum is the exhibit — but any settle
+# that lifts the bankroll above PT4_RESET_C sweeps the excess out as a
+# WITHDRAWAL (wd_c stamped on the settling row = the ledger), and
+# withdrawn cash can never be re-staked. Fresh $10k at the cutover;
+# v1/v2 history stays in the log untouched. Exposure is thereby
+# bounded at 0.33 x $10k forever, while the drawdown lessons remain.
+PT4_RESET2_TS = 1_787_994_332  # 2026-08-29 02:25 PT — v3 cutover
+# Trader 5, the SAVER (2026-08-25): starts $10k, stakes 25% of playing
+# bankroll (depth-capped like the whole desk), and SKIMS 25% of every
+# win into savings that never return to play; losses hit the bankroll
+# in full. The profit ratchet: slower compounding, monotone savings.
+PT5_LOG_NAME = "pt5_trades.jsonl"
+PT5_START_C = 1_000_000       # $10,000
+PT5_FRAC = 0.10   # reworked 2026-08-26 from 0.25 (~2.5x Kelly, bled
+                  # -31% with -$15k drawdown) to 0.10; skim unchanged.
+                  # Rows before the change are policy v1 (25% sizing).
+PT5_SKIM = 0.25
+# Trader 6, the MLE (2026-08-26): a SUPERVISED meta-trader. Learns
+# P(the leader-side bet wins) online from decision-time features of the
+# rule traders' shared signal, bets only when EV>0 at the real ask, and
+# sizes by HALF-KELLY of the estimated edge (capped 10%). Industry
+# standard: supervised edge + analytic sizing, not end-to-end RL (which
+# our window count can't support). Backtest: it learns that abstaining
+# is the skill — ~break-even EV but near-zero drawdown vs the Gambler.
+# Trader 7, the PATIENT (2026-08-28, additive — controls untouched):
+# the execution experiment. Same signal and 10% sizing as the Follower,
+# but a LIMIT order: at the desk's entry minute it rests a bid at
+# (quoted ask - PT7_IMPROVE_C) and fills only if a later minute's ask
+# comes down to it — otherwise the window is skipped (logged, stake 0).
+# Selection held constant, execution varied: any P&L gap vs the
+# Follower is execution alpha, nothing else. Motivated by the measured
+# 2.70 pts/EV execution leak and +9c late-entry slippage. Fill model is
+# conservative: we only see ~per-minute quote samples, so a real
+# resting order would fill at least as often. Pending orders are
+# in-memory (a restart mid-window cancels them — rare, logged nowhere,
+# acknowledged).
+PT7_LOG_NAME = "pt7_trades.jsonl"
+PT7_IMPROVE_C = 2.0
+# Trader 8, the IDEAL (2026-08-28, additive): the composite of what
+# crypto execution practice and THIS project's verified measurements
+# both support — nothing speculative, every component cited:
+#  * maker-style limit entry, never crossing the spread (passive
+#    execution for non-urgent flow: Almgren-Chriss urgency tradeoff;
+#    our measured 2.70-pt execution leak and +9c late-entry slippage)
+#  * edge at the ACTUAL fill >= margin (meta-labeling, Lopez de Prado
+#    2018; the pt4-v2 negative-EV lesson)
+#  * half-Kelly sizing on that stated edge, capped at 10% (Kelly 1956;
+#    MacLean-Thorp-Ziemba 2011 on estimation error)
+#  * participation cap: never take more than 25% of near-touch depth
+#    (the Kyle-1985 stealth optimum measured in the detection sim)
+#  * regime gate: stand down when trailing market accuracy < 0.62
+#    (M8 — the best-performing live treatment, +8.23%/$1 paired)
+# Knife-edge veto deliberately EXCLUDED: +1.32% paired post-fix, too
+# weak to earn a slot.
+PT8_LOG_NAME = "pt8_trades.jsonl"
+PT8_MARGIN_C = 2.0            # stated edge at fill must clear this
+PT8_IMPROVE_C = 2.0           # rest this far below the quoted ask
+PT8_KELLY_CAP = 0.10
+PT8_DEPTH_FRAC = 0.25
+PT6_LOG_NAME = "pt6_trades.jsonl"
+PT6_LOGIT_PATH_NAME = "pt6_logit.json"
+PT6_DIM = 7
+# 2026-08-26 calibration fix: the logit's p_win tracks the ask (price IS
+# information, weight +0.26) and sat 4-16 pts above cost on EVERY window,
+# so "EV>0" fired always and Metamon bet 7/7 windows — the opposite of
+# the baseline's finding that ~82% idle is the skill. Require a claimed
+# edge margin over break-even before betting (the meta-trader's analog
+# of the Disciplined's 0.77 gate); of his first 7 live bets only the
+# +15.9c entry would have qualified (it won).
+PT6_MIN_EDGE_C = 10           # bet only if pw*100 - (ask+fee) >= 10c
+
+# ---- GREAT SIMPLIFICATION (PM directive 2026-08-29) -----------------
+# docs/RETIREMENT_MANIFEST.md. The active roster is capped at 5 slots,
+# one deliberately empty: Follower (control), Disciplined (thesis),
+# MLE (SHADOW), A3/T10 (entry-timing treatment), [empty]. Retired
+# traders take NO new positions; open rows settle normally and their
+# logs freeze as archives (history is never deleted). pt6 is lifecycle
+# SHADOW: it decides and learns at full window rate but stakes nothing
+# until independently justified — would-bet rows carry would_* fields
+# so its hypothetical economics stay measurable.
+ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
+RETIRED_TRADERS = frozenset({"pt2", "pt4", "pt5", "pt7", "pt8"})
+PT6_SHADOW = True
+# One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
+# t_exec_reg (M10+M8); t_regime kept as the legacy-control component
+# reference (PM plan §36), t_edgeband observes as shadow (§43).
+# M11+M8 (t_limit_reg) moved to DIAGNOSTIC ARCHIVE (§41) — its
+# causal-explanation purpose is served. Every other treatment stops
+# consuming runtime — the paired history in treatments.jsonl stays
+# frozen evidence.
+RETIRED_TREATMENTS = frozenset({
+    "t_cal", "t_knife", "t_cheap", "t_both", "t_fshare",
+    "t_fs_reg", "t_limit", "t_evlead", "t_limit_reg"})
+
+# ---- PIT feature-snapshot store (M2.5, PM 08-30) --------------------
+# At every serving-pair inference (kb2 CONTROL, kb9 TREATMENT) the
+# EXACT inputs are persisted so "why did kb9 output 0.785 at this
+# decision?" is answerable months later without re-deriving features
+# from a possibly-changed pipeline. Append-only jsonl; parity replay
+# in scripts/check_parity.py. Lean scope: serving pair only.
+PIT_SNAP_NAME = "feature_snapshots.jsonl"
+PIT_SCHEMA_V = "pit-v1"
+
+# M3 vertical cleanup (PM 08-30): the ONLY kb arms with zero live
+# decision impact. kb3/kb4/kb7/kb8 stay — they are inside the FROZEN
+# champion's leader pool (PT_ARMS), so removing them would change the
+# control policy itself; kb5 serves the M14-v2 oracle product.
+# kb6 (fast-info, falsified) and kbf (T-3min call, accuracy-without-
+# monetizability tombstone) stop producing new rows; history frozen.
+RETIRED_MODEL_ARMS = frozenset({"kb6", "kbf"})
+M3_CLEANUP_TS = 1_788_078_000   # 2026-08-30 — zombie clock starts here
+
+
+def _pit_snapshot(variant, ticker, close_ts, decision_ts, receive_ts,
+                  model_desc, feature_obj, prediction, extra=None):
+    import hashlib as _hl
+    try:
+        fjson = json.dumps(feature_obj, sort_keys=True)
+        row = {
+            "prediction_id": f"{variant}-{ticker}-{decision_ts}",
+            "window_id": ticker, "variant": variant,
+            "event_ts": decision_ts, "receive_ts": receive_ts,
+            "decision_ts": decision_ts,
+            "persist_ts": round(time.time(), 3),
+            "close_ts": close_ts,
+            "model": model_desc,
+            "feature_schema_version": PIT_SCHEMA_V,
+            "features": feature_obj,
+            "feature_hash": _hl.sha256(
+                fjson.encode()).hexdigest()[:16],
+            "prediction": prediction,
+            "confidence": round(max(prediction, 1 - prediction), 4),
+        }
+        if extra:
+            row.update(extra)
+        with (RESULTS_DIR / PIT_SNAP_NAME).open("a") as f:
+            f.write(json.dumps(row) + "\n")
+    except Exception:
+        pass          # snapshotting must never break the trade loop
+
+
+def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
+                  sy: bool, pf: list[float], mins_left: float
+                  ) -> list[float]:
+    """Decision-time features for the meta-trader (no leakage): the
+    shared rule-trader signal (leader confidence, the ask, their
+    disagreement with the market) plus barrier/phase context."""
+    a = ask_c / 100.0
+    pm = k_pup if k_pup is not None else 0.5
+    p = (pf + [0.0] * 4)
+    return [1.0, conf, a, conf - a,
+            ((pm - 0.5) * (1 if sy else -1)) * 2.0,
+            mins_left / 15.0, p[2]]
+
+
+PT_START_BANKROLL_C = 100_000          # $1,000 in cents
+PT_FRAC = 0.10                         # max fraction of funds per bid
+PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
+PT_LAST_N = 10                         # leadership window (decisions)
+PT_MIN_REC = 5                         # min decisions to hold leadership
+# kb6 RETIRED 2026-08-26 from trader candidacy — weakest arm (UP recall
+# 63%, coverage 37%, persistently cold); it keeps predicting for the
+# record but no trader follows its calls.
+PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
+
+
+_FC_CACHE = {"ts": 0.0, "state": "NORMAL", "why": ""}
+
+
+def _fail_closed_state() -> tuple[str, str]:
+    """Runtime state machine (master directive §44-45): NORMAL /
+    DEGRADED / FREEZE_NEW_ENTRIES. Fail CLOSED: when the integrity
+    machinery itself is red or silent, the desk stops committing new
+    stakes (settlement of existing positions always continues — money
+    already at risk must still be accounted). Checked from the
+    published artifacts so the daemon and the auditors stay
+    independent; cached 60s so the 30s poll stays cheap.
+
+    FREEZE_NEW_ENTRIES when:
+      * the invariant wall is red, or
+      * the independent reconciler reports SEV-1, or
+      * either file is >45 min stale (silent auditors = no evidence
+        = no new bets; the 08-29 dead-chain incident is the scar).
+    DEGRADED (trade on, flagged) when: meta-monitor reports STALE.
+    """
+    now = time.time()
+    if now - _FC_CACHE["ts"] < 60:
+        return _FC_CACHE["state"], _FC_CACHE["why"]
+    state, why = "NORMAL", ""
+    try:
+        for name, bad_key, bad_val in (
+                ("invariants.json", "health", "red"),
+                ("reconciliation.json", "overall", "SEV-1")):
+            p = RESULTS_DIR / name
+            if not p.exists() or now - p.stat().st_mtime > 2700:
+                state = "FREEZE_NEW_ENTRIES"
+                why = f"{name} missing/stale — no evidence, no bets"
+                break
+            d = json.loads(p.read_text())
+            if d.get(bad_key) == bad_val:
+                state = "FREEZE_NEW_ENTRIES"
+                why = f"{name}: {bad_key}={bad_val}"
+                break
+        if state == "NORMAL":
+            mp = RESULTS_DIR / "meta_monitors.json"
+            if mp.exists():
+                m = json.loads(mp.read_text())
+                if m.get("overall") in ("STALE", "UNKNOWN"):
+                    state, why = "DEGRADED", "meta-monitor: " + \
+                        str(m.get("overall"))
+    except Exception as e:          # unreadable evidence = fail closed
+        state, why = "FREEZE_NEW_ENTRIES", f"state check failed: {e!r}"
+    _FC_CACHE.update(ts=now, state=state, why=why)
+    return state, why
+
+
+def _regime_acc(kb_rows: list[dict]) -> float | None:
+    """Trailing market accuracy over the last REGIME_LOOKBACK settled
+    windows, measured at DECISION time (earliest row inside the <=12
+    envelope — the near-close row is trivially right and would disable
+    the gate; that exact bug already happened once in the treatment
+    evaluator). Ex-ante: settled windows only."""
+    dt: dict = {}
+    for r in kb_rows:
+        if ((r.get("variant") or "kb") != "kb" or r.get("actual") is None
+                or r.get("mkt_p_up") is None
+                or (r.get("mins_left") or 99) > 12):
+            continue
+        tk = r["ticker"]
+        if tk not in dt or r["mins_left"] > dt[tk]["mins_left"]:
+            dt[tk] = r
+    seq = sorted(dt.values(), key=lambda r: r["close_ts"])
+    seq = seq[-REGIME_LOOKBACK:]
+    if len(seq) < REGIME_LOOKBACK:
+        return None
+    return sum(1 for r in seq
+               if (r["mkt_p_up"] >= 0.5) == bool(r["actual"])) / len(seq)
+
+
+def _order_fee_c(contracts: int, ask_c: float) -> int:
+    """Kalshi trading fee in cents for an ORDER of `contracts` at ask_c
+    cents: ceil(0.07 * C * P * (1-P)), rounded up ONCE per order.
+
+    BUG FIX 2026-08-28: the desk previously rounded up per CONTRACT
+    (ceil(7*p*(1-p)) then * C) — 2c/contract where the schedule charges
+    ~1.1-1.5c at typical desk asks. Measured: $8,822.62 charged vs
+    $6,467.48 true across the six ledgers — $2,355 of phantom fees that
+    depressed every P&L and tightened pt6's edge gate. Single-contract
+    bets (the kb selector ledgers) were already correct: for C=1 the
+    two roundings coincide, and their frozen thetas stay untouched."""
+    p = ask_c / 100.0
+    return math.ceil(7.0 * contracts * p * (1.0 - p))
+
+
+def _treat_policies():
+    """The challenger policies under live test, each a pure function of
+    decision-time context. Returning None means "stand down" — a real
+    decision that scores 0 and risks nothing, which is how a veto can
+    win on EV without ever placing a bet.
+
+    ctx keys: row (the leader's decision row), mkt (market P(up)),
+    p_cal (this arm's calibrated probability), regime_acc (trailing
+    market accuracy, decision-time), ask_c, side.
+    """
+    # Every policy prices from the SAME decision-time quote via
+    # _ask(side). Measured 2026-08-28: scoring the champion at the real
+    # ask it paid while challengers used the modelled ask handed them a
+    # 2.1c systematic discount, which alone inflated a challenger to
+    # +23% paired. Absolute EV here is therefore model-priced; the
+    # PAIRED DIFFERENCE — the only thing the SPRT tests — is fair.
+    def _ask(ctx, side):
+        return ctx["ask_c_yes"] if side == "yes" else ctx["ask_c_no"]
+
+    def champion(ctx):
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
+
+    def t_regime(ctx):                       # M8
+        if ctx["regime_acc"] is not None and ctx["regime_acc"] < REGIME_FLOOR:
+            return None
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
+
+    def t_knife(ctx):                        # M2
+        if ctx["mkt"] is not None and abs(ctx["mkt"] - 0.5) < KNIFE_BAND:
+            return None
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
+
+    def t_cal(ctx):                          # M1 routed to a decision
+        pc = ctx.get("p_cal")
+        if pc is None:
+            return None
+        if max(pc, 1 - pc) < PT_TAU:         # calibrated gate
+            return None
+        side = "yes" if pc >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
+
+    def t_cheap(ctx):                        # M9 — the Underdog
+        a = _ask(ctx, ctx["side"])
+        if a > 51:
+            return None
+        return {"side": ctx["side"], "ask_c": a}
+
+    def t_both(ctx):                         # M2 + M8 stacked
+        if t_regime(ctx) is None or t_knife(ctx) is None:
+            return None
+        return {"side": ctx["side"], "ask_c": _ask(ctx, ctx["side"])}
+
+    def t_fshare(ctx):                       # M3 — Fixed-Share leader
+        r = ctx.get("fs_row")
+        if r is None:
+            return None
+        if max(r["p_up"], 1 - r["p_up"]) < PT_TAU:
+            return None
+        side = "yes" if r["p_up"] >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
+
+    def t_fshare_regime(ctx):                # M3 + M8, the combination
+        if t_regime(ctx) is None:
+            return None
+        return t_fshare(ctx)
+
+    # --- REAL-FILL basis -------------------------------------------
+    # These are execution policies, so they must be judged on the ask
+    # the desk ACTUALLY paid, and paired against a champion priced the
+    # same way. Mixing bases is what produced the 2.1c artifact.
+    def champion_real(ctx):
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"],
+                "basis": "real"}
+
+    def t_exec(ctx):                         # M10 — execution guard
+        slip = ctx["ask_c"] - _ask(ctx, ctx["side"])
+        if slip > EXEC_MAX_SLIP_C:
+            return None                      # decline a bad fill
+        return {"side": ctx["side"], "ask_c": ctx["ask_c"],
+                "basis": "real"}
+
+    def t_exec_regime(ctx):                  # M10 + M8
+        if t_regime(ctx) is None:
+            return None
+        return t_exec(ctx)
+
+    def t_limit(ctx):                        # M11 — maker-style limit
+        # rest 2c below the decision-time quote; fill at the first
+        # later minute whose modeled ask reaches the limit, else skip.
+        # Conservative: minute samples only — a real resting order
+        # fills at least as often.
+        side = ctx["side"]
+        lim = _ask(ctx, side) - 2.0
+        for a_yes, a_no in ctx.get("later", []):
+            a = a_yes if side == "yes" else a_no
+            if 5 <= a <= lim:
+                return {"side": side, "ask_c": a}
+        return None
+
+    def t_limit_regime(ctx):                 # M11 + M8 (the Ideal core)
+        if t_regime(ctx) is None:
+            return None
+        return t_limit(ctx)
+
+    def t_evlead(ctx):                       # M12 — EV-ranked leader
+        # The live leaderboard ranks by WIN RATE, which selects
+        # market-echo arms: they win constantly and earn nothing after
+        # costs (measured 08/28: kb4+kb2 held the seat 62% of the day,
+        # each winning just under its own break-even). This candidate
+        # ranks arms by trailing EV per $1 AT REAL COSTS instead.
+        r = ctx.get("ev_row")
+        if r is None:
+            return None
+        if max(r["p_up"], 1 - r["p_up"]) < PT_TAU:
+            return None
+        side = "yes" if r["p_up"] >= 0.5 else "no"
+        return {"side": side, "ask_c": _ask(ctx, side)}
+
+    def t_edgeband(ctx):                     # M13 — edge BAND (owner
+        # decision D-edge-band, ratified 2026-08-29). Evidence: both
+        # edge-gated models weight their own stated edge NEGATIVELY
+        # (kb5 claimed_edge -0.096, pt6 conf_minus_ask -0.059) — when
+        # the model claims a huge edge over the crowd, it is usually
+        # the model that is wrong. So the floor becomes a band:
+        # too little claimed edge can't pay the costs; too much is a
+        # model-error signature. Band registered here, never fitted.
+        r = ctx.get("row")
+        if r is None or r.get("p_up") is None:
+            return None
+        conf = max(r["p_up"], 1 - r["p_up"])
+        a = _ask(ctx, ctx["side"])
+        fee = 7 * (a / 100.0) * (1 - a / 100.0)
+        edge = conf * 100 - (a + fee)
+        if not (M13_MIN_EDGE_C <= edge <= M13_MAX_EDGE_C):
+            return None
+        return {"side": ctx["side"], "ask_c": a}
+
+    return [
+        ("champion", "Champion — the live desk policy", champion,
+         "leader's call at >=0.62 confidence, every biddable window"),
+        ("t_regime", "M8 · regime gate", t_regime,
+         "stand down when trailing-20 market accuracy < 0.62"),
+        ("t_knife", "M2 · knife-edge veto", t_knife,
+         "stand down when |market - 0.5| < 0.10"),
+        ("t_cal", "M1 · calibrated gate", t_cal,
+         "gate and side taken from p_cal, not raw p_up"),
+        ("t_cheap", "M9 · Underdog (cheap bids only)", t_cheap,
+         "only enter at ask <= 51c, where break-even is far below 50%"),
+        ("t_both", "M2+M8 · both vetoes", t_both,
+         "stand down on knife-edge OR low-predictability regime"),
+        ("t_fshare", "M3 · Fixed-Share leader", t_fshare,
+         "leader by multiplicative expert weights, not a 10-bet streak"),
+        ("t_fs_reg", "M3+M8 · Fixed-Share + regime gate", t_fshare_regime,
+         "the expert-weighted leader, standing down in bad regimes"),
+        ("champion_real", "Champion at REAL fills (execution baseline)",
+         champion_real,
+         "the desk's actual entries at the ask it actually paid"),
+        ("t_exec", "M10 · execution guard", t_exec,
+         f"decline any fill worse than the quote by >{EXEC_MAX_SLIP_C}c"),
+        ("t_exec_reg", "M10+M8 · execution guard + regime gate",
+         t_exec_regime,
+         "decline bad fills AND stand down in bad regimes"),
+        ("t_limit", "M11 · maker limit (rest 2c below, fill or skip)",
+         t_limit,
+         "never cross the spread; fill only on price improvement"),
+        ("t_limit_reg", "M11+M8 · maker limit + regime gate",
+         t_limit_regime,
+         "the Ideal trader's execution core, SPRT-verified"),
+        ("t_evlead", "M12 · EV-ranked leader (costs, not win rate)",
+         t_evlead,
+         "follow the arm with the best trailing EV/$1 at real costs"),
+        ("t_edgeband", "M13 · edge band (enough edge, not too much)",
+         t_edgeband,
+         f"enter only when claimed edge is {M13_MIN_EDGE_C:.0f}-"
+         f"{M13_MAX_EDGE_C:.0f}c — a huge stated edge is a model-error"
+         " signature, not opportunity"),
+    ]
+
+
+def _treat_evaluate(pt_trades, kb_rows, kb_calib, treats, seen,
+                    fshare=None, evlead=None):
+    """Score every treatment on each newly-settled DESK window.
+
+    Paired by construction: all policies see the same window and the
+    same settled outcome, so the regime cancels out of the difference —
+    the thing 08/27 proved you cannot ignore. Effective n is windows.
+    Returns the list of newly scored window records (for the log).
+    """
+    by_tk = {}
+    for r in kb_rows:
+        if r.get("actual") is None or r.get("mkt_p_up") is None:
+            continue
+        by_tk.setdefault(r["ticker"], []).append(r)
+    # Trailing market accuracy, in settle order. Must be measured at
+    # DECISION time (the earliest row inside the <=12-minute entry
+    # envelope), not at whatever row happens to land last: near the
+    # close the market is trivially right, which inflates the signal to
+    # 80-100% and silently disables the gate. Measured while building
+    # this — the first version never fired once in 154 windows.
+    dtime = {}
+    for tk, rs in by_tk.items():
+        cand = [r for r in rs if (r.get("mins_left") or 99) <= 12]
+        if cand:
+            dtime[tk] = max(cand, key=lambda r: r["mins_left"])
+    order = sorted(dtime.values(), key=lambda r: r["close_ts"])
+    acc_hist, regime_at = [], {}
+    for r in order:
+        regime_at[r["ticker"]] = (
+            sum(acc_hist[-REGIME_LOOKBACK:]) / REGIME_LOOKBACK
+            if len(acc_hist) >= REGIME_LOOKBACK else None)
+        acc_hist.append(
+            1 if (r["mkt_p_up"] >= 0.5) == bool(r["actual"]) else 0)
+    out = []
+    for t in sorted((t for t in pt_trades
+                     if t.get("actual") is not None
+                     and t["ticker"] not in seen),
+                    key=lambda t: t["close_ts"]):
+        wrows = by_tk.get(t["ticker"], [])
+        # BUG FIX 2026-08-28 (critical): this selection had no
+        # mins_left <= 12 filter, so `row` landed at ~14.5-15.0 min out
+        # — every model-basis policy was priced and GATED off a quote
+        # ~3.81 min before the desk actually traded (149/150 windows).
+        # Under that stale quote the champion published +11.75%/$1
+        # (decision-time truth: -6.5%), the knife-edge veto fired on
+        # 74% of windows instead of 30% with its paired sign flipped,
+        # and the two leading challengers' "edge" was stale-quote
+        # drift. Same envelope rule as dtime/per_arm below.
+        rows = [r for r in wrows if r.get("variant") == t.get("leader")
+                and (r.get("mins_left") or 99) <= 12]
+        if not rows:
+            continue
+        rows.sort(key=lambda r: -r["mins_left"])
+        row = rows[0]
+        # decision-time row per arm for this window (Fixed-Share input)
+        per_arm = {}
+        for r in wrows:
+            v = r.get("variant")
+            if v not in PT_ARMS or (r.get("mins_left") or 99) > 12:
+                continue
+            if v not in per_arm or r["mins_left"] > per_arm[v]["mins_left"]:
+                per_arm[v] = r
+        fs_row = None
+        if fshare is not None:
+            ld = fshare.leader()          # weights from PAST windows only
+            fs_row = per_arm.get(ld)
+        ev_row = None
+        if evlead is not None:
+            # trailing EV/$1 from PAST windows only (min 5); the update
+            # for THIS window happens after scoring, below
+            cand = {v: sum(e[-20:]) / len(e[-20:])
+                    for v, e in evlead.items() if len(e) >= 5}
+            if cand:
+                ev_row = per_arm.get(max(cand, key=cand.get))
+        mkt = row["mkt_p_up"]
+        ask_yes = 100 * mkt + 2.5
+        ask_no = 100 * (1 - mkt) + 2.5
+        # BUG FIX 2026-08-28 (high): scoring used cal.predict() with the
+        # CURRENT calibrator — which had already trained on this very
+        # window's outcome (each window is ~9% of the sliding fit).
+        # The honest pre-settle value was already stamped on the row as
+        # p_m1; use it, and stand down when it doesn't exist rather
+        # than peek.
+        ctx = {
+            "row": row, "mkt": mkt,
+            "p_cal": row.get("p_m1"),
+            "regime_acc": regime_at.get(t["ticker"]),
+            "side": t["side"], "ask_c": t["ask_c"],
+            "ask_c_yes": ask_yes, "ask_c_no": ask_no,
+            "fs_row": fs_row,
+            "ev_row": ev_row,
+            # modeled asks at each LATER minute of this window, in time
+            # order — the limit policies scan these for a fill
+            "later": [(100 * r["mkt_p_up"] + 2.5,
+                       100 * (1 - r["mkt_p_up"]) + 2.5)
+                      for r in sorted(
+                          (x for x in wrows
+                           if (x.get("mins_left") or 99)
+                           < row["mins_left"]
+                           and x.get("mkt_p_up") is not None
+                           and (x.get("variant") or "kb") == "kb"),
+                          key=lambda x: -x["mins_left"])],
+        }
+        outcome = t["actual"]
+        evs, basis = {}, {}
+        for key, _lab, fn, _r in _treat_policies():
+            if key in RETIRED_TREATMENTS:
+                continue    # Great Simplification: no new ev rows;
+                            # a missing key = policy no longer exists
+            try:
+                d = fn(ctx)
+            except Exception:
+                d = None
+            evs[key] = (None if d is None
+                        else treatments.bet_ev(d["side"], d["ask_c"],
+                                               outcome))
+            basis[key] = (d or {}).get("basis", "model")
+        # Pair each policy against the champion on ITS OWN pricing
+        # basis. Execution policies must be judged at the ask actually
+        # paid; model policies at the decision-time quote. Comparing
+        # across bases is exactly the 2.1c artifact that faked every
+        # earlier "win".
+        champ_by = {"model": evs.get("champion"),
+                    "real": evs.get("champion_real")}
+        # a policy that stood down has no basis of its own — pair it
+        # against the champion of the family it belongs to
+        FAMILY = {"champion_real": "real", "t_exec": "real",
+                  "t_exec_reg": "real"}
+        for key, tr in treats.items():
+            fam = FAMILY.get(key, "model")
+            tr.observe(evs.get(key), champ_by.get(fam))
+        # Fixed-Share learns from this window only AFTER it was used to
+        # decide — the weights that picked fs_row came from prior
+        # windows, so there is no leakage.
+        if fshare is not None and per_arm:
+            losses = {}
+            for v, r in per_arm.items():
+                p = min(max(r["p_up"], 1e-6), 1 - 1e-6)
+                losses[v] = -(math.log(p) if outcome
+                              else math.log(1 - p))
+            fshare.update(losses)
+        if evlead is not None and per_arm:
+            for v, r in per_arm.items():
+                sidev = "yes" if r["p_up"] >= 0.5 else "no"
+                av = (100 * mkt + 2.5 if sidev == "yes"
+                      else 100 * (1 - mkt) + 2.5)
+                if 5 <= av < 80:
+                    evlead.setdefault(v, []).append(
+                        treatments.bet_ev(sidev, av, outcome))
+                    del evlead[v][:-20]
+        seen[t["ticker"]] = None       # insertion-ordered (dict-as-set)
+        out.append({"ticker": t["ticker"], "close_ts": t["close_ts"],
+                    "leader": t.get("leader"), "outcome": outcome,
+                    "regime_acc": ctx["regime_acc"],
+                    "ev": {k: (None if v is None else round(v, 4))
+                           for k, v in evs.items()}})
+    return out
+
+
+def _pt_leader(kb_rows: list[dict]) -> tuple[str, int, int] | None:
+    """Current best bidder: for each arm, its last PT_LAST_N settled
+    gate-clearing decisions (decision-ledger semantics: the FIRST minute
+    in a window clearing PT_TAU), ranked by wins then mean Brier.
+    Settled windows only — decision-time information, no leakage.
+    Returns (arm, wins, n) or None if no arm has PT_MIN_REC decisions."""
+    best = None
+    for arm in PT_ARMS:
+        byw: dict[str, list[dict]] = {}
+        for r in kb_rows:
+            # BUG FIX 2026-08-28 (high): rank arms ONLY on decisions
+            # inside the desk's tradeable envelope (mins_left <= 12).
+            # Without this filter 68.8% of ranked "decisions" (693 of
+            # 1,007) sat at 12-15 min out, where the desk can never
+            # enter — the leaderboard was scoring a game the desk
+            # doesn't play.
+            if (r.get("variant") == arm and r.get("actual") is not None
+                    and (r.get("mins_left") or 99) <= 12):
+                byw.setdefault(r["ticker"], []).append(r)
+        decs = []
+        for rows in byw.values():
+            rows.sort(key=lambda r: -r["mins_left"])
+            for r in rows:
+                if max(r["p_up"], 1 - r["p_up"]) >= PT_TAU:
+                    decs.append((r["close_ts"], r["hit"],
+                                 (r["p_up"] - r["actual"]) ** 2))
+                    break
+        decs.sort()
+        decs = decs[-PT_LAST_N:]
+        if len(decs) < PT_MIN_REC:
+            continue
+        wins = sum(h for _, h, _ in decs)
+        brier = sum(b for _, _, b in decs) / len(decs)
+        key = (wins / len(decs), -brier)
+        if best is None or key > best[0]:
+            best = (key, arm, wins, len(decs))
+    return (best[1], best[2], best[3]) if best else None
 KB_BET_MAX_PRICE_C = 80        # entries only below 80 cents (fee+spread
                                # make higher entries -EV; tightened from
                                # 85 on ledger evidence, 2026-08-21)
@@ -344,22 +1070,47 @@ def _bandit_reward(pred: float, actual: float, price_now: float,
 
 
 def _band_map(ledger: list[dict]) -> dict:
-    """Rolling 80% conformal band per arm x horizon: 10th/90th percentiles
-    of the last 100 scored residuals (actual - pred). Reporting layer only —
-    it never alters any model's point prediction."""
+    """Rolling 80% conformal band per arm x horizon — VOLATILITY-
+    CONDITIONED (normalized conformal: quantiles are taken over
+    z = residual / sigma_at_commit, then re-scaled by today's sigma at
+    apply time; Papadopoulos et al.'s locally-weighted conformal scores,
+    Lei et al. 2018). Reporting layer only — never alters a prediction.
+
+    BUG FIX 2026-08-28: the old map took raw DOLLAR quantiles of the
+    last 100 residuals, so one band width served every regime. Measured
+    coverage by vol regime: calm 0.827 / normal 0.802 / elevated 0.655
+    / violent 0.518 — the 0.765 aggregate was just the mixture. The
+    sigma-normalized replay repaired the bad buckets (0.518 -> 0.868)
+    but over-narrowed calm (0.890 -> 0.733), hence the floor the apply
+    site puts under sigma_now (0.6 x trailing median sigma).
+
+    Returns {(variant, horizon): (z_lo, z_hi, med_sigma)}."""
     res: dict = {}
     for row in ledger:
-        if row["actual"] is None:
+        if row["actual"] is None or not row.get("sigma"):
             continue
         res.setdefault((row["variant"], row["horizon"]), []).append(
-            row["actual"] - row["pred"])
+            ((row["actual"] - row["pred"]) / row["sigma"], row["sigma"]))
     out = {}
     for k, v in res.items():
-        v = sorted(v[-100:])
+        v = v[-100:]
         if len(v) >= 20:
-            out[k] = (int(v[int(0.1 * len(v))]),
-                      int(v[min(len(v) - 1, int(0.9 * len(v)))]))
+            zs = sorted(z for z, _ in v)
+            sig = sorted(s for _, s in v)
+            out[k] = (zs[int(0.1 * len(zs))],
+                      zs[min(len(zs) - 1, int(0.9 * len(zs)))],
+                      sig[len(sig) // 2])
     return out
+
+
+def _band_offsets(band: tuple, sigma_now: float | None) -> tuple:
+    """Re-scale a (z_lo, z_hi, med_sigma) band to TODAY's volatility.
+    The 0.6x-median floor keeps calm regimes from over-narrowing (the
+    replay's one over-correction); floor/ceil instead of int() so the
+    band is never silently trimmed toward zero on both ends."""
+    zlo, zhi, medsig = band
+    scale = max(sigma_now or medsig, 0.6 * medsig)
+    return math.floor(zlo * scale), math.ceil(zhi * scale)
 
 
 def _pm_view(arms: dict, feat: dict, snap: dict | None,
@@ -481,6 +1232,53 @@ def _chronos_p_up(closes: list[float], strike: float,
         return None
 
 
+_TIMESFM = None      # lazy singleton; ~15s first load, ~0.1s/predict
+
+
+def _timesfm_p_up(closes: list[float], strike: float,
+                  horizon: int):
+    """kb9: zero-shot P(close >= strike) from TimesFM 2.5 (200M),
+    Google's time-series foundation model — the SECOND model family,
+    launched as a decorrelated treatment (it TIED kb7 on the
+    pre-registered gauntlet, t=+0.67; that record stands). Same decile
+    readout at the strike as kb7. Returns (p, w80, lo, hi) or None."""
+    global _TIMESFM
+    try:
+        if _TIMESFM is None:
+            import timesfm as _tf
+            _TIMESFM = _tf.TimesFM_2p5_200M_torch.from_pretrained(
+                "google/timesfm-2.5-200m-pytorch")
+            _TIMESFM.compile(_tf.ForecastConfig(
+                max_context=1024, max_horizon=16, normalize_inputs=True,
+                use_continuous_quantile_head=True,
+                fix_quantile_crossing=True))
+        import numpy as _np
+        _, qt = _TIMESFM.forecast(
+            horizon=max(1, horizon),
+            inputs=[_np.array(closes[-1024:], dtype=_np.float32)])
+        q = _np.asarray(qt)[0, max(1, horizon) - 1]
+        vals = sorted(float(x) for x in (q[1:10] if q.shape[-1] >= 10
+                                         else q))
+        qs = [i / 10 for i in range(1, 10)]
+        if strike <= vals[0]:
+            pr = 0.95
+        elif strike >= vals[-1]:
+            pr = 0.05
+        else:
+            pr = 0.5
+            for i in range(len(vals) - 1):
+                if vals[i] <= strike <= vals[i + 1]:
+                    frac = ((strike - vals[i]) / (vals[i + 1] - vals[i])
+                            if vals[i + 1] > vals[i] else 0.5)
+                    pr = 1.0 - (qs[i] + frac * (qs[i + 1] - qs[i]))
+                    break
+        return (round(min(.95, max(.05, pr)), 4),
+                round(vals[-1] - vals[0], 1),
+                round(vals[0], 1), round(vals[-1], 1))
+    except Exception:
+        return None
+
+
 KB6_LOGIT_PATH_NAME = "kb6_logit.json"
 KB6_DIM = 12
 
@@ -554,6 +1352,42 @@ def _kb4_features(p_blend: float, p_logit: float, k_pup: float | None,
         bx[3],                                 # above-strike z (capped)
         mins_left / 15.0,
     ] + pf                                     # 4 barrier/path features
+
+
+KB8_LOGIT_PATH_NAME = "kb8_logit.json"
+KB8_DIM = 3
+
+
+def _kb8_features(p7: float, w80: float, k_pup: float | None,
+                  bx: list[float], pf: list[float],
+                  mins_left: float) -> list[float] | None:
+    """kb8 = log-opinion pool of kb7 and the market, learned online.
+    kb7 itself stays frozen and untouched — its p_up is an INPUT here.
+
+    Deliberately minimal (tests/kb8_feature_lab.py): behind the per-
+    minute rows there are only ~13 independent window outcomes per day,
+    and every auxiliary feature tried (band width, barrier path, time
+    interactions, even a market-presence flag) LOWERED held-back
+    prequential accuracy. Three dims: bias, kb7 log-odds, market
+    log-odds; a missing market quote is log-odds 0 (= no opinion). In
+    log-odds space "copy the market" is learnable as weight ~1, and the
+    learned weights ARE the answer to "how much to trust the foundation
+    model vs the crowd" (warm start landed near 0.4/0.6). w80/bx/pf/
+    mins_left stay in the signature so richer variants can be re-tried
+    when window count warrants — see the lab script before adding any.
+    """
+    import math as _m
+
+    def lg(p):
+        p = min(0.98, max(0.02, p))     # market can print exactly 0/1
+        return max(-3.0, min(3.0, _m.log(p / (1.0 - p))))
+    return [
+        1.0,
+        lg(p7),
+        lg(k_pup) if k_pup is not None else 0.0,
+    ]
+
+
 KB_LOGIT_MIN_UPDATES = 400     # graduate to publishing once trained this far
 
 
@@ -1051,8 +1885,15 @@ def _history_snapshot(ledger: list[dict], kb: list[dict],
             banded = [r for r in rows if r.get("in_band") is not None]
             snap_arms[v][f"h{h}"] = {
                 "n": len(rows),
+                # mse is the headline (user-directed 2026-08-28); mae
+                # stays emitted so historical charts don't break —
+                # additive keys, never a silent rename
+                "mse": round(sum(r["abs_err"] ** 2 for r in rows)
+                             / len(rows), 1),
                 "mae": round(sum(r["abs_err"] for r in rows) / len(rows), 2),
                 "rmse": round(M.rmse([r["err"] for r in rows]) or 0, 2),
+                "msse": round(M.msse([r["abs_err"] for r in rows], naive)
+                              or 0, 3) if naive else None,
                 "mase": round(M.mase([r["abs_err"] for r in rows], naive)
                               or 0, 3) if naive else None,
                 "dir": round(sum(
@@ -1094,18 +1935,19 @@ def _history_snapshot(ledger: list[dict], kb: list[dict],
 
 
 def _winner_variant(ledger: list[dict], horizon: int) -> str | None:
-    """The arm with the best trailing MAE at this horizon (last CAL_TRAIL
-    scored rows, min 20) — the model the calibrated meta-arm shadows."""
+    """The arm with the best trailing MSE at this horizon (last CAL_TRAIL
+    scored rows, min 20) — the model the calibrated meta-arm shadows.
+    2026-08-28: ranking metric MAE -> MSE (user-directed, stamped)."""
     errs: dict[str, list[float]] = {}
     for row in ledger:
         if (row["actual"] is None or row["horizon"] != horizon
                 or row["variant"].startswith(("consensus", "cal-"))
                 or row["variant"] not in VARIANTS):  # retired arms' fossil
             continue                                 # rows can't win
-        errs.setdefault(row["variant"], []).append(row["abs_err"])
-    mae = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
+        errs.setdefault(row["variant"], []).append(row["abs_err"] ** 2)
+    mse = {v: sum(e[-CAL_TRAIL:]) / len(e[-CAL_TRAIL:])
            for v, e in errs.items() if len(e) >= 20}
-    return min(mae, key=mae.get) if mae else None
+    return min(mse, key=mse.get) if mse else None
 
 
 def _calibration_adj(residuals: list[float]) -> int | None:
@@ -1358,17 +2200,20 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
             if band:
                 # conformal floor: native distributions ran overconfident
                 # (52-67% live coverage) — never publish a band tighter
-                # than the arm's own residual history supports
-                nlo = min(nlo, pred + band[0])
-                nhi = max(nhi, pred + band[1])
+                # than the arm's own residual history supports. Offsets
+                # are sigma-conditioned (fix 2026-08-28).
+                blo, bhi = _band_offsets(band, sig)
+                nlo = min(nlo, pred + blo)
+                nhi = max(nhi, pred + bhi)
             row_extra["lo"], row_extra["hi"] = _cap_band(
                 pred, nlo, nhi, horizon, sig)
             row_extra["band_src"] = "native+floor" if band else "native"
         else:
             band = (bands or {}).get((variant, horizon))
             if band:
+                blo, bhi = _band_offsets(band, row_extra["sigma"])
                 row_extra["lo"], row_extra["hi"] = _cap_band(
-                    pred, pred + band[0], pred + band[1], horizon,
+                    pred, pred + blo, pred + bhi, horizon,
                     row_extra["sigma"])
         rows.append({
             "variant": variant,
@@ -1382,22 +2227,25 @@ def _predict_at(variant: str, agents: dict[int, TabularQAgent],
     return rows
 
 
-def _greedy_mae(agent: TabularQAgent, episodes: list) -> float:
-    errs = [abs(e.price_now + agent.delta_for(
+def _greedy_mse(agent: TabularQAgent, episodes: list) -> float:
+    # 2026-08-28: retrain gate metric switched MAE -> MSE (user-directed).
+    # Caveat stated once: MSE is outlier-sensitive, so in a fat-tailed
+    # tape a single violent window weighs quadratically in accept/reject.
+    errs = [(e.price_now + agent.delta_for(
         agent.act(e.state, e.price_now, explore=False)) - e.price_future)
         for e in episodes]
-    return sum(errs) / len(errs) if errs else 0.0
+    return sum(x * x for x in errs) / len(errs) if errs else 0.0
 
 
-def _bandit_val_mae(agent: LinUCBAgent, spec: dict, episodes: list,
+def _bandit_val_mse(agent: LinUCBAgent, spec: dict, episodes: list,
                     snaps: list[dict]) -> float:
     errs = []
     for e in episodes:
         x = _context(spec, e.features, _nearest_snap(snaps, e.minute_ts))
         a = agent.select(x, greedy=True)
         d = _vol_delta(_k_of(agent, a), e.features, e.horizon_min)
-        errs.append(abs(e.price_now + d - e.price_future))
-    return sum(errs) / len(errs) if errs else 0.0
+        errs.append(e.price_now + d - e.price_future)
+    return sum(x * x for x in errs) / len(errs) if errs else 0.0
 
 
 def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
@@ -1420,6 +2268,8 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
         _heartbeat()  # a full-fleet retrain can outlast the watchdog window
         if not agents:
             continue  # replay baseline has no model
+        if variant not in LEAN_RETRAIN:
+            continue  # lean machine: frozen arms serve, never retrain
         if any(isinstance(a, BANDIT_TYPES) for a in agents.values()):
             spec = VARIANTS[variant]
             gate = {}
@@ -1434,7 +2284,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                 else:
                     before = ([a.copy() for a in agent.A],
                               [b.copy() for b in agent.b], list(agent.pulls))
-                before_mae = _bandit_val_mae(agent, spec, veps, snaps)
+                before_mse = _bandit_val_mse(agent, spec, veps, snaps)
                 for e in eps:
                     x = _context(spec, e.features,
                                  _nearest_snap(snaps, e.minute_ts))
@@ -1447,17 +2297,25 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                     agent.update(x, a, _bandit_reward(
                         e.price_now + d, e.price_future, e.price_now, d,
                         band=_hit_band(_horizon_sigma(e.features, h))))
-                after_mae = _bandit_val_mae(agent, spec, veps, snaps)
-                reverted = after_mae > before_mae
+                after_mse = _bandit_val_mse(agent, spec, veps, snaps)
+                reverted = after_mse > before_mse
                 if reverted:
                     if isinstance(agent, DistDQNAgent):
                         agent.net.load_state_dict(before)
+                        # BUG FIX 2026-08-28: rebuild the optimizer on
+                        # revert. load_state_dict copies weights in
+                        # place, so Adam's momentum from the REJECTED
+                        # replay survived and immediately re-walked the
+                        # restored weights on the next online update.
+                        agent.opt = agent.torch.optim.Adam(
+                            agent.net.parameters(),
+                            lr=agent.opt.param_groups[0]["lr"])
                     elif isinstance(agent, LinearQAgent):
                         agent.w, agent.pulls = before
                     else:
                         agent.A, agent.b, agent.pulls = before
-                gate[f"h{h}"] = {"val_mae_before": round(before_mae, 2),
-                                 "val_mae_after": round(after_mae, 2),
+                gate[f"h{h}"] = {"val_mse_before": round(before_mse, 2),
+                                 "val_mse_after": round(after_mse, 2),
                                  "reverted": reverted}
             _checkpoint(variant, agents)
             info["arms"][variant] = gate
@@ -1466,7 +2324,7 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
         eps = [e for e in train_eps if e.horizon_min in horizons]
         before = {h: {s: list(qs) for s, qs in agents[h].q.items()}
                   for h in horizons}
-        before_mae = {h: _greedy_mae(agents[h],
+        before_mse = {h: _greedy_mse(agents[h],
                                      [e for e in val_eps if e.horizon_min == h])
                       for h in horizons}
         rng = random.Random(int(now.timestamp()) // RETRAIN_EVERY)
@@ -1481,14 +2339,14 @@ def retrain_all(arms: dict[str, dict[int, TabularQAgent]],
                     band=_hit_band(_horizon_sigma(e.features, e.horizon_min))))
         gate = {}
         for h in horizons:
-            after_mae = _greedy_mae(agents[h],
+            after_mse = _greedy_mse(agents[h],
                                     [e for e in val_eps if e.horizon_min == h])
-            reverted = after_mae > before_mae[h]
+            reverted = after_mse > before_mse[h]
             if reverted:  # chased noise — roll this horizon back
                 agents[h].q.clear()
                 agents[h].q.update(before[h])
-            gate[f"h{h}"] = {"val_mae_before": round(before_mae[h], 2),
-                             "val_mae_after": round(after_mae, 2),
+            gate[f"h{h}"] = {"val_mse_before": round(before_mse[h], 2),
+                             "val_mse_after": round(after_mse, 2),
                              "reverted": reverted}
         _checkpoint(variant, agents)
         info["arms"][variant] = gate
@@ -1528,10 +2386,150 @@ def run(once: bool = False) -> None:
     kb_sel_tickers = {b["ticker"] for b in kb_sel_bets}
     pb_bets = _load_kb_bets(PB_BET_LOG_NAME)
     pb_tickers = {b["ticker"] for b in pb_bets}
+    pt_trades = _load_kb_bets(PT_LOG_NAME)
+    pt_tickers = {t["ticker"] for t in pt_trades}
+    # bankroll is derived from the log alone (single source of truth):
+    # start + settled pnl - stakes still locked in open positions
+    pt_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt_trades if t.get("actual") is None)
+    pt2_trades = _load_kb_bets(PT2_LOG_NAME)
+    pt2_tickers = {t["ticker"] for t in pt2_trades}
+    # ladder trader state replayed from his log alone (restart-safe)
+    pt2_bankroll_c = PT_START_BANKROLL_C
+    pt2_banked_c = 0
+    pt2_level_c = PT_START_BANKROLL_C
+    for t in sorted((t for t in pt2_trades if t.get("actual") is not None),
+                    key=lambda t: t["close_ts"]):
+        pt2_bankroll_c += t["pnl_c"]
+        while pt2_bankroll_c >= 11 * pt2_level_c:
+            pt2_banked_c += pt2_level_c
+            pt2_bankroll_c -= pt2_level_c
+            pt2_level_c *= 10
+    pt2_bankroll_c -= sum(t["stake_c"] for t in pt2_trades
+                          if t.get("actual") is None)
+    pt3_trades = _load_kb_bets(PT3_LOG_NAME)
+    pt3_tickers = {t["ticker"] for t in pt3_trades}
+    pt3_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt3_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
+    pt4_trades = _load_kb_bets(PT4_LOG_NAME)
+    pt4_tickers = {t["ticker"] for t in pt4_trades}
+    # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
+    # count, and each settled row's recorded withdrawal (wd_c) left
+    # the bankroll when it happened. The ledger on disk is the truth.
+    pt4_withdrawn_c = sum(t.get("wd_c", 0) for t in pt4_trades
+                          if t.get("actual") is not None
+                          and t["made_ts"] >= PT4_RESET2_TS)
+    pt4_bankroll_c = PT4_RESET_C \
+        + sum(t["pnl_c"] - t.get("wd_c", 0) for t in pt4_trades
+              if t.get("actual") is not None
+              and t["made_ts"] >= PT4_RESET2_TS) \
+        - sum(t["stake_c"] for t in pt4_trades
+              if t.get("actual") is None
+              and t["made_ts"] >= PT4_RESET2_TS)
+    pt5_trades = _load_kb_bets(PT5_LOG_NAME)
+    pt5_tickers = {t["ticker"] for t in pt5_trades}
+    pt5_savings_c = sum(t.get("skim_c", 0) for t in pt5_trades
+                        if t.get("actual") is not None)
+    pt5_bankroll_c = PT5_START_C \
+        + sum(t["pnl_c"] - t.get("skim_c", 0)
+              for t in pt5_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt5_trades if t.get("actual") is None)
+    pt7_trades = _load_kb_bets(PT7_LOG_NAME)
+    pt7_tickers = {t["ticker"] for t in pt7_trades}
+    pt7_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt7_trades
+              if t.get("actual") is not None and not t.get("skipped")) \
+        - sum(t["stake_c"] for t in pt7_trades
+              if t.get("actual") is None and not t.get("skipped"))
+    pt7_pending: dict = {}     # ticker -> resting limit order (in-mem)
+    pt8_trades = _load_kb_bets(PT8_LOG_NAME)
+    pt8_tickers = {t["ticker"] for t in pt8_trades}
+    pt8_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt8_trades
+              if t.get("actual") is not None and not t.get("skipped")) \
+        - sum(t["stake_c"] for t in pt8_trades
+              if t.get("actual") is None and not t.get("skipped"))
+    pt8_pending: dict = {}
+    pt6_trades = _load_kb_bets(PT6_LOG_NAME)
+    pt6_tickers = {t["ticker"] for t in pt6_trades}
+    pt6_bankroll_c = PT_START_BANKROLL_C \
+        + sum(t["pnl_c"] for t in pt6_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in pt6_trades if t.get("actual") is None)
+    pt6_path = RESULTS_DIR / PT6_LOGIT_PATH_NAME
+    try:
+        pt6_logit = (BinaryLogit.from_dict(json.loads(pt6_path.read_text()))
+                     if pt6_path.exists() else BinaryLogit(PT6_DIM))
+        if pt6_logit.dim != PT6_DIM:
+            pt6_logit = BinaryLogit(PT6_DIM)
+    except Exception:
+        pt6_logit = BinaryLogit(PT6_DIM)
     try:
         kb_policy = json.loads((RESULTS_DIR / SEL_POLICY_NAME).read_text())
     except Exception:
         kb_policy = None
+    # M1 shadow calibrators — one per arm, restored across restarts
+    kb_calib: dict[str, PlattCalibrator] = {}
+    try:
+        _cp = RESULTS_DIR / KB_CALIB_NAME
+        _cd = json.loads(_cp.read_text()) if _cp.exists() else {}
+    except Exception:
+        _cd = {}
+    for _v in KB_CALIB_ARMS:
+        try:
+            kb_calib[_v] = (PlattCalibrator.from_dict(_cd[_v])
+                            if _v in _cd else PlattCalibrator())
+        except Exception:
+            kb_calib[_v] = PlattCalibrator()
+    # BUG FIX 2026-08-28: the calibrator used to train on EVERY settled
+    # per-minute row (~14 per window sharing one outcome), so its
+    # "150-window" sliding memory was really ~11 windows and warm-up
+    # ended after ~2. Train once per (arm, window), on the decision row
+    # (first settled row inside the <=12-min envelope). In-memory set:
+    # settled rows are skipped on restart, so no double counting.
+    calib_seen: set = set()
+    # champion/challenger registry, restored across restarts
+    treats: dict = {}
+    for _k, _lab, _fn, _why in _treat_policies():
+        treats[_k] = treatments.Treatment(
+            _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+            alpha=TREAT_ALPHA,
+            baseline=_k in ("champion", "champion_real"))
+    # dict-as-ordered-set: BUG FIX 2026-08-28 — the trim used to be
+    # sorted(...)[-4000:], which is LEXICOGRAPHIC over tickers like
+    # KXBTC15M-26AUG262330-30 (AUG < DEC < FEB < JAN...), so past 4,000
+    # windows an arbitrary alphabetical tail survived and dropped
+    # tickers re-scored on restart. Insertion order = settle order.
+    treat_seen: dict = {}
+    fshare = treatments.FixedShare(PT_ARMS)
+    evlead: dict = {}
+    # BUG FIX 2026-08-28: seen/fshare are restored BEFORE the treats,
+    # and a failure resets the treats too. The old ordering could leave
+    # restored SPRT counters beside an EMPTIED seen-set, so the whole
+    # settled history re-scored on top of the restored evidence —
+    # doubling n and LLR: the false-auto-promotion mechanism again.
+    try:
+        _tp = RESULTS_DIR / TREAT_STATE_NAME
+        _td = json.loads(_tp.read_text()) if _tp.exists() else {}
+        treat_seen = dict.fromkeys(_td.get("seen") or [])
+        evlead = {k: list(v) for k, v in
+                  (_td.get("evlead") or {}).items()}
+        if _td.get("fshare"):
+            fshare = treatments.FixedShare.from_dict(_td["fshare"],
+                                                     PT_ARMS)
+        for _k, _st in (_td.get("treats") or {}).items():
+            if _k in treats:
+                treats[_k].load(_st)
+    except Exception:
+        treat_seen = {}
+        fshare = treatments.FixedShare(PT_ARMS)
+        evlead = {}
+        for _k, _lab, _fn, _why in _treat_policies():
+            treats[_k] = treatments.Treatment(
+                _k, _lab, _fn, _why, edge=TREAT_EDGE, min_n=TREAT_MIN_N,
+                alpha=TREAT_ALPHA,
+                baseline=_k in ("champion", "champion_real"))
     logit_path = RESULTS_DIR / KB_LOGIT_PATH_NAME
     try:
         kb_logit = (BinaryLogit.from_dict(json.loads(logit_path.read_text()))
@@ -1570,6 +2568,14 @@ def run(once: bool = False) -> None:
             kb6_logit = BinaryLogit(KB6_DIM)
     except Exception:
         kb6_logit = BinaryLogit(KB6_DIM)
+    kb8_path = RESULTS_DIR / KB8_LOGIT_PATH_NAME
+    try:
+        kb8_logit = (BinaryLogit.from_dict(json.loads(kb8_path.read_text()))
+                     if kb8_path.exists() else BinaryLogit(KB8_DIM))
+        if kb8_logit.dim != KB8_DIM:
+            kb8_logit = BinaryLogit(KB8_DIM)
+    except Exception:
+        kb8_logit = BinaryLogit(KB8_DIM)
     last_retrain_slot = int(time.time()) // RETRAIN_EVERY
     retrain_info: dict = {}
     retrains = 0
@@ -1580,6 +2586,11 @@ def run(once: bool = False) -> None:
 
     last_bars: list[dict] = []
     last_bars_ts = 0.0
+    _backfilled_close: set = set()   # INC 09-07: one-shot per close_ts
+    _zombie_bars: dict = {}          # recovered settle candles, kept
+    #   across loops AND re-merged after every by_ts rebuild (the
+    #   _merge_synth path rebuilds by_ts from `bars`, which would
+    #   otherwise drop these)
     while True:
         try:
             now = datetime.now(tz=config.PACIFIC)
@@ -1595,6 +2606,41 @@ def run(once: bool = False) -> None:
                     raise
                 bars = last_bars
             by_ts = {b["ts"]: b for b in bars}
+            # INC 2026-09-07 (zombie positions): a machine sleep
+            # longer than the rolling window leaves open rows whose
+            # settle bar [close_ts-60] can never reappear in `bars`,
+            # locking their stake out of cash forever. Targeted
+            # one-shot backfill of the authoritative candle for any
+            # matured open row older than the window; the settle
+            # convention itself is unchanged.
+            try:
+                _stale = set()
+                for _led in (pt_trades, pt3_trades, pt6_trades, kb):
+                    for _t in _led:
+                        _cts = _t.get("close_ts")
+                        if (_t.get("actual") is None and _cts
+                                and now_ts >= _cts
+                                and (_cts - 60) not in by_ts
+                                and _cts < now_ts
+                                - BACKFILL_HOURS * 3600):
+                            _stale.add(_cts)
+                for _cts in sorted(_stale - _backfilled_close):
+                    try:
+                        _fetched = fetch_range(
+                            datetime.fromtimestamp(
+                                _cts - 240, tz=config.PACIFIC),
+                            datetime.fromtimestamp(
+                                _cts + 120, tz=config.PACIFIC))
+                    except Exception:
+                        continue     # transient — RETRY next loop,
+                        #              never dedup a failed fetch
+                    _sb = next((b for b in _fetched
+                                if b["ts"] == _cts - 60), None)
+                    if _sb is not None:
+                        _zombie_bars[_cts - 60] = _sb
+                        _backfilled_close.add(_cts)
+            except Exception:
+                pass
             fng = fetch_fear_greed().get(now.date().isoformat())
 
             # 0a. stream a live-feature snapshot (t3's extra context)
@@ -1608,6 +2654,19 @@ def run(once: bool = False) -> None:
                         del synth_px[k]
                 bars = _merge_synth(bars, synth_px, now_ts)
                 by_ts = {b["ts"]: b for b in bars}
+            # re-merge recovered zombie candles AFTER the final by_ts
+            # rebuild (INC 09-07): _merge_synth rebuilds by_ts from
+            # `bars`, which does not contain these, so the settle
+            # loops below would otherwise never see them
+            by_ts.update(_zombie_bars)
+            # INC 2026-09-10 (freeze-state-convergence): refresh the
+            # fail-closed cache EVERY loop so a RED->GREEN invariant
+            # wall lets the desk leave FREEZE within the 60s cache
+            # SLA even in quiet minutes. Previously this was only
+            # recomputed inside the biddable-window block, so on quiet
+            # minutes the desk held a stale FREEZE long after the wall
+            # went green. Cheap (60s-internally-cached).
+            _fail_closed_state()
             spot = bars[-1]["close"] if bars else None
             mark = fetch_deribit_mark()
             book = fetch_book_stats()
@@ -1664,6 +2723,11 @@ def run(once: bool = False) -> None:
                                   if prev and ko is not None
                                   and prev[1] is not None else None)
                 k_flow_prev = {pm_mkt["ticker"]: (kv, ko)}
+                # near-touch book depth (contracts within 3c of the best
+                # bid, each side) — the measured per-window capacity that
+                # the $2M analysis assumes as ~$500
+                snap["k_depth_yes"] = pm_mkt.get("depth_yes")
+                snap["k_depth_no"] = pm_mkt.get("depth_no")
             try:  # frozen crypto-LLM reads the news tape (cached per headline)
                 senti = sentiment_snapshot()
             except Exception:
@@ -1823,9 +2887,10 @@ def run(once: bool = False) -> None:
                 }
                 cband = bands.get((ch, hz))
                 if cband:
+                    clo, chi = _band_offsets(cband, crow.get("sigma"))
                     crow["lo"], crow["hi"] = _cap_band(
-                        crow["pred"], crow["pred"] + cband[0],
-                        crow["pred"] + cband[1], hz, crow.get("sigma"))
+                        crow["pred"], crow["pred"] + clo,
+                        crow["pred"] + chi, hz, crow.get("sigma"))
                 ledger.append(crow)
                 new_preds += 1
 
@@ -1867,9 +2932,11 @@ def run(once: bool = False) -> None:
                     }
                     cband = bands.get((cal_v, cal_h))
                     if cband:
+                        clo, chi = _band_offsets(cband,
+                                                 crow.get("sigma"))
                         crow["lo"], crow["hi"] = _cap_band(
-                            crow["pred"], crow["pred"] + cband[0],
-                            crow["pred"] + cband[1], cal_h,
+                            crow["pred"], crow["pred"] + clo,
+                            crow["pred"] + chi, cal_h,
                             crow.get("sigma"))
                     ledger.append(crow)
                     new_preds += 1
@@ -1948,16 +3015,32 @@ def run(once: bool = False) -> None:
                         row.update(extra)
                         kb.append(row)
                         kb_made.add((variant, pm_mkt["ticker"], slot1))
+                    # PIT store (M2.5): kb2 is the serving CONTROL —
+                    # its exact blend inputs make parity EXACTLY
+                    # replayable offline
+                    _pit_snapshot(
+                        "kb2", pm_mkt["ticker"], k_close_ts, slot1,
+                        now_ts,
+                        {"family": "blend-v1",
+                         "formula": "bw*p_cal + (1-bw)*k_pup "
+                                    "(p_cal alone when k_pup None), "
+                                    "clamped [0.01, 0.99]"},
+                        {"p_cal": p_cal, "k_pup": k_pup,
+                         "bw": round(bw, 6)},
+                        p_blend)
                     # kb6 — fast-information arm: perp lead, tape, whale
                     # flow, OI delta; the channels aimed at the EDGE
                     # column rather than the accuracy column
-                    b6x = _kb6_features(snap, k_pup, bx, pf, mins_left)
-                    p6 = round(kb6_logit.predict(b6x), 4)
-                    kb.append({**common, "variant": "kb6", "p_up": p6,
-                               "call": int(p6 >= 0.5),
-                               "b6x": [round(v, 5) for v in b6x],
-                               "trained": kb6_logit.updates})
-                    kb_made.add(("kb6", pm_mkt["ticker"], slot1))
+                    if "kb6" not in RETIRED_MODEL_ARMS:
+                        b6x = _kb6_features(snap, k_pup, bx, pf,
+                                            mins_left)
+                        p6 = round(kb6_logit.predict(b6x), 4)
+                        kb.append({**common, "variant": "kb6",
+                                   "p_up": p6,
+                                   "call": int(p6 >= 0.5),
+                                   "b6x": [round(v, 5) for v in b6x],
+                                   "trained": kb6_logit.updates})
+                        kb_made.add(("kb6", pm_mkt["ticker"], slot1))
                     # kb7-fm — zero-shot foundation-model arm (Chronos
                     # Bolt): the LLM-timeseries direction, run against
                     # our ladder. No training, no state; a pretrained
@@ -2001,6 +3084,62 @@ def run(once: bool = False) -> None:
                                         "pnl_c": None,
                                     })
                                     pb_tickers.add(pm_mkt["ticker"])
+                            # kb8 — calibrated decorrelation stack: reads
+                            # the SAME fm result kb7 just produced (one
+                            # Chronos call per slot, no added latency) and
+                            # learns online how to fuse it with the market.
+                            # kb7's rows and Conviction Book are untouched.
+                            if ("kb8", pm_mkt["ticker"], slot1) not in kb_made:
+                                b8x = _kb8_features(p7, w80, k_pup, bx, pf,
+                                                    mins_left)
+                                if b8x is not None and len(b8x) == KB8_DIM:
+                                    p8 = round(kb8_logit.predict(b8x), 4)
+                                    kb.append({**common, "variant": "kb8",
+                                               "p_up": p8,
+                                               "call": int(p8 >= 0.5),
+                                               "b8x": [round(v, 5)
+                                                       for v in b8x],
+                                               "trained": kb8_logit.updates})
+                                    kb_made.add(("kb8", pm_mkt["ticker"],
+                                                 slot1))
+                            # kb9 — second foundation family (TimesFM
+                            # 2.5, frozen zero-shot): launched as a
+                            # DECORRELATED treatment, not an upgrade —
+                            # it tied kb7 on the gauntlet and that
+                            # record stands on the disproved wall
+                            if ("kb9", pm_mkt["ticker"], slot1) \
+                                    not in kb_made:
+                                fm9 = _timesfm_p_up(
+                                    [b["close"] for b in kbars],
+                                    pm_mkt["strike"],
+                                    int(max(1, round(mins_left))))
+                                if fm9:
+                                    p9, w9, ql9, qh9 = fm9
+                                    kb.append({**common, "variant": "kb9",
+                                               "p_up": p9,
+                                               "call": int(p9 >= 0.5),
+                                               "q80_w": w9,
+                                               "q80_lo": ql9,
+                                               "q80_hi": qh9})
+                                    kb_made.add(("kb9", pm_mkt["ticker"],
+                                                 slot1))
+                                    # PIT store: the exact close
+                                    # series the frozen TimesFM saw
+                                    _pit_snapshot(
+                                        "kb9", pm_mkt["ticker"],
+                                        k_close_ts, slot1, now_ts,
+                                        {"family": "timesfm-2.5",
+                                         "artifact": "google/timesfm-"
+                                         "2.5-200m-pytorch (frozen "
+                                         "zero-shot)"},
+                                        {"closes": [b["close"]
+                                                    for b in kbars],
+                                         "strike": pm_mkt["strike"],
+                                         "horizon_min": int(max(1,
+                                             round(mins_left)))},
+                                        p9,
+                                        {"q80_w": w9, "q80_lo": ql9,
+                                         "q80_hi": qh9})
                     # kb5 — train-where-you-trade arm: only exists on
                     # BIDDABLE minutes (mid/late, a side under 80c at the
                     # ask); picks its side by expected value and logs the
@@ -2054,11 +3193,494 @@ def run(once: bool = False) -> None:
                                     "pnl_c": None,
                                 })
                                 pb_tickers.add(pm_mkt["ticker"])
+                    # The $1K Desk — paper trader (TA spec): follows the
+                    # CURRENT best bidder (last-10 settled decisions),
+                    # risks at most 10% of funds, buys at the real ask
+                    # with Kalshi fees, one entry per window. Purely
+                    # observational research — nothing is purchased.
+                    # BUG FIX 2026-08-28 (critical): this guard used to
+                    # check only pt/pt2, but the entry logic for traders
+                    # 3-6 lives INSIDE the block — once pt1+pt2 entered
+                    # (same minute, same 0.62 gate), everyone else was
+                    # locked out of the window. Measured: 0 of 126
+                    # Gambler and 0 of 250 Saver entries ever differed
+                    # from pt1's minute, so the >=0.77 gates were a
+                    # filter on pt1's minute, not their own timing, and
+                    # a trader blocked by depth/bankroll never got a
+                    # second chance. Now: enter whenever ANY trader
+                    # still lacks this window; each trader's own
+                    # ticker-check and gate below are unchanged.
+                    # Patient/Ideal limit-order fills: a resting bid
+                    # fills the first minute the ask comes down to it,
+                    # independent of any gate below (2026-08-28).
+                    _fc_state, _fc_why = _fail_closed_state()
+                    _entries_frozen = _fc_state == "FREEZE_NEW_ENTRIES"
+                    for _pend, _tks, _blist, _bank in (
+                            (pt7_pending, pt7_tickers, pt7_trades,
+                             "pt7"),
+                            (pt8_pending, pt8_tickers, pt8_trades,
+                             "pt8")):
+                        if _entries_frozen:
+                            break       # a limit FILL commits new stake
+                        po = _pend.get(pm_mkt["ticker"])
+                        if (po and pm_mkt["ticker"] not in _tks
+                                and pm_mkt.get("yes_bid")
+                                and pm_mkt.get("yes_ask")):
+                            askL = (pm_mkt["yes_ask"] if po["side"] == "yes"
+                                    else 100 - pm_mkt["yes_bid"])
+                            if 5 <= askL <= po["limit_c"]:
+                                feeL = 7 * (askL / 100) * (1 - askL / 100)
+                                # ADVERSE-SELECTION GUARD (pt8 only,
+                                # 2026-08-28): a resting bid fills
+                                # preferentially when the market is
+                                # repricing the call DOWN — the
+                                # backfilled naive limit (M11) scored
+                                # -5.21% paired for exactly this
+                                # reason. The Ideal re-checks the
+                                # leader's CURRENT confidence at fill:
+                                # if the price fell because the signal
+                                # fell, refuse the fill and let the
+                                # order expire. pt7 stays naive on
+                                # purpose — it MEASURES the effect.
+                                if _bank == "pt8":
+                                    _ldr = po["row"].get("leader")
+                                    _cn = next(
+                                        (r for r in reversed(kb)
+                                         if r.get("variant") == _ldr
+                                         and r["ticker"]
+                                         == pm_mkt["ticker"]), None)
+                                    if _cn is None:
+                                        continue
+                                    _cf = (_cn["p_up"]
+                                           if po["side"] == "yes"
+                                           else 1 - _cn["p_up"])
+                                    if (_cf * 100
+                                            < askL + feeL
+                                            + PT8_MARGIN_C):
+                                        continue
+                                bank = (pt7_bankroll_c if _bank == "pt7"
+                                        else pt8_bankroll_c)
+                                capL = min(int(po["frac"] * bank),
+                                           po["dcap"])
+                                ncL = int(capL // (askL + feeL))
+                                if ncL >= 1:
+                                    stL = (int(ncL * askL)
+                                           + _order_fee_c(ncL, askL))
+                                    if _bank == "pt7":
+                                        pt7_bankroll_c -= stL
+                                    else:
+                                        pt8_bankroll_c -= stL
+                                    _blist.append({
+                                        **po["row"],
+                                        "made_ts": now_ts,
+                                        "mins_left": round(
+                                            (po["row"]["close_ts"]
+                                             - now_ts) / 60, 1),
+                                        "ask_c": askL,
+                                        "limit_c": po["limit_c"],
+                                        "quoted_c": po["quoted_c"],
+                                        "contracts": ncL,
+                                        "stake_c": stL,
+                                        "bankroll_c":
+                                            (pt7_bankroll_c
+                                             if _bank == "pt7"
+                                             else pt8_bankroll_c),
+                                    })
+                                    _tks.add(pm_mkt["ticker"])
+                                    del _pend[pm_mkt["ticker"]]
+                    if (not _entries_frozen
+                            and (pm_mkt["ticker"] not in pt_tickers
+                            or pm_mkt["ticker"] not in pt2_tickers
+                            or pm_mkt["ticker"] not in pt3_tickers
+                            or pm_mkt["ticker"] not in pt4_tickers
+                            or pm_mkt["ticker"] not in pt5_tickers
+                            or pm_mkt["ticker"] not in pt6_tickers
+                            or pm_mkt["ticker"] not in pt7_tickers
+                            or pm_mkt["ticker"] not in pt8_tickers)
+                            and mins_left <= 12 and pm_mkt.get("yes_bid")
+                            and pm_mkt.get("yes_ask")):
+                        led = _pt_leader(kb)
+                        if led:
+                            pt_arm, pt_w, pt_n = led
+                            ptr = next(
+                                (r for r in reversed(kb)
+                                 if r.get("variant") == pt_arm
+                                 and r["ticker"] == pm_mkt["ticker"]
+                                 and r["made_ts"] == slot1), None)
+                            if ptr and max(ptr["p_up"],
+                                           1 - ptr["p_up"]) >= PT_TAU:
+                                syp = ptr["p_up"] >= 0.5
+                                askp = (pm_mkt["yes_ask"] if syp
+                                        else 100 - pm_mkt["yes_bid"])
+                                # exact per-contract fee (float) for
+                                # sizing/EV math; stakes below charge
+                                # the true per-ORDER fee via
+                                # _order_fee_c (bug fix 2026-08-28)
+                                feep = 7 * (askp / 100) * (1 - askp / 100)
+                                if 5 <= askp < 80:
+                                    # ONE depth ceiling for the whole
+                                    # desk: live near-touch book on the
+                                    # side being lifted, $500 fallback
+                                    # when the book is dark
+                                    dside = (pm_mkt.get("depth_no")
+                                             if syp else
+                                             pm_mkt.get("depth_yes"))
+                                    dcap = (int(dside * askp)
+                                            if dside else PT4_CAP_C)
+                                    base_row = {
+                                        "ticker": pm_mkt["ticker"],
+                                        "made_ts": now_ts,
+                                        "depth_cap_c": dcap,
+                                        "close_ts": k_close_ts,
+                                        "strike": pm_mkt["strike"],
+                                        "side": "yes" if syp else "no",
+                                        "ask_c": round(askp, 1),
+                                        "fee_c": feep,
+                                        "leader": pt_arm,
+                                        "rec10": f"{pt_w}/{pt_n}",
+                                        "p_arm": round(max(
+                                            ptr["p_up"],
+                                            1 - ptr["p_up"]), 4),
+                                        "mins_left": round(mins_left, 1),
+                                        "actual": None, "win": None,
+                                        "pnl_c": None,
+                                    }
+                                    if pm_mkt["ticker"] not in pt_tickers:
+                                        ncon = int(min(PT_FRAC
+                                                       * pt_bankroll_c,
+                                                       dcap)
+                                                   // (askp + feep))
+                                        if ncon >= 1:
+                                            stake = int(ncon * askp) \
+                                                + _order_fee_c(ncon, askp)
+                                            pt_bankroll_c -= stake
+                                            pt_trades.append({
+                                                **base_row,
+                                                "contracts": ncon,
+                                                "stake_c": stake,
+                                                "bankroll_c": pt_bankroll_c,
+                                            })
+                                            pt_tickers.add(pm_mkt["ticker"])
+                                    if ("pt2" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt2_tickers):
+                                        nc2 = int(min(PT_FRAC
+                                                      * pt2_bankroll_c,
+                                                      dcap)
+                                                  // (askp + feep))
+                                        if nc2 >= 1:
+                                            st2 = int(nc2 * askp) \
+                                                + _order_fee_c(nc2, askp)
+                                            pt2_bankroll_c -= st2
+                                            pt2_trades.append({
+                                                **base_row,
+                                                "contracts": nc2,
+                                                "stake_c": st2,
+                                                "bankroll_c": pt2_bankroll_c,
+                                                "banked_c": pt2_banked_c,
+                                                "level_c": pt2_level_c,
+                                            })
+                                            pt2_tickers.add(pm_mkt["ticker"])
+                                    # disciplined policy v2: the same
+                                    # leader entry, but only at his own
+                                    # higher 0.77 confidence bar
+                                    if (pm_mkt["ticker"] not in pt3_tickers
+                                            and base_row["p_arm"]
+                                            >= PT3_TAU):
+                                        nc3 = int(min(PT_FRAC
+                                                      * pt3_bankroll_c,
+                                                      dcap)
+                                                  // (askp + feep))
+                                        if nc3 >= 1:
+                                            st3 = int(nc3 * askp) \
+                                                + _order_fee_c(nc3, askp)
+                                            pt3_bankroll_c -= st3
+                                            pt3_trades.append({
+                                                **base_row,
+                                                "contracts": nc3,
+                                                "stake_c": st3,
+                                                "src": "leader",
+                                                "pv": 2,
+                                                "bankroll_c": pt3_bankroll_c,
+                                            })
+                                            pt3_tickers.add(pm_mkt["ticker"])
+                                    # Trader 4, the GAMBLER (policy
+                                    # v2.1, 2026-08-28): 33% of capital
+                                    # at >=0.77 confidence AND >=2c of
+                                    # stated edge at the ACTUAL fill.
+                                    # v2's constant-only gate placed a
+                                    # $1,911.85 stake at 79c where
+                                    # break-even was 80.2% vs conf
+                                    # 78.5% — negative EV by
+                                    # construction, because confidence
+                                    # and price co-move (for the
+                                    # market-anchored kb2 leader they
+                                    # are IDENTICAL, so a constant gate
+                                    # degenerates into a price
+                                    # threshold). Same lesson as pt6's
+                                    # margin gate, applied here.
+                                    if ("pt4" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt4_tickers
+                                            and base_row["p_arm"]
+                                            >= PT4_TAU
+                                            and base_row["p_arm"] * 100
+                                            >= askp + feep
+                                            + PT4_MIN_EDGE_C):
+                                        st4cap = min(int(PT4_FRAC
+                                                     * pt4_bankroll_c),
+                                                     dcap)
+                                        nc4 = int(st4cap // (askp + feep))
+                                        if nc4 >= 1:
+                                            st4 = int(nc4 * askp) \
+                                                + _order_fee_c(nc4, askp)
+                                            pt4_bankroll_c -= st4
+                                            pt4_trades.append({
+                                                **base_row,
+                                                "contracts": nc4,
+                                                "stake_c": st4,
+                                                "depth_cap_c": dcap,
+                                                "pv": 3,
+                                                "bankroll_c": pt4_bankroll_c,
+                                                "withdrawn_c":
+                                                    pt4_withdrawn_c,
+                                            })
+                                            pt4_tickers.add(pm_mkt["ticker"])
+                                    # Trader 5, the SAVER: 25% stakes,
+                                    # skims 25% of each win to savings
+                                    if ("pt5" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt5_tickers):
+                                        st5cap = min(int(PT5_FRAC
+                                                     * pt5_bankroll_c),
+                                                     dcap)
+                                        nc5 = int(st5cap // (askp + feep))
+                                        if nc5 >= 1:
+                                            st5 = int(nc5 * askp) \
+                                                + _order_fee_c(nc5, askp)
+                                            pt5_bankroll_c -= st5
+                                            pt5_trades.append({
+                                                **base_row,
+                                                "contracts": nc5,
+                                                "stake_c": st5,
+                                                "bankroll_c": pt5_bankroll_c,
+                                                "savings_c": pt5_savings_c,
+                                            })
+                                            pt5_tickers.add(pm_mkt["ticker"])
+                                    # Trader 6, the MLE meta-trader:
+                                    # supervised P(win) on the shared
+                                    # signal; bet iff EV>0, half-Kelly
+                                    # size (capped 10%). Learns on settle.
+                                    if pm_mkt["ticker"] not in pt6_tickers:
+                                        b6x = _pt6_features(
+                                            base_row["p_arm"], askp, k_pup,
+                                            syp, pf, mins_left)
+                                        pw6 = pt6_logit.predict(b6x)
+                                        ev6 = pw6 * 100 - (askp + feep)
+                                        if ev6 >= PT6_MIN_EDGE_C:
+                                            odds = (100 - (askp + feep)) \
+                                                / (askp + feep)
+                                            kelly = max(0.0, (pw6 * (1 + odds)
+                                                        - 1) / odds)
+                                            frac = min(0.10, 0.5 * kelly)
+                                            cap = min(int(frac
+                                                      * pt6_bankroll_c), dcap)
+                                            nc6 = int(cap // (askp + feep))
+                                            if nc6 >= 1 and PT6_SHADOW:
+                                                # lifecycle SHADOW (PM
+                                                # 08-29): decide + learn,
+                                                # stake NOTHING; would_*
+                                                # keeps the hypothetical
+                                                # economics measurable
+                                                st6 = (int(nc6 * askp)
+                                                       + _order_fee_c(
+                                                           nc6, askp))
+                                                pt6_trades.append({
+                                                    **base_row,
+                                                    "contracts": 0,
+                                                    "stake_c": 0,
+                                                    "shadow": True,
+                                                    "would_contracts":
+                                                        nc6,
+                                                    "would_stake_c": st6,
+                                                    "b6x": [round(v, 5)
+                                                            for v in b6x],
+                                                    "p_win": round(pw6, 4),
+                                                    "trained":
+                                                        pt6_logit.updates,
+                                                    "bankroll_c":
+                                                        pt6_bankroll_c,
+                                                })
+                                                pt6_tickers.add(
+                                                    pm_mkt["ticker"])
+                                            elif nc6 >= 1:
+                                                st6 = (int(nc6 * askp)
+                                                       + _order_fee_c(
+                                                           nc6, askp))
+                                                pt6_bankroll_c -= st6
+                                                pt6_trades.append({
+                                                    **base_row,
+                                                    "contracts": nc6,
+                                                    "stake_c": st6,
+                                                    "b6x": [round(v, 5)
+                                                            for v in b6x],
+                                                    "p_win": round(pw6, 4),
+                                                    "trained":
+                                                        pt6_logit.updates,
+                                                    "bankroll_c":
+                                                        pt6_bankroll_c,
+                                                })
+                                                pt6_tickers.add(
+                                                    pm_mkt["ticker"])
+                                        else:
+                                            # SHADOW row — no money moves,
+                                            # but the skipped bet is still
+                                            # labeled at settle so the
+                                            # logit keeps learning at full
+                                            # window rate (a gated trader
+                                            # that only learns from its
+                                            # own bets re-learns nothing)
+                                            pt6_trades.append({
+                                                **base_row,
+                                                "contracts": 0,
+                                                "stake_c": 0,
+                                                "skipped": True,
+                                                "b6x": [round(v, 5)
+                                                        for v in b6x],
+                                                "p_win": round(pw6, 4),
+                                                "trained":
+                                                    pt6_logit.updates,
+                                                "bankroll_c":
+                                                    pt6_bankroll_c,
+                                            })
+                                            pt6_tickers.add(
+                                                pm_mkt["ticker"])
+                                    # Trader 7, the PATIENT: rest a
+                                    # limit PT7_IMPROVE_C below the
+                                    # quoted ask; the fill block above
+                                    # completes it if price comes down
+                                    if ("pt7" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt7_tickers
+                                            and pm_mkt["ticker"]
+                                            not in pt7_pending):
+                                        pt7_pending[pm_mkt["ticker"]] = {
+                                            "side": base_row["side"],
+                                            "limit_c": askp
+                                            - PT7_IMPROVE_C,
+                                            "quoted_c": askp,
+                                            "frac": PT_FRAC,
+                                            "dcap": dcap,
+                                            "row": dict(base_row),
+                                        }
+                                    # Trader 8, the IDEAL: regime gate,
+                                    # edge-at-fill margin, maker-style
+                                    # limit, half-Kelly x depth cap
+                                    if ("pt8" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"]
+                                            not in pt8_tickers
+                                            and pm_mkt["ticker"]
+                                            not in pt8_pending):
+                                        lim8 = askp - PT8_IMPROVE_C
+                                        conf8 = base_row["p_arm"]
+                                        fee8 = 7 * (lim8 / 100) \
+                                            * (1 - lim8 / 100)
+                                        edge8 = conf8 * 100 \
+                                            - (lim8 + fee8)
+                                        acc8 = _regime_acc(kb)
+                                        if (edge8 >= PT8_MARGIN_C
+                                                and (acc8 is None
+                                                     or acc8
+                                                     >= REGIME_FLOOR)):
+                                            # half-Kelly for a binary
+                                            # payout: f* = (p(1+b)-1)/b
+                                            odds8 = (100 - lim8 - fee8) \
+                                                / (lim8 + fee8)
+                                            kelly8 = max(0.0, (conf8
+                                                    * (1 + odds8) - 1)
+                                                    / odds8)
+                                            frac8 = min(PT8_KELLY_CAP,
+                                                        0.5 * kelly8)
+                                            if frac8 > 0:
+                                                pt8_pending[
+                                                    pm_mkt["ticker"]] = {
+                                                    "side":
+                                                        base_row["side"],
+                                                    "limit_c": lim8,
+                                                    "quoted_c": askp,
+                                                    "frac": frac8,
+                                                    # participation cap:
+                                                    # 25% of near-touch
+                                                    "dcap": int(
+                                                        PT8_DEPTH_FRAC
+                                                        * dcap),
+                                                    "row":
+                                                        dict(base_row),
+                                                }
+                    # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
+                    # only (frozen pre-registration above), 10% of funds,
+                    # real ask + fee, one bid per window
+                    if (pm_mkt["ticker"] not in pt3_tickers
+                            and mins_left <= 12 and pm_mkt.get("yes_bid")
+                            and pm_mkt.get("yes_ask")):
+                        k7r = next(
+                            (r for r in reversed(kb)
+                             if r.get("variant") == "kb7"
+                             and r["ticker"] == pm_mkt["ticker"]
+                             and r["made_ts"] == slot1), None)
+                        if k7r and max(k7r["p_up"],
+                                       1 - k7r["p_up"]) >= PT3_TAU:
+                            sy3 = k7r["p_up"] >= 0.5
+                            ask3 = (pm_mkt["yes_ask"] if sy3
+                                    else 100 - pm_mkt["yes_bid"])
+                            # exact per-contract for sizing; order fee
+                            # charged once at stake (fix 2026-08-28)
+                            fee3 = 7 * (ask3 / 100) * (1 - ask3 / 100)
+                            if 5 <= ask3 < 80:
+                                d3 = (pm_mkt.get("depth_no") if sy3
+                                      else pm_mkt.get("depth_yes"))
+                                dcap3 = (int(d3 * ask3) if d3
+                                         else PT4_CAP_C)
+                                nc3 = int(min(PT_FRAC * pt3_bankroll_c,
+                                              dcap3)
+                                          // (ask3 + fee3))
+                                if nc3 >= 1:
+                                    # BUG FIX 2026-08-29 (found by the
+                                    # independent reconciler's first
+                                    # run): int(nc3*(ask+fee)) FLOORS
+                                    # the order fee — 11 rows under-
+                                    # charged 1c each vs the spec
+                                    # ceil(7*C*p*(1-p)). Same form as
+                                    # every other trader now.
+                                    st3 = int(nc3 * ask3) \
+                                        + _order_fee_c(nc3, ask3)
+                                    pt3_bankroll_c -= st3
+                                    pt3_trades.append({
+                                        "ticker": pm_mkt["ticker"],
+                                        "made_ts": now_ts,
+                                        "close_ts": k_close_ts,
+                                        "strike": pm_mkt["strike"],
+                                        "side": "yes" if sy3 else "no",
+                                        "ask_c": round(ask3, 1),
+                                        "fee_c": fee3,
+                                        "contracts": nc3,
+                                        "stake_c": st3,
+                                        "p_arm": round(max(
+                                            k7r["p_up"],
+                                            1 - k7r["p_up"]), 4),
+                                        "mins_left": round(mins_left, 1),
+                                        "src": "kb7", "pv": 2,
+                                        "actual": None, "win": None,
+                                        "pnl_c": None,
+                                        "bankroll_c": pt3_bankroll_c,
+                                    })
+                                    pt3_tickers.add(pm_mkt["ticker"])
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
                     # cleared 80/80 in backtest (tests/window_call_eval.py)
                     if (mins_left <= 3.4
+                            and "kbf" not in RETIRED_MODEL_ARMS
                             and ("kbf", pm_mkt["ticker"], 0) not in kb_made):
                         kb.append({**common, "variant": "kbf", "p_up": p_cal,
                                    "call": int(p_cal >= 0.5),
@@ -2066,6 +3688,7 @@ def run(once: bool = False) -> None:
                         kb_made.add(("kbf", pm_mkt["ticker"], 0))
                     kb_changed = True
             logit_changed = False
+            calib_changed = False
             for r in kb:
                 if r["actual"] is not None or now_ts < r["close_ts"]:
                     continue
@@ -2098,6 +3721,21 @@ def run(once: bool = False) -> None:
                     # label: did the CHOSEN side win (call==1 means yes)
                     kb5_logit.update(r["b5x"], r["hit"])
                     logit_changed = True
+                if r.get("b8x") and len(r["b8x"]) == kb8_logit.dim:
+                    kb8_logit.update(r["b8x"], outcome)
+                    logit_changed = True
+                # M1 shadow: train this arm's calibrator on the outcome.
+                # Prequential — predict() was already stamped at write
+                # time, so the score recorded inside update() is honest.
+                # Once per (arm, window), decision row only (fix above).
+                _cv = r.get("variant") or "kb"
+                _cal = kb_calib.get(_cv)
+                if (_cal is not None
+                        and (r.get("mins_left") or 99) <= 12
+                        and (_cv, r["ticker"]) not in calib_seen):
+                    calib_seen.add((_cv, r["ticker"]))
+                    _cal.update(r["p_up"], outcome)
+                    calib_changed = True
                 kb_changed = True
             if logit_changed:
                 tmp = (RESULTS_DIR / KB_LOGIT_PATH_NAME).with_suffix(".tmp")
@@ -2112,7 +3750,60 @@ def run(once: bool = False) -> None:
                 tmp5 = (RESULTS_DIR / KB5_LOGIT_PATH_NAME).with_suffix(".tmp5")
                 tmp5.write_text(json.dumps(kb5_logit.to_dict()))
                 tmp5.replace(RESULTS_DIR / KB5_LOGIT_PATH_NAME)
+                tmp8 = (RESULTS_DIR / KB8_LOGIT_PATH_NAME).with_suffix(".tmp8")
+                tmp8.write_text(json.dumps(kb8_logit.to_dict()))
+                tmp8.replace(RESULTS_DIR / KB8_LOGIT_PATH_NAME)
+            if calib_changed:
+                tmpc = (RESULTS_DIR / KB_CALIB_NAME).with_suffix(".tmpc")
+                tmpc.write_text(json.dumps(
+                    {v: c.to_dict() for v, c in kb_calib.items()}))
+                tmpc.replace(RESULTS_DIR / KB_CALIB_NAME)
+            # champion/challenger: score every treatment on the desk's
+            # newly-settled windows, then check for a promotion
+            try:
+                scored = _treat_evaluate(pt_trades, kb, kb_calib,
+                                         treats, treat_seen, fshare,
+                                         evlead)
+                if scored:
+                    with (RESULTS_DIR / TREAT_LOG_NAME).open("a") as fh:
+                        for rec in scored:
+                            fh.write(json.dumps(rec) + "\n")
+                    for _k, _t in treats.items():
+                        if _k == "champion" or _t.promoted_at:
+                            continue
+                        if _t.sprt.verdict() == "promote":
+                            treatments.promote(_t)
+                            print(f"TREATMENT PROMOTED: {_k} "
+                                  f"({_t.label}) — mean paired EV diff "
+                                  f"{_t.sprt.mean:+.4f}/$1 over "
+                                  f"{_t.sprt.n} windows, LLR "
+                                  f"{_t.sprt.llr:.2f}", flush=True)
+                    tmpt = (RESULTS_DIR
+                            / TREAT_STATE_NAME).with_suffix(".tmpt")
+                    tmpt.write_text(json.dumps({
+                        "treats": {k: t.to_dict()
+                                   for k, t in treats.items()},
+                        "fshare": fshare.to_dict(),
+                        "evlead": {k: [round(x, 5) for x in v]
+                                   for k, v in evlead.items()},
+                        "seen": list(treat_seen)[-4000:]}))
+                    tmpt.replace(RESULTS_DIR / TREAT_STATE_NAME)
+            except Exception as e:
+                print("treatment eval:", str(e)[:120], flush=True)
             if kb_changed:
+                # M1 shadow stamp: p_cal on every unsettled row, so the
+                # calibrated number is recorded BEFORE the outcome is
+                # known. Nothing trades on it during the shadow week.
+                for r in kb:
+                    if r.get("actual") is None:
+                        c = kb_calib.get(r.get("variant") or "kb")
+                        if c is not None:
+                            # field is p_m1, NOT p_cal: p_cal already
+                            # exists on kb/kb2 rows and is read by the
+                            # kb2 blend-weight fit, so stamping it here
+                            # silently changed live trading — the exact
+                            # thing shadow mode exists to prevent.
+                            r["p_m1"] = round(c.predict(r["p_up"]), 4)
                 kb = kb[-KB_MAX_ROWS:]
                 tmp = (RESULTS_DIR / KB_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(r) + "\n" for r in kb))
@@ -2259,6 +3950,236 @@ def run(once: bool = False) -> None:
                 tmpp.write_text("".join(json.dumps(b) + "\n"
                                         for b in pb_bets))
                 tmpp.replace(RESULTS_DIR / PB_BET_LOG_NAME)
+            pt_changed = False
+            for t in pt_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue  # settle only on authoritative candles
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt_bankroll_c += payout
+                # INC 09-07: LATE settle (bar recovered by targeted
+                # backfill) — cash receives the payout NOW, but the
+                # row's entry-time stamp stays historically true;
+                # reconcile credits the payout at late_settle_ts.
+                if now_ts - t["close_ts"] > BACKFILL_HOURS * 3600:
+                    t["late_settle_ts"] = now_ts
+                else:
+                    t["bankroll_c"] = pt_bankroll_c
+                pt_changed = True
+            if pt_changed or (pt_trades and pt_trades[-1]["actual"] is None
+                              and pt_trades[-1]["made_ts"] >= now_ts - 90):
+                tmpt = (RESULTS_DIR / PT_LOG_NAME).with_suffix(".tmpt")
+                tmpt.write_text("".join(json.dumps(t) + "\n"
+                                        for t in pt_trades))
+                tmpt.replace(RESULTS_DIR / PT_LOG_NAME)
+            pt2_changed = False
+            for t in pt2_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt2_bankroll_c += payout
+                # the ladder: bank one level at 11x, play on with 10x
+                while pt2_bankroll_c >= 11 * pt2_level_c:
+                    pt2_banked_c += pt2_level_c
+                    pt2_bankroll_c -= pt2_level_c
+                    pt2_level_c *= 10
+                t["bankroll_c"] = pt2_bankroll_c
+                t["banked_c"] = pt2_banked_c
+                t["level_c"] = pt2_level_c
+                pt2_changed = True
+            if pt2_changed or (pt2_trades
+                               and pt2_trades[-1]["actual"] is None
+                               and pt2_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp2t = (RESULTS_DIR / PT2_LOG_NAME).with_suffix(".tmp2t")
+                tmp2t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt2_trades))
+                tmp2t.replace(RESULTS_DIR / PT2_LOG_NAME)
+            pt3_changed = False
+            for t in pt3_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt3_bankroll_c += payout
+                # INC 09-07: late settle — see pt loop above
+                if now_ts - t["close_ts"] > BACKFILL_HOURS * 3600:
+                    t["late_settle_ts"] = now_ts
+                else:
+                    t["bankroll_c"] = pt3_bankroll_c
+                pt3_changed = True
+            if pt3_changed or (pt3_trades
+                               and pt3_trades[-1]["actual"] is None
+                               and pt3_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp3t = (RESULTS_DIR / PT3_LOG_NAME).with_suffix(".tmp3t")
+                tmp3t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt3_trades))
+                tmp3t.replace(RESULTS_DIR / PT3_LOG_NAME)
+            pt4_changed = False
+            for t in pt4_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                # pre-cutover stragglers settle into the log but never
+                # touch the v3 bankroll (their stake wasn't debited)
+                if t["made_ts"] >= PT4_RESET2_TS:
+                    pt4_bankroll_c += payout
+                    # v3 profit sweep: anything above the $10k start is
+                    # withdrawn on the spot and can never be re-staked
+                    if pt4_bankroll_c > PT4_RESET_C:
+                        wd = pt4_bankroll_c - PT4_RESET_C
+                        pt4_withdrawn_c += wd
+                        pt4_bankroll_c = PT4_RESET_C
+                        t["wd_c"] = wd
+                    else:
+                        t["wd_c"] = 0
+                    t["bankroll_c"] = pt4_bankroll_c
+                    t["withdrawn_c"] = pt4_withdrawn_c
+                pt4_changed = True
+            if pt4_changed or (pt4_trades
+                               and pt4_trades[-1]["actual"] is None
+                               and pt4_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp4t = (RESULTS_DIR / PT4_LOG_NAME).with_suffix(".tmp4t")
+                tmp4t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt4_trades))
+                tmp4t.replace(RESULTS_DIR / PT4_LOG_NAME)
+            pt5_changed = False
+            for t in pt5_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                if t["win"]:
+                    sk = int(PT5_SKIM * t["pnl_c"])
+                    pt5_savings_c += sk
+                    pt5_bankroll_c += payout - sk
+                    t["skim_c"] = sk
+                else:
+                    pt5_bankroll_c += payout
+                    t["skim_c"] = 0
+                t["bankroll_c"] = pt5_bankroll_c
+                t["savings_c"] = pt5_savings_c
+                pt5_changed = True
+            if pt5_changed or (pt5_trades
+                               and pt5_trades[-1]["actual"] is None
+                               and pt5_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp5t = (RESULTS_DIR / PT5_LOG_NAME).with_suffix(".tmp5t")
+                tmp5t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt5_trades))
+                tmp5t.replace(RESULTS_DIR / PT5_LOG_NAME)
+            pt6_changed = pt6_learned = False
+            for t in pt6_trades:
+                if t["actual"] is not None or now_ts < t["close_ts"]:
+                    continue
+                settle_bar = by_ts.get(t["close_ts"] - 60)
+                if settle_bar is None or settle_bar.get("synth"):
+                    continue
+                outcome = int(settle_bar["close"] >= t["strike"])
+                t["actual"] = outcome
+                t["win"] = int((t["side"] == "yes") == bool(outcome))
+                payout = t["contracts"] * 100 if t["win"] else 0
+                t["pnl_c"] = payout - t["stake_c"]
+                pt6_bankroll_c += payout
+                t["bankroll_c"] = pt6_bankroll_c
+                # supervised update: label = did the bet win
+                if t.get("b6x") and len(t["b6x"]) == pt6_logit.dim:
+                    pt6_logit.update(t["b6x"], t["win"])
+                    pt6_learned = True
+                pt6_changed = True
+            if pt6_changed or (pt6_trades
+                               and pt6_trades[-1]["actual"] is None
+                               and pt6_trades[-1]["made_ts"] >= now_ts - 90):
+                tmp6t = (RESULTS_DIR / PT6_LOG_NAME).with_suffix(".tmp6t")
+                tmp6t.write_text("".join(json.dumps(t) + "\n"
+                                         for t in pt6_trades))
+                tmp6t.replace(RESULTS_DIR / PT6_LOG_NAME)
+            if pt6_learned:
+                tmp6l = (RESULTS_DIR
+                         / PT6_LOGIT_PATH_NAME).with_suffix(".tmp6l")
+                tmp6l.write_text(json.dumps(pt6_logit.to_dict()))
+                tmp6l.replace(RESULTS_DIR / PT6_LOGIT_PATH_NAME)
+            # Patient (pt7) / Ideal (pt8): settle fills, and log
+            # expired unfilled limits as skipped rows so the idle rate
+            # is measurable — an unfilled limit is a decision, not a
+            # gap in the record
+            for (p_trades, p_pend, p_name, p_tks) in (
+                    (pt7_trades, pt7_pending, PT7_LOG_NAME,
+                     pt7_tickers),
+                    (pt8_trades, pt8_pending, PT8_LOG_NAME,
+                     pt8_tickers)):
+                p_changed = False
+                for tk in [k for k, v in p_pend.items()
+                           if now_ts >= v["row"]["close_ts"]]:
+                    po = p_pend.pop(tk)
+                    p_trades.append({
+                        **po["row"], "contracts": 0, "stake_c": 0,
+                        "skipped": True, "limit_c": po["limit_c"],
+                        "quoted_c": po["quoted_c"], "pnl_c": 0,
+                        "actual": None,
+                    })
+                    p_tks.add(tk)
+                    p_changed = True
+                for t in p_trades:
+                    if t["actual"] is not None or now_ts < t["close_ts"]:
+                        continue
+                    if t.get("skipped"):
+                        t["actual"] = -1   # closed, never filled
+                        p_changed = True
+                        continue
+                    settle_bar = by_ts.get(t["close_ts"] - 60)
+                    if settle_bar is None or settle_bar.get("synth"):
+                        continue
+                    outcome = int(settle_bar["close"] >= t["strike"])
+                    t["actual"] = outcome
+                    t["win"] = int((t["side"] == "yes") == bool(outcome))
+                    payout = t["contracts"] * 100 if t["win"] else 0
+                    t["pnl_c"] = payout - t["stake_c"]
+                    if p_name == PT7_LOG_NAME:
+                        pt7_bankroll_c += payout
+                        t["bankroll_c"] = pt7_bankroll_c
+                    else:
+                        pt8_bankroll_c += payout
+                        t["bankroll_c"] = pt8_bankroll_c
+                    p_changed = True
+                if p_changed or (p_trades
+                                 and p_trades[-1].get("actual") is None
+                                 and p_trades[-1]["made_ts"]
+                                 >= now_ts - 90):
+                    tmpp = (RESULTS_DIR / p_name).with_suffix(".tmpp")
+                    tmpp.write_text("".join(json.dumps(t) + "\n"
+                                            for t in p_trades))
+                    tmpp.replace(RESULTS_DIR / p_name)
             if sel_changed:
                 tmp = (RESULTS_DIR / KB_SEL_BET_LOG_NAME).with_suffix(".tmp")
                 tmp.write_text("".join(json.dumps(b) + "\n"
@@ -2371,6 +4292,10 @@ def run(once: bool = False) -> None:
                 "alive_at": time.time(), "started_at": started,
                 "price_now": feat["price"],
                 "brti": brti,
+                # live near-touch book depth (within 3c of the best bid,
+                # each side) — the measured capacity behind the $2M math
+                "k_depth_yes": (pm_mkt or {}).get("depth_yes"),
+                "k_depth_no": (pm_mkt or {}).get("depth_no"),
                 "pm": _pm_view(arms, feat, snap, brti, pm_mkt),
                 "kalshi_binary": _kb_summary(kb),
                 "kb_treatments": {
@@ -2378,9 +4303,20 @@ def run(once: bool = False) -> None:
                         "brier": s.get("brier"),
                         "mkt_brier": s.get("mkt_brier"),
                         "prec80": _kb_conf_threshold(kb, v)}
-                    for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb6", "kb7")
+                    for v in ("kb", "kb2", "kb3", "kb4", "kb5", "kb6",
+                              "kb7", "kb8", "kb9")
                     if (s := _kb_summary(kb, v)) is not None},
                 "kb_logit_updates": kb_logit.updates,
+                "treatments": [t.status() for t in treats.values()],
+                "fshare_w": {k: round(v, 4)
+                             for k, v in sorted(fshare.w.items(),
+                                                key=lambda x: -x[1])},
+                "kb_calib": {v: {"a": round(c.a, 4), "b": round(c.b, 4),
+                                 "n": c.updates,
+                                 "ll": (lambda m: None if m is None
+                                        else [round(m[0], 4),
+                                              round(m[1], 4)])(c.mean_ll())}
+                             for v, c in kb_calib.items()},
                 "kbf": _class_prf(kb),
                 "sel_policy": {k: kb_policy.get(k) for k in
                                ("tuned_at", "kind", "theta", "precision",
@@ -2406,6 +4342,8 @@ def run(once: bool = False) -> None:
                     None),
                 "online_updates_session": online_updates,
                 "retrain_every_min": RETRAIN_EVERY // 60,
+                "runtime_state": _FC_CACHE["state"],
+                "runtime_state_why": _FC_CACHE["why"] or None,
                 "retrains_this_session": retrains,
                 "last_retrain": retrain_info or None,
                 "predictions_total": len(ledger),

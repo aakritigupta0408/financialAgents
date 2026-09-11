@@ -1,0 +1,18 @@
+{
+ "generated_ts": 1788727441,
+ "experiment": "A3-v2.1",
+ "registered_gate_n": 50,
+ "eligible_n": 0,
+ "primary_effect_per_eligible": null,
+ "ci95_bootstrap": null,
+ "concentration_survives_ex_best1": null,
+ "decision": "INSUFFICIENT_EVIDENCE",
+ "why": "n=0 < registered decision gate 50",
+ "allowed_outcomes": [
+  "CONTINUE",
+  "REJECT",
+  "QUALIFY",
+  "INSUFFICIENT_EVIDENCE"
+ ],
+ "law": "no interpretation-induced threshold change in the same cycle; a clean failure is a successful research outcome; full mechanism evidence lives in a3_live (decomposition, watches, shadows, markouts)"
+}

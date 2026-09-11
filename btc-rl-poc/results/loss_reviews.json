@@ -1,0 +1,214 @@
+{
+ "generated_ts": 1788002512,
+ "reviews": 413,
+ "new_this_run": 413,
+ "by_sev": {
+  "SEV-1": 2,
+  "SEV-2": 109,
+  "SEV-3": 35,
+  "SEV-4": 131,
+  "SEV-5": 136
+ },
+ "policy_breaches_total": 2,
+ "ladder": {
+  "SEV-0": "integrity \u2014 row impossible",
+  "SEV-1": "policy breach \u2014 own rule violated",
+  "SEV-2": "confident wrong (p>=0.77)",
+  "SEV-3": "oversized (>2x stated-edge Kelly)",
+  "SEV-4": "bad context (knife / regime<floor)",
+  "SEV-5": "expected variance \u2014 response only"
+ },
+ "traders": {
+  "pt": {
+   "label": "Follower",
+   "losses": 101,
+   "lost_c": 890782,
+   "by_grade": {
+    "EXPECTED_VARIANCE": 42,
+    "CONFIDENT_WRONG": 15,
+    "BAD_CONTEXT": 36,
+    "OVERSIZED": 8
+   },
+   "by_dominant": {
+    "signal": 52,
+    "price": 24,
+    "sizing": 10,
+    "regime": 15
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-5": 42,
+    "SEV-2": 15,
+    "SEV-4": 36,
+    "SEV-3": 8
+   },
+   "coach_note": "the leader's read was wrong \u2014 nothing you control; your rule executed as registered",
+   "proposed_treatment_path": "better arms \u2014 tier-1/2 work, not trader work"
+  },
+  "pt2": {
+   "label": "Ladder",
+   "losses": 101,
+   "lost_c": 890782,
+   "by_grade": {
+    "EXPECTED_VARIANCE": 42,
+    "CONFIDENT_WRONG": 15,
+    "BAD_CONTEXT": 36,
+    "OVERSIZED": 8
+   },
+   "by_dominant": {
+    "signal": 52,
+    "price": 24,
+    "sizing": 10,
+    "regime": 15
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-5": 42,
+    "SEV-2": 15,
+    "SEV-4": 36,
+    "SEV-3": 8
+   },
+   "coach_note": "the leader's read was wrong \u2014 nothing you control; your rule executed as registered",
+   "proposed_treatment_path": "better arms \u2014 tier-1/2 work, not trader work"
+  },
+  "pt3": {
+   "label": "Disciplined",
+   "losses": 48,
+   "lost_c": 441136,
+   "by_grade": {
+    "CONFIDENT_WRONG": 48
+   },
+   "by_dominant": {
+    "signal": 34,
+    "price": 2,
+    "sizing": 4,
+    "regime": 8
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-2": 48
+   },
+   "coach_note": "the leader's read was wrong \u2014 nothing you control; your rule executed as registered",
+   "proposed_treatment_path": "better arms \u2014 tier-1/2 work, not trader work"
+  },
+  "pt4": {
+   "label": "Gambler",
+   "losses": 40,
+   "lost_c": 5028236,
+   "by_grade": {
+    "BAD_CONTEXT": 9,
+    "EXPECTED_VARIANCE": 7,
+    "CONFIDENT_WRONG": 14,
+    "OVERSIZED": 9,
+    "POLICY_BREACH": 1
+   },
+   "by_dominant": {
+    "price": 10,
+    "signal": 16,
+    "sizing": 13,
+    "regime": 1
+   },
+   "breach_rows": 1,
+   "by_sev": {
+    "SEV-4": 9,
+    "SEV-5": 7,
+    "SEV-2": 14,
+    "SEV-3": 9,
+    "SEV-1": 1
+   },
+   "coach_note": "the leader's read was wrong \u2014 nothing you control; your rule executed as registered",
+   "proposed_treatment_path": "better arms \u2014 tier-1/2 work, not trader work"
+  },
+  "pt5": {
+   "label": "Saver",
+   "losses": 97,
+   "lost_c": 3106089,
+   "by_grade": {
+    "EXPECTED_VARIANCE": 37,
+    "CONFIDENT_WRONG": 14,
+    "OVERSIZED": 10,
+    "BAD_CONTEXT": 35,
+    "POLICY_BREACH": 1
+   },
+   "by_dominant": {
+    "signal": 46,
+    "sizing": 13,
+    "price": 23,
+    "regime": 15
+   },
+   "breach_rows": 1,
+   "by_sev": {
+    "SEV-5": 37,
+    "SEV-2": 14,
+    "SEV-3": 10,
+    "SEV-4": 35,
+    "SEV-1": 1
+   },
+   "coach_note": "the leader's read was wrong \u2014 nothing you control; your rule executed as registered",
+   "proposed_treatment_path": "better arms \u2014 tier-1/2 work, not trader work"
+  },
+  "pt6": {
+   "label": "MLE",
+   "losses": 9,
+   "lost_c": 107848,
+   "by_grade": {
+    "BAD_CONTEXT": 8,
+    "EXPECTED_VARIANCE": 1
+   },
+   "by_dominant": {
+    "price": 7,
+    "signal": 1,
+    "regime": 1
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-4": 8,
+    "SEV-5": 1
+   },
+   "coach_note": "you paid a break-even the window couldn't clear \u2014 the fill-curve model (bid pricing) is the treatment path",
+   "proposed_treatment_path": "M13 learned limit pricing (fill_curve.json)"
+  },
+  "pt7": {
+   "label": "Patient",
+   "losses": 9,
+   "lost_c": 96198,
+   "by_grade": {
+    "BAD_CONTEXT": 5,
+    "CONFIDENT_WRONG": 2,
+    "EXPECTED_VARIANCE": 2
+   },
+   "by_dominant": {
+    "execution": 9
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-4": 5,
+    "SEV-2": 2,
+    "SEV-5": 2
+   },
+   "coach_note": "your resting bid was picked off \u2014 filled because the market had just repriced you down (Glosten-Milgrom); pt8's recheck is the defense",
+   "proposed_treatment_path": "pt8 fill-time recheck (racing as M11 twin)"
+  },
+  "pt8": {
+   "label": "Ideal",
+   "losses": 8,
+   "lost_c": 49667,
+   "by_grade": {
+    "BAD_CONTEXT": 2,
+    "CONFIDENT_WRONG": 1,
+    "EXPECTED_VARIANCE": 5
+   },
+   "by_dominant": {
+    "execution": 8
+   },
+   "breach_rows": 0,
+   "by_sev": {
+    "SEV-4": 2,
+    "SEV-2": 1,
+    "SEV-5": 5
+   },
+   "coach_note": "your resting bid was picked off \u2014 filled because the market had just repriced you down (Glosten-Milgrom); pt8's recheck is the defense",
+   "proposed_treatment_path": "pt8 fill-time recheck (racing as M11 twin)"
+  }
+ }
+}

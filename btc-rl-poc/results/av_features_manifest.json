@@ -1,0 +1,15 @@
+{
+ "generated_ts": 1789151445,
+ "spec": "F_AV1_SPEC.yaml",
+ "status": "SCREEN_ONLY",
+ "receipt_model": "human-owned (av_features.receipt_available_ts)",
+ "n_windows": 193,
+ "n_with_fresh_equity": 193,
+ "sources": {
+  "spy_bars": 5404,
+  "uup_bars": 2549,
+  "yield_pts": 16157,
+  "fed_funds_pts": 26369
+ },
+ "note": "residual = outcome - mkt_p_up; screen target"
+}

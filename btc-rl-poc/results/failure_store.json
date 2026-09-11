@@ -1,0 +1,330 @@
+{
+ "generated_ts": 1789104889,
+ "schema_version": "failure-store-v1",
+ "plane": "D-Research (data flywheel); observation-only",
+ "bets_total": 1641,
+ "bad_total": 766,
+ "window_recent_bad": 100,
+ "decision_alignment": {
+  "ALIGNED": 1519,
+  "EXPLICIT_OVERRIDE": 75,
+  "CONVENTION_NORMALIZED": 47
+ },
+ "sign_inversions": {
+  "count": 0,
+  "tickers": []
+ },
+ "failure_clusters": {
+  "MARKET_KNEW": 63,
+  "THIN_EDGE_LOST": 21,
+  "CONFIDENTLY_WRONG": 15,
+  "LATE_ENTRY": 1
+ },
+ "top_cluster": {
+  "mechanism": "MARKET_KNEW",
+  "count": 63,
+  "share": 0.63
+ },
+ "proposed_information_improvement": "market leads on these \u2014 need EARLIER or genuinely INDEPENDENT information (F1 microstructure / F-AV1), not a better BTC-price model",
+ "worst_20_windows": [
+  {
+   "ticker": "KXBTC15M-26SEP101830-30",
+   "made_ts": 1789078613,
+   "pnl_c": -79.0,
+   "p_model": 0.7612,
+   "side": "yes",
+   "price_c": 79.0,
+   "mins_left": 13.1,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP082230-30",
+   "made_ts": 1788920195,
+   "pnl_c": -78.0,
+   "p_model": 0.3387,
+   "side": "no",
+   "price_c": 78.0,
+   "mins_left": 13.4,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090445-45",
+   "made_ts": 1788942965,
+   "pnl_c": -78.0,
+   "p_model": 0.7413,
+   "side": "yes",
+   "price_c": 78.0,
+   "mins_left": 8.9,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP102345-45",
+   "made_ts": 1789097649,
+   "pnl_c": -78.0,
+   "p_model": 0.2511,
+   "side": "no",
+   "price_c": 78.0,
+   "mins_left": 10.8,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090115-15",
+   "made_ts": 1788930253,
+   "pnl_c": -77.0,
+   "p_model": 0.2518,
+   "side": "no",
+   "price_c": 77.0,
+   "mins_left": 10.8,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP101900-00",
+   "made_ts": 1789080422,
+   "pnl_c": -77.0,
+   "p_model": 0.6765,
+   "side": "yes",
+   "price_c": 77.0,
+   "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP081315-15",
+   "made_ts": 1788886922,
+   "pnl_c": -76.0,
+   "p_model": 0.7066,
+   "side": "yes",
+   "price_c": 76.0,
+   "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP101545-45",
+   "made_ts": 1789068665,
+   "pnl_c": -76.0,
+   "p_model": 0.1605,
+   "side": "no",
+   "price_c": 76.0,
+   "mins_left": 13.9,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP102115-15",
+   "made_ts": 1789088540,
+   "pnl_c": -76.0,
+   "p_model": 0.7091,
+   "side": "yes",
+   "price_c": 76.0,
+   "mins_left": 12.7,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP100130-30",
+   "made_ts": 1789017583,
+   "pnl_c": -75.0,
+   "p_model": 0.2941,
+   "side": "no",
+   "price_c": 75.0,
+   "mins_left": 10.3,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP102315-15",
+   "made_ts": 1789095927,
+   "pnl_c": -75.0,
+   "p_model": 0.1991,
+   "side": "no",
+   "price_c": 75.0,
+   "mins_left": 9.6,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090200-00",
+   "made_ts": 1788932792,
+   "pnl_c": -74.0,
+   "p_model": 0.2067,
+   "side": "no",
+   "price_c": 74.0,
+   "mins_left": 13.5,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP091000-00",
+   "made_ts": 1788961631,
+   "pnl_c": -73.0,
+   "p_model": 0.7818,
+   "side": "yes",
+   "price_c": 73.0,
+   "mins_left": 12.8,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "EXPENSIVE_LOSER"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP101645-45",
+   "made_ts": 1789072366,
+   "pnl_c": -67.0,
+   "p_model": 0.2733,
+   "side": "no",
+   "price_c": 67.0,
+   "mins_left": 12.2,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090130-30",
+   "made_ts": 1788930921,
+   "pnl_c": -64.0,
+   "p_model": 0.8661,
+   "side": "yes",
+   "price_c": 64.0,
+   "mins_left": 14.7,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090730-30",
+   "made_ts": 1788952587,
+   "pnl_c": -64.0,
+   "p_model": 0.2755,
+   "side": "no",
+   "price_c": 64.0,
+   "mins_left": 13.6,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP102300-00",
+   "made_ts": 1789094898,
+   "pnl_c": -64.0,
+   "p_model": 0.6713,
+   "side": "yes",
+   "price_c": 64.0,
+   "mins_left": 11.7,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090930-30",
+   "made_ts": 1788959820,
+   "pnl_c": -63.0,
+   "p_model": 0.3309,
+   "side": "no",
+   "price_c": 63.0,
+   "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
+   "primary": "MARKET_KNEW",
+   "tags": [
+    "CONFIDENTLY_WRONG",
+    "MARKET_KNEW"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP110115-15",
+   "made_ts": 1789102851,
+   "pnl_c": -63.0,
+   "p_model": 0.327,
+   "side": "no",
+   "price_c": 63.0,
+   "mins_left": 14.2,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG"
+   ]
+  },
+  {
+   "ticker": "KXBTC15M-26SEP090830-30",
+   "made_ts": 1788956338,
+   "pnl_c": -62.0,
+   "p_model": 0.3262,
+   "side": "no",
+   "price_c": 62.0,
+   "mins_left": 11.0,
+   "decision_alignment": "ALIGNED",
+   "primary": "CONFIDENTLY_WRONG",
+   "tags": [
+    "CONFIDENTLY_WRONG"
+   ]
+  }
+ ]
+}

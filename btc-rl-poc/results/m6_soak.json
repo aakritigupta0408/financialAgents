@@ -1,0 +1,18 @@
+{
+ "generated_ts": 1788177107,
+ "required_cycles": 6,
+ "consecutive_clean_cycles": 6,
+ "last_clean_ts": 1788177107,
+ "cycle_clean": true,
+ "problems": [],
+ "status": "SOAK_PASS",
+ "close_gate": [
+  "R1 PROVEN",
+  "R2 PROVEN",
+  "R3 PROVEN",
+  "multi-fault ordering PASS (fixtures 10/10)",
+  "independent verification universal",
+  "retry exhaustion universal",
+  "policy/research/scientific mutations = 0"
+ ]
+}

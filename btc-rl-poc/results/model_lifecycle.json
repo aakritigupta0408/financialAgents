@@ -1,0 +1,327 @@
+{
+ "generated_ts": 1788076930,
+ "dictionary_version": "1.1.0",
+ "training_runs": {
+  "total": 4856,
+  "appended_this_emit": 8,
+  "artifact": "training_runs.jsonl"
+ },
+ "t2_models": {
+  "kb2": {
+   "model_id": "kb2",
+   "role": "CONTROL (market-anchored)",
+   "tier": "T2",
+   "lifecycle": "CONTROL",
+   "offline": {
+    "status": "NOT_RECORDED",
+    "note": "arms are online-prequential; the offline block begins with the M2 walk-forward evaluator \u2014 absence is stated, never faked"
+   },
+   "launch": {
+    "note": "first 25 settled decision-time windows in the retained log",
+    "n": 25,
+    "brier": 0.1924,
+    "log_loss": 0.5629,
+    "selective_acc_75": 0.7778,
+    "selective_coverage_75": 0.36,
+    "selective_n_75": 9,
+    "market_brier": 0.2037,
+    "bss_vs_market": 0.0552,
+    "market_n": 24
+   },
+   "current": {
+    "n": 25,
+    "brier": 0.1591,
+    "log_loss": 0.4985,
+    "selective_acc_75": 1.0,
+    "selective_coverage_75": 0.12,
+    "selective_n_75": 3,
+    "market_brier": 0.159,
+    "bss_vs_market": -0.0001,
+    "market_n": 25
+   },
+   "lifetime": {
+    "n": 169,
+    "brier": 0.1998,
+    "log_loss": 0.5849,
+    "selective_acc_75": 0.8,
+    "selective_coverage_75": 0.2071,
+    "selective_n_75": 35,
+    "market_brier": 0.201,
+    "bss_vs_market": 0.0061,
+    "market_n": 168
+   },
+   "windows": {
+    "LIFETIME": {
+     "n": 169,
+     "brier": 0.1998,
+     "log_loss": 0.5849,
+     "selective_acc_75": 0.8,
+     "selective_coverage_75": 0.2071,
+     "selective_n_75": 35,
+     "market_brier": 0.201,
+     "bss_vs_market": 0.0061,
+     "market_n": 168
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.2026,
+     "log_loss": 0.592,
+     "selective_acc_75": 0.8421,
+     "selective_coverage_75": 0.19,
+     "selective_n_75": 19,
+     "market_brier": 0.2021,
+     "bss_vs_market": -0.0025,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.1978,
+     "log_loss": 0.5798,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.1,
+     "selective_n_75": 5,
+     "market_brier": 0.1978,
+     "bss_vs_market": -0.0001,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1591,
+     "log_loss": 0.4985,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.12,
+     "selective_n_75": 3,
+     "market_brier": 0.159,
+     "bss_vs_market": -0.0001,
+     "market_n": 25
+    }
+   },
+   "self_trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1591,
+    "brier_prior_75": 0.2171,
+    "delta": -0.058,
+    "why": "Brier last-25 0.1591 vs prior-75 0.2171 (\u0394 -0.0580, band \u00b10.01)"
+   },
+   "baseline_status": "ESTABLISHED \u2014 lifetime BSS 0.0061",
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1591,
+    "brier_prior_75": 0.2171,
+    "delta": -0.058,
+    "why": "Brier last-25 0.1591 vs prior-75 0.2171 (\u0394 -0.0580, band \u00b10.01)"
+   },
+   "scoring_convention": "decision-time row (earliest settled row with mins_left <= 12) \u2014 one observation per window",
+   "min_n": {
+    "display": 10,
+    "compare": 25,
+    "gate": 50
+   }
+  },
+  "kb9": {
+   "model_id": "kb9",
+   "role": "CHALLENGER (TimesFM fusion)",
+   "tier": "T2",
+   "lifecycle": "TREATMENT",
+   "offline": {
+    "status": "NOT_RECORDED",
+    "note": "arms are online-prequential; the offline block begins with the M2 walk-forward evaluator \u2014 absence is stated, never faked"
+   },
+   "launch": {
+    "note": "first 25 settled decision-time windows in the retained log",
+    "n": 25,
+    "brier": 0.2043,
+    "log_loss": 0.5927,
+    "selective_acc_75": 0.7,
+    "selective_coverage_75": 0.4,
+    "selective_n_75": 10,
+    "market_brier": 0.1955,
+    "bss_vs_market": -0.0449,
+    "market_n": 25
+   },
+   "current": {
+    "n": 25,
+    "brier": 0.1691,
+    "log_loss": 0.5132,
+    "selective_acc_75": 1.0,
+    "selective_coverage_75": 0.28,
+    "selective_n_75": 7,
+    "market_brier": 0.159,
+    "bss_vs_market": -0.0636,
+    "market_n": 25
+   },
+   "lifetime": {
+    "n": 169,
+    "brier": 0.2069,
+    "log_loss": 0.6033,
+    "selective_acc_75": 0.7857,
+    "selective_coverage_75": 0.2485,
+    "selective_n_75": 42,
+    "market_brier": 0.1998,
+    "bss_vs_market": -0.0351,
+    "market_n": 169
+   },
+   "windows": {
+    "LIFETIME": {
+     "n": 169,
+     "brier": 0.2069,
+     "log_loss": 0.6033,
+     "selective_acc_75": 0.7857,
+     "selective_coverage_75": 0.2485,
+     "selective_n_75": 42,
+     "market_brier": 0.1998,
+     "bss_vs_market": -0.0351,
+     "market_n": 169
+    },
+    "LAST_100": {
+     "n": 100,
+     "brier": 0.2073,
+     "log_loss": 0.6069,
+     "selective_acc_75": 0.8095,
+     "selective_coverage_75": 0.21,
+     "selective_n_75": 21,
+     "market_brier": 0.2021,
+     "bss_vs_market": -0.0257,
+     "market_n": 100
+    },
+    "LAST_50": {
+     "n": 50,
+     "brier": 0.1971,
+     "log_loss": 0.592,
+     "selective_acc_75": 0.9091,
+     "selective_coverage_75": 0.22,
+     "selective_n_75": 11,
+     "market_brier": 0.1978,
+     "bss_vs_market": 0.0038,
+     "market_n": 50
+    },
+    "LAST_25": {
+     "n": 25,
+     "brier": 0.1691,
+     "log_loss": 0.5132,
+     "selective_acc_75": 1.0,
+     "selective_coverage_75": 0.28,
+     "selective_n_75": 7,
+     "market_brier": 0.159,
+     "bss_vs_market": -0.0636,
+     "market_n": 25
+    }
+   },
+   "self_trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1691,
+    "brier_prior_75": 0.22,
+    "delta": -0.0509,
+    "why": "Brier last-25 0.1691 vs prior-75 0.22 (\u0394 -0.0509, band \u00b10.01)"
+   },
+   "baseline_status": "NOT_ESTABLISHED \u2014 lifetime BSS vs market -0.0351",
+   "trend": {
+    "state": "IMPROVING",
+    "brier_recent_25": 0.1691,
+    "brier_prior_75": 0.22,
+    "delta": -0.0509,
+    "why": "Brier last-25 0.1691 vs prior-75 0.22 (\u0394 -0.0509, band \u00b10.01)"
+   },
+   "scoring_convention": "decision-time row (earliest settled row with mins_left <= 12) \u2014 one observation per window",
+   "min_n": {
+    "display": 10,
+    "compare": 25,
+    "gate": 50
+   }
+  }
+ },
+ "t1_serving": {
+  "h1": {
+   "model_id": "h1",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 184,
+   "kept": 62,
+   "keep_rate": 0.337,
+   "last_run_ts": 1788076819,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 203.79
+  },
+  "h5": {
+   "model_id": "h5",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 184,
+   "kept": 82,
+   "keep_rate": 0.446,
+   "last_run_ts": 1788076819,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 487.09
+  },
+  "h15": {
+   "model_id": "h15",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 184,
+   "kept": 83,
+   "keep_rate": 0.451,
+   "last_run_ts": 1788076819,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 2744.1
+  },
+  "h30": {
+   "model_id": "h30",
+   "tier": "T1",
+   "lifecycle": "CONTROL",
+   "runs": 184,
+   "kept": 88,
+   "keep_rate": 0.478,
+   "last_run_ts": 1788076819,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 6935.75
+  },
+  "t9-h1": {
+   "model_id": "t9-h1",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 184,
+   "kept": 67,
+   "keep_rate": 0.364,
+   "last_run_ts": 1788076819,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 192.82
+  },
+  "t10-h5": {
+   "model_id": "t10-h5",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 184,
+   "kept": 84,
+   "keep_rate": 0.457,
+   "last_run_ts": 1788076819,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 926.13
+  },
+  "t7-h15": {
+   "model_id": "t7-h15",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 184,
+   "kept": 55,
+   "keep_rate": 0.299,
+   "last_run_ts": 1788076819,
+   "last_decision": "KEPT",
+   "last_candidate_val_mse": 1821.71
+  },
+  "t9-h30": {
+   "model_id": "t9-h30",
+   "tier": "T1",
+   "lifecycle": "TREATMENT",
+   "runs": 184,
+   "kept": 86,
+   "keep_rate": 0.467,
+   "last_run_ts": 1788076819,
+   "last_decision": "REVERTED",
+   "last_candidate_val_mse": 8548.24
+  }
+ },
+ "provenance": {
+  "kb_source": "kalshi_binary_log.jsonl (retained tail)",
+  "runs_source": "metrics_history.jsonl"
+ }
+}

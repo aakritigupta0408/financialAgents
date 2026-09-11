@@ -1,0 +1,674 @@
+{
+ "generated_ts": 1788727212,
+ "spec": "A3_V2_SPEC.yaml",
+ "dip_c": 5.0,
+ "experiment_id": "A3-v2",
+ "predecessor": {
+  "experiment": "A3-v1.1",
+  "outcome": "CLOSED_REJECTED",
+  "final": "a3_v1_final.json"
+ },
+ "failure_watch": {
+  "paired_delta_negative": true,
+  "miss_cost_overwhelms": true,
+  "thesis_integrity": {
+   "a3_fill_win": 0.744,
+   "eligible_win": 0.832,
+   "flag": false
+  },
+  "toxic_markouts": true,
+  "outlier_concentration": null,
+  "note": "WATCH flags only \u2014 thresholds informative at n>=10; no automatic action"
+ },
+ "spec_hash": "ab0168b48c6ba794",
+ "spec_hash_frozen": "ab0168b48c6ba794",
+ "spec_hash_ok": true,
+ "exclusion_monitor": {
+  "potential_registrations": 149,
+  "system_excluded": 0,
+  "reasons": {
+   "QUOTE_MISSING": 0
+  },
+  "note": "high exclusion rate = operationally unable to capture the opportunity set"
+ },
+ "outlier_dependence": {
+  "total_delta": -2.93,
+  "delta_ex_best1": -4.261,
+  "delta_ex_best3": -6.261,
+  "top10pct_share": null
+ },
+ "shadows": {
+  "T10": {
+   "registered_ts": 1788149400,
+   "dip_c": 10.0,
+   "eligible": 149,
+   "filled": 56,
+   "pnl_per_eligible": 0.0306
+  }
+ },
+ "registered_ts": 1788149400,
+ "price_source": "EXECUTABLE event-tape asks (1s) \u2014 modeled asks forbidden (spec \u00a74); v0 ledger retained as exploratory replay only",
+ "conventions": "fill = take ask qty 1 (no depth data yet, recorded); entry cutoff 60s; quote freshness 10s",
+ "live": {
+  "state": "TRIGGERED",
+  "ticker": "KXBTC15M-26SEP061645-45",
+  "close_ts": 1788727500,
+  "side": "UP",
+  "call_conf": 0.764,
+  "call_ask": 78.0,
+  "call_mins_left": 8.3,
+  "trigger_ask": 73.0,
+  "entry_ask": 58.0,
+  "entry_ts": 1788727074.383159,
+  "entry_ask_sz": 2148.59,
+  "improvement_c": 20.0,
+  "entry_conf": 0.695,
+  "best_valid_price": 50.0,
+  "best_valid_improvement_c": 28.0,
+  "best_valid_ts": 1788727104.0,
+  "cutoff_ts": 1788727440,
+  "shadows": {
+   "T10": {
+    "state": "FILLED",
+    "entry_ask": 58.0,
+    "entry_ts": 1788727074.383159,
+    "entry_ask_sz": 2148.59,
+    "improvement_c": 20.0
+   }
+  },
+  "dip_ladder": {
+   "first_05": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_10": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_15": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_20": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   }
+  },
+  "event_first": "DIP",
+  "time_to_first_event_s": 72.4
+ },
+ "forward": {
+  "eligible": 149,
+  "filled": 82,
+  "missed": 59,
+  "invalidated": 8,
+  "system_excluded": 0,
+  "miss_rate": 0.45,
+  "control_pnl_per_eligible": 0.0634,
+  "a3_pnl_per_eligible": 0.0438,
+  "incremental_per_eligible": -0.0197,
+  "mean_entry_improvement_c": 10.3,
+  "a3_fill_win_rate": 0.744,
+  "control_win_rate": 0.832,
+  "missed_control_pnl_total": 14.7,
+  "decomposition": {
+   "missed_winner_magnitude": {
+    "n_missed_winners": 59,
+    "mean_c": 29.6,
+    "median_c": 29.4,
+    "p75_c": 36.2,
+    "p90_c": 43.8,
+    "largest_c": 79.4,
+    "top1_share_of_miss_cost": 0.045,
+    "top3_share_of_miss_cost": 0.104
+   },
+   "gross_fill_gain": 11.7704,
+   "timeout_control_pnl": 17.4701,
+   "missed_control_pnl": 0,
+   "invalidation_control_pnl": -2.7699,
+   "net_waiting_value": -2.9298,
+   "identity_residual": -0.0,
+   "note": "under A3-v1.1 MISSED \u2261 timed-out (dip never arrived by cutoff), so missed_control_pnl is 0 unless a new state path appears; differential execution costs are inside gross_fill_gain (both arms priced at their own executable ask)",
+   "econ_classes": {
+    "A_FILLED_GOOD": {
+     "n": 82,
+     "delta_contribution": 11.7704
+    },
+    "C_MISSED_WINNER": {
+     "n": 59,
+     "delta_contribution": -17.4701
+    },
+    "F_INVALIDATED_LOSER": {
+     "n": 4,
+     "delta_contribution": 4.0
+    },
+    "E_INVALIDATED_WINNER": {
+     "n": 4,
+     "delta_contribution": -1.2301
+    }
+   }
+  }
+ },
+ "recent_settled": [
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061630-30",
+   "close_ts": 1788726600,
+   "side": "UP",
+   "call_conf": 0.795,
+   "call_ask": 76.0,
+   "call_mins_left": 10.0,
+   "trigger_ask": 71.0,
+   "entry_ask": 57.0,
+   "entry_ts": 1788726000.6186419,
+   "entry_ask_sz": 3224.15,
+   "improvement_c": 19.0,
+   "entry_conf": 0.795,
+   "best_valid_price": 57.0,
+   "best_valid_improvement_c": 19.0,
+   "best_valid_ts": 1788726000.6,
+   "cutoff_ts": 1788726540,
+   "shadows": {
+    "T10": {
+     "state": "FILLED",
+     "entry_ask": 57.0,
+     "entry_ts": 1788726000.6186419,
+     "entry_ask_sz": 3224.15,
+     "improvement_c": 19.0,
+     "pnl": 0.7031
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788726000.6,
+     "price": 57.0,
+     "conf": 0.795
+    },
+    "first_10": {
+     "ts": 1788726000.6,
+     "price": 57.0,
+     "conf": 0.795
+    },
+    "first_15": {
+     "ts": 1788726000.6,
+     "price": 57.0,
+     "conf": 0.795
+    },
+    "first_20": null
+   },
+   "event_first": "DIP",
+   "time_to_first_event_s": 0.6,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.294,
+   "c0_markout_1s": -20.0,
+   "c0_markout_5s": -20.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": -1.0,
+   "c0_markout_60s": 11.0,
+   "a3_pnl": 0.7031,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": 18.0,
+   "markout_30s": 18.0,
+   "markout_60s": 30.0,
+   "ecr": 1.0,
+   "wait_regret_c": 0.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "MISSED",
+   "ticker": "KXBTC15M-26SEP061545-45",
+   "close_ts": 1788723900,
+   "side": "DOWN",
+   "call_conf": 0.758,
+   "call_ask": 66.0,
+   "call_mins_left": 9.7,
+   "trigger_ask": 61.0,
+   "best_valid_price": 66.0,
+   "best_valid_improvement_c": 0.0,
+   "best_valid_ts": 1788723318.4,
+   "cutoff_ts": 1788723840,
+   "shadows": {
+    "T10": {
+     "state": "MISSED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": null,
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "TIMEOUT",
+   "time_to_first_event_s": 522.0,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.4799,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 11.0,
+   "c0_markout_60s": 11.0,
+   "a3_pnl": 0.0,
+   "econ_class": "C_MISSED_WINNER"
+  },
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061530-30",
+   "close_ts": 1788723000,
+   "side": "DOWN",
+   "call_conf": 0.789,
+   "call_ask": 62.0,
+   "call_mins_left": 8.8,
+   "trigger_ask": 57.0,
+   "entry_ask": 57.0,
+   "entry_ts": 1788722709.2029529,
+   "entry_ask_sz": 1478.8,
+   "improvement_c": 5.0,
+   "entry_conf": 0.716,
+   "best_valid_price": 57.0,
+   "best_valid_improvement_c": 5.0,
+   "best_valid_ts": 1788722709.2,
+   "cutoff_ts": 1788722940,
+   "shadows": {
+    "T10": {
+     "state": "INVALIDATED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788722709.2,
+     "price": 57.0,
+     "conf": 0.716
+    },
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "INVALIDATION",
+   "time_to_first_event_s": 252.1,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.5711,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 17.0,
+   "c0_markout_60s": 14.0,
+   "a3_pnl": 0.7031,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": -1.0,
+   "markout_30s": -13.0,
+   "markout_60s": 6.0,
+   "ecr": 1.0,
+   "wait_regret_c": 0.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "MISSED",
+   "ticker": "KXBTC15M-26SEP061445-45",
+   "close_ts": 1788720300,
+   "side": "UP",
+   "call_conf": 0.823,
+   "call_ask": 79.0,
+   "call_mins_left": 8.9,
+   "trigger_ask": 74.0,
+   "best_valid_price": 79.0,
+   "best_valid_improvement_c": 0.0,
+   "best_valid_ts": 1788719766.1,
+   "cutoff_ts": 1788720240,
+   "shadows": {
+    "T10": {
+     "state": "MISSED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": null,
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "TIMEOUT",
+   "time_to_first_event_s": 474.0,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.2475,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 2.0,
+   "c0_markout_60s": 0.0,
+   "a3_pnl": 0.0,
+   "econ_class": "C_MISSED_WINNER"
+  },
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061430-30",
+   "close_ts": 1788719400,
+   "side": "UP",
+   "call_conf": 0.785,
+   "call_ask": 78.0,
+   "call_mins_left": 7.8,
+   "trigger_ask": 73.0,
+   "entry_ask": 72.0,
+   "entry_ts": 1788718932.787185,
+   "entry_ask_sz": 2731.55,
+   "improvement_c": 6.0,
+   "entry_conf": 0.785,
+   "best_valid_price": 72.0,
+   "best_valid_improvement_c": 6.0,
+   "best_valid_ts": 1788718932.8,
+   "cutoff_ts": 1788719340,
+   "shadows": {
+    "T10": {
+     "state": "MISSED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788718932.8,
+     "price": 72.0,
+     "conf": 0.785
+    },
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "TIMEOUT",
+   "time_to_first_event_s": 408.0,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.2626,
+   "c0_markout_1s": -7.0,
+   "c0_markout_5s": -7.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": -1.0,
+   "c0_markout_60s": -1.0,
+   "a3_pnl": 0.3622,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": 5.0,
+   "markout_30s": 5.0,
+   "markout_60s": 5.0,
+   "ecr": 1.0,
+   "wait_regret_c": 0.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "MISSED",
+   "ticker": "KXBTC15M-26SEP061345-45",
+   "close_ts": 1788716700,
+   "side": "UP",
+   "call_conf": 0.778,
+   "call_ask": 69.0,
+   "call_mins_left": 8.4,
+   "trigger_ask": 64.0,
+   "best_valid_price": 69.0,
+   "best_valid_improvement_c": 0.0,
+   "best_valid_ts": 1788716196.6,
+   "cutoff_ts": 1788716640,
+   "shadows": {
+    "T10": {
+     "state": "MISSED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": null,
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "TIMEOUT",
+   "time_to_first_event_s": 444.0,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.4185,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 7.0,
+   "c0_markout_60s": 10.0,
+   "a3_pnl": 0.0,
+   "econ_class": "C_MISSED_WINNER"
+  },
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061330-30",
+   "close_ts": 1788715800,
+   "side": "UP",
+   "call_conf": 0.825,
+   "call_ask": 81.0,
+   "call_mins_left": 10.7,
+   "trigger_ask": 76.0,
+   "entry_ask": 69.0,
+   "entry_ts": 1788715250.563505,
+   "entry_ask_sz": 1019.03,
+   "improvement_c": 12.0,
+   "entry_conf": 0.72,
+   "best_valid_price": 69.0,
+   "best_valid_improvement_c": 12.0,
+   "best_valid_ts": 1788715250.6,
+   "cutoff_ts": 1788715740,
+   "shadows": {
+    "T10": {
+     "state": "FILLED",
+     "entry_ask": 69.0,
+     "entry_ts": 1788715250.563505,
+     "entry_ask_sz": 1019.03,
+     "improvement_c": 12.0,
+     "pnl": 0.4185
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788715250.6,
+     "price": 69.0,
+     "conf": 0.72
+    },
+    "first_10": {
+     "ts": 1788715250.6,
+     "price": 69.0,
+     "conf": 0.72
+    },
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "DIP",
+   "time_to_first_event_s": 92.6,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.2184,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 1.0,
+   "c0_markout_60s": 1.0,
+   "a3_pnl": 0.4185,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": -1.0,
+   "markout_30s": 7.0,
+   "markout_60s": 13.0,
+   "ecr": 1.0,
+   "wait_regret_c": 0.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061130-30",
+   "close_ts": 1788708600,
+   "side": "UP",
+   "call_conf": 0.77,
+   "call_ask": 79.0,
+   "call_mins_left": 12.5,
+   "trigger_ask": 74.0,
+   "entry_ask": 69.0,
+   "entry_ts": 1788707884.781049,
+   "entry_ask_sz": 1934.63,
+   "improvement_c": 10.0,
+   "entry_conf": 0.77,
+   "best_valid_price": 61.0,
+   "best_valid_improvement_c": 18.0,
+   "best_valid_ts": 1788707914.2,
+   "cutoff_ts": 1788708540,
+   "shadows": {
+    "T10": {
+     "state": "FILLED",
+     "entry_ask": 69.0,
+     "entry_ts": 1788707884.781049,
+     "entry_ask_sz": 1934.63,
+     "improvement_c": 10.0,
+     "pnl": 0.4185
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788707884.8,
+     "price": 69.0,
+     "conf": 0.77
+    },
+    "first_10": {
+     "ts": 1788707884.8,
+     "price": 69.0,
+     "conf": 0.77
+    },
+    "first_15": {
+     "ts": 1788707914.2,
+     "price": 61.0,
+     "conf": 0.728
+    },
+    "first_20": null
+   },
+   "event_first": "DIP",
+   "time_to_first_event_s": 34.8,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.2475,
+   "c0_markout_1s": -2.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": -1.0,
+   "c0_markout_60s": -11.0,
+   "a3_pnl": 0.4185,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": -1.0,
+   "markout_30s": -9.0,
+   "markout_60s": -9.0,
+   "ecr": 0.556,
+   "wait_regret_c": 8.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "FILLED",
+   "ticker": "KXBTC15M-26SEP061045-45",
+   "close_ts": 1788705900,
+   "side": "DOWN",
+   "call_conf": 0.8,
+   "call_ask": 71.0,
+   "call_mins_left": 12.5,
+   "trigger_ask": 66.0,
+   "entry_ask": 59.0,
+   "entry_ts": 1788705603.404431,
+   "entry_ask_sz": 40.12,
+   "improvement_c": 12.0,
+   "entry_conf": 0.65,
+   "best_valid_price": 59.0,
+   "best_valid_improvement_c": 12.0,
+   "best_valid_ts": 1788705603.4,
+   "cutoff_ts": 1788705840,
+   "shadows": {
+    "T10": {
+     "state": "FILLED",
+     "entry_ask": 59.0,
+     "entry_ts": 1788705603.404431,
+     "entry_ask_sz": 40.12,
+     "improvement_c": 12.0,
+     "pnl": -1.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": {
+     "ts": 1788705603.4,
+     "price": 59.0,
+     "conf": 0.65
+    },
+    "first_10": {
+     "ts": 1788705603.4,
+     "price": 59.0,
+     "conf": 0.65
+    },
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "DIP",
+   "time_to_first_event_s": 453.4,
+   "won": false,
+   "settled": true,
+   "control_pnl": -1.0,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": 3.0,
+   "c0_markout_60s": 9.0,
+   "a3_pnl": -1.0,
+   "markout_1s": -1.0,
+   "markout_5s": -1.0,
+   "markout_10s": -1.0,
+   "markout_30s": -2.0,
+   "markout_60s": -2.0,
+   "ecr": 1.0,
+   "wait_regret_c": 0.0,
+   "econ_class": "A_FILLED_GOOD"
+  },
+  {
+   "state": "MISSED",
+   "ticker": "KXBTC15M-26SEP061030-30",
+   "close_ts": 1788705000,
+   "side": "DOWN",
+   "call_conf": 0.793,
+   "call_ask": 86.0,
+   "call_mins_left": 8.2,
+   "trigger_ask": 81.0,
+   "best_valid_price": 82.0,
+   "best_valid_improvement_c": 4.0,
+   "best_valid_ts": 1788704536.6,
+   "cutoff_ts": 1788704940,
+   "shadows": {
+    "T10": {
+     "state": "MISSED",
+     "pnl": 0.0
+    }
+   },
+   "dip_ladder": {
+    "first_05": null,
+    "first_10": null,
+    "first_15": null,
+    "first_20": null
+   },
+   "event_first": "TIMEOUT",
+   "time_to_first_event_s": 432.0,
+   "won": true,
+   "settled": true,
+   "control_pnl": 0.1515,
+   "c0_markout_1s": -1.0,
+   "c0_markout_5s": -1.0,
+   "c0_markout_10s": -1.0,
+   "c0_markout_30s": -5.0,
+   "c0_markout_60s": -5.0,
+   "a3_pnl": 0.0,
+   "econ_class": "C_MISSED_WINNER"
+  }
+ ]
+}

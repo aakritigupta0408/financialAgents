@@ -1,0 +1,77 @@
+# ARTIFACT_CLASSES.yaml v1.0.0 — 2026-08-31 (M6.2 R2 boundary)
+# Machine-readable law: ONLY class DERIVED_REBUILDABLE may enter the
+# R2 repair path. Sources and configs are never "repaired" — a
+# damaged source is an incident, not a rebuild target.
+
+version: 1.0.0
+
+immutable_source:      # append-only evidence — R2 REFUSES these
+  - kalshi_binary_log.jsonl
+  - prediction_log.jsonl
+  - treatments.jsonl
+  - pt_trades.jsonl
+  - feature_snapshots.jsonl
+  - a3v2_window_evaluation.jsonl
+  - a3_v1_final.json                # CLOSED experiment — invariant-
+  - a3_v1_window_evaluation.jsonl   # guarded shas; rebuild=impossible
+  - a3_v1_decision.json
+  - system_change_log.jsonl
+  - agent_recommendations.jsonl
+  - self_heal.jsonl
+  - incidents.jsonl
+  - metrics_history.jsonl
+  - training_runs.jsonl
+
+canonical_config:      # governance files — never runtime-rebuilt
+  - A3_SPEC.yaml
+  - A3_V2_SPEC.yaml
+  - METRICS.yaml
+  - FEATURE_REGISTRY.yaml
+  - COMPONENT_REGISTRY.yaml
+  - M6_REPAIRS.yaml
+  - M5_CLOSE.yaml
+
+derived_rebuildable:   # presentation/analysis state — R2 eligible
+  pm_snapshot.json:
+    emitter: scripts/emit_pm_snapshot.py
+    slo_s: 1800
+    upstreams: [a3_live.json, program.json, invariants.json]
+    semantic: a3_n_exact          # doc.a3.n == a3_live.forward.eligible
+  experiment_analysis.json:
+    emitter: scripts/agent_experiment_analyst.py
+    slo_s: 1800
+    upstreams: [a3_live.json]
+    semantic: experiment_scope    # n + experiment_id match a3_live;
+                                  # provenance may not reference the
+                                  # closed v1 generation
+  data_health.json:
+    emitter: scripts/agent_data_reliability.py
+    slo_s: 1800
+    upstreams: [online_status.json, event_capture.json]
+    semantic: enum_overall
+  monitor_health.json:
+    emitter: scripts/emit_monitor_health.py
+    slo_s: 1800
+    upstreams: []
+    semantic: enum_overall
+  research_queue.json:
+    emitter: scripts/agent_research_manager.py
+    slo_s: 3600
+    upstreams: [a3_live.json, model_qualification.json]
+    semantic: queue_hierarchy     # non-empty, P0 present
+  information_timing.json:
+    emitter: scripts/agent_model_researcher.py
+    slo_s: 3600
+    upstreams: [kalshi_binary_log.jsonl]
+    semantic: fields_present
+
+law:
+  upstream_gate: "an artifact may be rebuilt ONLY while every listed
+    upstream is fresh and parseable — rebuilding from untrusted input
+    is FAILED_CLOSED / UPSTREAM_UNHEALTHY, not a repair"
+  lineage_gate: "recovery may never splice scientific generations:
+    a v2-scoped artifact referencing the closed v1 ledger (or vice
+    versa) is VERIFICATION_FAIL regardless of JSON validity"
+  atomicity: "prior artifact preserved as .pre_rebuild before any
+    attempt; a failed rebuild leaves the last-known file on disk
+    while its operational state stays STALE/UNAVAILABLE"

@@ -1,0 +1,65 @@
+# F-AV1 — Alpha Vantage exogenous-feature SCREEN (backfill backtest).
+# STATUS: SPEC_ONLY / Research plane (D). This is a SCREEN, not a
+# qualifying experiment: a backfilled backtest cannot honor real
+# receipt-time PIT (that information no longer exists), so it can only
+# ELIMINATE features / test sigma-calibration and rank survivors for a
+# PROSPECTIVE F-AV slot. It can never emit QUALIFY.
+version: 0.1-spec
+id: F-AV1
+tier: T1/T2          # exogenous information for forecast + probability
+plane: D
+status: SPEC_ONLY
+
+governing_question: >
+  Do Alpha Vantage exogenous features (equity-risk regime, dollar,
+  macro state) carry information about the settlement residual
+  (actual - mkt_p_up) that the BTC tape — and therefore the market —
+  does not already price? If a feature's partial contribution vanishes
+  conditional on price, it is ELIMINATED here and never gets a
+  prospective slot.
+
+honest_framing:
+  - AV is a polling REST source: strictly SLOWER than the market, so it
+    can never give a latency edge on BTC-price-derived signal.
+  - backfill CANNOT reconstruct true receipt time -> the receipt-time
+    latency model (av_features.receipt_available_ts) is a deliberate,
+    HANDICAPPED assumption owned by a human, not a fitted quantity.
+  - expected primary win is sigma-CALIBRATION (regime-aware volatility),
+    not directional alpha. Elimination is the honest main output.
+
+target: settlement residual  (actual - mkt_p_up)  per settled window
+reference_windows: results/kalshi_binary_log.jsonl  (variant kb2, 192
+  unique settled windows, keyed on made_ts = decision time, UTC epoch)
+
+feature_families:            # Tier-A first; each family tested independently
+  equity_regime:  [spy_ret_15m, spy_ret_60m, spy_rvol_30m, spy_staleness_min,
+                   equity_session_open]
+  dollar:         [uup_ret_60m, uup_staleness_min]
+  macro_state:    [yield_10y_level, yield_10y_chg_1d, fed_funds_level]
+
+# the four gates a surviving family must pass BEFORE a prospective slot
+gates_in_order:
+  - redundancy:   partial correlation with residual | price  != 0
+  - resolution:   conditioning on the feature changes outcome distribution
+  - monotonicity: higher predicted residual advantage -> better realized EV
+  - economics:    yields >=1 feasible decision-frontier point (bad-entry<=0.10)
+
+method:
+  cv: purged + embargoed chronological folds (embargo >= 1 label horizon)
+  ci: block bootstrap
+  decision_rule: FROZEN before fitting; one winner per family; losers gone
+  holdout: chronological tail scored ONCE; no retuning after
+falsification_canaries:          # any drift = run void
+  - label_shuffle_auc in [0.40, 0.60]
+  - prediction_shuffle_auc in [0.40, 0.60]
+  - av_future_correlation: features must not correlate with post-decision
+    price beyond what receipt_available_ts permits
+outputs:
+  - results/av_features.jsonl        (PIT feature matrix, this harness)
+  - results/f_av1_screen.json        (verdicts per family; NEXT step)
+verdict_space: [ELIMINATE, PROMISING_PROSPECTIVE_SLOT]   # never QUALIFY
+integrity:
+  - screen-only; frozen gates remain the sole authority for any launch
+  - no fitting before F1 freezes is NOT required for the SCREEN (screening
+    on backfill is not peeking at F1's prospective evidence); but any
+    resulting prospective F-AV slot runs AFTER F1, PIT-live.

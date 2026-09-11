@@ -28,7 +28,13 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 
 PAGES = ["home.html", "live_online.html", "experiment_review.html",
          "live_training.html", "index.html", "theme.css",
-         "ab_dashboard.html"]
+         "ab_dashboard.html", "sev0.html", "metrics_lab.html",
+         "board.html", "analyst.html", "home_classic.html", "glossary.js", "glossary.json", "nav.js",
+         "universe.html", "clock.html", "agents.html", "museum.html",
+         "instrument.html", "watchtower.html", "ledgers.html",
+         "diagnosis.html", "paper.html", "archive.html", "models.html",
+         "backend.html", "experiments.html", "play.html", "traders.html",
+         "perf.html", "tiers.html", "features.html", "health.html"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -39,10 +45,92 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("kb_bets_sel.jsonl", None),
     ("kb_bets_sel_prepolicy.jsonl", None),
     ("pb_bets.jsonl", None),
+    ("pt_trades.jsonl", None),
+    ("pt2_trades.jsonl", None),
+    ("pt3_trades.jsonl", None),
+    ("pt4_trades.jsonl", None),
+    ("pt5_trades.jsonl", None),
+    ("pt6_trades.jsonl", None),
+    ("pt7_trades.jsonl", None),
+    ("pt8_trades.jsonl", None),
+    ("demo_orders.jsonl", None),
+    ("demo_account.json", None),
+    ("demo_fills.jsonl", None),
     ("metrics_history.jsonl", None),
     ("metrics.json", None),
+    ("kb_calib.json", None),
+    ("treatments.json", None),
+    ("treatments.jsonl", 2000),
     ("training_progress.jsonl", None),
     ("live_status.json", None),
+    ("audit_report.json", None),
+    ("incidents.jsonl", None),
+    ("model_internals.json", None),
+    ("board.json", None),
+    ("commentary.jsonl", None),
+    ("site_manifest.json", None),
+    ("treatments_board.json", None),
+    ("metric_fixtures.json", None),
+    ("decision_board.json", None),
+    ("world.json", None),
+    ("invariants.json", None),
+    ("model_registry.json", None),
+    ("loss_reviews.json", None),
+    ("loss_reviews.jsonl", 3000),
+    ("fill_curve.json", None),
+    ("diagnosis.json", None),
+    ("program.json", None),
+    ("readiness.json", None),
+    ("execution_ledger.json", None),
+    ("exec_sensitivity.json", None),
+    ("build_manifest.json", None),
+    ("oracle_calls.json", None),
+    ("a3_live.json", None),
+    ("a3_window_evaluation.jsonl", 2000),
+    ("model_lifecycle.json", None),
+    ("model_online.json", None),
+    ("model_offline.json", None),
+    ("training_runs.jsonl", 3000),
+    ("pm_snapshot.json", None),
+    ("model_qualification.json", None),
+    ("parity.json", None),
+    ("feature_snapshots.jsonl", 200),
+    ("system_change_log.jsonl", 500),
+    ("research_queue.json", None),
+    ("experiment_analysis.json", None),
+    ("agent_recommendations.jsonl", 500),
+    ("data_health.json", None),
+    ("feature_monitor.json", None),
+    ("model_research.json", None),
+    ("execution_research.json", None),
+    ("information_timing.json", None),
+    ("xvenue_state.jsonl", 500),
+    ("f1_capture_qualification.json", None),
+    ("monitor_health.json", None),
+    ("m5_soak.json", None),
+    ("m6_soak.json", None),
+    ("repair_dependency_state.json", None),
+    ("a3_decision.json", None),
+    ("trajectory_board.json", None),
+    ("failure_store.json", None),
+    ("eod_exec_selection.json", None),
+    ("decision_frontier.json", None),
+    ("a3v21_window_evaluation.jsonl", None),
+    ("a3_v2_closure.json", None),
+    ("t1_1_result.json", None),
+    ("t1_dataset_manifest.json", None),
+    ("f1_missingness_audit.json", None),
+    ("self_heal.jsonl", 500),
+    ("a3_v1_final.json", None),
+    ("a3_v1_decision.json", None),
+    ("a3_v1_window_evaluation.jsonl", None),
+    ("a3v2_window_evaluation.jsonl", 2000),
+    ("self_heal.jsonl", 500),
+    ("agent_performance.json", None),
+    ("reconciliation.json", None),
+    ("meta_monitors.json", None),
+    ("leakage_canaries.json", None),
+    ("execution_ledger.jsonl", 2000),
 ]
 
 
@@ -67,7 +155,11 @@ def copy_bundle(dest: Path) -> None:
     (dest / "site").mkdir(parents=True, exist_ok=True)
     (dest / "results").mkdir(parents=True, exist_ok=True)
     for name in PAGES:
-        shutil.copy2(ROOT / "site" / name, dest / "site" / name)
+        src = ROOT / "site" / name
+        if not src.exists():        # a listed page may not be built
+            print(f"page missing (skipped): {name}")
+            continue
+        shutil.copy2(src, dest / "site" / name)
     for name, cap in DATA:
         src = ROOT / "results" / name
         if not src.exists():
@@ -112,6 +204,19 @@ def publish_ghpages() -> None:
 def sync_main() -> None:
     if STAMP.exists() and time.time() - STAMP.stat().st_mtime < MAIN_SYNC_S:
         return
+    # SELF-HEAL (INC-2026-08-29-stale-rebase, twice): a crashed rebase
+    # leaves .git/rebase-merge + a detached HEAD; every later sync then
+    # fails or commits into the void. Heal both conditions before
+    # touching anything.
+    gitdir = SITE_REPO / ".git"
+    if (gitdir / "rebase-merge").exists() or \
+            (gitdir / "rebase-apply").exists():
+        _git(SITE_REPO, "rebase", "--abort", check=False)
+    if _git(SITE_REPO, "symbolic-ref", "-q", "HEAD",
+            check=False).returncode != 0:      # detached HEAD
+        # re-attach main AT the current commit (keeps any sync
+        # commits made while detached; push targets refs/heads/main)
+        _git(SITE_REPO, "checkout", "-B", "main", check=False)
     # rebase first: the site's own workflows commit to origin/main (e.g.
     # weekly content refresh), and a plain push then non-fast-forwards
     # and wedges every hourly sync after it
@@ -126,7 +231,11 @@ def sync_main() -> None:
         _git(SITE_REPO, "add", *staged)
         _git(SITE_REPO, "commit", "-q", "-m",
              f"btc-oracle hourly sync {time.strftime('%Y-%m-%d %H:%M')}")
-        _git(SITE_REPO, "push", "-q", _push_url(SITE_REPO), "HEAD")
+        # explicit refspec: a detached-HEAD checkout made bare "HEAD"
+        # unresolvable remotely (2026-08-29) — the push failed every
+        # minute and stacked local sync commits until reattached
+        _git(SITE_REPO, "push", "-q", _push_url(SITE_REPO),
+             "HEAD:refs/heads/main")
         print("main: synced")
     STAMP.touch()
 

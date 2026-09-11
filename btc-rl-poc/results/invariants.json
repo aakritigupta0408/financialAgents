@@ -1,0 +1,80 @@
+{
+ "generated_ts": 1788069438,
+ "passed": 12,
+ "failed": 0,
+ "health": "green",
+ "checks": [
+  {
+   "name": "one-decision-per-window",
+   "origin": "trader-lockout bug 08-28 + owner guarantee 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "ledger-monotonic-close-ts",
+   "origin": "settle-ordered replay discipline",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "no-duplicate-treatment-windows",
+   "origin": "windows-not-rows law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "fee-formula-parity",
+   "origin": "per-contract fee rounding bug ($2,355)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "gambler-v3-sweep",
+   "origin": "owner decision D-gambler-sizing 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "decision-quote-age",
+   "origin": "stale-quote treatment bug (fake +11.75%)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "skip-is-not-missing",
+   "origin": "decision-board INVALID bug 08-29",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "frozen-controls-untouched",
+   "origin": "additive-only law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "withdrawals-never-restaked",
+   "origin": "D-gambler-sizing ledger law",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "analytics-freshness",
+   "origin": "oversized-crontab silent failure 08-29 (chain dead 2.7h)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "a3-experiment-integrity",
+   "origin": "A3-v1.1 evaluator spec \u00a753 (A3-02..06,10,11)",
+   "ok": true,
+   "detail": []
+  },
+  {
+   "name": "a3-independent-artifact-audit",
+   "origin": "A3 measurement spec \u00a741 (A3-13,15,19,21,22) \u2014 the evaluator may not certify its own implementation",
+   "ok": true,
+   "detail": []
+  }
+ ]
+}

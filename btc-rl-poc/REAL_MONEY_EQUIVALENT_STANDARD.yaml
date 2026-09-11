@@ -1,0 +1,142 @@
+# REAL_MONEY_EQUIVALENT_STANDARD v1.0.0 — 2026-08-29
+#
+# The canonical qualification specification (master directive §3).
+# GOVERNANCE: agents and models may NOT modify this file automatically.
+# Changing any rule here is a governance event: explicit code change,
+# version increment, DECISIONS.md entry ratified by the owner.
+#
+# The UI reads readiness from machine-generated evidence
+# (results/readiness.json, emitted by scripts/emit_readiness.py).
+# The UI never decides readiness. UNKNOWN is never GREEN.
+
+version: 1.0.5
+# 1.0.5 (2026-08-29): recovery R2->R3 — chaos suite 5/5 PASS (live daemon
+# kill/recovery, zero dupes, reconcile OK; atomicity/malformed/staleness
+# drills); INC-dup-daemons found+closed; daemon-singleton monitor added.
+# 1.0.4 (2026-08-29): security R1->R2 — dependency lock (479 pkgs),
+# env digest, 47 artifact checksums, secret scan CLEAN
+# (build_manifest.json). Remaining gaps listed inside it.
+# 1.0.3 (2026-08-29): execution R1->R2 — quote-age sensitivity curves
+# + E1/E2/E3 models live (survives E2 +2.7c, fails E3 -3.8c; the
+# momentum-inflated-ask finding). Ratified in DECISIONS.md.
+# 1.0.2 (2026-08-29): evidence updates ratified in DECISIONS.md —
+# SRM gate live (deficits/dupes → INVALID), leakage-canary + placebo
+# suite 6/6 PASS on cron, monitor-of-monitors on independent cron,
+# fail-closed runtime states in the daemon. experimentation R5→R6
+# (paired A/B WITH SRM now true); blocker texts corrected.
+# 1.0.1 (2026-08-29): factual correction only, no level changes —
+# retraining blocker text was wrong: permanent history EXISTS
+# (metrics_history.jsonl, 167 retrain records since 08-20 with git
+# SHA + per-arm gate outcomes). Ratified in DECISIONS.md.
+
+r_levels:
+  R0: experimental
+  R1: offline validated
+  R2: adversarial validated (placebo/leakage-canary/red-team pass)
+  R3: historical replay validated
+  R4: live shadow validated
+  R5: paper canary validated
+  R6: paired paper A/B validated (with SRM)
+  R7: long-running soak validated
+  R8: real-money-equivalent qualified
+
+aggregation: MIN            # never average; weakest plane wins
+
+# Hard invariants — any failure caps the named plane at R0 and is SEV-0
+hard_invariants:
+  production_execution_adapter_exists: false
+  production_credentials_detected: false
+  future_data_violations: 0
+  unresolved_sev0: 0
+
+# Live downgrade rules the emitter applies on every run
+downgrades:
+  - if: invariants_health != green
+    then: cap_system_at R0
+  - if: auditor_age_min > 20
+    then: freeze_qualification            # §48
+  - if: decision_board_integrity != green
+    then: cap plane experimentation at R1
+  - if: heartbeat_age_s > 300
+    then: cap plane data at R1
+
+# Assessed baseline per plane (owner-ratified 2026-08-29; each entry
+# names its evidence and the FIRST missing requirement = the blocker).
+# The emitter may only DOWNGRADE from here, never upgrade.
+planes:
+  data:
+    assessed: R3
+    evidence: live validation + full-tape replay (ticks.jsonl) + freshness monitors
+    blocker_to_next: "R4 gap: no point-in-time 4-timestamp model (§9) — leakage canaries + placebos LIVE, 6/6 PASS"
+  forecast_t1:
+    assessed: R4
+    evidence: offline eval + hourly gated retrains + logged-only live shadow since 08-20
+    blocker_to_next: "R5 gap: no canary routing; no purged/CPCV offline framework (§18)"
+  probability_t2:
+    assessed: R4
+    evidence: prequential BSS-vs-market live shadow; frozen controls
+    blocker_to_next: "R5 gap: same; also BSS<=0 (a strategy fact, not a system fact)"
+  uncertainty:
+    assessed: R3
+    evidence: z-normalized bands post-SEV-0, coverage monitored (0.73-0.78)
+    blocker_to_next: "R4 gap: no pre-registered warning/failure zones live (§21)"
+  decision:
+    assessed: R6
+    evidence: paired same-window A/B with SPRT, family-wise alpha, 190+ windows
+    blocker_to_next: "R7 gap: soak criteria (§61) — SRM now live"
+  execution:
+    assessed: R2
+    evidence: model-basis quotes + real-fill family; measured -5.3c gap; execution ledger LIVE (531 orders, +1m/+5m markouts, adverse selection measured -0.9pp@1m, provenance-labeled)
+    blocker_to_next: "R3 gap: historical-replay validation of the E2 fill model against real recorded fills; sub-minute latency still UNAVAILABLE at data granularity"
+  risk_capital:
+    assessed: R3
+    evidence: per-trader caps, Kelly fractions, v3 sweep conservation invariant
+    blocker_to_next: "R4 gap: no unified risk engine above policy (§41), no CVaR/halt states"
+  experimentation:
+    assessed: R6
+    evidence: pre-registration in code, decision board CI/MDE/power, mechanism checks
+    blocker_to_next: "R7 gap: dependence-aware effective-n (§33); soak criteria (§61)"
+  retraining:
+    assessed: R3
+    evidence: hourly holdout gate keep/revert, Adam-state checkpoints, permanent history (metrics_history.jsonl, 167 records since 08-20 w/ git SHA)
+    blocker_to_next: "R4 gap: no slice-regression gate or equivalence region in the promotion rule (§17)"
+  audit:
+    assessed: R3
+    evidence: dual-implementation parity (27 fixtures), 10-invariant wall, independent reconciler (7 checks, 1211 rows to the cent), 10-min cadence
+    blocker_to_next: "R4 gap: auditor freshness SLO burn (§48) — independent money-math LIVE (reconcile.py, caught INC-fee-floor on first run)"
+  observability:
+    assessed: R3
+    evidence: watchtower planes, monitor cadences, freshness invariant
+    blocker_to_next: "R4 gap: SLO burn tracking (§65) — monitor-of-monitors LIVE on independent cron"
+  recovery:
+    assessed: R3
+    evidence: chaos suite 5/5 (tests/chaos_drills.py) — live kill/recovery with zero dupes + reconcile OK; atomicity/malformed/staleness drills; daemon-singleton monitor
+    blocker_to_next: "R4 gap: scheduled rollback drills (§62); FREEZE-branch live test needs a maintenance window (deferred honestly)"
+  security:
+    assessed: R2
+    evidence: demo-only order code; prod market-data read-only; requirements.lock (479 pkgs) + env digest + 47 artifact sha256s + secret scan clean (build_manifest.json)
+    blocker_to_next: "R3 gap: SBOM + vulnerability scan + containerized reproducible env (§63)"
+
+# Strategy qualification (§83-84) — SEPARATE from system readiness
+strategy_gate:
+  tradable_equivalent_requires:
+    - bss_vs_market > 0 with adequate uncertainty evidence
+    - net_ev_after_conservative_costs > 0
+    - sprt_promote_boundary_crossed
+    - regime_robustness (no catastrophic powered slice)
+    - no_jackpot_dependence (top-3 share bounded)
+    - mechanism_supported
+    - soak_complete
+  current_status: NO QUALIFIED EDGE   # honest as of v1: best BSS -0.0016
+
+# Lean program law (§5): max 3 active treatments per tier
+lean_law:
+  max_active_treatments_per_tier: 3
+
+slos:                                   # §65 initial candidates
+  critical_ledger_integrity: 1.0
+  duplicate_decisions: 0
+  future_data_violations: 0
+  reconciliation: 1.0
+  auditor_success: 0.999
+  unresolved_sev0: 0

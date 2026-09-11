@@ -1,0 +1,12 @@
+{
+ "generated_ts": 1789028126,
+ "invariant_wall_state": "GREEN",
+ "invariant_wall_age_s": 320,
+ "daemon_cached_state": "NORMAL",
+ "daemon_cached_why": null,
+ "daemon_heartbeat_age_s": 20,
+ "state_age_s": 320,
+ "expected_next_refresh_s": 90,
+ "disagree": false,
+ "note": "wall and desk agree"
+}

@@ -1,0 +1,96 @@
+# CHAMPION-vLean — registered NON-INFERIORITY experiment to lean the
+# champion's leader pool (PM 2026-09-07/09-08). STATUS: SPEC_ONLY.
+#
+# WHY AN EXPERIMENT, NOT A CLEANUP: btc_rl/online.py:529 —
+#   PT_ARMS = (kb2, kb3, kb4, kb7, kb8, kb9)
+# are members of the FROZEN champion (the T3 decision CONTROL).
+# Removing any in place makes CONTROL_before != CONTROL_after, so the
+# historical experiment is no longer byte-equivalent to the current
+# control — a governance violation (model-parity, SEV-0 class).
+# "Runtime reachability beats registry intention": a load-bearing arm
+# is retired only by a registered champion change, reversible and
+# measurable.
+version: 0.2-spec
+experiment_id: CHAMPION-vLean
+status: SPEC_ONLY
+tier: T3-decision
+
+# The hypothesis is NOT "are these arms bad?" (largely known
+# individually) — it is SIMPLIFICATION WITHOUT DEGRADATION.
+hypothesis: >
+  The champion can be simplified by removing low-value leader-pool
+  members (kb3, kb7, kb8, kb9) WITHOUT materially degrading its
+  predictive, economic, robustness, or operational behavior.
+objective: non-inferiority with lower complexity — NOT superiority.
+
+control: CHAMPION-vCurrent (frozen pool kb2,kb3,kb4,kb7,kb8,kb9)
+treatment: CHAMPION-vLean (pool reduced to kb2, kb4)
+
+# vLean is evaluated as a NON-INFERIORITY candidate, never as an
+# alpha-seeking challenger. Scorecard (all paired, same windows):
+scorecard:
+  performance:
+    - delta_bss_vs_current_champion
+    - delta_paired_ev_per_$1
+    - calibration_degradation (slope/intercept/ECE drift)
+    - resolution_degradation
+    - coverage_change
+    - worst_regime_degradation
+  behavior:
+    - changed_window_rate           # fraction of windows where the
+    #                                 decision differs at all
+    - disagreement_rate             # vLean vs vCurrent side/size
+  complexity_reduction:
+    - latency_compute_reduction
+    - dependency_count_reduction    # 6 arms -> 2
+    - monitoring_burden_reduction
+
+# FROZEN non-inferiority margin (registered before any result).
+promotion_rule: >
+  vLean may promote iff ALL hold:
+    (a) every performance degradation < registered tolerance
+        (non_inferiority_margin below), on paired evidence with CI;
+    (b) NO risk/integrity guardrail worsens (parity, coverage floor,
+        worst-regime, drawdown);
+    (c) complexity materially decreases (dependency + monitoring).
+non_inferiority_margin:
+  bss_drop_max: 0.005              # vLean BSS may sit at most this
+  #                                  far below vCurrent (CI-bounded)
+  ev_drop_max_c_per_$1: 0.5
+  coverage80_band: [0.72, 0.88]
+  worst_regime_drop_max: 0.01
+  # margins are placeholders pending PM ratification of exact values
+
+# CHANGED-WINDOW ATTRIBUTION (PM 09-08): a mechanism check, not just
+# an aggregate. For every window where vLean != vCurrent, record:
+changed_window_record:
+  - old_champion_output            # side, size, p
+  - new_champion_output
+  - attributed_removed_arm         # which dropped arm caused the flip
+  - market_state                   # regime, distance-to-strike, vol
+  - outcome                        # settled result
+  - economic_consequence           # paired PnL delta on that window
+rationale: >
+  If vLean drops four arms but produces the SAME downstream decision
+  on ~98% of windows, the important ~2% deserve inspection — that is
+  where the removed arms actually mattered, and it turns an aggregate
+  score into a causal explanation.
+
+# SERIALIZATION (PM 09-08): shadow generation may start any time, but
+# FORMAL evaluation is serialized — vLean does not consume the single
+# downstream formal-treatment slot while t_exec_reg holds it.
+scheduling:
+  shadow: allowed now (observe-only, no formal slot)
+  formal_slot: BLOCKED until t_exec_reg resolves (one formal
+    downstream treatment at a time)
+
+guardrails:
+  - never mutate the frozen champion in place — vLean is a NEW arm
+  - model-parity invariant stays green throughout (vCurrent
+    byte-equivalent until vLean formally promotes)
+  - reversible: if vLean underperforms the margin, vCurrent stands
+
+# Until this experiment runs and qualifies, kb3/kb7/kb8/kb9 REMAIN
+# serving as champion-internal (runtime unchanged); they are
+# RETIRED_FROM_T2_CONTENTION (no independent challenger traffic) but
+# NOT removed. See COMPONENT_REGISTRY three-field separation.

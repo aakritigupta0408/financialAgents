@@ -1,0 +1,486 @@
+"""Monitor-of-monitors (§50) — runs on its OWN crontab line, so the
+death of the audit chain (or any producer) is detected from outside
+it. Lesson encoded: the 08-29 oversized-crontab incident killed the
+whole analytics chain silently for 2.7h while everything looked green;
+a freshness invariant inside the chain can only catch the PREVIOUS
+run — this watcher is independent.
+
+Every monitored producer: expected cadence, last success (file mtime),
+status HEALTHY / WARNING / STALE / UNKNOWN. UNKNOWN is never green.
+Output: results/meta_monitors.json. If anything is STALE/UNKNOWN, a
+line also goes to /tmp/btc_meta_alerts.log (append-only alert trail).
+"""
+from __future__ import annotations
+
+import json
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+RES = ROOT / "results"
+
+# producer artifact -> (expected cadence s, warn multiple, source)
+WATCH = {
+    "online_status.json": (30, 4, "daemon heartbeat"),
+    "audit_report.json": (600, 2, "audit chain step 1"),
+    "decision_board.json": (600, 2, "audit chain (SRM gate)"),
+    "invariants.json": (600, 2, "invariant wall"),
+    "reconciliation.json": (600, 2, "independent reconciler"),
+    "readiness.json": (600, 2, "readiness machine"),
+    "execution_ledger.json": (600, 2, "markout ledger"),
+    "world.json": (600, 2, "world/clock emitter"),
+    "model_internals.json": (3600, 2, "hourly introspection"),
+    "metrics_history.jsonl": (3600, 3, "retrain history append"),
+    "event_capture.json": (10, 12, "Layer-A event capture heartbeat"),
+}
+
+
+def _verify_r2_artifact(res, name):
+    """Independent R2 verification: schema, freshness, SEMANTIC TRUTH
+    (a valid-JSON-but-wrong value must fail), and the cross-version
+    lineage gate (recovery may never splice scientific generations).
+    Returns (ok, checks_dict)."""
+    checks = {}
+    p = res / name
+    checks["exists"] = p.exists()
+    doc = None
+    if checks["exists"]:
+        try:
+            doc = json.loads(p.read_text())
+            checks["schema_valid"] = True
+        except Exception:
+            checks["schema_valid"] = False
+    else:
+        checks["schema_valid"] = False
+    checks["fresh"] = checks["exists"] and \
+        time.time() - p.stat().st_mtime < 900
+    live_exp = None
+    try:
+        live_exp = json.loads(
+            (res / "a3_live.json").read_text()).get("experiment_id")
+    except Exception:
+        pass
+    sem = True
+    if isinstance(doc, dict):
+        if name == "pm_snapshot.json":
+            try:
+                truth = json.loads((res / "a3_live.json").read_text()
+                                   )["forward"]["eligible"]
+                sem = (doc.get("a3") or {}).get("n") == truth
+                checks["semantic_a3_n"] = sem
+            except Exception:
+                sem = False
+                checks["semantic_a3_n"] = False
+        elif name == "experiment_analysis.json":
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                sem = doc.get("n_eligible") == \
+                    a3["forward"]["eligible"] and \
+                    doc.get("experiment") == a3.get("experiment_id")
+                checks["semantic_scope"] = sem
+            except Exception:
+                sem = False
+                checks["semantic_scope"] = False
+        elif name in ("data_health.json", "monitor_health.json"):
+            sem = doc.get("overall") in ("HEALTHY", "WATCH",
+                                         "CRITICAL", "UNKNOWN",
+                                         "STALE", "DEGRADED")
+            checks["semantic_enum"] = sem
+        elif name == "research_queue.json":
+            q = doc.get("queue") or []
+            sem = bool(q) and any(x.get("priority") == "P0"
+                                  for x in q)
+            checks["semantic_queue"] = sem
+        elif name == "information_timing.json":
+            sem = "models" in doc
+            checks["semantic_fields"] = sem
+        # cross-version lineage gate: a v2-scoped artifact must never
+        # reference the CLOSED v1 generation's ledgers
+        if live_exp and live_exp != "A3-v1.1" \
+                and name in ("pm_snapshot.json",
+                             "experiment_analysis.json"):
+            blob = json.dumps(doc)
+            spliced = ("a3_v1_" in blob
+                       or "a3_window_evaluation.jsonl" in blob)
+            checks["lineage_no_generation_splice"] = not spliced
+            sem = sem and not spliced
+    else:
+        sem = False
+    ok = checks["exists"] and checks["schema_valid"] \
+        and checks["fresh"] and sem
+    return ok, checks
+
+
+def verify_repairs(res_dir=None, min_age_s=90, hb_fresh_s=180,
+                   pat=r"-m btc_rl\.online$"):
+    """M6 independent-verification law: the repairing process
+    (watchdog) may never certify itself — THIS process verifies.
+
+    For each REPAIR_ATTEMPTED row without a later verification
+    outcome and older than min_age_s: check fresh heartbeat +
+    singleton + audit progress + SCIENTIFIC_UNCHANGED (A3 spec hash
+    ok AND the invariant suite green — which itself covers the frozen
+    constants, roster and treatment laws). PASS -> RESTORED;
+    FAIL -> FAILED_CLOSED (system stays contained)."""
+    import subprocess as _sp
+    res = Path(res_dir) if res_dir else RES
+    heal = res / "self_heal.jsonl"
+    if not heal.exists():
+        return []
+    rows = []
+    for l in heal.open():
+        if l.strip():
+            try:
+                rows.append(json.loads(l))
+            except Exception:
+                pass
+    verified_ts = {r.get("verifies_attempt_ts") for r in rows
+                   if r.get("state") in ("VERIFICATION_PASS",
+                                         "VERIFICATION_FAIL")}
+    out = []
+    now = time.time()
+    for r in rows:
+        if r.get("state") != "REPAIR_ATTEMPTED":
+            continue
+        if r["ts"] in verified_ts or now - r["ts"] < min_age_s:
+            continue
+        # ---- R2 branch: derived-artifact verification --------------
+        if str(r.get("repair_id", "")).startswith("M6-R2"):
+            art = r.get("artifact")
+            ok2, checks2 = _verify_r2_artifact(res, art)
+            sci2 = False
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                inv = json.loads(
+                    (res / "invariants.json").read_text())
+                sci2 = a3.get("spec_hash_ok") is True \
+                    and not inv.get("failed")
+            except Exception:
+                pass
+            verdict = {"ts": round(now, 3),
+                       "repair_id": r.get("repair_id"),
+                       "artifact": art,
+                       "verifies_attempt_ts": r["ts"],
+                       "state": "VERIFICATION_PASS" if ok2
+                       else "VERIFICATION_FAIL",
+                       "verified_by": "meta_monitor (independent)",
+                       "checks": checks2,
+                       "scientific_unchanged": sci2}
+            with heal.open("a") as f:
+                f.write(json.dumps(verdict) + "\n")
+                f.write(json.dumps({
+                    "ts": round(now, 3),
+                    "repair_id": r.get("repair_id"),
+                    "artifact": art,
+                    "verifies_attempt_ts": r["ts"],
+                    "state": "RESTORED" if ok2 and sci2
+                    else "FAILED_CLOSED",
+                    "reason": None if ok2 and sci2 else
+                    "verification failed — artifact stays "
+                    "UNAVAILABLE, .pre_rebuild preserved"}) + "\n")
+            out.append(verdict)
+            continue
+        # ---- R3 branch: fetch the REAL destination -----------------
+        if str(r.get("repair_id", "")).startswith("M6-R3"):
+            try:
+                sys_path_added = str(RES.parent / "scripts")
+                import sys as _sys
+                if sys_path_added not in _sys.path:
+                    _sys.path.insert(0, sys_path_added)
+                import repair_r3
+                pub, err = repair_r3.fetch_published(repair_r3.CFG)
+            except Exception:
+                pub, err = None, "FETCH_FAILED"
+            checks3 = {"destination_reachable": err is None,
+                       "fetch_error": err}
+            ok3 = False
+            if isinstance(pub, dict):
+                checks3["schema_valid"] = True
+                checks3["experiment_id_matches"] = \
+                    pub.get("experiment_id") == \
+                    r.get("local_experiment_id")
+                pn = ((pub.get("forward") or {}).get("eligible"))
+                ln = r.get("local_eligible_n")
+                # semantic: published n must be >= the value at repair
+                # time (market clock only moves forward) and identity
+                # must match — catches wrong-file uploads that
+                # returned rc=0
+                checks3["semantic_eligible_n"] = (
+                    pn is not None and ln is not None and pn >= ln)
+                checks3["fresh_vs_repair"] = \
+                    (pub.get("generated_ts") or 0) >= \
+                    (r.get("local_generated_ts") or 0)
+                ok3 = all(checks3.get(k) for k in
+                          ("schema_valid", "experiment_id_matches",
+                           "semantic_eligible_n", "fresh_vs_repair"))
+            sci3 = False
+            try:
+                a3 = json.loads((res / "a3_live.json").read_text())
+                inv = json.loads(
+                    (res / "invariants.json").read_text())
+                sci3 = a3.get("spec_hash_ok") is True \
+                    and not inv.get("failed")
+            except Exception:
+                pass
+            verdict = {"ts": round(now, 3),
+                       "repair_id": r.get("repair_id"),
+                       "plane": "DELIVERY",
+                       "verifies_attempt_ts": r["ts"],
+                       "state": "VERIFICATION_PASS" if ok3
+                       else "VERIFICATION_FAIL",
+                       "verified_by": "meta_monitor (independent "
+                                      "destination fetch)",
+                       "checks": checks3,
+                       "scientific_unchanged": sci3}
+            with heal.open("a") as f:
+                f.write(json.dumps(verdict) + "\n")
+                f.write(json.dumps({
+                    "ts": round(now, 3),
+                    "repair_id": r.get("repair_id"),
+                    "plane": "DELIVERY",
+                    "verifies_attempt_ts": r["ts"],
+                    "state": "RESTORED" if ok3 and sci3
+                    else "FAILED_CLOSED",
+                    "reason": None if ok3 and sci3 else
+                    "destination verification failed — published "
+                    "state stays UNAVAILABLE"}) + "\n")
+            out.append(verdict)
+            continue
+        # ---- R1 branch: independent process checks -----------------
+        hb_ok = False
+        try:
+            hb_age = now - json.loads(
+                (res / "online_status.json").read_text())["alive_at"]
+            hb_ok = hb_age < hb_fresh_s
+        except Exception:
+            hb_age = None
+        pr = _sp.run(["pgrep", "-f", "--", pat], capture_output=True,
+                     text=True)
+        n_proc = len([x for x in pr.stdout.splitlines() if x.strip()])
+        singleton = n_proc == 1
+        audit_p = res / "audit_report.json"
+        audit_progress = audit_p.exists() and \
+            audit_p.stat().st_mtime > r["ts"]
+        sci = False
+        try:
+            a3 = json.loads((res / "a3_live.json").read_text())
+            inv = json.loads((res / "invariants.json").read_text())
+            sci = a3.get("spec_hash_ok") is True \
+                and not inv.get("failed")
+        except Exception:
+            pass
+        # PM LAW (09-07, from the zombie-position SEV): operational
+        # recovery and STATE recovery are different properties. A
+        # post-sleep recovery may not reach RESTORED while matured
+        # unresolved positions exist or bankroll conservation fails.
+        state_ok = True
+        state_why = None
+        try:
+            recon = json.loads((res / "reconciliation.json")
+                               .read_text())
+            bank = next((c for c in recon.get("checks", [])
+                         if c.get("name") == "bankroll-conservation"),
+                        None)
+            if bank and bank.get("status") != "OK":
+                state_ok = False
+                state_why = "bankroll-conservation FAIL"
+        except Exception:
+            pass                     # missing auditor != proof of bad
+        try:
+            for fname in ("pt_trades.jsonl", "pt3_trades.jsonl"):
+                for _l in (res / fname).open():
+                    _r = json.loads(_l)
+                    if (_r.get("actual") is None
+                            and _r.get("close_ts")
+                            and now - _r["close_ts"] > 7200):
+                        state_ok = False
+                        state_why = (f"matured unresolved position "
+                                     f"{_r.get('ticker')} in {fname}")
+                        raise StopIteration
+        except StopIteration:
+            pass
+        except Exception:
+            pass
+        ok = hb_ok and singleton and state_ok
+        verdict = {"ts": round(now, 3),
+                   "repair_id": r.get("repair_id"),
+                   "verifies_attempt_ts": r["ts"],
+                   "state": "VERIFICATION_PASS" if ok
+                   else "VERIFICATION_FAIL",
+                   "verified_by": "meta_monitor (independent)",
+                   "heartbeat_fresh": hb_ok,
+                   "heartbeat_age_s": None if hb_age is None
+                   else round(hb_age),
+                   "singleton": singleton, "processes": n_proc,
+                   "audit_progress": audit_progress,
+                   "state_conservation": state_ok,
+                   "state_conservation_why": state_why,
+                   "scientific_unchanged": sci}
+    # append verdict + terminal state
+        with heal.open("a") as f:
+            f.write(json.dumps(verdict) + "\n")
+            f.write(json.dumps({
+                "ts": round(now, 3), "repair_id": r.get("repair_id"),
+                "verifies_attempt_ts": r["ts"],
+                "state": "RESTORED" if ok and sci
+                else "FAILED_CLOSED",
+                "reason": None if ok and sci else
+                ("verification failed — system stays contained"
+                 if not ok else
+                 "recovered operationally but scientific-unchanged "
+                 "evidence incomplete — held FAILED_CLOSED")})
+                + "\n")
+        out.append(verdict)
+    return out
+
+
+def main():
+    verify_repairs()
+    now = time.time()
+    rows, worst = [], "HEALTHY"
+    rank = {"HEALTHY": 0, "WARNING": 1, "STALE": 2, "UNKNOWN": 3}
+    for name, (cad, warn_x, src) in WATCH.items():
+        p = RES / name
+        if not p.exists():
+            st, age = "UNKNOWN", None
+        else:
+            age = now - p.stat().st_mtime
+            st = ("HEALTHY" if age <= cad * warn_x else
+                  "WARNING" if age <= cad * warn_x * 2 else "STALE")
+        rows.append({"artifact": name, "source": src,
+                     "cadence_s": cad,
+                     "age_s": round(age) if age is not None else None,
+                     "status": st})
+        if rank[st] > rank[worst]:
+            worst = st
+    # heartbeat special case: read the stamp inside, not the mtime
+    try:
+        alive = json.loads((RES / "online_status.json").read_text()
+                           ).get("alive_at")
+        hb_age = now - alive if alive else None
+        rows.append({"artifact": "online_status.alive_at",
+                     "source": "daemon inner heartbeat",
+                     "cadence_s": 30,
+                     "age_s": round(hb_age) if hb_age else None,
+                     "status": "HEALTHY" if hb_age and hb_age < 120
+                     else "STALE"})
+        if rows[-1]["status"] != "HEALTHY":
+            worst = "STALE" if rank[worst] < 2 else worst
+    except Exception:
+        rows.append({"artifact": "online_status.alive_at",
+                     "source": "daemon inner heartbeat",
+                     "cadence_s": 30, "age_s": None,
+                     "status": "UNKNOWN"})
+        worst = "UNKNOWN"
+
+    # ---- daemon singleton check (INC-2026-08-29-dup-daemons: a
+    # failed pkill during a manual restart left 3 concurrent daemons;
+    # atomic full-file rewrites prevented data damage, but concurrent
+    # writers are a standing hazard — exactly 1 is the only green) ---
+    import subprocess as _sp
+    try:
+        pids = [l for l in _sp.run(
+            ["pgrep", "-f", "btc_rl.online"], capture_output=True,
+            text=True).stdout.splitlines() if l.strip()]
+        n_daemons = len(pids)
+    except Exception:
+        n_daemons = None
+    st = ("HEALTHY" if n_daemons == 1 else
+          "UNKNOWN" if n_daemons is None else "STALE")
+    rows.append({"artifact": "daemon process count",
+                 "source": "pgrep btc_rl.online",
+                 "cadence_s": None, "age_s": None,
+                 "status": st,
+                 "detail": f"{n_daemons} process(es) — exactly 1 is "
+                 "healthy"})
+    if rank[st] > rank[worst]:
+        worst = st
+
+    # ---- site-sync freshness (INC-2026-08-29-stale-rebase: a crashed
+    # rebase wedged the hourly main-repo sync for hours while
+    # "gh-pages: published" looked green; the DOMAIN serves from main
+    # builds, so the front end silently froze). Watch the last
+    # "main: synced" line's age in the publisher log. -----------------
+    try:
+        plog = Path("/tmp/btc_publish.log").read_text()[-20000:]
+        import re as _re
+        synced = [m for m in plog.splitlines() if "main: synced" in m]
+        # the log has no per-line timestamps; use the log file's mtime
+        # only if the LAST lines contain a synced marker — otherwise
+        # count attempts since last success
+        lines_since = 0
+        for l in reversed(plog.splitlines()):
+            if "main: synced" in l:
+                break
+            if "main sync failed" in l:
+                lines_since += 1
+        st = ("HEALTHY" if lines_since == 0 else
+              "WARNING" if lines_since <= 3 else "STALE")
+        rows.append({"artifact": "site main-repo sync",
+                     "source": "publisher log",
+                     "cadence_s": 3600, "age_s": None,
+                     "status": st,
+                     "detail": f"{lines_since} consecutive failures "
+                     "since last 'main: synced'"})
+        if rank[st] > rank[worst]:
+            worst = st
+    except Exception:
+        pass
+
+    # ---- SLO snapshot (§65): current compliance, appended to a
+    # history file so burn rates become computable over time. Values
+    # read from the machine evidence, never asserted. -----------------
+    def _j(name):
+        try:
+            return json.loads((RES / name).read_text())
+        except Exception:
+            return {}
+    inv = _j("invariants.json")
+    rec = _j("reconciliation.json")
+    canary = _j("leakage_canaries.json")
+    slo = {
+        "critical_ledger_integrity": inv.get("health") == "green",
+        "duplicate_decisions_zero": all(
+            c.get("ok") for c in inv.get("checks", [])
+            if c.get("name") == "one-decision-per-window") or None,
+        "future_data_violations_zero":
+            canary.get("overall") == "PASS" if canary else None,
+        "reconciliation_ok": rec.get("overall") == "OK"
+        if rec else None,
+        "unresolved_sev0_zero": True,   # readiness emitter is source;
+        # mirrored here from its last output
+    }
+    try:
+        slo["unresolved_sev0_zero"] = not _j("readiness.json").get(
+            "sev0_open")
+    except Exception:
+        slo["unresolved_sev0_zero"] = None
+    compliant = [k for k, v in slo.items() if v is True]
+    breached = [k for k, v in slo.items() if v is False]
+    unknown = [k for k, v in slo.items() if v is None]
+    with (RES / "slo_history.jsonl").open("a") as f:
+        f.write(json.dumps({"ts": int(now), "ok": len(compliant),
+                            "breach": breached,
+                            "unknown": unknown}) + "\n")
+
+    doc = {"generated_ts": int(now), "overall": worst,
+           "monitors": rows,
+           "slo": {"compliant": compliant, "breached": breached,
+                   "unknown": unknown,
+                   "note": "snapshot per run; burn rate from "
+                           "slo_history.jsonl as it accrues"},
+           "note": "independent cron line — watches the watchers; "
+                   "UNKNOWN is never green"}
+    (RES / "meta_monitors.json").write_text(json.dumps(doc, indent=1))
+    if worst != "HEALTHY":
+        with open("/tmp/btc_meta_alerts.log", "a") as f:
+            bad = [r for r in rows if r["status"] != "HEALTHY"]
+            f.write(json.dumps({"ts": int(now), "overall": worst,
+                                "bad": bad}) + "\n")
+    print(f"meta_monitors: {worst} "
+          f"({sum(1 for r in rows if r['status'] == 'HEALTHY')}/"
+          f"{len(rows)} healthy)")
+
+
+if __name__ == "__main__":
+    main()

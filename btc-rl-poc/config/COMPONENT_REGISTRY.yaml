@@ -1,0 +1,313 @@
+# COMPONENT_REGISTRY.yaml v1.0.0 — 2026-08-30
+# Machine-readable migration manifest (PM plan §85). One row per
+# component; `runtime: false` means the daemon/crons do no live work
+# for it. History is NEVER deleted — see reopen_condition per row.
+# Enforced by tests/invariants.py (retired-roster-frozen,
+# one-control-one-treatment) and consumed by emitters/agents/UI.
+
+version: 1.2.0
+# PLANES (PM 09-08) — WHAT responsibility a component carries, an
+# axis orthogonal to `tier` (WHERE in the lifecycle). Full map:
+# docs/ARCHITECTURE_TIERS_PLANES.md. The Teaching plane (F) observes
+# and explains but must NEVER mutate canonical research state.
+planes:
+  A: DATA                # what happened
+  B: MODEL               # what we believe
+  C: DECISION_EXECUTION  # what we do
+  D: RESEARCH            # what we are testing
+  E: RELIABILITY_GOVERNANCE  # whether we can trust any of it
+  F: TEACHING            # how we understand/explain it
+budgets:
+  max_active_traders: 5          # one slot deliberately EMPTY
+  max_serving_model_roles: 3     # ROLES, not physical artifacts —
+                                 # an ensemble/control may depend on
+                                 # several frozen internals (PM 08-30)
+  max_live_treatments_per_experiment: 1
+
+# GOVERNANCE RULE (PM 08-30, from the M3 leader-pool discovery):
+# "Runtime reachability beats registry intention." Before retiring
+# anything, compute its dependency path to a live decision and assign
+# a dependency_class:
+#   ZERO_DECISION_IMPACT      -> may retire without registration
+#   CONTROL_DEPENDENCY        -> retiring = NEW champion registration
+#   TREATMENT_DEPENDENCY      -> retiring = experiment change
+#   EXPERIMENT_DEPENDENCY     -> promotion/retirement via its experiment
+#   OBSERVABILITY_DEPENDENCY  -> audit/safety consumer exists
+#
+# Model-role accounting (three roles, not three artifacts):
+#   ROLE 1  MARKET/STRUCTURAL CONTROL
+#   ROLE 2  CHAMPION POLICY MODEL SYSTEM (frozen internal leader
+#           pool: kb3, kb4, kb7, kb8 + inputs kb, kb2)
+#   ROLE 3  CHALLENGER (kb9)
+# kb5 is an EXPERIMENT dependency of M14-v2, not a fourth role.
+# Champion simplification (CHAMPION-vLean) is a FUTURE registered
+# question — never a cleanup action.
+
+traders:
+  - {id: pt,  name: Follower,    lifecycle: CONTROL,  runtime: true,
+     role: TRADER_BASELINE, reason: frozen baseline execution}
+  - {id: pt3, name: Disciplined, lifecycle: CONTROL,  runtime: true,
+     role: TRADER_DISCIPLINED, reason: simple selective-thesis comparator}
+  - {id: pt6, name: MLE,         lifecycle: SHADOW,   runtime: true,
+     role: TRADER_META_CHALLENGER, stakes: false,
+     reason: zero-stake shadow; earns ACTIVE via offline+walk-forward+shadow+paired-forward}
+  - {id: a3,  name: A3-T10,      lifecycle: TREATMENT, runtime: true,
+     role: TRADER_ENTRY_TIMING, control: C0,
+     reason: frozen forward experiment A3-v1.1}
+  - {id: slot5, name: EMPTY, lifecycle: EMPTY, runtime: false,
+     reason: a future trader must earn admission by solving a measured bottleneck}
+  - {id: pt2, name: Ladder, lifecycle: RETIRED, runtime: false,
+     reason: control duplication + banking (not alpha),
+     consolidated_into: risk/capital engine (future),
+     reopen_condition: banking tested as a treatment vs frozen trader}
+  - {id: pt4, name: Gambler, lifecycle: ARCHIVED, runtime: false,
+     role: RISK_STRESS_EXHIBIT,
+     reason: sizing is risk-layer, not strategy; teaching exhibit}
+  - {id: pt5, name: Saver, lifecycle: RETIRED, runtime: false,
+     consolidated_into: risk/capital engine (stake fraction + skim)}
+  - {id: pt7, name: Patient, lifecycle: RETIRED, runtime: false,
+     role: EXEC_BENCH_NAIVE_MAKER, monitoring: benchmark_only,
+     reason: mechanism_falsified (adverse selection measured),
+     reopen_condition: fill/queue model changes}
+  - {id: pt8, name: Ideal, lifecycle: ARCHIVED, runtime: false,
+     reason: unattributable composite (6 simultaneous causal changes),
+     reopen_condition: ingredients re-enter one at a time as single treatments}
+
+models:
+  - {id: market_baseline, tier: T2, lifecycle: CONTROL, runtime: true,
+     role: MARKET_STRUCTURAL_CONTROL,
+     reason: the benchmark every model must beat (BSS vs market)}
+  - {id: kb2, tier: T2, lifecycle: CONTROL, runtime: true,
+     note: market-anchored — NOT an independent fair-value oracle;
+       serving because A3/product theses require it}
+  # THREE-FIELD SEPARATION (PM 09-08): research_status,
+  # runtime_reachability, and removal_authority are DISTINCT so no
+  # future agent sees "RETIRED" and deletes a frozen-control
+  # dependency. "Retired" never implies "deleted from every process".
+  - {id: kb9, tier: T2, lifecycle: RETIRED_FROM_T2_CONTENTION,
+     runtime: true, trajectory: REGRESSING,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
+     dependency_class: CONTROL_DEPENDENCY, parent: PT_CHAMPION,
+     note: "TimesFM — OFFLINE_FAIL (median BSS -0.021, 2/5 folds);
+       no independent challenger traffic. STILL SERVES as champion
+       leader-pool member (PT_ARMS); removing it in place would break
+       champion parity"}
+  # M3 corrections (08-30): the dependency map proved several
+  # "retired" arms are LOAD-BEARING for frozen registered policies —
+  # the M3 gate "A3/champion byte-equivalent" itself forbids removing
+  # them. Registry now states real roles instead of aspirations.
+  - {id: kb, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: INTERNAL, note: raw calibrated arm — kb2's p_cal input}
+  - {id: kb3, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
+     independent_serving_role: false, decision_impact: true,
+     note: frozen champion leader-pool member — no independent T2
+       value, but cannot retire without CHAMPION-vLean; still serves}
+  - {id: kb4, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true}
+  - {id: kb5, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: EXPERIMENT_DEPENDENCY, experiment: M14-v2,
+     dependency_class: EXPERIMENT_DEPENDENCY,
+     independent_serving_role: false, decision_impact: true,
+     promotion_path: via M14-v2 only,
+     note: also the edge anti-signal research stream}
+  - {id: kb6, tier: T2, lifecycle: ARCHIVED, runtime: false,
+     reason: falsified (coverage 37%, calibration ~noise),
+     note: inference physically removed 08-30 (M3) — history frozen}
+  - {id: kb7, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
+     independent_serving_role: false, decision_impact: true,
+     note: leader-pool member + Conviction Book stream 2; worst
+       fold -0.18 as an independent arm, still serves champion}
+  - {id: kb8, tier: T2, lifecycle: ACTIVE, runtime: true,
+     role: CONTROL_INTERNAL, parent: PT_CHAMPION,
+     dependency_class: CONTROL_DEPENDENCY,
+     research_status: RETIRED_FROM_T2_CONTENTION,
+     runtime_reachability: CONTROL_INTERNAL,
+     removal_authority: CHAMPION_vLean_PROMOTION_REQUIRED,
+     independent_serving_role: false, decision_impact: true}
+  - {id: kbf, tier: T2, lifecycle: ARCHIVED, runtime: false,
+     reason: accuracy without monetizability — forecast arrives too late;
+       canonical teaching specimen,
+     note: inference physically removed 08-30 (M3) — history frozen}
+  - {id: t1_serving_pairs, tier: T1, lifecycle: CONTROL, runtime: true,
+     note: "h1/h5/h15/h30 ctl + t9-h1/t10-h5/t7-h15/t9-h30 treatment;
+       LEAN_RETRAIN enforces; all other t-arms FROZEN (serve nothing,
+       never retrain). max-3-roles end-state awaits owner call vs
+       keep-all-horizons order"}
+
+experiments:
+  - {id: A3-v1.1, lifecycle: CLOSED_REJECTED, runtime: false,
+     control: C0, treatment: T10,
+     final_verdict: "REJECT at registered gate (n=56, paired delta
+       -10.4c/eligible, 95% CI below zero)",
+     evidence: "a3_v1_final.json sha 22014cee8ebe2b82 (immutable,
+       invariant-guarded)", reopen: NEVER as v1.1,
+     canonical_completed_experiment: true}
+  - {id: A4, lifecycle: SPEC_ONLY, runtime: false, spec: A4_SPEC.yaml,
+     dependency_class: ZERO_DECISION_IMPACT,
+     note: "learned Value-of-Wait — BLOCKED on A3-v2 close + Gate F1;
+       unlock conditions in-spec; evidence decides, not roadmap;
+       also on the T1T2 program BLOCK list (PM 09-01)"}
+  - {id: CHAMPION-vLean, lifecycle: SPEC_ONLY, runtime: false,
+     spec: CHAMPION_VLEAN_SPEC.yaml, tier: T3,
+     dependency_class: TREATMENT_DEPENDENCY,
+     note: "PM 09-07 lean directive — the REGISTERED vehicle to drop
+       kb3/kb7/kb8/kb9 from the champion leader pool; SPEC_ONLY
+       because a load-bearing arm is retired by a registered champion
+       change, never a cleanup edit (protects model-parity). Waits
+       for the one downstream slot (held by t_exec_reg)"}
+  - {id: T1.1, lifecycle: CLOSED_REJECTED, runtime: false,
+     spec: T1_1_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     final_verdict: "REJECT at registered one-shot gate (09-05):
+       F-XVENUE worsened paired pinball at every horizon (h5 -4.0pct,
+       h15 -3.5pct CI [-6.2,-0.7], h30 -1.8pct CI [-3.6,-0.2]) on
+       frozen dataset c255447862551cb5, n=401, linear probe",
+     evidence: "t1_1_result.json + t1_dataset_manifest.json
+       (immutable); criteria pre-registered at 097a313",
+     scope_of_claim: "family-level for T1 price forecasting at
+       h5-h30 via linear probe — NOT a claim about T2 probability
+       features or nonlinear extraction",
+     next: "T1.2 (F-MICRO) registration per T1T2 program"}
+  - {id: T1.2, lifecycle: RATIFIED_PENDING_F1, runtime: false,
+     spec: T1_2_SPEC.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     note: "incumbent vs +F-MICRO (8 features approved unchanged,
+       PM 09-07); incumbent pinned by sha256; decision rule
+       byte-identical to T1.1; execution blocked on F1 PASS at
+       freeze + fresh PIT dataset; no automatic T1.3 on rejection"}
+  - {id: T1T2, lifecycle: SPEC_ONLY, runtime: false,
+     spec: T1T2_PROGRAM.yaml, dependency_class: ZERO_DECISION_IMPACT,
+     note: "forecast-quality-first program (PM 09-01) — the research
+       sequencing authority after Gate F1: T1 feature families one
+       at a time, propagation test through unchanged bridge, then
+       ONE T2 challenger; blocks T3+/learned-dip/VoW/exec/sizing;
+       starts NOTHING before F1"}
+  - {id: A3-v2, lifecycle: CLOSED_INVALIDATED, runtime: false,
+     control: C0, treatment: T05, spec: A3_V2_SPEC.yaml,
+     final_verdict: "INVALIDATED_BY_EVIDENCE_INTEGRITY (PM 09-06):
+       source-log rotation destroyed ~34/153 eligible windows before
+       the persistence fix; denominator unreconstructable. The delta
+       at closure is NOT a scientific result",
+     evidence: "a3_v2_closure.json + 4 sha-frozen artifacts
+       (invariant-guarded); n=50 CONTINUE artifact in git 7b99d6d",
+     reopen: NEVER as v2}
+  - {id: A3-v2.1, lifecycle: CLOSED_REJECTED, runtime: false,
+     control: C0, treatment: T05, spec: A3_V2_1_SPEC.yaml,
+     tier: T3, plane: D,
+     final_verdict: "REJECT at registered gate n=86: paired delta
+       -6.35c/eligible, 95% CI [-12.5,-0.0] excludes zero from below;
+       44 diffuse missed winners (mean 27.9c, top-1 4.6%) overwhelm
+       fill improvement",
+     evidence: "a3_v21_closure.json + 3 sha-frozen artifacts
+       (invariant-guarded)",
+     line_conclusion: "closes the A3 wait-for-dip line — v1.1 REJECT
+       (10c), v2 INVALIDATED, v2.1 REJECT (5c); fixed waiting does
+       not create value",
+     a4_unlock: "NOT met — miss cost is DIFFUSE not state-dependent,
+       so learned Value-of-Wait has no state signal to exploit",
+     registered: 2026-09-06, shadows: [T10-diagnostic],
+     family_status: "SEALED — mechanism falsified (PM 09-10): do NOT
+       revisit under 4c/7c/adaptive/ML-selected/regime-conditioned
+       dip (research overfitting by persistence). Reopen ONLY if
+       genuinely new information invalidates the diffuse-miss
+       conclusion",
+     reopen: NEVER as v2.1}
+  - {id: EOD-exec-selection, lifecycle: CLOSED_NO_CANDIDATE,
+     runtime: false, tier: T4, plane: D,
+     alpha_class: EXECUTION_UTILIZATION,
+     final_verdict: "NO_CANDIDATE — on untouched holdout the frozen
+       0.66 selector cut champion realized -12.65c -> -5.8c/$1, win
+       0.50 -> 0.70, drawdown 1521 -> 399 at 25% coverage, but did
+       NOT cross zero. Mechanism validated, not profitable",
+     baseline_frozen: "eod_exec_selection_baseline.json sha 8956dbf2ccd43257",
+     note: "FROZEN baseline — do not tune the 0.66 gate, add selectors,
+       enlarge the model, or reopen the holdout. Successor is
+       H-MICRO-EXEC (information, not more filtering)"}
+  - {id: H-MICRO-EXEC, lifecycle: SPEC_ONLY, runtime: false,
+     tier: T2, plane: D, spec: H_MICRO_EXEC_SPEC.yaml,
+     note: "does microstructure add incremental realized EV within
+       execution-qualified opportunities? control vs treatment share
+       the IDENTICAL frozen 0.66 selector so improvement attributes
+       to INFORMATION, not re-tuning; blocked on F1 freeze; market-
+       residual objective; regression fixture ADVERSE_EXECUTION_
+       REGIME_EOD_2026-09-10"}
+  - {id: X1, lifecycle: SPEC_ONLY, runtime: false, tier: T4, plane: D,
+     spec: X1_EXECUTION_ATTRIBUTION_SPEC.yaml, is_treatment: false,
+     note: "P0 execution-gap attribution (PM 09-10) — DIAGNOSTIC, opens
+       no positions; decompose the ~6.6c/$1 quoted->realized gap into
+       measured components that reconcile within tolerance. No
+       execution treatment is registrable until X1 reconciles >=95%"}
+  - {id: M10_vs_M10+M8, lifecycle: TREATMENT, runtime: true,
+     control: t_exec, treatment: t_exec_reg,
+     primary_treatment: t_exec_reg, role_t_exec_reg: PRIMARY_TREATMENT,
+     role_t_exec: SHADOW_DIAGNOSTIC,
+     alpha_class: EXECUTION_UTILIZATION,   # NOT information alpha (§4)
+     note: "the ONE legacy pair; t_exec_reg is the single formal
+       downstream treatment (best paired +4.2c/$1, LLR ~1.1/5.66,
+       collecting), t_exec is shadow-diagnostic (isolates whether the
+       regime component is needed); after SPRT verdict archive loser,
+       close family. Gains are execution-utilization, never labelled
+       predictive alpha"}
+  - {id: M8,  key: t_regime, lifecycle: SHADOW, runtime: true,
+     note: legacy-control component reference only (§36)}
+  - {id: M13, key: t_edgeband, lifecycle: SHADOW, runtime: true,
+     note: shadow only while A3 + legacy unresolved}
+  - {id: M11+M8, key: t_limit_reg, lifecycle: ARCHIVED, runtime: false,
+     note: diagnostic archive — purpose was causal explanation, done}
+  - {id: M1,  key: t_cal,    lifecycle: RETIRED,  runtime: false,
+     consolidated_into: model observability (drift diagnostic)}
+  - {id: M2,  key: t_knife,  lifecycle: ARCHIVED, runtime: false}
+  - {id: M2+M8, key: t_both, lifecycle: ARCHIVED, runtime: false}
+  - {id: M3,  key: t_fshare, lifecycle: ARCHIVED, runtime: false}
+  - {id: M3+M8, key: t_fs_reg, lifecycle: ARCHIVED, runtime: false}
+  - {id: M9,  key: t_cheap,  lifecycle: ARCHIVED, runtime: false,
+     reopen_condition: registered cheap-contract product question}
+  - {id: M11, key: t_limit,  lifecycle: ARCHIVED, runtime: false,
+     role: execution benchmark}
+  - {id: M12, key: t_evlead, lifecycle: RETIRED, runtime: false,
+     reopen_condition: register M12-v2 as a fresh control/treatment}
+
+services:
+  - {id: daemon, lifecycle: ACTIVE, runtime: true,
+     note: refactor toward module boundaries under M6; no god-loop growth}
+  - {id: publisher, lifecycle: ACTIVE, runtime: true,
+     note: atomic publish + self-heal + visible failure (meta-monitor row)}
+  - {id: auditor_chain, lifecycle: ACTIVE, runtime: true,
+     note: independent of primary evaluator; owns reconciliation/invariants}
+  - {id: watchdog, lifecycle: ACTIVE, runtime: true,
+     authority: restart stale daemon only}
+  - {id: capture+capture_watchdog, lifecycle: ACTIVE, runtime: true,
+     note: F-MICRO — Coinbase trades/L1 + Kalshi 1s quotes (the
+       primary event tape)}
+  - {id: capture_xvenue, lifecycle: ACTIVE, runtime: true,
+     role: CAPTURE_ONLY, dependency_class: OBSERVABILITY_DEPENDENCY,
+     decision_impact: false,
+     note: F-XVENUE — Binance(mirror)+OKX BTC trade tape, prospective
+       recording only (PM 08-30); no model/policy/experiment reads
+       it; Model Researcher decides IF a feature family ever earns an
+       experiment}
+  - {id: meta_monitor, lifecycle: ACTIVE, runtime: true}
+  - {id: trainer_hourly, lifecycle: ACTIVE, runtime: true,
+     note: evidence-gated retraining replaces blind hourly under M2/M6}
+  - {id: introspection_hourly, lifecycle: ACTIVE, runtime: true,
+     consolidated_into: Model Researcher agent (M5)}
+
+agents:   # five durable roles (M5) — session builder agents excluded
+  - {id: data_reliability,     lifecycle: PLANNED}
+  - {id: model_researcher,     lifecycle: PLANNED}
+  - {id: experiment_analyst,   lifecycle: PLANNED}
+  - {id: execution_researcher, lifecycle: PLANNED}
+  - {id: research_manager,     lifecycle: PLANNED,
+     note: structure live in program.json research_manager since 08-29}

@@ -1,0 +1,107 @@
+{
+ "generated_ts": 1788727431,
+ "spec": "A3_V2_1_SPEC.yaml",
+ "dip_c": 5.0,
+ "experiment_id": "A3-v2.1",
+ "predecessor": {
+  "experiment": "A3-v1.1",
+  "outcome": "CLOSED_REJECTED",
+  "final": "a3_v1_final.json"
+ },
+ "failure_watch": null,
+ "spec_hash": "5bece7efbd7f3e39",
+ "spec_hash_frozen": "5bece7efbd7f3e39",
+ "spec_hash_ok": true,
+ "exclusion_monitor": {
+  "potential_registrations": 0,
+  "system_excluded": 0,
+  "reasons": {
+   "QUOTE_MISSING": 0
+  },
+  "note": "high exclusion rate = operationally unable to capture the opportunity set"
+ },
+ "outlier_dependence": null,
+ "shadows": {},
+ "registered_ts": 1788727331,
+ "price_source": "EXECUTABLE event-tape asks (1s) \u2014 modeled asks forbidden (spec \u00a74); v0 ledger retained as exploratory replay only",
+ "conventions": "fill = take ask qty 1 (no depth data yet, recorded); entry cutoff 60s; quote freshness 10s",
+ "live": {
+  "state": "TRIGGERED",
+  "ticker": "KXBTC15M-26SEP061645-45",
+  "close_ts": 1788727500,
+  "side": "UP",
+  "call_conf": 0.764,
+  "call_ask": 78.0,
+  "call_mins_left": 8.3,
+  "trigger_ask": 73.0,
+  "entry_ask": 58.0,
+  "entry_ts": 1788727074.383159,
+  "entry_ask_sz": 2148.59,
+  "improvement_c": 20.0,
+  "entry_conf": 0.695,
+  "best_valid_price": 34.0,
+  "best_valid_improvement_c": 44.0,
+  "best_valid_ts": 1788727270.0,
+  "cutoff_ts": 1788727440,
+  "shadows": {
+   "T10": {
+    "state": "FILLED",
+    "entry_ask": 58.0,
+    "entry_ts": 1788727074.383159,
+    "entry_ask_sz": 2148.59,
+    "improvement_c": 20.0
+   }
+  },
+  "dip_ladder": {
+   "first_05": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_10": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_15": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   },
+   "first_20": {
+    "ts": 1788727074.4,
+    "price": 58.0,
+    "conf": 0.695
+   }
+  },
+  "event_first": "DIP",
+  "time_to_first_event_s": 72.4
+ },
+ "forward": {
+  "eligible": 0,
+  "filled": 0,
+  "missed": 0,
+  "invalidated": 0,
+  "system_excluded": 0,
+  "miss_rate": null,
+  "control_pnl_per_eligible": null,
+  "a3_pnl_per_eligible": null,
+  "incremental_per_eligible": null,
+  "mean_entry_improvement_c": null,
+  "a3_fill_win_rate": null,
+  "control_win_rate": null,
+  "missed_control_pnl_total": null,
+  "decomposition": {
+   "missed_winner_magnitude": null,
+   "gross_fill_gain": 0,
+   "timeout_control_pnl": 0,
+   "missed_control_pnl": 0,
+   "invalidation_control_pnl": 0,
+   "net_waiting_value": 0,
+   "identity_residual": 0,
+   "note": "under A3-v1.1 MISSED \u2261 timed-out (dip never arrived by cutoff), so missed_control_pnl is 0 unless a new state path appears; differential execution costs are inside gross_fill_gain (both arms priced at their own executable ask)",
+   "econ_classes": {}
+  }
+ },
+ "recent_settled": []
+}

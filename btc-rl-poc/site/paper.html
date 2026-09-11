@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC 7PM Oracle — The Paper</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+main.paper { max-width: 46rem; }
+.paper section { background: transparent; border: 0; padding: 0;
+  margin: 0 0 6px; }
+.paper h1 { font: 500 30px/1.25 var(--display); letter-spacing: .01em;
+  margin: 10px 0 8px; }
+.paper h2 { font: 500 20px/1.3 var(--display); margin: 34px 0 10px;
+  padding-top: 18px; border-top: 1px solid var(--grid); }
+.paper h3 { font: 600 14.5px/1.4 ui-sans-serif, system-ui;
+  color: var(--ink); margin: 22px 0 6px; }
+.paper p, .paper li { font: 15px/1.75 Georgia, "Iowan Old Style",
+  "Times New Roman", serif; color: var(--ink-2); margin: 0 0 14px; }
+.paper li { margin-bottom: 8px; }
+.paper b, .paper strong { color: var(--ink); }
+.paper .art { font: 11.5px ui-monospace, SFMono-Regular, Menlo,
+  monospace; color: var(--muted); white-space: nowrap; }
+.stamp { display: inline-block; font: 600 11px ui-sans-serif,
+  system-ui; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--good-text); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 12px; margin: 6px 0 2px; }
+.byline { font: 13px/1.6 ui-sans-serif, system-ui;
+  color: var(--muted); margin-bottom: 18px; }
+.abstract { border: 1px solid var(--border); border-left: 3px solid
+  var(--series-2); border-radius: 10px; background: var(--surface);
+  padding: 16px 20px; margin: 18px 0 6px; }
+.abstract p { font-size: 14px; line-height: 1.7; margin: 0; }
+.abstract .abhead { font: 700 10.5px ui-sans-serif, system-ui;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 8px; }
+.paper table { font-variant-numeric: tabular-nums; margin: 6px 0 14px; }
+.paper td, .paper th { padding-right: 16px; }
+.paper td.num, .paper th.num { text-align: right; }
+.paper .neg { color: var(--down); }
+.paper .pos { color: var(--good-text); }
+.paper .refs p { font-size: 13px; line-height: 1.6; margin: 0 0 8px;
+  padding-left: 1.4em; text-indent: -1.4em; }
+.tocbox { font: 13px/2 ui-sans-serif, system-ui; color: var(--muted);
+  border: 1px solid var(--grid); border-radius: 10px;
+  padding: 10px 16px; margin: 14px 0 6px; }
+.tocbox a { color: var(--ink-2); text-decoration: none; }
+.tocbox a:hover { color: var(--ink); }
+@media print {
+  .topnav, .research-banner, .tocbox, footer { display: none; }
+  body { background: #fff; }
+  .paper p, .paper li { color: #222; }
+  .paper h1, .paper h2, .paper h3, .paper b, .paper strong { color: #000; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="ab_dashboard.html">Results</a><a class="nav" href="live_online.html">Live desk</a><a class="nav" href="experiment_review.html">Experiment lab</a><a class="nav" href="index.html">Backtest</a><a class="nav" href="live_training.html">Training</a><a class="nav" href="metrics_lab.html">Metrics Lab</a><a class="nav" href="sev0.html">SEV-0</a><a class="nav" href="board.html">Board</a><a class="nav" href="analyst.html">Analyst</a><span class="spacer"></span><span class="tag">the paper</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing on this site is financial advice, a solicitation, or a recommendation to buy or sell anything.</div>
+
+<main class="paper">
+<header>
+  <div class="eyebrow">research paper · dated document</div>
+  <h1>The Quant Universe: A Self-Auditing Experimentation System for Short-Horizon Market Prediction</h1>
+  <span class="stamp">v1 · 2026-08-29 · numbers as of 177 paired windows</span>
+  <p class="byline">A dated snapshot — the <a href="home.html">live system</a>
+  supersedes every number here. Source of record:
+  <span class="art">docs/PAPER.md</span>. Each quantitative claim cites
+  the repo artifact it was read from.</p>
+  <div class="tocbox">
+    <a href="#s1">1 Introduction</a> · <a href="#s2">2 System</a> ·
+    <a href="#s3">3 Methods</a> · <a href="#s4">4 Results</a> ·
+    <a href="#s5">5 Incidents &amp; integrity</a> ·
+    <a href="#s6">6 Limitations</a> · <a href="#s7">7 Conclusion</a> ·
+    <a href="#refs">References</a>
+  </div>
+</header>
+
+<section class="abstract">
+  <div class="abhead">Abstract</div>
+  <p>We report on a live paper-trading research system that predicts
+  15-minute Kalshi BTC binary settlements. Nine probability models —
+  spanning tabular reinforcement learning, contextual bandits, online
+  logistic regression, a distributional DQN, an LSTM, and two frozen
+  time-series foundation models — all fail to beat the market's own
+  price: the best Brier skill score versus the market is −0.0016
+  <span class="art">(results/audit_report.json)</span>. The durable
+  contribution is therefore not a predictor but a measurement
+  instrument: paired same-window sequential experimentation under
+  family-wise error control, mechanism validation for every treatment,
+  automated root-cause analysis of every losing trade, and nine
+  machine-checked invariants each named for the incident that created
+  it. The instrument caught two would-be false promotions (an SPRT
+  variance collapse and a 2.1¢ pricing-basis artifact) before they
+  shipped. The only profitable trading policy discovered is one whose
+  skill is refusal: it declines to trade 84% of the time and earns
+  +14.8¢ per dollar staked on the remainder
+  <span class="art">(results/audit_report.json)</span>.</p>
+</section>
+
+<section id="s1">
+<h2>1&nbsp;&nbsp;Introduction</h2>
+<p>Every fifteen minutes, Kalshi's KXBTC15M contract settles a single
+binary question: will the Bitcoin price close at or above a strike?
+The task is a near-ideal laboratory for online machine learning under
+real constraints. Outcomes arrive within minutes, roughly 96 times a
+day, so prequential evaluation (Dawid, 1984) accumulates at a pace no
+daily-bar strategy can match. The market publishes its own probability
+continuously — the contract price — so every model faces an
+observable, adversarial consensus baseline rather than a straw-man
+climatology. And the costs are real: a bid–ask spread and a fee of
+ceil(7·p·(1−p)) cents per contract stand between statistical skill and
+economic skill <span class="art">(docs/MANUAL.md)</span>.</p>
+<p>The project began as an attempt to build a predictor that beats
+this market. Section 4 documents, in some detail, that it did not:
+minute-scale BTC is approximately a martingale on price level
+(persistence is near-unbeatable, MASE ≈ 1;
+<span class="art">docs/MANUAL.md</span>), and on event probability no
+arm in the stable carries positive skill against the book on the
+current sample <span class="art">(results/audit_report.json)</span>.
+The project's pivot — directed by its TA review — was to treat that
+negative result as the research object: to build the instrument that
+can <i>establish</i> such a result quickly, cheaply, and without
+fooling its operator. What follows describes that instrument — a
+self-auditing experimentation system in the spirit of Arnott, Harvey
+and Markowitz's (2019) protocol for backtesting — and the empirical
+record it produced.</p>
+</section>
+
+<section id="s2">
+<h2>2&nbsp;&nbsp;The system</h2>
+<h3>2.1&nbsp;&nbsp;Planes and tiers</h3>
+<p>The system is organized as seven planes — Data, Prediction,
+Probability, Decision, Execution, Risk &amp; Capital, and Learning
+&amp; Governance — mapped onto a historical tier numbering T0–T5
+<span class="art">(docs/OS_BLUEPRINT.md)</span>. Signal flows
+upward:</p>
+<ul>
+<li><b>T0 — Data.</b> Open no-auth streams: Coinbase 1-minute bars and
+trades, OKX funding, Deribit mark and order book, RSS news scored by a
+frozen CryptoBERT, and Kalshi quotes/depth/open interest, snapshotted
+every 30-second poll <span class="art">(docs/MANUAL.md)</span>.</li>
+<li><b>T1 — Price arms.</b> Independent arms commit integer price
+predictions every 5 minutes at +5/+15/+30-minute horizons: a control
+tabular-Q learner, a replay arm, LinUCB contextual bandits (t2, t6,
+t10, t11; Li et&nbsp;al., 2010), a linear-Q arm (t7), a distributional
+DQN (t8), and an LSTM (t9). Arms never share model state, so metric
+gaps are attributable to exactly one design difference. Learning is
+two-speed: an immediate update per scored prediction plus an hourly
+replay retrain behind a hold-out no-regression gate that reverts bad
+retrains <span class="art">(docs/MANUAL.md)</span>.</li>
+<li><b>z-bridge.</b> The t8 distributional head supplies the σ that
+converts a price forecast into a z-score against the strike — the
+bridge from the price plane to the probability plane, and the site of
+the SEV-0 defect described in Section 5
+<span class="art">(docs/MANUAL.md, docs/SEV0_REMEDIATION.md)</span>.</li>
+<li><b>T2 — Probability arms.</b> Once per minute per open contract,
+each kb arm writes P(close ≥ strike): kb (control: t8's distribution,
+per-phase calibrated), kb2 (market-anchored blend), kb3 (online logit,
+24 features), kb4 (stack of kb2×kb3), kb5 (train-where-you-trade EV
+logit), kb6 (fast-information; retired), kb7 (Chronos-Bolt-small,
+frozen zero-shot; Ansari et&nbsp;al., 2024), kb8 (learned log-opinion
+pool of kb7&nbsp;×&nbsp;market), kb9 (TimesFM 2.5, frozen zero-shot;
+Das et&nbsp;al., 2024). Every row also carries p_m1, a shadow
+Platt-calibrated probability (Platt, 1999) that is never a decision
+input <span class="art">(docs/MANUAL.md, docs/DECISIONS.md)</span>.</li>
+<li><b>T3 — Decision.</b> A leaderboard crowns a leader arm; entries
+require confidence ≥ 0.62. Treatments layer vetoes and gates on top:
+knife-edge veto (M2), Fixed-Share leader (M3; Herbster &amp; Warmuth,
+1998), regime gate (M8), cheap-contract filter (M9), EV-ranked leader
+(M12) <span class="art">(results/program.json)</span>.</li>
+<li><b>T4/T5 — Execution and capital.</b> Modeled fills at the quoted
+ask plus fee; eight paper traders take the same signals under
+different sizing and entry policies, from a full-Kelly-style Gambler
+to a supervised-edge half-Kelly MLE trader
+<span class="art">(docs/MANUAL.md)</span> (Kelly, 1956).</li>
+</ul>
+<p>A notable inventory result predates the pivot: five separate
+attempts to upgrade the kb7 foundation model (4× parameters, Chronos-2
+at two context lengths, covariates, TimesFM, a fine-tuned Bolt) all
+landed within noise of the 47M-parameter zero-shot original (|t| &lt; 2
+on window-clustered paired Brier). At this horizon the extractable
+signal, not the model, is the binding constraint
+<span class="art">(docs/MANUAL.md)</span>.</p>
+<h3>2.2&nbsp;&nbsp;The four loops</h3>
+<p>The running product is four loops
+<span class="art">(docs/OS_BLUEPRINT.md)</span>: a 30-second
+<b>runtime</b> loop (feeds → features → T1 → T2 → policy → execution →
+ledger → settlement); an hourly-and-on-settlement <b>learning</b> loop
+(evaluation → candidate → holdout gate → keep/revert, with policy
+changes additionally passing a paired live A/B and a human promotion
+decision); a <b>maintenance</b> loop (monitors → incident → mitigation
+→ postmortem → regression test); and a <b>research</b> loop
+(observation → hypothesis → ticket → treatment → experiment → decision
+→ knowledge base). The human owner is the governance root and the only
+promote/retire authority.</p>
+</section>
+
+<section id="s3">
+<h2>3&nbsp;&nbsp;Methods</h2>
+<p><b>Prequential, paired, windows-not-rows.</b> All evaluation is
+prequential (Dawid, 1984): every prediction is scored on data the
+model had not seen when it committed. Treatments are scored strictly
+on paired same-window differences against the champion — both policies
+see the identical window, quote, and settlement, and only the
+difference Δ enters the test
+<span class="art">(results/decision_board.json)</span>. Effective n is
+counted in 15-minute windows, never minute rows, because entries
+within one window share fate
+<span class="art">(docs/MANUAL.md)</span>.</p>
+<p><b>Sequential testing under family-wise control.</b> With 16
+concurrent comparisons, the per-test significance level is
+Bonferroni-corrected to α = 0.05/16 = 0.003125, one-sided, giving SPRT
+boundaries of +5.663 (promote) and −2.299 (reject) at β = 0.1 for a
+pre-registered minimum edge of 2¢ per dollar (Wald, 1945;
+<span class="art">results/audit_report.json,
+results/decision_board.json</span>). Two hygiene rules exist because
+their absence caused a near-miss: a variance floor of 0.01 and a
+12-window warmup, added after early identical paired differences
+collapsed the running variance and drove one treatment to LLR 123 on
+154 windows — a false auto-promotion caught before shipping
+<span class="art">(NOTES.md)</span>.</p>
+<p><b>Power honesty.</b> The board computes, and displays, its own
+weakness: at n ≈ 170 windows, power to detect the pre-registered 2¢
+edge at the family-wise α is roughly 2%, with a minimum detectable
+effect near 12¢/window <span class="art">(NOTES.md,
+results/decision_board.json)</span>. Fixed-horizon testing is hopeless
+at this traffic; sequential testing is not a stylistic preference but
+the only viable design. Uncertainty is reported as both a normal
+approximation and a seeded 2,000-draw bootstrap CI (Efron, 1979),
+alongside P(Δ&gt;0), P(Δ&gt;edge), effect slices by
+regime/hour/leader, and top-3 concentration as a jackpot detector
+<span class="art">(results/decision_board.json)</span>.</p>
+<p><b>Mechanism validation.</b> A positive Δ is necessary but not
+sufficient: each treatment declares the mechanism by which it claims
+to earn, and the board checks the claim on the windows where the
+mechanism should bind. M8's gate is SUPPORTED (+20.4¢ on the windows
+it claims, ~0 elsewhere); M11's passive-entry mechanism is
+CONTRADICTED by the measured fill curve
+<span class="art">(results/diagnosis.json)</span>.</p>
+<p><b>Version-aware loss RCA.</b> Every losing trade receives an
+automated root-cause review graded on a six-level ladder (SEV-0
+integrity-impossible … SEV-5 expected variance), judged against the
+rule <i>in force when the trade was made</i> — the first run produced
+48 false policy-breach findings by judging v1 rows under v2 gates,
+fixed before shipping <span class="art">(docs/DECISIONS.md)</span>.
+Retirement pressure is pre-registered (negative mean at full sample,
+staleness, domination by a sibling, coverage &lt; 25%), and paired
+incremental branch analysis asks of every combination whether it adds
+anything over each parent on identical windows — refusing cross-basis
+comparisons rather than fudging them
+<span class="art">(results/program.json)</span>.</p>
+</section>
+
+<section id="s4">
+<h2>4&nbsp;&nbsp;Results</h2>
+<h3>4.1&nbsp;&nbsp;Nobody beats the book</h3>
+<p>Brier skill versus the market price itself, per arm (n = 169
+windows; <span class="art">results/audit_report.json</span>):</p>
+<div class="scroll"><table>
+<thead><tr><th>arm</th><th class="num">Brier</th>
+<th class="num">market Brier</th><th class="num">BSS vs market</th></tr></thead>
+<tbody>
+<tr><td>kb2 (market blend)</td><td class="num">0.2025</td><td class="num">0.2022</td><td class="num neg"><b>−0.0016</b></td></tr>
+<tr><td>kb5 (EV logit)</td><td class="num">0.1878</td><td class="num">0.1858</td><td class="num neg">−0.0109</td></tr>
+<tr><td>kb4 (stack)</td><td class="num">0.2067</td><td class="num">0.2022</td><td class="num neg">−0.0222</td></tr>
+<tr><td>kb8 (opinion pool)</td><td class="num">0.2089</td><td class="num">0.2022</td><td class="num neg">−0.0333</td></tr>
+<tr><td>kb3 (online logit)</td><td class="num">0.2097</td><td class="num">0.2022</td><td class="num neg">−0.0371</td></tr>
+<tr><td>kb9 (TimesFM)</td><td class="num">0.2108</td><td class="num">0.2022</td><td class="num neg">−0.0423</td></tr>
+<tr><td>kb (control, t8 dist.)</td><td class="num">0.2122</td><td class="num">0.2022</td><td class="num neg">−0.0493</td></tr>
+<tr><td>kb6 (fast-info, retired)</td><td class="num">0.2129</td><td class="num">0.2022</td><td class="num neg">−0.0527</td></tr>
+<tr><td>kb7 (Chronos-Bolt)</td><td class="num">0.2172</td><td class="num">0.2022</td><td class="num neg">−0.0741</td></tr>
+<tr><td>kbf (retired)</td><td class="num">0.1048</td><td class="num">0.0963</td><td class="num neg">−0.1014</td></tr>
+</tbody></table></div>
+<p>Every skill score is negative. The best arm, kb2, is a
+market-anchored blend whose near-zero score measures its anchor, not
+private information. The open scientific question on the board is
+stated exactly this way: "binary predictors contain skill beyond the
+market price — status: unknown; no arm with BSS &gt; 0 this sample"
+<span class="art">(results/program.json)</span>.</p>
+
+<h3>4.2&nbsp;&nbsp;The execution funnel</h3>
+<p>Where a clairvoyant policy's value goes
+<span class="art">(results/diagnosis.json,
+results/model_internals.json)</span>:</p>
+<div class="scroll"><table>
+<thead><tr><th>stage</th><th class="num">EV per $1</th></tr></thead>
+<tbody>
+<tr><td>Oracle opportunity (same rules, clairvoyant; n = 150)</td><td class="num pos"><b>+1.6913</b></td></tr>
+<tr><td>Forecast + probability + decision losses</td><td class="num">unknown (not yet decomposed)</td></tr>
+<tr><td>Desk decision EV, model quotes (n = 177)</td><td class="num neg">−0.0228</td></tr>
+<tr><td>Execution gap (quote → fill)</td><td class="num neg">−0.0533</td></tr>
+<tr><td>Realized EV, real fills</td><td class="num neg">−0.0761</td></tr>
+</tbody></table></div>
+<p>The rules permit ~$1.69 per dollar per window; the desk realizes
+−7.6¢. The single largest <i>measured</i> leak is execution — the
+−5.3¢ quote-to-fill gap, the chain's CRITICAL tier
+<span class="art">(results/diagnosis.json)</span> — which is why the
+two priority treatments are both execution-adjacent.</p>
+
+<h3>4.3&nbsp;&nbsp;The regime gate (M8)</h3>
+<p>M8 stands down when the market's own trailing-20 accuracy falls
+below 0.62. On 177 paired windows: Δ = +5.7¢/$1, bootstrap 95% CI
+[+0.0¢, +11.5¢], P(Δ&gt;0) = 0.975, at 72% coverage
+<span class="art">(results/diagnosis.json)</span>. Its mechanism check
+passes exactly where it claims: +20.4¢ on the 49 regime-below-floor
+windows versus +0.0¢ on healthy windows
+<span class="art">(results/diagnosis.json)</span>. It has not crossed
+the SPRT boundary (LLR 1.17 of 5.66) and is therefore not promoted; it
+is merely the best-evidenced candidate, together with M10+M8
+(Δ = +7.8¢, P(Δ&gt;0) = 0.989;
+<span class="art">results/diagnosis.json</span>).</p>
+
+<h3>4.4&nbsp;&nbsp;Branch analysis: what a combination actually adds</h3>
+<p>Paired incremental analysis on identical windows (n = 179;
+<span class="art">results/program.json</span>):</p>
+<div class="scroll"><table>
+<thead><tr><th>comparison</th><th class="num">incremental Δ</th>
+<th class="num">P(Δ&gt;0)</th><th>reading</th></tr></thead>
+<tbody>
+<tr><td>M2+M8 − M8</td><td class="num neg">−3.7¢</td><td class="num">0.13</td><td>knife-edge veto adds nothing to M8</td></tr>
+<tr><td>M3+M8 − M8</td><td class="num neg">−7.1¢</td><td class="num">0.06</td><td>Fixed-Share <i>interferes</i> with M8</td></tr>
+<tr><td>M10+M8 − M10</td><td class="num pos">+3.6¢</td><td class="num">0.95</td><td>regime gate genuinely adds to the exec guard</td></tr>
+<tr><td>M11+M8 − M11</td><td class="num pos">+7.4¢</td><td class="num">1.00</td><td>but M11+M8 − M8 = −2.9¢ (P 0.19): the benefit is inherited from M8, not contributed by M11</td></tr>
+</tbody></table></div>
+<p>The last row is the method's advertisement: a naive reading
+("M11+M8 is positive, +3.0¢!") survives until the branch comparison
+shows the credit belongs entirely to the parent.</p>
+
+<h3>4.5&nbsp;&nbsp;Adverse selection, measured</h3>
+<p>A full-information counterfactual over logged quote paths scored
+every candidate limit offset δ ∈ [0, 8]¢ below the ask
+<span class="art">(results/fill_curve.json)</span>: fill rate falls
+100% → 59.5%, and — the finding — <b>win-rate-given-fill falls
+monotonically 67.9% → 47.0%</b> as the bid rests deeper. Resting
+orders fill preferentially when the market has just repriced against
+them: Glosten and Milgrom's (1985) picked-off problem, now measured on
+this book rather than asserted. This is the mechanism evidence that
+contradicts M11 (Section 4.4) and grades pt7's losses ("your resting
+bid was picked off";
+<span class="art">results/loss_reviews.json</span>). The least-bad
+taker entry bucket is 9–6 minutes before settlement (−1.8¢/$1 vs
+−12.0¢ at 6–3 minutes;
+<span class="art">results/fill_curve.json</span>).</p>
+
+<h3>4.6&nbsp;&nbsp;The falsification record</h3>
+<p>The system's negative results are reported as results:</p>
+<ul>
+<li><b>The toxic hour (M7).</b> A "cursed hour" with 64% errors
+dissolved under multiplicity: 24 hours searched, ~1.98 false positives
+expected by chance, 2 found; p = 0.60. Dropped, not deferred
+<span class="art">(docs/DECISIONS.md, results/program.json)</span>.</li>
+<li><b>kbf, the late genius.</b> Best Brier in the stable (0.0923 at
+decision time) and −$0.38/$1 at real costs: its skill lives at T−3
+minutes, after anything can be bought. Accuracy without decision-time
+monetizability is not economic skill
+<span class="art">(results/diagnosis.json, results/program.json)</span>.</li>
+<li><b>M1 calibration harms everyone.</b> The Platt layer's
+prequential log-loss is <i>worse</i> than raw for all nine arms
+(+0.034 to +0.164, kb7 worst), and the fitted direction flipped within
+a day — the miscalibration drifts faster than the fit. Redesigned with
+a 50-window memory and kept shadow-only, as a drift instrument, never
+a decision input <span class="art">(docs/DECISIONS.md)</span>.</li>
+<li><b>kb6.</b> UP-recall of 63% concealed 37% coverage and a
+calibration slope of 0.33 ≈ noise; recall alone is not skill
+<span class="art">(docs/DECISIONS.md, results/program.json)</span>.</li>
+<li><b>The SPRT variance collapse and the 2.1¢ pricing artifact.</b>
+Two near-miss false promotions in one day. The second: challengers
+were priced from modeled quotes while the champion paid real asks — a
+systematic 2.1¢ subsidy that manufactured +23.5% for M3, +10.6% for
+M9, +8.0% for M2; after repricing everything from the same
+decision-time quote, those became +1.2%, −5.0%, −8.6%
+<span class="art">(NOTES.md)</span>.</li>
+</ul>
+
+<h3>4.7&nbsp;&nbsp;Traders as ablations</h3>
+<p>The eight paper traders are a sizing/execution ablation grid over
+the same signals <span class="art">(results/audit_report.json)</span>.
+The Gambler (pt4) is the aggressive-curriculum exhibit — its v3 ruling
+keeps the 33% stake but sweeps every dollar above the $10k start to a
+withdrawal ledger that can never be re-staked, bounding exposure
+forever <span class="art">(docs/DECISIONS.md)</span>. The instructive
+contrast is pt6, the "MLE" trader (supervised edge model, half-Kelly):
++14.8¢ per dollar staked over 26 settled windows — the only green
+trader on the desk — while sitting idle 84% of the time
+<span class="art">(results/audit_report.json,
+results/diagnosis.json)</span>. Its edge-model regression even scores
+its own stated edge <i>negatively</i> (conf−ask weight −0.059, echoed
+by kb5's claimed-edge weight −0.096): when the model most believes it
+knows better than the price, it is most often wrong — the "edge
+anti-signal" now queued as a candidate M13 edge-band redesign
+<span class="art">(docs/DECISIONS.md)</span>. On a desk where no arm
+beats the book, the only monetizable skill found so far is
+<i>selection</i>: knowing when not to trade.</p>
+</section>
+
+<section id="s5">
+<h2>5&nbsp;&nbsp;Incidents and integrity</h2>
+<p>The defining incident was a SEV-0: the initial root-cause analysis
+of the desk's losses ("the price arms point the wrong way") was itself
+falsified by the audit. The corrected RCA: the tier-1 defect is
+<b>dispersion, not direction</b> — drift arms never trade, the feeding
+path carried a +$1.76 bias, and 80% bands covered only 74–76%
+<span class="art">(docs/DECISIONS.md)</span>. Under-dispersion at T1
+poisons the z-bridge σ and every probability downstream
+<span class="art">(docs/SEV0_REMEDIATION.md)</span>. Per the
+blueprint's rule, the invalidated number is preserved beside the
+corrected one: the +11.75% "champion" figure stands crossed out next
+to the true −6.5% <span class="art">(docs/OS_BLUEPRINT.md)</span>.</p>
+<p>Four recurring bug classes emerged
+<span class="art">(docs/MANUAL.md, NOTES.md)</span>: the <b>stale
+quote</b> (treatment rows evaluated on quotes older than the tradeable
+envelope — fixed with a ≤12-minute filter, verified when the post-fix
+champion measured −6.04% against an independently predicted −6.5%);
+<b>fee rounding</b> (per-contract ceil applied per-order accrued
+$2,355 of phantom fees); the <b>field collision</b> (a shadow
+calibration output written into a field a live reader consumed — p_cal
+renamed to p_m1, 390 rows scrubbed); and the <b>trader lockout</b> (an
+entry guard that silently prevented four traders from finding their
+own entry minute).</p>
+<p>Each closed incident must yield a fixture, an invariant, or a
+museum exhibit <span class="art">(docs/OS_BLUEPRINT.md)</span>. The
+invariant suite currently machine-checks nine promises —
+one-decision-per-window, ledger monotonicity, no duplicate treatment
+windows, fee-formula parity, the Gambler-v3 sweep, decision-quote age,
+skip-is-not-missing, frozen-controls-untouched,
+withdrawals-never-restaked — every one named for the scar that created
+it, all passing <span class="art">(results/invariants.json)</span>.
+The skip-is-not-missing rule deserves emphasis as an
+evaluation-methods point: a policy's deliberate stand-down is a
+complete scored observation with EV 0 by pre-registration, not a
+missing pair; the first board draft conflated the two and wrongly
+invalidated all twelve challengers
+<span class="art">(docs/DECISIONS.md)</span>.</p>
+</section>
+
+<section id="s6">
+<h2>6&nbsp;&nbsp;Limitations</h2>
+<p><b>Pricing basis.</b> Most treatment EVs are computed at
+model-basis quotes, not real fills; only the paired difference is
+apples-to-apples, and cross-basis comparisons are refused rather than
+estimated <span class="art">(NOTES.md, results/program.json)</span>.
+<b>Liquidity realism.</b> The venue is a demo-liquidity market; fill
+and depth behavior may not transfer. <b>Power ceiling.</b> The
+instrument's clock is ~96 windows/day; at family-wise α the desk needs
+hundreds of windows for a verdict on a 2¢ effect (projected ~590 for
+M8 at current drift; <span class="art">NOTES.md</span>).
+<b>Effective n.</b> Windows are the counting unit, but adjacent
+windows share regime; the window-clustering correction to effective n
+is acknowledged, not solved <span class="art">(docs/MANUAL.md)</span>.
+<b>Single instrument.</b> Everything above is one contract family on
+one underlying; the multi-ticker generalization is future work, and
+the deep-RL variants of the trader-policy program are explicitly
+deferred until that scale supplies the data appetite and a
+counterfactual audit path
+<span class="art">(docs/DECISIONS.md)</span>.</p>
+</section>
+
+<section id="s7">
+<h2>7&nbsp;&nbsp;Conclusion and future work</h2>
+<p>The honest summary of the prediction program is a well-measured
+null: against an observable market consensus, at 15-minute horizon and
+real costs, nine model families extracted no skill the price did not
+already contain — and five foundation-model upgrades could not move
+that needle. The honest summary of the <i>instrument</i> program is
+positive: the system now detects its own artifacts faster than it
+generates them, it has converted every incident into a machine-checked
+promise, and its two best-evidenced treatments (M8, M10+M8) earn
+exactly where their mechanisms claim while remaining unpromoted until
+the sequential boundary is crossed.</p>
+<p>Future work follows the decision inbox
+<span class="art">(results/program.json, docs/DECISIONS.md)</span>: an
+<b>M13 edge-band gate</b> (a maximum as well as a minimum on claimed
+edge, motivated by the replicated edge anti-signal) and learned limit
+pricing from the fill curve; <b>post-fill markout capture</b> at 1m/5m
+to decompose the execution leak; <b>multi-ticker seams</b> to raise
+the window budget an order of magnitude; and, only at that scale,
+reinforcement-learned trader policies with a row-by-row counterfactual
+audit.</p>
+</section>
+
+<section id="refs" class="refs">
+<h2>References</h2>
+<p>Arnott, R., Harvey, C. R., &amp; Markowitz, H. (2019). A backtesting protocol in the era of machine learning. <i>Journal of Financial Data Science</i>.</p>
+<p>Ansari, A. F., et al. (2024). Chronos: Learning the language of time series. arXiv:2403.07815.</p>
+<p>Das, A., et al. (2024). A decoder-only foundation model for time-series forecasting (TimesFM). <i>ICML</i>.</p>
+<p>Dawid, A. P. (1984). Present position and potential developments: The prequential approach. <i>JRSS A</i>.</p>
+<p>Diebold, F. X., &amp; Mariano, R. S. (1995). Comparing predictive accuracy. <i>JBES</i>.</p>
+<p>Efron, B. (1979). Bootstrap methods: Another look at the jackknife. <i>Annals of Statistics</i>.</p>
+<p>Glosten, L. R., &amp; Milgrom, P. R. (1985). Bid, ask and transaction prices in a specialist market with heterogeneously informed traders. <i>JFE</i>.</p>
+<p>Guo, C., Pleiss, G., Sun, Y., &amp; Weinberger, K. Q. (2017). On calibration of modern neural networks. <i>ICML</i>.</p>
+<p>Herbster, M., &amp; Warmuth, M. K. (1998). Tracking the best expert (Fixed-Share). <i>Machine Learning</i>.</p>
+<p>Hyndman, R. J., &amp; Koehler, A. B. (2006). Another look at measures of forecast accuracy. <i>IJF</i>.</p>
+<p>Kelly, J. L. (1956). A new interpretation of information rate. <i>Bell System Technical Journal</i>.</p>
+<p>Lei, J., et al. (2018). Distribution-free predictive inference for regression. <i>JASA</i>.</p>
+<p>Li, L., Chu, W., Langford, J., &amp; Schapire, R. E. (2010). A contextual-bandit approach to personalized news article recommendation (LinUCB). <i>WWW</i>.</p>
+<p>Platt, J. (1999). Probabilistic outputs for support vector machines. <i>Advances in Large Margin Classifiers</i>.</p>
+<p>Wald, A. (1945). Sequential tests of statistical hypotheses. <i>Annals of Mathematical Statistics</i>.</p>
+<p class="mini" style="margin-top:12px">Full per-claim source list
+with URLs: <span class="art">docs/RESEARCH_BASELINE.md</span> and
+<span class="art">docs/SEV0_REMEDIATION.md §Source list</span>.
+Markdown source of this paper:
+<span class="art">docs/PAPER.md</span>.</p>
+</section>
+
+<footer>
+  <p>v1 · 2026-08-29 · numbers as of 177 paired windows · a dated
+  document — the <a href="home.html">live system</a> supersedes it ·
+  the full page history lives in <a href="archive.html">The Archive</a>.</p>
+</footer>
+</main>
+
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

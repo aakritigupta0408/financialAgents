@@ -1,0 +1,102 @@
+# H-MICRO-EXEC — does microstructure information add incremental
+# realized EV WITHIN execution-qualified opportunities? (PM 09-10)
+# STATUS: SPEC_ONLY, gated on F1. This is the sharpened successor to
+# Attack #1: execution selection was shown useful-but-insufficient
+# (recovered ~half the loss, could not cross zero on an adverse
+# holdout). The bottleneck is now INFORMATION, not filtering.
+version: 0.1-spec
+id: H-MICRO-EXEC
+tier: T2            # information; interacts with T4 execution
+plane: D            # Research
+status: SPEC_ONLY
+blocked_on:
+  - F1_ESS_150_AND_FROZEN     # never peek/engineer before F1 freezes
+  - PIT_DATASET_FROZEN
+
+hypothesis: >
+  Microstructure information (Coinbase L2 + Kalshi book state) adds
+  incremental realized EV specifically within the ~25% of windows the
+  frozen execution selector already accepts — i.e. it distinguishes
+  profitable from unprofitable trades among execution-safe
+  opportunities. NOT "beat the market everywhere."
+sharpened_mission: >
+  (PM 09-11) Does microstructure RESTORE MONOTONICITY between
+  estimated residual advantage and realized economic value? Today
+  CURRENT_EDGE_MONOTONICITY=INVERTED — the highest model-vs-market
+  edge windows have the WORST realized EV (top-10% bucket -9.5c vs
+  bottom-10% +2.1c). This is a sharper, more falsifiable target than
+  "improve BSS": microstructure must turn edge back into a POSITIVE
+  signal, not merely raise average score.
+success_criteria_all_of:      # a real win shows ALL simultaneously
+  - BSS_vs_market improves
+  - higher predicted residual -> BETTER outcomes (monotonicity restored)
+  - decision frontier develops >=1 feasible point (bad-entry<=0.10, EV>0)
+  - realized EV at that feasible point > 0
+  - profitable-trade recall rises without breaching the bad-entry budget
+  - execution remains controlled
+outcome_fork_pm0911:
+  bss_up_but_no_feasible_point: "information found but NOT monetizable"
+  feasible_point_without_bss_gain: "conditional information / selection
+    value — may still be the trader we want"
+  neither: "close the feature family"
+
+# ATTRIBUTION DESIGN — the point is to know whether any improvement
+# came from INFORMATION or from another round of selection tuning.
+arms:
+  control:   {signal: current champion,
+              execution_gate: FROZEN 0.66 selector (baseline 8956dbf2ccd43257)}
+  treatment: {signal: champion + microstructure residual,
+              execution_gate: FROZEN 0.66 selector — IDENTICAL}
+hard_constraint: >
+  microstructure MUST NOT re-optimize the execution gate. Same model,
+  same costs, same frozen 0.66 selector, same bankroll/risk rules.
+  Only the signal differs between arms.
+
+microstructure_state_vector:   # small, mechanistic — NOT raw L2 flattened
+  - spot_ofi
+  - depth_imbalance_L1
+  - depth_imbalance_L1_L5
+  - microprice_minus_mid
+  - spread
+  - book_slope
+  - aggressive_buy_sell_imbalance
+  - trade_intensity
+  - cancel_replace_intensity
+  - short_term_realized_vol
+  - kalshi_book_imbalance
+  - kalshi_spread
+  - kalshi_microprice
+  - btc_move_minus_kalshi_prob_move
+
+modeling:
+  objective: MARKET-RESIDUAL — model logit(p*) - logit(p_market),
+    not p from scratch (kb2 already ~0.998 corr with market)
+  first_models: [regularized logistic residual, LightGBM residual]
+  benchmark: market-only
+  rule: pick ONE winner offline; loser is gone; no third model
+
+primary_metric: realized net EV/$1 on the untouched holdout
+secondary: [BSS_vs_market, coverage, max_drawdown, top3_concentration,
+            execution_gap, win_rate, effective_n]
+
+# the clean fork this experiment resolves
+outcome_fork:
+  treatment_crosses_zero_control_stays: "INFORMATION closed the gap
+    (not more filtering) — alpha+execution candidate"
+  both_negative: "microstructure is not enough"
+  bss_up_ev_flat: "execution still binding"
+  ev_up_bss_flat: "microstructure acts as conditional SELECTION, not
+    predictive alpha (label EXECUTION_UTILIZATION)"
+
+integrity:
+  - no look-ahead (PIT features only)
+  - chronological split frozen before fitting
+  - holdout scored once; no retuning after validation
+  - also evaluate against the named regression fixture
+    ADVERSE_EXECUTION_REGIME_EOD_2026-09-10 (f38f5c940784413c)
+regression_fixtures:
+  - {name: ADVERSE_EXECUTION_REGIME_EOD_2026-09-10,
+     sha: f38f5c940784413c,
+     note: "accidental stress regime — champion -12.65c vs -4.6c
+       baseline; selector cut it to -5.8c. Future strategies tested
+       here permanently"}

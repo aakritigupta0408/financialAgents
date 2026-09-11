@@ -1,0 +1,38 @@
+{
+ "generated_ts": 1788149601,
+ "experiment": "A3-v2",
+ "n_eligible": 0,
+ "paired_delta_per_eligible": null,
+ "decomposition": {
+  "gross_fill_gain": 0,
+  "timeout_control_pnl": 0,
+  "missed_control_pnl": 0,
+  "invalidation_control_pnl": 0,
+  "net_waiting_value": 0,
+  "identity_residual": 0,
+  "note": "under A3-v1.1 MISSED \u2261 timed-out (dip never arrived by cutoff), so missed_control_pnl is 0 unless a new state path appears; differential execution costs are inside gross_fill_gain (both arms priced at their own executable ask)",
+  "econ_classes": {}
+ },
+ "econ_class_distribution": {},
+ "thesis_integrity_gap": {
+  "fill_win_rate": null,
+  "eligible_win_rate": null,
+  "interpretation": "fills land disproportionately on windows that go on to lose \u2014 dips are partly informative repricing, not only overreaction"
+ },
+ "watch_flags_firing": [],
+ "loss_mechanisms": [
+  {
+   "term": "timeout_control_pnl",
+   "value": 0,
+   "mechanism": "opportunity cost \u2014 winners that never offered the dip"
+  },
+  {
+   "term": "thesis_integrity_gap",
+   "value": null,
+   "mechanism": "fill-conditioned thesis degradation \u2014 adverse selection of the dip"
+  }
+ ],
+ "state": "COLLECTING",
+ "recommended_action": "COLLECT",
+ "prohibited_interpretation": "do not infer an optimal threshold from the current sample; a smaller dip could reduce miss cost while worsening adverse-selection exposure \u2014 only the registered decision gate may adjudicate"
+}

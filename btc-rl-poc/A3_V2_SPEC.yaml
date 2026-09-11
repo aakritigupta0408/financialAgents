@@ -1,0 +1,60 @@
+# A3-v2 — SHALLOW OVERREACTION HARVEST — pre-registration (2026-08-30)
+# New prospective experiment motivated by A3-v1.1 FAILURE. NOT an
+# "optimized A3": v1.1 was REJECTED at its registered gate (n=56,
+# paired Δ −10.4c/eligible, 95% CI below zero) and is CLOSED forever
+# (evidence: results/a3_v1_final.json, sha 22014cee8ebe2b82).
+# EXACTLY ONE variable changes vs v1.1: dip threshold 10c -> 5c.
+# Fresh forward counter from registered_ts_v2; NO historical T05
+# shadow row counts toward the v2 decision statistic.
+version: 2.0
+experiment_id: A3-v2
+registered_ts_v2: 1788149400        # 2026-08-30 — PM ratification
+control: C0_IMMEDIATE
+treatment: T05_WAIT
+research_question: Does waiting for the first valid >=5c discount
+  improve after-cost P&L per eligible window relative to immediate
+  entry?
+hypotheses: {H0: "delta <= 0", H1: "delta > 0"}
+primary_metric: paired_delta_net_pnl_per_eligible_window
+statistical_unit: eligible window
+denominator: all eligible windows (misses = 0 trading P&L)
+price_source: executable event-tape side ask (results/events/, ~1s)
+entry_cutoff_seconds: 60
+quote_freshness_seconds: 10
+fill_convention: take the ask, qty 1 contract
+thesis_gate: {caller: kb2, min_conf: 0.75,
+              envelope_mins_left: [6, 13]}
+validity_floor: {caller: kb2, min_conf: 0.65,
+                 invalidation: permanent}
+dip_gate: {min_drop_c: 5}           # THE one change vs v1.1
+evidence_gates: {display_n: 10, compare_n: 25, decision_n: 50}
+decision_rule:                       # identical machinery to v1.1
+  QUALIFY: "95% seeded-bootstrap CI > 0 AND survives ex-best-1
+    concentration"
+  REJECT: "95% CI < 0"
+  otherwise: CONTINUE / INSUFFICIENT_EVIDENCE
+  law: no favorable stopping rule invented for v2
+failure_watches: [paired_delta_negative,
+                  miss_cost_overwhelms_fill_gain, thesis_integrity,
+                  toxic_10s_markouts, outlier_concentration]
+decomposition: [gross_fill_gain, missed_winner_cost,
+                invalidation_cost, net_waiting_value,
+                identity_residual]
+central_test: Does reducing the required discount materially lower
+  missed-winner cost without giving back too much entry-price
+  improvement or increasing thesis adverse selection?
+shadows:
+  T10: {dip_c: 10, role: "diagnostic continuity benchmark — the
+    rejected v1.1 rule, observation only"}
+  # T15 RETIRED from forward collection — the deep-wait mechanism is
+  # already understood; no threshold ladder zoo (complexity law)
+registration_rationale:
+  label: EXPLORATORY PRE-REGISTRATION EVIDENCE — NOT INCLUDED IN
+    FORWARD TEST
+  v1_shadow_T05_pnl_per_eligible: 0.114   # over v1.1's 55-56 windows
+  v1_T10_pnl_per_eligible: -0.104
+  v1_mechanism: all fills beat control; missed winners + thesis
+    deterioration dominated; execution toxicity not evident
+  independent_track_note: F-XVENUE stays a separate research track;
+    cross-venue gating of waiting would be a LATER registered
+    experiment

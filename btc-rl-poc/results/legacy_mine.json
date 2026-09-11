@@ -1,0 +1,123 @@
+{
+ "generated_ts": 1788055305,
+ "windows": 168,
+ "conventions": "modeled asks, kb2 contemporaneous fair, RE = fair - ask - fee - 4c crude reserve; minute resolution \u2014 sub-minute claims UNAVAILABLE",
+ "a1_excursion_after_confidence": {
+  "0.75-0.80": {
+   "n": 88,
+   "win_rate": 0.818,
+   "avg_entry_ask": 79.9,
+   "avg_later_min_ask": 61.5,
+   "p_drop_ge10c": 0.455,
+   "p_drop_ge20c": 0.33
+  },
+  "0.80-0.85": {
+   "n": 73,
+   "win_rate": 0.849,
+   "avg_entry_ask": 84.5,
+   "avg_later_min_ask": 67.8,
+   "p_drop_ge10c": 0.384,
+   "p_drop_ge20c": 0.247
+  },
+  "0.85-0.90": {
+   "n": 58,
+   "win_rate": 0.914,
+   "avg_entry_ask": 89.7,
+   "avg_later_min_ask": 78.9,
+   "p_drop_ge10c": 0.328,
+   "p_drop_ge20c": 0.172
+  },
+  "0.90-1.01": {
+   "n": 35,
+   "win_rate": 0.914,
+   "avg_entry_ask": 94.4,
+   "avg_later_min_ask": 84.8,
+   "p_drop_ge10c": 0.2,
+   "p_drop_ge20c": 0.2
+  }
+ },
+ "a2_divergence_residual_clean_era": {},
+ "a3_buy_vs_wait": {
+  "n": 3,
+  "mean_re_at_first_positive": 3.3,
+  "mean_wait_gain_c": -35.4,
+  "median_wait_gain_c": -4.0,
+  "p_wait_gain_positive": 0.333,
+  "p_opportunity_disappeared": 0.333,
+  "note": "coarse minute policy only \u2014 sub-minute timing UNAVAILABLE FROM LEGACY TAPE"
+ },
+ "a4_trader_ecr": {
+  "pt": {
+   "n": 2,
+   "mean_ECR": 0.0,
+   "mean_ESR": null
+  }
+ },
+ "v2_corrections": {
+  "generated_ts": 1788055391,
+  "a2_kb9_divergence": {
+   "early_10-13m_10-20pp": {
+    "n": 28,
+    "mkt_implied": 0.47,
+    "actual": 0.61,
+    "residual_pp": 14
+   },
+   "mid_5-8m_10-20pp": {
+    "n": 26,
+    "residual_pp": -1
+   },
+   "late_1-3m_10-20pp": {
+    "n": 25,
+    "residual_pp": 3
+   },
+   "read": "divergence signal exists ONLY early \u2014 thin n, hypothesis not bank"
+  },
+  "a3_conditional_wait": {
+   "n": 127,
+   "valid_later_entry_rate": 0.98,
+   "mean_wait_gain_c": 2.6,
+   "median_wait_gain_c": 3.0,
+   "p_gain_ge10c": 0.2,
+   "read": "validity-conditioned waiting is +EV at minute resolution; naive 18c shrinks to 2.6c once hindsight removed (the \u00a79 lesson, demonstrated)"
+  },
+  "a4": "mostly UNAVAILABLE FROM LEGACY TAPE \u2014 kb path retention (~168 windows) vs 300+ trades; tape v2 needs full-history join",
+  "verdict": "ENGINE JUSTIFIED: alive families = A3 overreaction-harvest on confident calls (fat right tail: 20pct of windows offer >=10c better valid entry) + A2 early-divergence (n=28, +14pp, needs forward confirmation). Informational edge over market mid/late: NULL, consistent with BSS<=0. Event capture decides how much of the tail is capturable sub-minute."
+ },
+ "a3_surface": {
+  "generated_ts": 1788066166,
+  "design": "one point per confident-call window (kb2>=0.75, 6-13m) at its deepest valid dip (kb2 floor 0.65); kb9 minute-matched as independent stability reference; netEV at modeled dip ask",
+  "cells": {
+   "drop>=10c_kb9stable(<5pp)": {
+    "n": 10,
+    "win": 0.6,
+    "avg_drop_c": 20.0,
+    "net_ev_per_$1": -0.079,
+    "read": "THE ELEGANT O_t CELL FAILS \u2014 model-stable deep dips LOSE; kb9 stability was false reassurance"
+   },
+   "drop>=10c_kb9det(>=5pp)": {
+    "n": 25,
+    "win": 0.76,
+    "avg_drop_c": 19.1,
+    "net_ev_per_$1": 0.184,
+    "read": "best cell: both moved, market moved MORE"
+   },
+   "drop5-10c_kb9stable": {
+    "n": 15,
+    "win": 0.8,
+    "net_ev_per_$1": 0.063
+   },
+   "all_dips>=10c": {
+    "n": 35,
+    "win": 0.714,
+    "net_ev_per_$1": 0.109
+   },
+   "baseline_buy_at_call": {
+    "n": 126,
+    "win": 0.849,
+    "net_ev_per_$1": 0.085
+   }
+  },
+  "kb2_surface_note": "with kb2 as fair, the ideal cell is EMPTY by construction (kb2 is market-anchored); its deep-dip cell: n=23, win 78%, avg 12.6c",
+  "verdict": "A3-v1 pre-registered as the SIMPLE dip rule (A3_SPEC.yaml); the stability-gate variant COUNTERINDICATED (n=10, -7.9%) \u2014 watch, not gate; all n tiny; forward tape-v2 judges."
+ }
+}

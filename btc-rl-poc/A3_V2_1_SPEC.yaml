@@ -1,0 +1,54 @@
+# A3-v2.1 — SHALLOW OVERREACTION HARVEST — re-registration
+# (2026-09-06). SCIENTIFICALLY IDENTICAL to A3-v2 in every
+# threshold, gate, and decision rule. Re-registered ONLY because
+# A3-v2 was CLOSED / INVALIDATED_BY_EVIDENCE_INTEGRITY: source-log
+# rotation destroyed ~34 of its 153 eligible windows before the
+# persistence fix (INC 2026-09-05, fix aa3334b), so its registered
+# denominator can no longer be reconstructed. This is an evidence-
+# chain closure, NOT a scientific verdict — v2's Δ at closure is
+# not a result. Evidence preserved immutably: a3_v2_closure.json.
+# Fresh forward counter from registered_ts; NO row of any earlier
+# experiment counts toward the v2.1 statistic.
+version: 2.1
+experiment_id: A3-v2.1
+registered_ts: 1788727331           # 2026-09-06 — PM ruling
+predecessor: {id: A3-v2, lifecycle: CLOSED_INVALIDATED,
+              closure: results/a3_v2_closure.json}
+control: C0_IMMEDIATE
+treatment: T05_WAIT
+research_question: Does waiting for the first valid >=5c discount
+  improve after-cost P&L per eligible window relative to immediate
+  entry?
+hypotheses: {H0: "delta <= 0", H1: "delta > 0"}
+primary_metric: paired_delta_net_pnl_per_eligible_window
+statistical_unit: eligible window
+denominator: all eligible windows (misses = 0 trading P&L)
+price_source: executable event-tape side ask (results/events/, ~1s)
+entry_cutoff_seconds: 60
+quote_freshness_seconds: 10
+fill_convention: take the ask, qty 1 contract
+thesis_gate: {caller: kb2, min_conf: 0.75,
+              envelope_mins_left: [6, 13]}
+validity_floor: {caller: kb2, min_conf: 0.65,
+                 invalidation: permanent}
+dip_gate: {min_drop_c: 5}
+evidence_gates: {display_n: 10, compare_n: 25, decision_n: 50}
+decision_rule:
+  QUALIFY: "95% seeded-bootstrap CI > 0 AND survives ex-best-1
+    concentration"
+  REJECT: "95% CI < 0"
+  otherwise: CONTINUE / INSUFFICIENT_EVIDENCE
+  law: no favorable stopping rule invented for v2.1
+failure_watches: [paired_delta_negative,
+                  miss_cost_overwhelms_fill_gain, thesis_integrity,
+                  toxic_10s_markouts, outlier_concentration]
+decomposition: [gross_fill_gain, missed_winner_cost,
+                invalidation_cost, net_waiting_value,
+                identity_residual, missed_winner_magnitude]
+shadows:
+  T10: {dip_c: 10, role: "diagnostic continuity benchmark —
+    observation only"}
+evidence_integrity:                  # the lesson this version wears
+  ledger_persistence: union-merge, first-written wins, fail-closed
+    shrink guard (emit_a3, INC 2026-09-05)
+  invariant: registered-ledger-never-shrinks (permanent suite test)

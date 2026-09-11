@@ -40,7 +40,7 @@ for r in rows:
         out = _chronos_p_up(upto[-N:], r["strike"], horizon)
         if not out:
             continue
-        p, _ = out
+        p = out[0]          # (p_up, q80_w, q80_lo, q80_hi) since the 4-tuple change
         s = res[N]
         s[0] += 1
         s[1] += int((p >= 0.5) == bool(r["actual"]))
