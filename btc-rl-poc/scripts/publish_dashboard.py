@@ -112,6 +112,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("trajectory_board.json", None),
     ("failure_store.json", None),
     ("eod_exec_selection.json", None),
+    ("decision_frontier.json", None),
     ("a3v21_window_evaluation.jsonl", None),
     ("a3_v2_closure.json", None),
     ("t1_1_result.json", None),

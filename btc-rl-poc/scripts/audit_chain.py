@@ -52,6 +52,7 @@ STEPS = [
     "scripts/emit_pm_snapshot.py",
     "scripts/emit_trajectory_board.py",
     "scripts/mine_failures.py",
+    "scripts/decision_frontier.py",
     "scripts/emit_freeze_convergence.py",
     "scripts/emit_readiness.py",
 ]
