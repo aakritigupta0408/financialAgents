@@ -22,21 +22,43 @@ RES = ROOT / "results"
 N_RECENT = 100
 
 
+def decision_alignment(b):
+    """INC 09-10 integrity field (PM taxonomy). Betting the model's
+    LESS-likely side is NOT a disagreement in a PRICED market — the
+    cheap tail can be +edge. A genuine inversion is: less-likely side
+    AND negative edge AND not forced.
+      EXPLICIT_OVERRIDE   — forced/fallback policy (versioned flag)
+      CONVENTION_NORMALIZED — cheap-tail +edge on the less-likely side
+      INVALID             — genuine sign inversion (SEV candidate)
+      ALIGNED             — side matches model direction"""
+    p = float(b.get("p_model") or 0.5)
+    p_side = p if b.get("side") == "yes" else 1 - p
+    edge = float(b.get("edge_c") or 0)
+    if b.get("forced"):
+        return "EXPLICIT_OVERRIDE"
+    if p_side < 0.5:
+        return "CONVENTION_NORMALIZED" if edge >= 0 else "INVALID"
+    return "ALIGNED"
+
+
 def classify(b, mkt_p):
-    """Primary failure mechanism for a LOST bet, by priority.
-    All labels are attributable to PRE-ENTRY state."""
+    """Primary ECONOMIC failure mechanism for a LOST bet, by priority.
+    All labels are attributable to PRE-ENTRY state. (Decision-side
+    logic is handled separately by decision_alignment — betting a
+    cheap +edge tail is not a failure mechanism.)"""
     p = float(b.get("p_model") or 0.5)
     side_yes = b.get("side") == "yes"
-    conf_for_side = p if side_yes else 1 - p     # our conviction
+    conf_for_side = p if side_yes else 1 - p
     price = float(b.get("price_c") or 0)
     mins = float(b.get("mins_left") or 99)
+    edge = float(b.get("edge_c") or 0)
     tags = []
-    if conf_for_side < 0.5:
-        tags.append("BET_AGAINST_OWN_MODEL")     # anomaly
+    if conf_for_side < 0.5 and edge < 0 and not b.get("forced"):
+        tags.append("SIGN_INVERSION")            # genuine — should be 0
     if conf_for_side >= 0.65:
         tags.append("CONFIDENTLY_WRONG")
     if price >= 70:
-        tags.append("EXPENSIVE_LOSER")           # selection should skip
+        tags.append("EXPENSIVE_LOSER")
     if mins < 3:
         tags.append("LATE_ENTRY")
     if 0.5 <= conf_for_side < 0.65:
@@ -44,12 +66,12 @@ def classify(b, mkt_p):
     if mkt_p is not None:
         mkt_for_other = (1 - mkt_p) if side_yes else mkt_p
         if mkt_for_other >= 0.62:
-            tags.append("MARKET_KNEW")           # market favored other side
+            tags.append("MARKET_KNEW")
     if not tags:
         tags.append("UNCLASSIFIED")
-    priority = ["BET_AGAINST_OWN_MODEL", "MARKET_KNEW",
-                "CONFIDENTLY_WRONG", "EXPENSIVE_LOSER", "LATE_ENTRY",
-                "THIN_EDGE_LOST", "UNCLASSIFIED"]
+    priority = ["SIGN_INVERSION", "MARKET_KNEW", "CONFIDENTLY_WRONG",
+                "EXPENSIVE_LOSER", "LATE_ENTRY", "THIN_EDGE_LOST",
+                "UNCLASSIFIED"]
     primary = next(t for t in priority if t in tags)
     return primary, tags
 
@@ -68,8 +90,9 @@ IMPROVEMENT = {
         "priced it; weight early-window information (economic half-life)",
     "THIN_EDGE_LOST": "no real edge here — these are coin-flips; a "
         "residual model should learn delta~=0 and abstain",
-    "BET_AGAINST_OWN_MODEL": "ledger anomaly — a bet placed against the "
-        "model's own side; investigate the decision path",
+    "SIGN_INVERSION": "DECISION-INTEGRITY: bet the less-likely side at "
+        "negative edge, not forced — investigate the decision path "
+        "(should be 0; guarded by decision-side-consistency invariant)",
     "UNCLASSIFIED": "add instrumentation — this loss is not explained by "
         "current pre-entry features",
 }
@@ -86,6 +109,11 @@ def main():
             and b.get("pnl_c") is not None]
     bets.sort(key=lambda b: b.get("made_ts", 0))
 
+    # decision-alignment over ALL settled bets (integrity, not just losers)
+    align = Counter(decision_alignment(b) for b in bets)
+    invalid_bets = [b.get("ticker") for b in bets
+                    if decision_alignment(b) == "INVALID"]
+
     bad = [b for b in bets if float(b["pnl_c"]) < 0]
     recent_bad = bad[-N_RECENT:]
     labelled = []
@@ -98,15 +126,20 @@ def main():
                          "side": b.get("side"),
                          "price_c": b.get("price_c"),
                          "mins_left": b.get("mins_left"),
+                         "decision_alignment": decision_alignment(b),
                          "primary": primary, "tags": tags})
     clusters = Counter(x["primary"] for x in labelled)
     top_cluster = clusters.most_common(1)[0] if clusters else ("NONE", 0)
     worst20 = sorted(labelled, key=lambda x: x["pnl_c"])[:20]
 
     doc = {"generated_ts": int(time.time()),
+           "schema_version": "failure-store-v1",
            "plane": "D-Research (data flywheel); observation-only",
            "bets_total": len(bets), "bad_total": len(bad),
            "window_recent_bad": len(recent_bad),
+           "decision_alignment": dict(align.most_common()),
+           "sign_inversions": {"count": len(invalid_bets),
+                               "tickers": invalid_bets[:10]},
            "failure_clusters": dict(clusters.most_common()),
            "top_cluster": {"mechanism": top_cluster[0],
                            "count": top_cluster[1],

@@ -1,19 +1,29 @@
 {
- "generated_ts": 1789104107,
+ "generated_ts": 1789104889,
+ "schema_version": "failure-store-v1",
  "plane": "D-Research (data flywheel); observation-only",
- "bets_total": 1640,
- "bad_total": 765,
+ "bets_total": 1641,
+ "bad_total": 766,
  "window_recent_bad": 100,
+ "decision_alignment": {
+  "ALIGNED": 1519,
+  "EXPLICIT_OVERRIDE": 75,
+  "CONVENTION_NORMALIZED": 47
+ },
+ "sign_inversions": {
+  "count": 0,
+  "tickers": []
+ },
  "failure_clusters": {
-  "MARKET_KNEW": 58,
+  "MARKET_KNEW": 63,
   "THIN_EDGE_LOST": 21,
   "CONFIDENTLY_WRONG": 15,
-  "BET_AGAINST_OWN_MODEL": 6
+  "LATE_ENTRY": 1
  },
  "top_cluster": {
   "mechanism": "MARKET_KNEW",
-  "count": 58,
-  "share": 0.58
+  "count": 63,
+  "share": 0.63
  },
  "proposed_information_improvement": "market leads on these \u2014 need EARLIER or genuinely INDEPENDENT information (F1 microstructure / F-AV1), not a better BTC-price model",
  "worst_20_windows": [
@@ -25,6 +35,7 @@
    "side": "yes",
    "price_c": 79.0,
    "mins_left": 13.1,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -39,6 +50,7 @@
    "side": "no",
    "price_c": 78.0,
    "mins_left": 13.4,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -53,6 +65,7 @@
    "side": "yes",
    "price_c": 78.0,
    "mins_left": 8.9,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -67,6 +80,7 @@
    "side": "no",
    "price_c": 78.0,
    "mins_left": 10.8,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -81,6 +95,7 @@
    "side": "no",
    "price_c": 77.0,
    "mins_left": 10.8,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -96,6 +111,7 @@
    "side": "yes",
    "price_c": 77.0,
    "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -110,6 +126,7 @@
    "side": "yes",
    "price_c": 76.0,
    "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -124,6 +141,7 @@
    "side": "no",
    "price_c": 76.0,
    "mins_left": 13.9,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -139,6 +157,7 @@
    "side": "yes",
    "price_c": 76.0,
    "mins_left": 12.7,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -153,6 +172,7 @@
    "side": "no",
    "price_c": 75.0,
    "mins_left": 10.3,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -167,6 +187,7 @@
    "side": "no",
    "price_c": 75.0,
    "mins_left": 9.6,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -181,6 +202,7 @@
    "side": "no",
    "price_c": 74.0,
    "mins_left": 13.5,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -195,6 +217,7 @@
    "side": "yes",
    "price_c": 73.0,
    "mins_left": 12.8,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -209,6 +232,7 @@
    "side": "no",
    "price_c": 67.0,
    "mins_left": 12.2,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG"
@@ -222,6 +246,7 @@
    "side": "yes",
    "price_c": 64.0,
    "mins_left": 14.7,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -236,6 +261,7 @@
    "side": "no",
    "price_c": 64.0,
    "mins_left": 13.6,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -250,6 +276,7 @@
    "side": "yes",
    "price_c": 64.0,
    "mins_left": 11.7,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -264,6 +291,7 @@
    "side": "no",
    "price_c": 63.0,
    "mins_left": 13.0,
+   "decision_alignment": "ALIGNED",
    "primary": "MARKET_KNEW",
    "tags": [
     "CONFIDENTLY_WRONG",
@@ -278,6 +306,7 @@
    "side": "no",
    "price_c": 63.0,
    "mins_left": 14.2,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG"
@@ -291,6 +320,7 @@
    "side": "no",
    "price_c": 62.0,
    "mins_left": 11.0,
+   "decision_alignment": "ALIGNED",
    "primary": "CONFIDENTLY_WRONG",
    "tags": [
     "CONFIDENTLY_WRONG"

@@ -291,6 +291,38 @@ def _no_zombie_positions():
     return not bad, bad[:5]
 
 
+@check("decision-side-consistency",
+       "INC 09-10 (permanent) — every paper action must align with the "
+       "model/policy decision OR carry an explicit registered override. "
+       "A genuine sign inversion is: bet the model's LESS-likely side "
+       "(p_side<0.5) AT negative edge AND not forced. Betting a cheap "
+       "+edge tail or a flagged forced bet is legitimate, not an "
+       "inversion.")
+def _decision_side_consistency():
+    import json as _j
+    bad = []
+    for fname in ("kb_bets.jsonl",):
+        p = RES / fname
+        if not p.exists():
+            continue
+        for line in p.open():
+            try:
+                b = _j.loads(line)
+            except Exception:
+                continue
+            if b.get("actual") is None or b.get("p_model") is None:
+                continue
+            pm = float(b["p_model"])
+            p_side = pm if b.get("side") == "yes" else 1 - pm
+            edge = float(b.get("edge_c") or 0)
+            if p_side < 0.5 and edge < 0 and not b.get("forced"):
+                bad.append(f"{fname}:{b.get('ticker')} p_side="
+                           f"{round(p_side,3)} edge={edge} — sign "
+                           "inversion (less-likely side, -edge, not "
+                           "forced)")
+    return not bad, bad[:5]
+
+
 @check("freeze-state-convergence",
        "INC 09-10 (permanent) — when the invariant wall is GREEN and "
        "has been for longer than the daemon's fail-closed cache SLA, "
