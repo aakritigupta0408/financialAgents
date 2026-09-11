@@ -224,6 +224,25 @@ experiments:
        genuinely new information invalidates the diffuse-miss
        conclusion",
      reopen: NEVER as v2.1}
+  - {id: EOD-exec-selection, lifecycle: CLOSED_NO_CANDIDATE,
+     runtime: false, tier: T4, plane: D,
+     alpha_class: EXECUTION_UTILIZATION,
+     final_verdict: "NO_CANDIDATE — on untouched holdout the frozen
+       0.66 selector cut champion realized -12.65c -> -5.8c/$1, win
+       0.50 -> 0.70, drawdown 1521 -> 399 at 25% coverage, but did
+       NOT cross zero. Mechanism validated, not profitable",
+     baseline_frozen: "eod_exec_selection_baseline.json sha 8956dbf2ccd43257",
+     note: "FROZEN baseline — do not tune the 0.66 gate, add selectors,
+       enlarge the model, or reopen the holdout. Successor is
+       H-MICRO-EXEC (information, not more filtering)"}
+  - {id: H-MICRO-EXEC, lifecycle: SPEC_ONLY, runtime: false,
+     tier: T2, plane: D, spec: H_MICRO_EXEC_SPEC.yaml,
+     note: "does microstructure add incremental realized EV within
+       execution-qualified opportunities? control vs treatment share
+       the IDENTICAL frozen 0.66 selector so improvement attributes
+       to INFORMATION, not re-tuning; blocked on F1 freeze; market-
+       residual objective; regression fixture ADVERSE_EXECUTION_
+       REGIME_EOD_2026-09-10"}
   - {id: X1, lifecycle: SPEC_ONLY, runtime: false, tier: T4, plane: D,
      spec: X1_EXECUTION_ATTRIBUTION_SPEC.yaml, is_treatment: false,
      note: "P0 execution-gap attribution (PM 09-10) — DIAGNOSTIC, opens
