@@ -105,6 +105,33 @@
     </div>
   </header>
 
+  <style>
+    .dashrail { margin: 24px 0 6px; }
+    .dashrail .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em;
+      color: var(--good-text); }
+    .dashrail h2 { font: italic 500 26px/1.2 var(--display); margin: 3px 0 0; }
+    .dashgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+      margin-top: 14px; }
+    @media (max-width: 900px) { .dashgrid { grid-template-columns: repeat(2, 1fr); } }
+    .dashtile { display: flex; flex-direction: column; gap: 4px; text-decoration: none;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px 15px; transition: border-color .12s, transform .12s; }
+    .dashtile:hover { border-color: var(--series-2); transform: translateY(-2px); }
+    .dashtile b { font-size: 15px; color: var(--ink); }
+    .dashtile span { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  </style>
+  <section class="dashrail" aria-label="Live dashboards">
+    <span class="eyebrow">NEW · LIVE RESEARCH DASHBOARDS</span>
+    <h2>See the desk in numbers</h2>
+    <div class="dashgrid">
+      <a class="dashtile" href="traders.html"><b>Traders →</b><span>Every trader's equity on one axis · the $1K Desk</span></a>
+      <a class="dashtile" href="perf.html"><b>Performance →</b><span>Profit per trade with 95% CIs &amp; significance</span></a>
+      <a class="dashtile" href="tiers.html"><b>Tiers →</b><span>T1/T2/T3 arms, features, losses, A/B</span></a>
+      <a class="dashtile" href="features.html"><b>Features →</b><span>Feeds, leakage canaries, calibration</span></a>
+      <a class="dashtile" href="health.html"><b>Health →</b><span>Invariants, incidents, graveyard &amp; incubator</span></a>
+    </div>
+  </section>
+
   <section class="cards">
     <div class="card">
       <div class="eyebrow">CARD 1</div>
