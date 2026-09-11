@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>Feature Monitor</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+:root{ --card:#ffffff; --soft:#f5f7fa; --ink2:#4a5768; --line:rgba(20,27,36,.10);
+  --accent:#2f6df0; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+main{max-width:1080px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 3px rgba(20,27,36,.05);margin-top:14px}
+.panel h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;font-weight:650}
+.panel .sub{font-size:12.5px;color:var(--ink2);margin:0 0 14px;max-width:78ch}
+.feeds{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.feed{border:1px solid var(--line);border-radius:11px;padding:12px 14px;background:var(--soft)}
+.feed .n{font-size:12px;font-weight:600}
+.feed .s{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:20px;margin-top:6px;display:inline-block}
+.s.HEALTHY,.s.PASS,.s.OK{color:var(--up);background:rgba(15,157,88,.13)}
+.s.DEGRADED,.s.WARN{color:#b26a00;background:rgba(230,149,43,.14)}
+.s.STALE,.s.FAIL,.s.DOWN{color:var(--down);background:rgba(209,60,60,.12)}
+.feed .m{font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--mono)}
+.flag{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-family:var(--mono);padding:4px 10px;border-radius:8px;margin:3px 6px 0 0}
+.flag.ok{color:var(--up);background:rgba(15,157,88,.10)}
+.flag.warn{color:#b26a00;background:rgba(230,149,43,.13)}
+.can{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.can div{font-size:12px;font-family:var(--mono);padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--soft);display:flex;justify-content:space-between;gap:8px}
+.can .r{font-weight:700}
+.selrow{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+select{font:600 12px var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+canvas{width:100%;display:block}
+.legend{display:flex;gap:16px;margin-top:10px;font-size:11.5px;color:var(--muted);font-family:var(--mono);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}.legend i{width:12px;height:3px;border-radius:2px}
+.note{font-size:11.5px;color:var(--faint);margin-top:14px;font-family:var(--mono);line-height:1.6}
+.stamp{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:760px){.two{grid-template-columns:1fr}}
+h3.sec{font-size:13px;font-weight:650;margin:0 0 8px}
+</style>
+</head>
+<body>
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="traders.html">Traders</a><a class="nav" href="tiers.html">Tiers</a><a class="nav here" href="features.html">Features</a><a class="nav" href="watchtower.html">Watchtower</a><a class="nav" href="board.html">Board</a><span class="spacer"></span><span class="tag">inputs</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing here is financial advice.</div>
+
+<main>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">Feature Monitor</h1>
+  <p style="color:var(--ink-2);max-width:70ch;">Every third-party feed and derived feature that flows into the models — its health, its
+  time-series with rolling mean and variance, its missing-data flags, and whether the outbound probabilities actually track reality.</p>
+</header>
+<span class="stamp" id="stamp"></span>
+
+<div class="panel"><h2>Input feeds &amp; capture liveness</h2>
+  <p class="sub">Live health of the daemons and third-party captures feeding the feature store.</p>
+  <div class="feeds" id="feeds"></div>
+  <div style="margin-top:12px" id="flags"></div>
+</div>
+
+<div class="panel"><h2>Leakage canaries</h2>
+  <p class="sub">Adversarial checks that would fire if the system were peeking at the future or fitting noise. All must pass.</p>
+  <div class="can" id="canaries"></div>
+</div>
+
+<div class="panel"><h2>Feature time-series</h2>
+  <div class="selrow">feature <select id="fsel"></select>
+    <span class="note" style="margin:0">line = value · band = rolling mean ± 1σ (window 20) · ticks = missing</span></div>
+  <canvas id="ts" height="260"></canvas>
+  <div class="legend"><span><i style="background:var(--accent)"></i>value</span><span><i style="background:var(--muted)"></i>rolling mean</span><span><i style="background:rgba(47,109,240,.18)"></i>±1σ band</span></div>
+</div>
+
+<div class="panel"><h2>Outbound probability — predicted vs actual</h2>
+  <p class="sub">Reliability: for each predicted-probability bucket, the realized win frequency. On the diagonal = perfectly calibrated. Model vs market.</p>
+  <div class="two">
+    <div><h3 class="sec">Calibration</h3><canvas id="cal" height="240"></canvas>
+      <div class="legend"><span><i style="background:var(--accent)"></i>model</span><span><i style="background:#b26a00"></i>market</span><span><i style="background:var(--muted)"></i>ideal</span></div></div>
+    <div><h3 class="sec">Reading it</h3><p class="note" id="calnote" style="color:var(--ink2)"></p></div>
+  </div>
+</div>
+<p class="note" id="foot"></p>
+</main>
+
+<script>
+const C=getComputedStyle(document.documentElement),col=k=>C.getPropertyValue(k).trim();
+const bust=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function jget(u){const r=await fetch(bust(u),{cache:"no-store"});return r.ok?r.json():null;}
+function dpr(cv,w,h){const r=window.devicePixelRatio||1;cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);return g;}
+let D=null;
+function stateCls(s){s=(s||"").toUpperCase();if(/HEALTH|PASS|OK|GREEN/.test(s))return"HEALTHY";if(/DEGRAD|WARN|AMBER/.test(s))return"DEGRADED";if(/STALE|FAIL|DOWN|SEV|RED/.test(s))return"STALE";return"HEALTHY";}
+function feeds(){
+  const h=document.getElementById("feeds");h.innerHTML="";
+  D.feeds.forEach(f=>{const el=document.createElement("div");el.className="feed";
+    el.innerHTML=`<div class="n">${f.name}</div><span class="s ${stateCls(f.state)}">${f.state||'—'}</span>
+      <div class="m">${f.age_s!=null?'age '+Math.round(f.age_s)+'s':''}${f.errors?' · '+f.errors+' err':''}</div>`;h.appendChild(el);});
+  Object.entries(D.captures||{}).forEach(([k,v])=>{const el=document.createElement("div");el.className="feed";
+    const parts=Object.entries(v).filter(([kk])=>kk!=="errors").slice(0,4).map(([kk,vv])=>kk+' '+vv).join(' · ');
+    el.innerHTML=`<div class="n">${k.replace('_',' ')}</div><span class="s HEALTHY">capturing</span><div class="m">${parts||'—'}${v.errors?' · '+v.errors+' err':''}</div>`;h.appendChild(el);});
+  const fl=document.getElementById("flags");const m=D.missingness||{};fl.innerHTML="";
+  Object.entries(m).forEach(([k,v])=>{if(k==="state")return;const rate=+v;const warn=rate>0.5;
+    fl.innerHTML+=`<span class="flag ${warn?'warn':'ok'}">${warn?'⚠':'✓'} ${k} ${(rate*100).toFixed(1)}% null</span>`;});
+  if(D.pit_store)fl.innerHTML+=`<span class="flag ok">PIT store ${(D.pit_store.rows||D.pit_store.snapshots||D.pit_store.n||'')}</span>`;
+}
+function canaries(){const h=document.getElementById("canaries");h.innerHTML="";
+  D.canaries.checks.forEach(c=>{const ok=(c.result||"").toUpperCase()==="PASS";
+    h.innerHTML+=`<div><span>${c.name}</span><span class="r" style="color:${ok?col('--up'):col('--down')}">${c.result||'—'}</span></div>`;});}
+function rolling(vals,win){const out=[];for(let i=0;i<vals.length;i++){let s=0,s2=0,n=0;
+  for(let j=Math.max(0,i-win+1);j<=i;j++){const v=vals[j];if(v!=null){s+=v;s2+=v*v;n++;}}
+  if(n){const m=s/n;out.push({m,sd:Math.sqrt(Math.max(0,s2/n-m*m))});}else out.push(null);}return out;}
+function tsChart(field){
+  const s=D.series[field]||[];const cv=document.getElementById("ts"),w=cv.clientWidth||800,h=260,g=dpr(cv,w,h);
+  const pl=54,pr=14,pt=10,pb=26;const vals=s.map(p=>p.v);
+  const nn=vals.filter(v=>v!=null);if(!nn.length)return;let y0=Math.min(...nn),y1=Math.max(...nn);const pad=(y1-y0)*0.08||1;y0-=pad;y1+=pad;
+  const X=i=>pl+i/(s.length-1)*(w-pl-pr),Y=v=>pt+(1-(v-y0)/(y1-y0))*(h-pt-pb);
+  g.font="10px "+col("--mono");g.textBaseline="middle";
+  for(let i=0;i<=3;i++){const v=y0+(y1-y0)*i/3,y=Y(v);g.strokeStyle=col("--grid");g.beginPath();g.moveTo(pl,y);g.lineTo(w-pr,y);g.stroke();
+    g.fillStyle=col("--faint");g.textAlign="right";g.fillText(v.toFixed(Math.abs(v)<2?3:0),pl-6,y);}
+  const roll=rolling(vals,20);
+  // band
+  g.fillStyle="rgba(47,109,240,.14)";g.beginPath();let started=false;
+  for(let i=0;i<s.length;i++){if(roll[i]){const x=X(i),y=Y(roll[i].m+roll[i].sd);started?g.lineTo(x,y):g.moveTo(x,y);started=true;}}
+  for(let i=s.length-1;i>=0;i--){if(roll[i]){g.lineTo(X(i),Y(roll[i].m-roll[i].sd));}}g.closePath();g.fill();
+  // value line (break on nulls)
+  g.strokeStyle=col("--accent");g.lineWidth=1.6;g.beginPath();let pen=false;
+  s.forEach((p,i)=>{if(p.v==null){pen=false;return;}const x=X(i),y=Y(p.v);pen?g.lineTo(x,y):g.moveTo(x,y);pen=true;});g.stroke();
+  // rolling mean
+  g.strokeStyle=col("--muted");g.lineWidth=1.4;g.setLineDash([4,3]);g.beginPath();pen=false;
+  roll.forEach((r,i)=>{if(!r){pen=false;return;}const x=X(i),y=Y(r.m);pen?g.lineTo(x,y):g.moveTo(x,y);pen=true;});g.stroke();g.setLineDash([]);
+  // missing ticks
+  g.strokeStyle=col("--down");s.forEach((p,i)=>{if(p.v==null){const x=X(i);g.beginPath();g.moveTo(x,h-pb);g.lineTo(x,h-pb-6);g.stroke();}});
+}
+function calChart(){
+  const cv=document.getElementById("cal"),w=cv.clientWidth||420,h=240,g=dpr(cv,w,h);const pl=40,pr=12,pt=10,pb=28;
+  const X=v=>pl+v*(w-pl-pr),Y=v=>pt+(1-v)*(h-pt-pb);
+  g.font="10px "+col("--mono");g.textBaseline="middle";
+  for(let i=0;i<=4;i++){const v=i/4;g.strokeStyle=col("--grid");g.beginPath();g.moveTo(pl,Y(v));g.lineTo(w-pr,Y(v));g.stroke();
+    g.fillStyle=col("--faint");g.textAlign="right";g.fillText(v.toFixed(1),pl-5,Y(v));}
+  g.textAlign="center";g.textBaseline="top";[0,.25,.5,.75,1].forEach(v=>g.fillText(v.toFixed(2),X(v),h-pb+6));
+  g.strokeStyle=col("--muted");g.setLineDash([4,4]);g.beginPath();g.moveTo(X(0),Y(0));g.lineTo(X(1),Y(1));g.stroke();g.setLineDash([]);
+  const draw=(pts,c)=>{g.strokeStyle=c;g.fillStyle=c;g.lineWidth=2;g.beginPath();let pen=false;
+    pts.forEach(b=>{if(b.freq==null)return;const x=X(b.p),y=Y(b.freq);pen?g.lineTo(x,y):g.moveTo(x,y);pen=true;});g.stroke();
+    pts.forEach(b=>{if(b.freq==null)return;g.globalAlpha=.9;g.beginPath();g.arc(X(b.p),Y(b.freq),Math.min(7,3+Math.sqrt(b.n)/3),0,7);g.fill();g.globalAlpha=1;});};
+  draw(D.calibration.market,"#b26a00");draw(D.calibration.model,col("--accent"));
+}
+function boot(){jget("../results/feature_monitor.json").then(d=>{
+  if(!d){document.getElementById("stamp").textContent="feature_monitor.json not found — run emit_feature_monitor.py";return;}
+  D=d;
+  document.getElementById("stamp").textContent="overall "+(d.overall||"—")+" · "+d.n_settled+" settled windows · canary "+(d.canaries.overall||"—");
+  const sel=document.getElementById("fsel");sel.innerHTML=Object.keys(d.series).map(k=>`<option>${k}</option>`).join("");
+  sel.onchange=e=>tsChart(e.target.value);
+  document.getElementById("calnote").textContent="The model (blue) and the market (amber) sit almost on top of each other and near the diagonal — both are well-calibrated, and the model does not beat the market's calibration. A model that added information would bow above the market line in the buckets where it disagrees.";
+  document.getElementById("foot").textContent="Source: feature_monitor.json (data_health + leakage_canaries + kalshi_binary_log, variant kb2). Series downsampled to 300 points; nulls preserved as missing-data ticks.";
+  feeds();canaries();tsChart(Object.keys(d.series)[0]);calChart();
+});}
+window.addEventListener("resize",()=>{if(D){tsChart(document.getElementById("fsel").value);calChart();}});
+boot();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>

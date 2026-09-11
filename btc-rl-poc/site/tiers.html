@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="cache-control" content="no-store">
+<title>Tier Performance</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+:root{ --card:#ffffff; --soft:#f5f7fa; --ink2:#4a5768; --line:rgba(20,27,36,.10);
+  --accent:#2f6df0; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+main{max-width:1080px}
+.tabs{display:inline-flex;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:3px;margin:18px 0 6px}
+.tabs button{font:600 13px system-ui;color:var(--muted);background:transparent;border:0;padding:8px 18px;border-radius:7px;cursor:pointer}
+.tabs button.on{color:var(--ink);background:var(--card);box-shadow:0 1px 2px rgba(20,27,36,.08)}
+.stamp{font-size:11.5px;color:var(--faint);font-family:var(--mono);margin-left:12px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 3px rgba(20,27,36,.05);margin-top:14px}
+.panel h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 4px;font-weight:650}
+.panel .sub{font-size:12.5px;color:var(--ink2);margin:0 0 14px;max-width:76ch}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:2px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.tiles div{background:var(--soft);padding:13px 15px}
+.tiles .k{font-size:10px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.tiles .v{font-size:21px;font-weight:650;font-variant-numeric:tabular-nums;font-family:var(--mono);margin-top:2px}
+.tiles .d{font-size:11px;color:var(--faint);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+.lb{overflow-x:auto;margin-top:6px}
+th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:650;padding:0 11px 9px;text-align:right;white-space:nowrap}
+th.l{text-align:left}
+td{padding:9px 11px;border-top:1px solid var(--grid);text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+td.l{text-align:left;font-family:system-ui}
+.tag2{font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:5px;font-family:system-ui}
+.tag2.control{color:var(--ink2);background:rgba(124,135,152,.16)}
+.tag2.treatment{color:var(--accent);background:rgba(47,109,240,.12)}
+.tag2.shadow{color:#7a5cc0;background:rgba(122,92,192,.13)}
+.tag2.frozen{color:var(--muted);background:rgba(124,135,152,.12)}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.sig{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;font-family:system-ui}
+.sig.yes{color:var(--up);background:rgba(15,157,88,.13)}
+.sig.no{color:var(--muted);background:rgba(124,135,152,.13)}
+.sig.testing{color:var(--accent);background:rgba(47,109,240,.12)}
+.fi-row{display:grid;grid-template-columns:130px 1fr 58px;align-items:center;gap:8px;font-size:12px;margin:3px 0}
+.fi-row .lab{font-family:var(--mono);color:var(--muted);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-row .lab.hot{color:var(--ink);font-weight:600}
+.track{position:relative;height:14px}.track .ax{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted);opacity:.5}
+.fill{position:absolute;top:2px;height:10px;border-radius:2px}
+.fi-row .val{font-family:var(--mono);font-size:11px;text-align:right}
+.arch{font-size:12.5px;color:var(--ink2);line-height:1.55;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:13px 15px;margin-top:6px}
+.arch b{color:var(--ink)}
+.selrow{display:flex;gap:8px;align-items:center;margin:2px 0 10px}
+select{font:600 12px var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 9px;cursor:pointer}
+.note{font-size:11.5px;color:var(--faint);margin-top:14px;font-family:var(--mono);line-height:1.6}
+h3.sec{font-size:13px;font-weight:650;margin:20px 0 2px}
+</style>
+</head>
+<body>
+<nav class="topnav"><a class="brand" href="home.html">BTC 7PM Oracle</a>
+  <a class="nav" href="home.html">Home</a><a class="nav" href="traders.html">Traders</a><a class="nav" href="perf.html">Performance</a><a class="nav here" href="tiers.html">Tiers</a><a class="nav" href="models.html">Models</a><a class="nav" href="board.html">Board</a><span class="spacer"></span><span class="tag">research</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. All trading shown is <b>simulated paper trading</b> for model evaluation and education only. Nothing here is financial advice.</div>
+
+<main>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">Tier Performance</h1>
+  <p style="color:var(--ink-2);max-width:70ch;">The stack, tier by tier. <b>T1</b> forecasts the price move, <b>T2</b> turns that into a
+  settlement probability, <b>T3</b> decides whether to trade. Each tier: its arms (control · treatment · frozen), input features and
+  their importances, the architecture and loss it optimizes, the last training/validation loss, and the A/B significance of every challenger.</p>
+</header>
+<div style="display:flex;align-items:center;flex-wrap:wrap">
+  <div class="tabs"><button class="on" data-t="T1">T1 · Forecast</button><button data-t="T2">T2 · Probability</button><button data-t="T3">T3 · Decision</button></div>
+  <span class="stamp" id="stamp"></span>
+</div>
+<div id="pane"></div>
+</main>
+
+<script>
+const ARCH={
+ T1:{title:"Point &amp; quantile price regressors, one per horizon (h1/h5/h15/h30)",
+   body:"<b>Families in the pool:</b> ridge/linear (t2), LinUCB contextual bandit (t10, t11), LinearQ (t7), distributional DQN (t8), LSTM (t9), plus a persistence baseline. <b>Loss:</b> validation <b>MSE</b> against the realized move; each hourly retrain is a gated keep/revert — the candidate replaces the incumbent only if it beats the incumbent's holdout MSE. <b>Inputs:</b> recent returns, realized vol, order-flow imbalance, book state, technicals.",
+   loss:"validation MSE (gated keep/revert)"},
+ T2:{title:"Binary settlement-probability arms",
+   body:"<b>Control:</b> kb2 — a least-squares blend anchored to the market (≈0.998 corr). <b>Treatments:</b> kb3/kb4/kb5/kb8 — online logistic models trained by <b>binary cross-entropy</b> (SGD, decaying lr, L2=1e-4). <b>Frozen foundation models:</b> kb7 (Chronos-Bolt) and kb9 (TimesFM-2.5) — zero-shot, quantile→decile-interpolated probability. <b>Eval loss:</b> Brier / Brier Skill Score vs the market. Note kb5 trains on <i>hit</i> (side won), not raw outcome.",
+   loss:"train: cross-entropy (logistic) · eval: Brier / BSS vs market"},
+ T3:{title:"Selective decision &amp; execution",
+   body:"Turns a probability into a bet-or-abstain decision at the market ask, then executes. Measured in realized economic value <b>per $1</b> staked. Control (champion) vs treatments run under a sequential test (SPRT) with fixed evidence boundaries; a treatment is only promoted when its log-likelihood ratio crosses the upper bound.",
+   loss:"objective: realized EV per $1 (with a bad-entry budget)"},
+};
+const HOT=new Set(["market_mid","above_strike_z"]);
+const C=getComputedStyle(document.documentElement),col=k=>C.getPropertyValue(k).trim();
+const bust=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function jget(u){const r=await fetch(bust(u),{cache:"no-store"});return r.ok?r.json():null;}
+async function jsonl(u){const r=await fetch(bust(u),{cache:"no-store"});if(!r.ok)return[];const t=await r.text();
+  return t.split("\n").filter(Boolean).map(l=>{try{return JSON.parse(l)}catch{return null}}).filter(Boolean);}
+const cent=v=>v==null?"—":(v>=0?"+":"")+(v*100).toFixed(2)+"¢";
+const f3=v=>v==null?"—":(v>=0?"+":"")+v.toFixed(3);
+let D={};
+function aggBSS(arm){const m=(D.off&&D.off.models||{})[arm];if(!m||!m.folds)return null;
+  const vs=m.folds.map(f=>f.bss).filter(x=>x!=null);return vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null;}
+function onlineBSS(arm){const m=(D.on&&D.on.models||{})[arm];return m&&m.windows&&m.windows.LIFETIME?m.windows.LIFETIME.bss_vs_market:null;}
+
+function tierT1(){
+  const t1=(D.life&&D.life.t1_serving)||{};
+  const rows=Object.entries(t1).map(([id,m])=>({id,...m}));
+  let h=`<div class="panel"><h2>T1 · Forecast — the arms</h2>
+    <p class="sub">Price regressors, retrained hourly under a gated keep/revert. Lower validation MSE is better; the market itself is not a T1 arm — T1 feeds T2.</p>
+    <div class="lb"><table><thead><tr><th class="l">Model</th><th class="l">Role</th><th>Retrains</th><th>Kept</th><th>Keep rate</th><th>Last cand. val MSE</th></tr></thead><tbody>`;
+  rows.forEach(m=>{h+=`<tr><td class="l">${m.id}</td><td class="l"><span class="tag2 ${(m.lifecycle||'').toLowerCase().includes('control')?'control':'treatment'}">${m.lifecycle||'—'}</span></td>
+    <td>${m.runs??'—'}</td><td>${m.kept??'—'}</td><td>${m.keep_rate!=null?Math.round(m.keep_rate*100)+'%':'—'}</td>
+    <td>${m.last_candidate_val_mse!=null?m.last_candidate_val_mse.toFixed(2):'—'}</td></tr>`;});
+  h+=`</tbody></table></div>
+    <h3 class="sec">Architecture &amp; loss</h3><div class="arch"><b>${ARCH.T1.title}.</b> ${ARCH.T1.body}</div>
+    <p class="note">Verdict: T1 is competitive with a persistence baseline but shows no durable edge — most gated retrains revert (see the keep rates above). This is the efficient-short-horizon result: the best predictor of the price in 15 minutes is the price now.</p></div>`;
+  return h;
+}
+function fiBars(arm){
+  const co=((D.int&&D.int.logits)||{})[arm];if(!co)return "<p class='note'>no coefficients for this arm</p>";
+  const items=co.map(c=>({f:c.feature,w:c.w})).sort((a,b)=>b.w-a.w);
+  const mx=Math.max(...items.map(i=>Math.abs(i.w)),1e-9);
+  return items.map(i=>{const frac=Math.min(1,Math.abs(i.w)/mx)*50;
+    const side=i.w>=0?`left:50%;width:${frac}%;background:${col('--up')}`:`right:50%;width:${frac}%;background:${col('--down')}`;
+    return `<div class="fi-row"><div class="lab ${HOT.has(i.f)?'hot':''}">${i.f}</div>
+      <div class="track"><div class="ax"></div><div class="fill" style="${side}"></div></div>
+      <div class="val">${i.w>=0?'+':''}${i.w.toFixed(3)}</div></div>`;}).join("");
+}
+function tierT2(){
+  const arms=["kb2","kb3","kb4","kb5","kb8","kb7","kb9","kb"];
+  const role={kb2:"control",kb3:"treatment",kb4:"treatment",kb5:"treatment",kb8:"treatment",kb7:"frozen",kb9:"frozen",kb:"treatment"};
+  let h=`<div class="panel"><h2>T2 · Probability — the arms vs the market</h2>
+    <p class="sub">Brier Skill Score against the market implied probability (0 = ties the market, positive = beats it). Every arm currently sits at or below zero — none beats simply reading the Kalshi price.</p>
+    <div class="lb"><table><thead><tr><th class="l">Arm</th><th class="l">Role</th><th>Offline BSS</th><th>Online BSS</th><th class="l">Verdict</th></tr></thead><tbody>`;
+  arms.forEach(a=>{const off=aggBSS(a),on=onlineBSS(a);
+    h+=`<tr><td class="l">${a}</td><td class="l"><span class="tag2 ${role[a]}">${role[a]}</span></td>
+      <td class="${off<0?'neg':'pos'}">${f3(off)}</td><td class="${on!=null?(on<0?'neg':'pos'):''}">${on!=null?f3(on):'—'}</td>
+      <td class="l"><span class="sig ${off!=null&&off<0?'no':'testing'}">${off!=null&&off<0?'below market':'—'}</span></td></tr>`;});
+  h+=`</tbody></table></div>
+    <h3 class="sec">Feature importance — logistic arms</h3>
+    <div class="selrow">arm <select id="fisel"><option>kb3</option><option>kb4</option><option>kb5</option><option>kb8</option></select>
+      <span class="note" style="margin:0">coefficients · <span class="pos">■</span> raises P(up) <span class="neg">■</span> lowers it</span></div>
+    <div id="fibars">${fiBars("kb3")}</div>
+    <h3 class="sec">Architecture &amp; loss</h3><div class="arch"><b>${ARCH.T2.title}.</b> ${ARCH.T2.body}</div>
+    <p class="note">Offline BSS aggregated over walk-forward folds (model_offline.json); online BSS = lifetime vs market (model_online.json, served arms only). kb3's coefficients show market geometry dominates and order-flow ≈ 0 — the arm re-derives the market.</p></div>`;
+  return h;
+}
+function tierT3(){
+  const w=(D.dec&&D.dec.execution_waterfall)||{};
+  const tr=(D.tb&&D.tb.treatments)||[];
+  let h=`<div class="panel"><h2>T3 · Decision — economic value per $1</h2>
+    <p class="sub">What the decision layer is worth once it meets real execution. The decision looks profitable in theory; realized value is negative, and the gap is the cost of crossing the spread + fees.</p>
+    <div class="tiles">
+      <div><div class="k">Decision EV / $1</div><div class="v ${(w.decision_ev_per_1||0)>=0?'pos':'neg'}">${cent(w.decision_ev_per_1)}</div><div class="d">theory, at model prob</div></div>
+      <div><div class="k">Realized EV / $1</div><div class="v ${(w.realized_ev_per_1||0)>=0?'pos':'neg'}">${cent(w.realized_ev_per_1)}</div><div class="d">after execution</div></div>
+      <div><div class="k">Execution gap / $1</div><div class="v neg">${cent(w.execution_gap_per_1)}</div><div class="d">spread + fees</div></div>
+      <div><div class="k">Windows</div><div class="v">${w.windows??'—'}</div><div class="d">evaluated</div></div>
+    </div>
+    <h3 class="sec">Control × treatment — sequential A/B (SPRT)</h3>
+    <div class="lb"><table><thead><tr><th class="l">Treatment</th><th>n</th><th>Own EV / $1</th><th>Mean diff</th><th>SE</th><th>LLR</th><th class="l">Verdict</th></tr></thead><tbody>`;
+  tr.forEach(t=>{const crossed=t.llr!=null&&t.upper!=null&&(t.llr>=t.upper||t.llr<=t.lower);
+    const sig=t.llr==null?"no":(t.llr>=t.upper?"yes":(t.llr<=t.lower?"no":"testing"));
+    const sigtxt=t.verdict||(sig==="yes"?"promote":sig==="no"?"reject":"testing");
+    h+=`<tr><td class="l">${t.label||t.key}</td><td>${t.n??'—'}</td>
+      <td class="${(t.own_ev||0)>=0?'pos':'neg'}">${cent(t.own_ev)}</td>
+      <td class="${(t.mean_diff||0)>=0?'pos':'neg'}">${t.mean_diff!=null?(t.mean_diff*100).toFixed(2)+'¢':'—'}</td>
+      <td>${t.se!=null?(t.se*100).toFixed(2):'—'}</td><td>${t.llr!=null?t.llr.toFixed(2):'—'}</td>
+      <td class="l"><span class="sig ${sig}">${sigtxt}</span></td></tr>`;});
+  h+=`</tbody></table></div>
+    <h3 class="sec">Objective &amp; loss</h3><div class="arch"><b>${ARCH.T3.title}.</b> ${ARCH.T3.body}</div>
+    <p class="note">SPRT boundaries frozen (upper ${((D.tb&&D.tb.config&&D.tb.config.upper)||0).toFixed?.(2)||'—'} / lower ${((D.tb&&D.tb.config&&D.tb.config.lower)||0).toFixed?.(2)||'—'}). “Significant” = LLR crossed a boundary; otherwise the challenger is still accumulating evidence.</p></div>`;
+  return h;
+}
+const R={T1:tierT1,T2:tierT2,T3:tierT3};
+function show(t){document.getElementById("pane").innerHTML=R[t]();
+  if(t==="T2"){const s=document.getElementById("fisel");if(s)s.onchange=e=>{document.getElementById("fibars").innerHTML=fiBars(e.target.value);};}}
+async function boot(){
+  const[life,off,on,int,tb,dec]=await Promise.all([
+    jget("../results/model_lifecycle.json"),jget("../results/model_offline.json"),
+    jget("../results/model_online.json"),jget("../results/model_internals.json"),
+    jget("../results/treatments_board.json"),jget("../results/decision_board.json")]);
+  D={life,off,on,int,tb,dec};
+  document.getElementById("stamp").textContent="live · offline+online+SPRT";
+  document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{
+    document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));b.classList.add("on");show(b.dataset.t);});
+  show("T1");
+}
+boot();
+</script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
+</body>
+</html>
