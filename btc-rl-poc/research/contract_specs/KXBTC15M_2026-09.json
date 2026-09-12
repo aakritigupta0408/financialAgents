@@ -1,0 +1,23 @@
+{
+ "series": "KXBTC15M",
+ "rule_source": "Kalshi trade-api v2 (authoritative)",
+ "retrieved_utc": "2026-09-12 23:35:41",
+ "benchmark": "CF Benchmarks BRTI (BTC Real-Time Index)",
+ "benchmark_provider": "CF Benchmarks",
+ "target_construction": "simple average of the 60 one-second BRTI values in the minute before window OPEN (== floor_strike)",
+ "settlement_construction": "simple average of the 60 one-second BRTI values in the minute before EXPIRY (== expiration_value)",
+ "yes_condition": "expiration_value >= floor_strike  (D = close_avg - open_avg >= 0)",
+ "comparison_operator": ">=",
+ "frequency": "fifteen_min",
+ "timezone": "EDT (America/New_York)",
+ "window_open": "expiry - 15min",
+ "expiration": "top of the 15-min block",
+ "rounding": "custom_strike round_digits=2 (cents)",
+ "fee_type": "quadratic",
+ "contiguous_windows": true,
+ "note": "each window's floor_strike == the prior window's expiration_value (open avg = prior close avg) -> pure up/down over the block",
+ "outcome_source": "Kalshi official result (BRTI-based); our labels use this",
+ "n_markets": 6337,
+ "official_yes_rate": 0.4999,
+ "result_vs_formula_mismatches": 0
+}

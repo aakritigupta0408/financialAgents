@@ -1,0 +1,24 @@
+{
+ "n_markets_total": 6337,
+ "official_yes_rate": 0.4999,
+ "our_label_vs_official": {
+  "checked": 221,
+  "mismatches": 10,
+  "mismatch_rate": 0.04525,
+  "verdict": "LABELS_DIVERGE"
+ },
+ "coinbase_reconstruction_vs_brti": {
+  "n": 370,
+  "flip_count": 16,
+  "flip_rate": 0.0432,
+  "near_boundary_n_absD_le_20": 85,
+  "near_boundary_flip_rate": 0.1765
+ },
+ "coinbase_minus_brti_basis_usd": {
+  "mean": -3.67,
+  "std": 17.96,
+  "p05": -24.91,
+  "p95": 12.91
+ },
+ "interpretation": "Our settlement LABELS come from Kalshi's official BRTI-based resolution -> correct. But modeling FEATURES (distance-to-strike, physics Oracle) used Coinbase instantaneous price vs the BRTI target; the Coinbase-vs-BRTI basis + 60s averaging is a real mismodeling that would flip a Coinbase-reconstructed label at the rate above, concentrated near the boundary. MECH_FAIR must model D = close_avg - open_avg on the correct statistic."
+}
