@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SHARDS = ROOT / "results" / "events"
 OUT = ROOT / "research" / "t05_repricing" / "dataset.jsonl"
 SAMPLE_S = 15          # one decision point per ticker every ~15s
-HORIZONS = [5, 15, 30, 60]
+HORIZONS = [1, 2, 5, 15, 30, 60]
 TRADE_WIN = 30         # order-flow lookback (s)
 
 

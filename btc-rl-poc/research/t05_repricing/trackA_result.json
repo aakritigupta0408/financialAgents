@@ -1,0 +1,95 @@
+{
+ "n_test_entries": 5807,
+ "n_train": 13631,
+ "predicted_move_IC": 0.3607,
+ "median_k_spread_c": 1.0,
+ "fee_floor_c": 1.75,
+ "improvement_vs_latency_eps0.002": {
+  "L0": 0.8143,
+  "L1": 0.7796,
+  "L2": 0.7111,
+  "L5": 0.5197
+ },
+ "policies": {
+  "eps_0.001": {
+   "L0": {
+    "defer_coverage": 0.47,
+    "mean_improvement_c_per_$1": 0.8092,
+    "mean_improvement_on_deferred_c": 1.7201,
+    "adverse_rate": 0.067
+   },
+   "L1": {
+    "defer_coverage": 0.47,
+    "mean_improvement_c_per_$1": 0.7754,
+    "mean_improvement_on_deferred_c": 1.6482,
+    "adverse_rate": 0.061
+   },
+   "L2": {
+    "defer_coverage": 0.47,
+    "mean_improvement_c_per_$1": 0.7066,
+    "mean_improvement_on_deferred_c": 1.502,
+    "adverse_rate": 0.059
+   },
+   "L5": {
+    "defer_coverage": 0.47,
+    "mean_improvement_c_per_$1": 0.5158,
+    "mean_improvement_on_deferred_c": 1.0963,
+    "adverse_rate": 0.046
+   }
+  },
+  "eps_0.002": {
+   "L0": {
+    "defer_coverage": 0.442,
+    "mean_improvement_c_per_$1": 0.8143,
+    "mean_improvement_on_deferred_c": 1.8413,
+    "adverse_rate": 0.061
+   },
+   "L1": {
+    "defer_coverage": 0.442,
+    "mean_improvement_c_per_$1": 0.7796,
+    "mean_improvement_on_deferred_c": 1.7629,
+    "adverse_rate": 0.056
+   },
+   "L2": {
+    "defer_coverage": 0.442,
+    "mean_improvement_c_per_$1": 0.7111,
+    "mean_improvement_on_deferred_c": 1.6081,
+    "adverse_rate": 0.054
+   },
+   "L5": {
+    "defer_coverage": 0.442,
+    "mean_improvement_c_per_$1": 0.5197,
+    "mean_improvement_on_deferred_c": 1.1752,
+    "adverse_rate": 0.043
+   }
+  },
+  "eps_0.005": {
+   "L0": {
+    "defer_coverage": 0.361,
+    "mean_improvement_c_per_$1": 0.8021,
+    "mean_improvement_on_deferred_c": 2.2191,
+    "adverse_rate": 0.045
+   },
+   "L1": {
+    "defer_coverage": 0.361,
+    "mean_improvement_c_per_$1": 0.7642,
+    "mean_improvement_on_deferred_c": 2.1143,
+    "adverse_rate": 0.042
+   },
+   "L2": {
+    "defer_coverage": 0.361,
+    "mean_improvement_c_per_$1": 0.6955,
+    "mean_improvement_on_deferred_c": 1.9242,
+    "adverse_rate": 0.041
+   },
+   "L5": {
+    "defer_coverage": 0.361,
+    "mean_improvement_c_per_$1": 0.507,
+    "mean_improvement_on_deferred_c": 1.4025,
+    "adverse_rate": 0.032
+   }
+  }
+ },
+ "verdict": "EXECUTION_TIMING_PROMISING",
+ "note": "entry-only timing for a FROZEN side; improvement is the price a buyer saves by deferring on a predicted drop; the signal must survive decision->fill latency."
+}
