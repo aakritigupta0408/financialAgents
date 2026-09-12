@@ -8,13 +8,19 @@
   "INDEPENDENT_ORACLE": "INFORMATION_LIMITED",
   "EXECUTION_TIMING": "REGISTERED_FORMAL_PENDING_RUNTIME_ACTIVATION",
   "ORTHOGONAL_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
-  "PREOPEN_ORACLE_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION"
+  "PREOPEN_ORACLE_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
+  "CONTRACT_MECHANICS": "MECH_FAIR_ESTABLISHED (Brier 0.2024; explains 74% of Kalshi edge)",
+  "MECHANICS_RESIDUAL_ORACLE": "INFORMATION_LIMITED (independent features add nothing beyond mechanics OOS)",
+  "LABEL_AUDIT": "TARGET_DEFINITION_MISMATCH \u2014 4.5% divergence; official BRTI outcomes now canonical"
  },
- "primary_bottleneck": "INDEPENDENT_INFORMATION",
- "settlement_alpha": "NO_QUALIFIED_SETTLEMENT_EDGE_FOUND_IN_TESTED_CURRENTLY_AVAILABLE_BTC_DERIVED_INFORMATION_FAMILIES",
+ "primary_bottleneck": "BENCHMARK_DATA",
+ "settlement_alpha": "MECHANICS_EXPLAINS_74pct_OF_KALSHI; RESIDUAL_MID_WINDOW_GAP_IS_BENCHMARK_BASIS_NOT_FEATURES",
  "the_one_positive_mechanism": {
-  "id": "EXEC-TIMING", "spec": "EXEC_TIMING_SPEC.yaml", "spec_hash": "9c0c89ae",
-  "classification": "EXECUTION_TIMING_PROMISING", "prospective_n": 0,
+  "id": "EXEC-TIMING",
+  "spec": "EXEC_TIMING_SPEC.yaml",
+  "spec_hash": "9c0c89ae",
+  "classification": "EXECUTION_TIMING_PROMISING",
+  "prospective_n": 0,
   "note": "modest entry-price improvement (+0.5c/$1 at 5s latency); not alpha"
  },
  "capture_sources": {
@@ -26,10 +32,12 @@
   "preopen_oracle": "MODULE_READY (btc_rl/preopen_oracle.py; leak-guarded)"
  },
  "untested_because_uncaptured": [
-  "derivatives positioning (funding/OI/basis/long-short) — prospective",
-  "options IV/skew (IBIT/COIN/MSTR) — prospective",
-  "news arrival (structured) — prospective",
-  "true pre-open independent Oracle snapshots — prospective"
+  "derivatives positioning (funding/OI/basis/long-short) \u2014 prospective",
+  "options IV/skew (IBIT/COIN/MSTR) \u2014 prospective",
+  "news arrival (structured) \u2014 prospective",
+  "true pre-open independent Oracle snapshots \u2014 prospective"
  ],
- "provenance": "read from canonical research artifacts; UNKNOWN never rendered green"
+ "provenance": "read from canonical research artifacts; UNKNOWN never rendered green",
+ "secondary_focus": "MID_WINDOW_RESIDUAL_INFORMATION",
+ "canonical_labels": "results/contract_outcomes.jsonl (official Kalshi BRTI outcomes)"
 }
