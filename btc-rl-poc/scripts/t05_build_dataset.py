@@ -102,9 +102,11 @@ def main():
                     micro_dev = (microp - mid) / mid
             except (TypeError, ValueError):
                 pass
+        cb_price = ms[-1] if ms else (l1 and (float(l1.get("bid") or 0) + float(l1.get("ask") or 0)) / 2.0) or None
         return {"cb_ofi_30s": round(ofi, 5), "cb_ret_30s": round(ret, 6),
                 "cb_rvol_30s": round(rvol, 7), "cb_l1_imb": round(l1imb, 5),
                 "cb_micro_dev": round(micro_dev, 8), "trade_n_30s": len(trades),
+                "cb_price": round(cb_price, 2) if cb_price else None,
                 "k_prob": round(kprob, 5), "k_spread": round(kspread, 4)}
 
     for fp in files:

@@ -1,0 +1,121 @@
+{
+ "n_windows": 216,
+ "windows_train": 151,
+ "windows_test": 65,
+ "test_points": 3442,
+ "phys_sigma_per_sqrt_s": 5e-05,
+ "base_rate": 0.416,
+ "summary": {
+  "MARKET": {
+   "brier": 0.1869,
+   "accuracy": 0.7246
+  },
+  "ORACLE_phys": {
+   "brier": 0.1955,
+   "accuracy": 0.7289
+  },
+  "ORACLE_learn": {
+   "brier": 0.2081,
+   "accuracy": 0.6996
+  }
+ },
+ "by_time_to_expiry": {
+  "T-2..0": {
+   "n": 336,
+   "market_brier": 0.1438,
+   "oracle_phys_brier": 0.1296,
+   "oracle_learn_brier": 0.1541,
+   "oracle_ahead_of_market": false
+  },
+  "T-4..2": {
+   "n": 489,
+   "market_brier": 0.1614,
+   "oracle_phys_brier": 0.1632,
+   "oracle_learn_brier": 0.1853,
+   "oracle_ahead_of_market": false
+  },
+  "T-6..4": {
+   "n": 492,
+   "market_brier": 0.1671,
+   "oracle_phys_brier": 0.183,
+   "oracle_learn_brier": 0.2003,
+   "oracle_ahead_of_market": false
+  },
+  "T-9..6": {
+   "n": 724,
+   "market_brier": 0.1745,
+   "oracle_phys_brier": 0.197,
+   "oracle_learn_brier": 0.2131,
+   "oracle_ahead_of_market": false
+  },
+  "T-15..9": {
+   "n": 1401,
+   "market_brier": 0.2194,
+   "oracle_phys_brier": 0.2262,
+   "oracle_learn_brier": 0.2291,
+   "oracle_ahead_of_market": false
+  }
+ },
+ "lock_curves": {
+  "c=0.60": {
+   "coverage": 0.969,
+   "accuracy": 0.73,
+   "mean_lock_tte_min": 10.95,
+   "no_call_rate": 0.031,
+   "locked_windows": 63,
+   "total_windows": 65
+  },
+  "c=0.70": {
+   "coverage": 0.6,
+   "accuracy": 0.949,
+   "mean_lock_tte_min": 3.07,
+   "no_call_rate": 0.4,
+   "locked_windows": 39,
+   "total_windows": 65
+  },
+  "c=0.80": {
+   "coverage": 0.215,
+   "accuracy": 1.0,
+   "mean_lock_tte_min": 1.8,
+   "no_call_rate": 0.785,
+   "locked_windows": 14,
+   "total_windows": 65
+  },
+  "c=0.90": {
+   "coverage": 0.046,
+   "accuracy": 1.0,
+   "mean_lock_tte_min": 0.7,
+   "no_call_rate": 0.954,
+   "locked_windows": 3,
+   "total_windows": 65
+  }
+ },
+ "calibration_oracle_learn": [
+  {
+   "bin": "50-60",
+   "n": 2193,
+   "expected": 0.551,
+   "observed": 0.609
+  },
+  {
+   "bin": "60-70",
+   "n": 990,
+   "expected": 0.636,
+   "observed": 0.831
+  },
+  {
+   "bin": "70-80",
+   "n": 211,
+   "expected": 0.742,
+   "observed": 0.957
+  },
+  {
+   "bin": "80-90",
+   "n": 44,
+   "expected": 0.837,
+   "observed": 1.0
+  }
+ ],
+ "verdict": "ORACLE_BEHIND_MARKET",
+ "note": "Independent Oracle uses BTC-only features + strike/tte; Kalshi used only as benchmark. Settlement label from contract resolution. Development sample."
+}

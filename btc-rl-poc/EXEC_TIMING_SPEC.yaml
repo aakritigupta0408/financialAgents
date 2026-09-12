@@ -1,0 +1,56 @@
+# EXEC-TIMING — the T0.5 lead as a formal execution-timing treatment.
+# The ONLY formal treatment (leanness law). Side is FROZEN; the treatment
+# may change only BUY-NOW / DEFER / SKIP, never UP<->DOWN. Registered as an
+# immutable spec; prospective paired A/B accrues in the live paper desk.
+version: 1.0
+id: EXEC-TIMING
+tier: T4            # execution
+plane: C
+status: REGISTERED_SPEC_ONLY   # prospective wiring runs in the live daemon
+registered_ts_utc: "2026-09-12"
+
+hypothesis: >
+  The confirmed T0.5 reprice lead (Gate A PASS; predicted-move OOS IC +0.36)
+  can improve realized entry economics for an already-decided settlement
+  thesis, without changing the side.
+
+frozen_policy:                 # frozen BEFORE online testing; never tuned on A/B
+  predictor: ridge-linear on [cb_ofi_30s, cb_ret_30s, cb_rvol_30s, cb_l1_imb,
+             cb_micro_dev, trade_n_30s, k_spread] -> predicted 15s Kalshi move
+  rule: |
+    intended side & size come UNCHANGED from the frozen upstream selector.
+    if predicted move makes the intended contract cheaper soon (>= 0.002):
+        DEFER entry up to 15s, then enter
+    else:
+        ENTER NOW  (control behaviour)
+  may_change: [BUY_NOW, DEFER, SKIP]
+  may_not_change: [side_up_down, settlement_thesis, sizing, risk_policy]
+
+arms:
+  control:   existing frozen execution behaviour (enter at decision)
+  treatment: control + the frozen T0.5 timing rule above (side identical)
+
+dev_evidence:                  # research/t05_repricing/trackA_result.json
+  predicted_move_ic_oos: 0.36
+  test_entries: 5807
+  entry_improvement_c_per_$1: {L0: 0.81, L1: 0.78, L2: 0.71, L5: 0.52}
+  defer_coverage: 0.44
+  adverse_rate: 0.05
+  classification: EXECUTION_TIMING_PROMISING   # NOT alpha
+
+primary_metric: realized paper EV per eligible window (paired, same window)
+secondary: [entry_price_delta, execution_gap_delta, coverage, missed_winner_cost,
+            markouts_1s_5s_15s_30s_60s, drawdown, latency_sensitivity]
+attribution_law: same side, different timing — any gain is execution, not alpha
+verdict_space: [EXECUTION_TIMING_CANDIDATE, REPRICE_SIGNAL_NOT_EXECUTABLE, NO_EXECUTION_VALUE]
+
+integrity:
+  - side is frozen and identical across arms (mechanical guarantee required)
+  - policy frozen before online; not re-tuned from prospective results
+  - one formal treatment only; the Independent Oracle stays DEV
+  - real-money execution remains physically disabled
+runtime_dependency: >
+  prospective paired A/B accrues in the live paper daemon (btc_rl/online.py);
+  this repo/worktree registers the immutable spec only. Wiring the treatment
+  into the running desk is a live-runtime change, made in the main checkout,
+  not from this isolated research worktree.
