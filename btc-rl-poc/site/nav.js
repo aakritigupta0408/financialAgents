@@ -6,6 +6,12 @@
  * "More" dropdown, and a search button.  If JS fails to run, the page's
  * original inline nav still renders — graceful degradation by design.
  */
+/* load the shared global header on every page */
+(function () {
+  var s = document.createElement("script");
+  s.src = "header.js"; document.head.appendChild(s);
+})();
+
 (function () {
   "use strict";
 
@@ -21,92 +27,30 @@
      it is testing, Watchtower proves it can be trusted. Everything
      else (ledgers, metrics lab, agents, museum, backend, play) is a
      drill-down that lives INSIDE those worlds and in More/search. */
+  // FIVE SECTIONS ONLY (research-console spec). Everything else is a
+  // tab or drill-down inside these — never its own top-level page.
   var PRIMARY = [
-    { label: "Home",        href: "home.html" },
-    { label: "Universe",    href: "universe.html" },
-    { label: "Models",      href: "models.html" },
-    { label: "Experiments", href: "experiments.html" },
-    { label: "Watchtower",  href: "watchtower.html" }
+    { label: "Home",       href: "home.html" },
+    { label: "Traders",    href: "traders.html" },
+    { label: "Tiers",      href: "tiers.html" },
+    { label: "Data",       href: "features.html" },
+    { label: "Watchtower", href: "health.html" }
   ];
 
-  var MORE = [
-    { label: "Traders",    href: "traders.html" },
-    { label: "Performance",href: "perf.html" },
-    { label: "Tiers",      href: "tiers.html" },
-    { label: "Features",   href: "features.html" },
-    { label: "Health",     href: "health.html" },
-    { label: "Play",       href: "play.html" },
-    { label: "Backend",    href: "backend.html" },
-    { label: "Research",   href: "board.html" },
-    { label: "Evidence",   href: "ledgers.html" },
-    { label: "Museum",     href: "museum.html" },
-    { label: "The Paper",  href: "paper.html" },
-    { label: "Archive",    href: "archive.html" }
-  ];
+  var MORE = [];
 
   /* Static search index: every page, 3-6 honest keywords each. */
   var PAGE_INDEX = [
-    { title: "Home — what are we building?", href: "home.html",
-      kw: "home, vision, laboratory, simulated, scoreboard, journey" },
-    { title: "Experiments — one control × one treatment",
-      href: "experiments.html",
-      kw: "experiments, ab test, a3, control, treatment, hypothesis, evidence, decision gate, history" },
-    { title: "Trader Dashboard — the $1K Desk", href: "traders.html",
-      kw: "traders, paper desk, follower, disciplined, mle, current bid, status, thesis, bankroll" },
-    { title: "Performance & Significance", href: "perf.html",
-      kw: "performance, confidence interval, bootstrap, significance, profit per trade, since retrain, deploy" },
-    { title: "Tier Performance — T1/T2/T3", href: "tiers.html",
-      kw: "tiers, forecast, probability, decision, arms, feature importance, architecture, loss, ab test, sprt" },
-    { title: "Feature Monitor — inputs", href: "features.html",
-      kw: "features, feeds, third party, missing data, leakage canary, rolling mean, calibration, predicted vs actual" },
-    { title: "System Health", href: "health.html",
-      kw: "health, invariants, incidents, sev, self heal, graveyard, incubator, retired, candidates, monitors" },
-    { title: "Play — the Playground", href: "play.html",
-      kw: "playground, forecast, oracle, 7pm, horizons, live price" },
-    { title: "Backend — the operating console", href: "backend.html",
-      kw: "backend, overview, models, experiments, data, operations, agents, registry, console" },
-    { title: "Map — the Quant Universe", href: "universe.html",
-      kw: "world map, atlas, overview, navigation, all pages" },
-    { title: "Live desk", href: "live_online.html",
-      kw: "live, online learning, arms, ticker, snapshots" },
-    { title: "Research Command", href: "board.html",
-      kw: "research command, program, hypothesis, retire, queue, causal graph, portfolio, a3, graveyard" },
-    { title: "Diagnosis", href: "diagnosis.html",
-      kw: "diagnosis, tiers, failing, funnel, blind spots" },
-    { title: "Models & Learning", href: "models.html",
-      kw: "models, scoreboard, training, retraining, drift, BSS, coverage, robustness" },
-    { title: "The Paper", href: "paper.html",
-      kw: "paper, research, abstract, methods, results, citations, writeup" },
-    { title: "The Archive", href: "archive.html",
-      kw: "archive, retired pages, deep views, legacy, documents" },
-    { title: "Control Tower", href: "watchtower.html",
-      kw: "control tower, watchtower, health, monitors, sev, incidents, invariants, agents, costs, backend, readiness" },
-    { title: "Metrics Lab", href: "metrics_lab.html",
-      kw: "decision board, CI, power, MDE, promote, brier" },
-    { title: "Agent HQ", href: "agents.html",
-      kw: "agents, autonomy, triggers, authority, who does what" },
-    { title: "The Analyst", href: "analyst.html",
-      kw: "llm commentary, critique, model reads model" },
-    { title: "Museum of Failed Ideas", href: "museum.html",
-      kw: "failures, toxic hour, kbf, adverse selection, platt" },
-    { title: "The Instrument", href: "instrument.html",
-      kw: "kalshi, binary contract, prediction, decision, evidence, falsification" },
-    { title: "Results — A/B dashboard", href: "ab_dashboard.html",
-      kw: "results, a/b, live evaluation, pnl, final deliverable" },
-    { title: "Experiment lab", href: "experiment_review.html",
-      kw: "treatments, review, ev, windows, policies" },
-    { title: "Backtest", href: "index.html",
-      kw: "backtest, dqn, lstm, linucb, replay, proof of concept" },
-    { title: "Training", href: "live_training.html",
-      kw: "reinforcement learning, training run, reward, episodes" },
-    { title: "System Clock", href: "clock.html",
-      kw: "cron, retrain, costs, schedule, bill" },
-    { title: "SEV-0", href: "sev0.html",
-      kw: "incident, audit, outage, postmortem, tracker" },
-    { title: "The Ledgers", href: "ledgers.html",
-      kw: "ledger, trades, gambler, withdrawals, book, rows" },
-    { title: "Classic ledgers", href: "home_classic.html",
-      kw: "classic home, ledgers, tables, archive" }
+    { title: "Home — executive research summary", href: "home.html",
+      kw: "home, readiness, performance funnel, market beating, decision frontier, failure store, bottleneck" },
+    { title: "Traders — the $1K Desk", href: "traders.html",
+      kw: "traders, control, treatment, shadow, realized ev, profit per trade, skips, decisions" },
+    { title: "Tiers — T0 through T7", href: "tiers.html",
+      kw: "tiers, forecast, probability, decision, execution, capital, evaluation, governance, control treatment, ab" },
+    { title: "Data & Features", href: "features.html",
+      kw: "data, features, provenance, freshness, missing, drift, importance, leakage canary, calibration" },
+    { title: "Watchtower — trust & integrity", href: "health.html",
+      kw: "watchtower, invariants, sev, parity, freeze convergence, graveyard, incubator, failure flywheel" }
   ];
 
   /* ------------------------------------------------------------ util -- */

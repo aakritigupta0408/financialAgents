@@ -26,15 +26,11 @@ MARKER = "btc-oracle data snapshot"
 MAIN_SYNC_S = 3600
 STAMP = ROOT / "results" / ".publish_main_stamp"
 
-PAGES = ["home.html", "live_online.html", "experiment_review.html",
-         "live_training.html", "index.html", "theme.css",
-         "ab_dashboard.html", "sev0.html", "metrics_lab.html",
-         "board.html", "analyst.html", "home_classic.html", "glossary.js", "glossary.json", "nav.js",
-         "universe.html", "clock.html", "agents.html", "museum.html",
-         "instrument.html", "watchtower.html", "ledgers.html",
-         "diagnosis.html", "paper.html", "archive.html", "models.html",
-         "backend.html", "experiments.html", "play.html", "traders.html",
-         "perf.html", "tiers.html", "features.html", "health.html"]
+# FIVE SECTIONS ONLY — the research console (spec). Everything else is a
+# tab/drill-down inside these; no other top-level page is published.
+PAGES = ["home.html", "traders.html", "tiers.html", "features.html",
+         "health.html", "perf.html", "theme.css", "nav.js", "header.js",
+         "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
@@ -154,6 +150,12 @@ def _push_url(repo) -> str:
 def copy_bundle(dest: Path) -> None:
     (dest / "site").mkdir(parents=True, exist_ok=True)
     (dest / "results").mkdir(parents=True, exist_ok=True)
+    # prune orphan pages left by earlier full-site publishes: the live
+    # site must contain ONLY the five sections + their assets.
+    keep = set(PAGES)
+    for f in (dest / "site").glob("*.html"):
+        if f.name not in keep:
+            f.unlink()
     for name in PAGES:
         src = ROOT / "site" / name
         if not src.exists():        # a listed page may not be built

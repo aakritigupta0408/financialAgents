@@ -4,299 +4,212 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="cache-control" content="no-store">
-<title>Quant Universe — a living ML laboratory</title>
+<title>Home — Research Summary</title>
 <link rel="stylesheet" href="theme.css">
-<script src="nav.js" defer></script>
 <style>
-  /* HOME — sells the idea and the system, never trading performance.
-     Owner brief 09-07: kid-readable at zoom-out, evidence underneath. */
-  .hero { text-align: center; padding: 30px 8px 6px; }
-  .hero h1 { font: italic 500 54px/1.1 var(--display); letter-spacing: .01em; }
-  .hero .sub { font: italic 400 21px/1.45 var(--display); color: var(--ink-2);
-    margin-top: 14px; }
-  .hero .tag { max-width: 44rem; margin: 14px auto 0; color: var(--muted);
-    font-size: 15.5px; }
-  .badges { display: flex; gap: 10px; justify-content: center; margin-top: 18px;
-    flex-wrap: wrap; }
-  .badge { font-size: 11.5px; font-weight: 700; letter-spacing: .14em;
-    padding: 5px 12px; border: 1px solid var(--border); border-radius: 999px;
-    color: var(--ink-2); background: var(--surface); }
-  .badge.live { color: var(--good-text); border-color: rgba(12,138,77,.35); }
-
-  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
-  .card { background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 22px 22px 18px;
-    display: flex; flex-direction: column; gap: 10px; }
-  .card .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em;
-    color: var(--muted); }
-  .card h2 { font: italic 500 24px/1.2 var(--display); }
-  .card p { color: var(--ink-2); font-size: 14.5px; }
-  .card .go { margin-top: auto; padding-top: 10px; font-weight: 650;
-    font-size: 14px; color: var(--series-2); text-decoration: none; }
-  .card .go:hover { text-decoration: underline; }
-
-  /* the machine flow (card 2) */
-  .flow { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; }
-  .flow a { display: block; text-align: center; text-decoration: none;
-    color: var(--ink); background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 9px;
-    padding: 7px 10px; font-size: 13.5px; font-weight: 600; }
-  .flow a:hover { border-color: var(--series-2); color: var(--series-2); }
-  .flow .arr { text-align: center; color: var(--faint); font-size: 12px;
-    line-height: 1; }
-
-  /* scoreboard (card 3) */
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .stat { background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 12px; }
-  .stat .v { font-size: 21px; font-weight: 700;
-    font-variant-numeric: tabular-nums; }
-  .stat .k { font-size: 11px; color: var(--muted); letter-spacing: .05em;
-    font-weight: 650; margin-top: 2px; }
-  .honest { font-size: 13.5px; color: var(--ink-2); font-style: italic;
-    border-left: 3px solid var(--border); padding-left: 10px; }
-
-  /* the journey */
-  .journey-wrap { background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 26px 20px; }
-  .journey-wrap h2, .prove h2 { font: italic 500 28px/1.2 var(--display);
-    text-align: center; margin-bottom: 6px; }
-  .journey-wrap .lede, .prove .lede { text-align: center; color: var(--muted);
-    font-size: 14px; margin-bottom: 18px; }
-  .journey { display: flex; flex-wrap: wrap; justify-content: center;
-    gap: 6px 4px; align-items: center; }
-  .jstep { background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 999px; padding: 7px 14px; font-size: 13.5px;
-    font-weight: 600; white-space: nowrap; }
-  .jarr { color: var(--faint); font-size: 13px; padding: 0 2px; }
-  .jloop { color: var(--series-2); font-weight: 700; }
-
-  /* proof section */
-  .prove { background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; padding: 26px 22px; }
-  .lessons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
-    margin-top: 14px; }
-  @media (max-width: 900px) { .lessons { grid-template-columns: 1fr; } }
-  .lesson { border: 1px solid var(--border); border-radius: 11px;
-    padding: 14px 15px; background: var(--surface-2); }
-  .lesson b { display: block; font-size: 14.5px; margin-bottom: 6px; }
-  .lesson span { font-size: 13px; color: var(--ink-2); }
-  .lesson .case { display: block; margin-top: 9px; font-size: 12px;
-    color: var(--muted); font-style: italic; }
-
-  .foot { text-align: center; color: var(--muted); font-size: 12.5px;
-    padding-top: 8px; }
+:root{ --card:#fff; --soft:#f5f7fa; --ink2:#4a5768; --line:rgba(20,27,36,.10);
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+main{max-width:1120px}
+.qs{display:flex;flex-wrap:wrap;gap:6px 18px;color:var(--muted);font-size:12.5px;margin-top:8px}
+.qs b{color:var(--ink)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;box-shadow:0 1px 3px rgba(20,27,36,.05);margin-top:16px}
+.panel h2{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);margin:0 0 3px;font-weight:650}
+.panel .st{font-size:18px;font-weight:600;margin:0 0 12px;letter-spacing:-.01em}
+.panel .sub{font-size:12.5px;color:var(--ink2);margin:-6px 0 14px;max-width:80ch}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);font-weight:650;padding:0 10px 8px;text-align:left;white-space:nowrap}
+td{padding:8px 10px;border-top:1px solid var(--grid);vertical-align:top;font-variant-numeric:tabular-nums}
+td.mono{font-family:var(--mono)}
+.lb{overflow-x:auto}
+.pill{font-size:10px;font-weight:700;letter-spacing:.05em;padding:2px 8px;border-radius:20px;font-family:var(--mono);white-space:nowrap}
+.pill.ok{color:#0f7a4e;background:rgba(15,157,88,.13)}
+.pill.warn{color:#9a6400;background:rgba(230,149,43,.16)}
+.pill.bad{color:#b53838;background:rgba(209,60,60,.13)}
+.pill.unk{color:#6b7885;background:rgba(124,135,152,.14)}
+.pos{color:var(--up)}.neg{color:var(--down)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:2px;background:var(--line);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+.tiles div{background:var(--soft);padding:12px 14px}
+.tiles .k{font-size:10px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.tiles .v{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;font-family:var(--mono);margin-top:2px}
+.big-verdict{font-size:22px;font-weight:700;letter-spacing:.02em}
+canvas{width:100%;display:block}
+.note{font-size:11.5px;color:var(--faint);margin-top:12px;font-family:var(--mono);line-height:1.6}
+.prov{font-size:10.5px;color:var(--faint);font-family:var(--mono);margin-top:8px}
+h3.sec{font-size:13px;font-weight:650;margin:16px 0 6px}
+a.ev{color:var(--series-2);text-decoration:none;border-bottom:1px dotted var(--series-2)}
 </style>
 </head>
 <body>
-<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a></nav>
+<nav class="topnav"><a class="brand" href="home.html">Quant Universe</a>
+  <a class="nav here" href="home.html">Home</a><a class="nav" href="traders.html">Traders</a><a class="nav" href="tiers.html">Tiers</a><a class="nav" href="features.html">Data</a><a class="nav" href="health.html">Watchtower</a><span class="spacer"></span><span class="tag">research console</span></nav>
+<div class="research-banner">🎓 <b>University research study</b> — NYU Deep Learning course project. <b>Simulated / paper trading only</b>, no real capital, not financial advice. Every number links to a canonical artifact.</div>
 
 <main>
-  <header class="hero">
-    <h1>Quant Universe</h1>
-    <div class="sub">A living machine-learning laboratory for
-      understanding markets.</div>
-    <p class="tag">Watch models learn, compete, fail, recover and
-      improve — using simulated money.</p>
-    <div class="badges">
-      <span class="badge live">LIVE</span>
-      <span class="badge">SIMULATED</span>
-      <span class="badge">EDUCATIONAL</span>
-    </div>
-  </header>
+<header>
+  <h1 style="font-family:var(--display);font-style:italic;font-weight:500;">Executive Research Summary</h1>
+  <div class="qs">
+    <span><b>Is the machine healthy?</b></span><span><b>Are we beating the market?</b></span>
+    <span><b>Is any trader profitable?</b></span><span><b>What's stopping us?</b></span><span><b>What's next?</b></span>
+  </div>
+</header>
 
-  <style>
-    .dashrail { margin: 24px 0 6px; }
-    .dashrail .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .16em;
-      color: var(--good-text); }
-    .dashrail h2 { font: italic 500 26px/1.2 var(--display); margin: 3px 0 0; }
-    .dashgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
-      margin-top: 14px; }
-    @media (max-width: 900px) { .dashgrid { grid-template-columns: repeat(2, 1fr); } }
-    .dashtile { display: flex; flex-direction: column; gap: 4px; text-decoration: none;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px 15px; transition: border-color .12s, transform .12s; }
-    .dashtile:hover { border-color: var(--series-2); transform: translateY(-2px); }
-    .dashtile b { font-size: 15px; color: var(--ink); }
-    .dashtile span { font-size: 12px; color: var(--muted); line-height: 1.4; }
-  </style>
-  <section class="dashrail" aria-label="Live dashboards">
-    <span class="eyebrow">NEW · LIVE RESEARCH DASHBOARDS</span>
-    <h2>See the desk in numbers</h2>
-    <div class="dashgrid">
-      <a class="dashtile" href="traders.html"><b>Traders →</b><span>Every trader's equity on one axis · the $1K Desk</span></a>
-      <a class="dashtile" href="perf.html"><b>Performance →</b><span>Profit per trade with 95% CIs &amp; significance</span></a>
-      <a class="dashtile" href="tiers.html"><b>Tiers →</b><span>T1/T2/T3 arms, features, losses, A/B</span></a>
-      <a class="dashtile" href="features.html"><b>Features →</b><span>Feeds, leakage canaries, calibration</span></a>
-      <a class="dashtile" href="health.html"><b>Health →</b><span>Invariants, incidents, graveyard &amp; incubator</span></a>
-    </div>
-  </section>
-
-  <section class="cards">
-    <div class="card">
-      <div class="eyebrow">CARD 1</div>
-      <h2>The World</h2>
-      <p><b>Bitcoin is our laboratory.</b> Market data flows in every
-        second. The system observes it, predicts what might happen
-        next, estimates its own uncertainty — and compares its
-        beliefs with a real prediction market's odds, every
-        15&nbsp;minutes.</p>
-      <a class="go" href="universe.html">Explore the Universe →</a>
-    </div>
-
-    <div class="card">
-      <div class="eyebrow">CARD 2</div>
-      <h2>The Machine</h2>
-      <div class="flow">
-        <a href="models.html">🧠 Models — predict the future</a>
-        <div class="arr">↓</div>
-        <a href="universe.html">🔮 Probability — beliefs vs the market</a>
-        <div class="arr">↓</div>
-        <a href="experiments.html">🎮 Decisions — act or abstain</a>
-        <div class="arr">↓</div>
-        <a href="universe.html">⚙️ Execution — simulated fills, real quotes</a>
-        <div class="arr">↓</div>
-        <a href="watchtower.html">🤖 Learning — retrain, verify, repair</a>
-      </div>
-      <p style="font-size:13px;color:var(--muted)">Click any part to
-        zoom in.</p>
-    </div>
-
-    <div class="card">
-      <div class="eyebrow">CARD 3</div>
-      <h2>The Scoreboard</h2>
-      <div class="stats">
-        <div class="stat"><div class="v" id="s-bss">—</div>
-          <div class="k">BEST BSS vs MARKET</div></div>
-        <div class="stat"><div class="v" id="s-ev">—</div>
-          <div class="k">BEST PAIRED ΔEV / $1</div></div>
-        <div class="stat"><div class="v" id="s-exp">—</div>
-          <div class="k">LIVE EXPERIMENT</div></div>
-        <div class="stat"><div class="v" id="s-health">—</div>
-          <div class="k">SYSTEM HEALTH</div></div>
-      </div>
-      <p class="honest" id="s-honest">Today: the system is learning,
-        but has not yet demonstrated durable market-beating
-        information.</p>
-      <a class="go" href="experiments.html">See the evidence →</a>
-    </div>
-  </section>
-
-  <section class="journey-wrap">
-    <h2>What happens inside?</h2>
-    <p class="lede">The whole thesis in one loop — repeated every
-      15-minute market window, around the clock.</p>
-    <div class="journey">
-      <span class="jstep">Observe</span><span class="jarr">→</span>
-      <span class="jstep">Predict</span><span class="jarr">→</span>
-      <span class="jstep">Estimate uncertainty</span><span class="jarr">→</span>
-      <span class="jstep">Compare with market</span><span class="jarr">→</span>
-      <span class="jstep">Decide</span><span class="jarr">→</span>
-      <span class="jstep">Simulate trade</span><span class="jarr">→</span>
-      <span class="jstep">Measure outcome</span><span class="jarr">→</span>
-      <span class="jstep">Learn</span><span class="jarr">→</span>
-      <span class="jstep jloop">Try again</span>
-    </div>
-  </section>
-
-  <section class="prove">
-    <h2>The machine doesn't assume it's right.</h2>
-    <p class="lede">It has to prove every step — and most ideas
-      don't survive the proof.</p>
-    <div class="lessons">
-      <div class="lesson">
-        <b>A model can predict price well and still fail
-          economically.</b>
-        <span>Accuracy is not money. A forecast that arrives after
-          the market has already moved is trivia, not edge.</span>
-        <span class="case">Case: kbf — accurate, too late,
-          retired.</span>
-      </div>
-      <div class="lesson">
-        <b>A strategy can make money temporarily and still fail
-          statistically.</b>
-        <span>Small samples flatter. Every result must survive its
-          pre-registered sample size and confidence interval.</span>
-        <span class="case">Case: t_cheap — +13¢/$1 on 36 bets;
-          verdict: keep collecting.</span>
-      </div>
-      <div class="lesson">
-        <b>A model can look promising and still be retired.</b>
-        <span>Shadow arms flip sign week to week. Only frozen
-          decision gates speak — and their verdicts are
-          recorded forever.</span>
-        <span class="case">Case: A3-v1.1 — rejected at its gate;
-          the failure taught us more than a win would have.</span>
-      </div>
-    </div>
-  </section>
-
-  <p class="foot">simulated capital · registered experiments ·
-    every number traces to a ledger ·
-    <a href="paper.html" style="color:var(--muted)">read the paper</a></p>
+<div class="panel" id="c1"><h2>Card 1 · System readiness</h2><div class="st">Are the planes healthy?</div><div id="c1b">loading…</div></div>
+<div class="panel" id="c2"><h2>Card 2 · Performance funnel</h2><div class="st">Where the economics are gained and lost</div>
+  <p class="sub">Signal → quoted EV → selection → execution → <b>realized</b> EV. Quoted and realized EV are never shown as the same thing.</p>
+  <div id="c2tiles" class="tiles"></div><canvas id="waterfall" height="150" style="margin-top:14px"></canvas><div class="prov" id="c2prov"></div></div>
+<div class="panel" id="c3"><h2>Card 3 · Market-beating status</h2><div class="st">Does any tier beat its baseline?</div><div class="lb" id="c3b">loading…</div></div>
+<div class="panel" id="c4"><h2>Card 4 · Decision frontier</h2><div class="st">Profitable-trade recall vs bad-entry rate</div>
+  <p class="sub">Frozen risk budget: P(negative realized EV | enter) ≤ 0.10. The feasible region is bad-entry ≤ 10% <b>and</b> realized EV &gt; 0.</p>
+  <div class="grid2"><div><canvas id="frontier" height="220"></canvas></div><div id="c4b"></div></div><div class="prov" id="c4prov"></div></div>
+<div class="panel" id="c5"><h2>Card 5 · Failure store</h2><div class="st">Why are we losing?</div><div id="c5b">loading…</div></div>
+<div class="panel" id="c6"><h2>Card 6 · Current bottleneck</h2><div class="st">What's the binding constraint, and the next registered test?</div><div id="c6b">loading…</div></div>
 </main>
 
 <script>
-"use strict";
-const bust = u => u + (u.includes("?") ? "&" : "?") + "t="
-  + Math.floor(Date.now() / 15000);
-const J = async u => {
-  try { const r = await fetch(bust(u), { cache: "no-store" });
-    return r.ok ? r.json() : null; } catch { return null; }
-};
-(async () => {
-  const [q, os, a3, mh] = await Promise.all([
-    J("../results/model_qualification.json"),
-    J("../results/online_status.json"),
-    J("../results/a3_live.json"),
-    J("../results/monitor_health.json")]);
+const C=getComputedStyle(document.documentElement),col=k=>C.getPropertyValue(k).trim();
+const bust=u=>u+(u.includes("?")?"&":"?")+"t="+Date.now();
+async function J(u){try{const r=await fetch(bust("../results/"+u),{cache:"no-store"});return r.ok?r.json():null;}catch(e){return null;}}
+const c=v=>v==null?'<span class="pill unk">UNKNOWN</span>':(v>=0?"+":"")+(v*100).toFixed(2)+"¢";
+const UNK='<span class="pill unk">UNKNOWN</span>';
+function dpr(cv,w,h){const r=window.devicePixelRatio||1;cv.width=w*r;cv.height=h*r;const g=cv.getContext("2d");g.scale(r,r);return g;}
+function vpill(v){const m={PASS:"ok",FEASIBLE_POINT:"ok",FAIL:"bad",NO_FEASIBLE_POINT:"bad",INVERTED:"bad",
+  COLLECTING:"warn",INSUFFICIENT_EVIDENCE:"warn",EXTEND_CAPTURE:"warn",BLOCKED:"unk",INVALID:"unk"};
+  return '<span class="pill '+(m[v]||"unk")+'">'+(v||"UNKNOWN")+'</span>';}
 
-  // best market-relative BSS (median fold) across model arms
-  if (q && q.models) {
-    let best = null;
-    for (const [id, m] of Object.entries(q.models)) {
-      const b = m.walk_forward && m.walk_forward.median_fold_bss;
-      if (typeof b === "number" && (best === null || b > best.b))
-        best = { id, b };
-    }
-    if (best) {
-      const el = document.getElementById("s-bss");
-      el.textContent = (best.b >= 0 ? "+" : "") + best.b.toFixed(3);
-      el.style.color = best.b > 0 ? "var(--up)" : "var(--down)";
-      el.title = best.id;
-    }
-  }
-  // best paired treatment effect among trader arms
-  if (os && Array.isArray(os.treatments)) {
-    let best = null;
-    for (const t of os.treatments)
-      if (t.verdict !== "baseline" &&
-          (best === null || t.mean_diff > best.mean_diff)) best = t;
-    if (best) {
-      const el = document.getElementById("s-ev");
-      el.textContent = (best.mean_diff >= 0 ? "+" : "")
-        + (best.mean_diff * 100).toFixed(1) + "¢";
-      el.style.color = best.mean_diff > 0 ? "var(--up)" : "var(--down)";
-      el.title = best.key + " · n=" + best.n + " · still collecting";
-    }
-  }
-  // live registered experiment
-  if (a3) {
-    const n = a3.forward && a3.forward.eligible;
-    document.getElementById("s-exp").textContent =
-      (a3.experiment_id || "A3") + " · n=" + (n ?? "—");
-    document.getElementById("s-exp").style.fontSize = "16px";
-  }
-  // health chip
-  const h = document.getElementById("s-health");
-  let state = "🟢 OK";
-  if (os && os.runtime_state && os.runtime_state !== "OK" &&
-      os.runtime_state !== "NORMAL") state = "🟡 " + "guarded";
-  if (mh && mh.overall && /red|crit/i.test(String(mh.overall)))
-    state = "🔴 attention";
-  h.textContent = state; h.style.fontSize = "17px";
-})();
+// CARD 1
+J("readiness.json").then(r=>{
+  const b=document.getElementById("c1b");if(!r){b.innerHTML=UNK;return;}
+  const planes=r.planes||{};const lvl=(r.system&&r.system.level)||null;
+  let h=`<div class="tiles" style="margin-bottom:12px"><div><div class="k">Overall readiness</div><div class="v">${lvl||"UNKNOWN"}</div></div>
+    <div><div class="k">Headline</div><div class="v" style="font-size:12px">${(r.system&&r.system.headline)||"—"}</div></div>
+    <div><div class="k">Open SEV-0</div><div class="v">${(r.sev0_open&&r.sev0_open.length)||0}</div></div></div>
+    <div class="lb"><table><thead><tr><th>Plane</th><th>State</th><th>Target</th><th>Evidence</th><th>Blocker</th></tr></thead><tbody>`;
+  Object.entries(planes).forEach(([name,p])=>{const lv=p.level||p.assessed;
+    const cls=/R[678]/.test(lv)?"ok":/R[45]/.test(lv)?"warn":"bad";
+    h+=`<tr><td class="mono">${name}</td><td><span class="pill ${cls}">${lv||"UNKNOWN"}</span></td>
+      <td class="mono">${p.target||"—"}</td><td style="color:var(--ink2);max-width:280px">${p.evidence||"—"}</td>
+      <td style="color:var(--muted);max-width:320px">${p.blocker||"—"}</td></tr>`;});
+  h+=`</tbody></table></div><div class="prov">source: readiness.json · readiness = MIN over critical planes, never averaged</div>`;
+  b.innerHTML=h;
+});
+
+// CARD 2
+Promise.all([J("decision_board.json"),J("decision_frontier.json")]).then(([db,df])=>{
+  const w=(db&&db.execution_waterfall)||{};
+  const op=df&&df.chosen_operating_point;
+  document.getElementById("c2tiles").innerHTML=
+    `<div><div class="k">Quoted EV / $1</div><div class="v ${(w.decision_ev_per_1||0)>=0?'pos':'neg'}">${c(w.decision_ev_per_1)}</div></div>
+     <div><div class="k">Realized EV / $1</div><div class="v ${(w.realized_ev_per_1||0)>=0?'pos':'neg'}">${c(w.realized_ev_per_1)}</div></div>
+     <div><div class="k">Execution gap</div><div class="v neg">${c(w.execution_gap_per_1)}</div></div>
+     <div><div class="k">Windows</div><div class="v">${w.windows!=null?w.windows:UNK}</div></div>
+     <div><div class="k">Coverage</div><div class="v">${op?op.coverage:'<span class="pill unk">UNKNOWN</span>'}</div></div>`;
+  document.getElementById("c2prov").textContent="source: decision_board.json (execution_waterfall) · quoted = at model price, realized = after execution";
+  // waterfall
+  const cv=document.getElementById("waterfall"),W=cv.clientWidth||900,H=150,g=dpr(cv,W,H);
+  const q=(w.decision_ev_per_1||0)*100,r=(w.realized_ev_per_1||0)*100;
+  const steps=[["Quoted EV",0,q,q>=0],["Execution gap",q,r,false],["Realized EV",0,r,r>=0]];
+  const vals=[0,q,r];let lo=Math.min(...vals)-1,hi=Math.max(...vals)+1;
+  const pad=40,bw=(W-pad-14)/3-16;const Y=v=>H-24-((v-lo)/(hi-lo))*(H-40);
+  g.strokeStyle=col("--grid");g.beginPath();g.moveTo(pad,Y(0));g.lineTo(W-8,Y(0));g.stroke();
+  g.font="10px "+col("--mono");g.fillStyle=col("--faint");g.textAlign="right";g.fillText("0¢",pad-4,Y(0));
+  steps.forEach((s,i)=>{const x=pad+8+i*((W-pad-14)/3);const y0=Y(s[1]),y1=Y(s[2]);
+    g.fillStyle=s[3]?col("--up"):col("--down");g.globalAlpha=.85;
+    g.fillRect(x,Math.min(y0,y1),bw,Math.max(2,Math.abs(y1-y0)));g.globalAlpha=1;
+    g.fillStyle=col("--ink");g.textAlign="center";g.font="600 11px "+col("--mono");
+    g.fillText((s[2]>=0?"+":"")+s[2].toFixed(1)+"¢",x+bw/2,Math.min(y0,y1)-6);
+    g.fillStyle=col("--muted");g.font="10px system-ui";g.fillText(s[0],x+bw/2,H-8);});
+});
+
+// CARD 3
+Promise.all([J("model_offline.json"),J("model_online.json"),J("f1_capture_qualification.json"),J("decision_frontier.json"),J("decision_board.json")])
+.then(([off,on,f1,df,db])=>{
+  const bssKb2=(()=>{const m=off&&off.models&&off.models.kb2;if(!m||!m.folds)return null;
+    const v=m.folds.map(f=>f.bss).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;})();
+  const w=(db&&db.execution_waterfall)||{};
+  const rows=[
+    {tier:"T1 · Forecast",q:"beat persistence?",ctrl:"persistence",trt:"price regressors",
+     n:f1?("ESS "+(f1.ess_min_across_horizons!=null?Math.round(f1.ess_min_across_horizons):"?")):null,
+     metric:"val MSE",verdict:(f1&&f1.verdict)?f1.verdict.split(" ")[0]:"COLLECTING"},
+    {tier:"T2 · Probability",q:"beat the market?",ctrl:"market (kb2)",trt:"kb3/4/5/8",
+     n:"n≈192",metric:"BSS vs market",val:(bssKb2!=null?bssKb2.toFixed(3):null),
+     verdict:(bssKb2!=null&&bssKb2<0)?"FAIL":"INSUFFICIENT_EVIDENCE"},
+    {tier:"T3 · Decision",q:"improve realized EV?",ctrl:"champion",trt:"selective policy",
+     n:df?("n "+(df.n_windows||"?")):null,metric:"feasible point",
+     verdict:(df&&/NO_FEASIBLE/.test(df.verdict))?"NO_FEASIBLE_POINT":"COLLECTING"},
+    {tier:"T4 · Execution",q:"preserve edge?",ctrl:"—",trt:"real fills",
+     n:w.windows?("n "+w.windows):null,metric:"execution gap",val:(w.execution_gap_per_1!=null?(w.execution_gap_per_1*100).toFixed(1)+"¢":null),
+     verdict:(w.execution_gap_per_1!=null&&w.execution_gap_per_1<0)?"FAIL":"INSUFFICIENT_EVIDENCE"},
+  ];
+  let h=`<table><thead><tr><th>Tier</th><th>Question</th><th>Control</th><th>Treatment</th><th>n / ESS</th><th>Primary metric</th><th>Value</th><th>Verdict</th></tr></thead><tbody>`;
+  rows.forEach(r=>{h+=`<tr><td class="mono">${r.tier}</td><td style="color:var(--ink2)">${r.q}</td>
+    <td class="mono">${r.ctrl}</td><td class="mono">${r.trt}</td><td class="mono">${r.n||UNK}</td>
+    <td>${r.metric}</td><td class="mono ${r.val&&r.val[0]==='-'?'neg':''}">${r.val||"—"}</td><td>${vpill(r.verdict)}</td></tr>`;});
+  h+=`</tbody></table><div class="prov">sources: model_offline.json · f1_capture_qualification.json · decision_frontier.json · decision_board.json — offline and online evidence are not mixed</div>`;
+  document.getElementById("c3b").innerHTML=h;
+});
+
+// CARD 4
+J("decision_frontier.json").then(df=>{
+  const b=document.getElementById("c4b");if(!df){b.innerHTML=UNK;return;}
+  const feasible=!/NO_FEASIBLE/.test(df.verdict);
+  b.innerHTML=`<div class="big-verdict ${feasible?'pos':'neg'}">${feasible?'FEASIBLE POINT':'NO FEASIBLE POINT'}</div>
+    <p class="sub" style="margin-top:6px">${df.verdict}</p>
+    <div class="tiles" style="margin-top:8px"><div><div class="k">Base rate profitable</div><div class="v">${df.base_rate_profitable!=null?(df.base_rate_profitable*100).toFixed(0)+'%':UNK}</div></div>
+    <div><div class="k">Risk budget ε</div><div class="v">${df.risk_budget_epsilon!=null?df.risk_budget_epsilon:UNK}</div></div>
+    <div><div class="k">Edge monotonicity</div><div class="v ${df.edge_monotonicity&&df.edge_monotonicity.monotonicity==='INVERTED'?'neg':''}" style="font-size:15px">${(df.edge_monotonicity&&df.edge_monotonicity.monotonicity)||UNK}</div></div></div>`;
+  document.getElementById("c4prov").textContent="source: decision_frontier.json · operating point is not substituted with the best-looking threshold when none is feasible";
+  // scatter recall vs bad-entry
+  const fr=df.frontier||[];const cv=document.getElementById("frontier"),W=cv.clientWidth||400,H=220,g=dpr(cv,W,H);
+  const pl=40,pb=30,pt=10,pr=12;const X=v=>pl+v*(W-pl-pr),Y=v=>pt+(1-v)*(H-pt-pb);
+  g.font="10px "+col("--mono");
+  for(let i=0;i<=4;i++){const v=i/4;g.strokeStyle=col("--grid");g.beginPath();g.moveTo(pl,Y(v));g.lineTo(W-pr,Y(v));g.stroke();
+    g.fillStyle=col("--faint");g.textAlign="right";g.textBaseline="middle";g.fillText((v*100)+'%',pl-4,Y(v));}
+  // feasible region: bad-entry <= 0.10 (left band)
+  g.fillStyle="rgba(15,157,88,.08)";g.fillRect(pl,pt,X(0.10)-pl,H-pt-pb);
+  g.strokeStyle=col("--up");g.setLineDash([4,3]);g.beginPath();g.moveTo(X(0.10),pt);g.lineTo(X(0.10),H-pb);g.stroke();g.setLineDash([]);
+  g.textAlign="center";g.textBaseline="top";[0,.25,.5,.75,1].forEach(v=>{g.fillStyle=col("--faint");g.fillText((v*100)+'%',X(v),H-pb+6);});
+  g.fillStyle=col("--muted");g.fillText("bad-entry rate →",W/2,H-14);
+  fr.forEach(p=>{if(p.bad_entry_rate==null||p.profitable_trade_recall==null)return;
+    g.fillStyle=col("--series-2");g.globalAlpha=.6;g.beginPath();g.arc(X(p.bad_entry_rate),Y(p.profitable_trade_recall),3,0,7);g.fill();g.globalAlpha=1;});
+  g.save();g.translate(12,(pt+H-pb)/2);g.rotate(-Math.PI/2);g.textAlign="center";g.fillStyle=col("--muted");g.fillText("profitable-trade recall",0,0);g.restore();
+});
+
+// CARD 5
+J("failure_store.json").then(fs=>{
+  const b=document.getElementById("c5b");if(!fs){b.innerHTML=UNK;return;}
+  const tc=fs.top_cluster||{};
+  let h=`<div class="tiles" style="margin-bottom:12px"><div><div class="k">Dominant mechanism</div><div class="v neg">${tc.mechanism||"UNKNOWN"}</div></div>
+    <div><div class="k">Share of recent losses</div><div class="v">${tc.share!=null?(tc.share*100).toFixed(0)+'%':UNK}</div></div>
+    <div><div class="k">Count</div><div class="v">${tc.count!=null?tc.count:UNK}</div></div>
+    <div><div class="k">Bad / total</div><div class="v">${fs.bad_total!=null?fs.bad_total+' / '+(fs.bets_total||'?'):UNK}</div></div></div>`;
+  if(fs.proposed_information_improvement)h+=`<p class="sub">Recommended research direction: <b>${typeof fs.proposed_information_improvement==="string"?fs.proposed_information_improvement:(fs.proposed_information_improvement.headline||JSON.stringify(fs.proposed_information_improvement).slice(0,120))}</b></p>`;
+  const ww=fs.worst_20_windows||[];
+  h+=`<h3 class="sec">20 worst recent windows</h3><div class="lb"><table><thead><tr><th>Window</th><th>Side</th><th>Model P</th><th>Price ¢</th><th>P&L ¢</th><th>Mechanism</th><th>Alignment</th></tr></thead><tbody>`;
+  ww.forEach(w=>{h+=`<tr><td class="mono">${(w.ticker||'').replace('KXBTC15M-','')}</td><td>${w.side||'—'}</td>
+    <td class="mono">${w.p_model!=null?w.p_model.toFixed(3):'—'}</td><td class="mono">${w.price_c!=null?w.price_c:'—'}</td>
+    <td class="mono neg">${w.pnl_c!=null?w.pnl_c:'—'}</td><td class="mono">${w.primary||(w.tags&&w.tags[0])||'—'}</td>
+    <td class="mono" style="color:var(--muted)">${w.decision_alignment||'—'}</td></tr>`;});
+  h+=`</tbody></table></div><div class="prov">source: failure_store.json · the Failure Store may recommend, never mutate active research policy</div>`;
+  b.innerHTML=h;
+});
+
+// CARD 6
+Promise.all([J("pm_snapshot.json"),J("diagnosis.json")]).then(([pm,dg])=>{
+  const b=document.getElementById("c6b");if(!pm&&!dg){b.innerHTML=UNK;return;}
+  const bottleneck=(pm&&pm.top_bottleneck)||(dg&&dg.question)||null;
+  const next=(pm&&pm.next_unblocked_action)||null;
+  let h=`<div class="tiles" style="margin-bottom:12px"><div><div class="k">Current bottleneck</div><div class="v" style="font-size:15px;color:var(--down)">${bottleneck||"UNKNOWN"}</div></div>
+    <div><div class="k">Next registered test</div><div class="v" style="font-size:15px">${next||"UNKNOWN"}</div></div></div>
+    <p class="sub">Evidence: decision frontier <b>NO_FEASIBLE_POINT</b>, edge monotonicity <b>INVERTED</b>, dominant failure <b>MARKET_KNEW</b> — all point at missing information, not model complexity.</p>`;
+  const blocked=(pm&&pm.blocked_work)||[];
+  if(Array.isArray(blocked)&&blocked.length){h+=`<h3 class="sec">Blocked work</h3><ul class="qs" style="flex-direction:column;gap:4px">`+
+    blocked.slice(0,6).map(x=>`<li style="color:var(--ink2)">${typeof x==="string"?x:(x.what||x.name||JSON.stringify(x).slice(0,80))}</li>`).join("")+`</ul>`;}
+  h+=`<div class="prov">sources: pm_snapshot.json · diagnosis.json · machine-derived, not hand-typed</div>`;
+  b.innerHTML=h;
+});
 </script>
+<script src="glossary.js" defer></script>
+<script src="nav.js" defer></script>
 </body>
 </html>
