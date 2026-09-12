@@ -1,0 +1,149 @@
+{
+ "decision_points": 18535,
+ "windows": 352,
+ "windows_train": 211,
+ "windows_val": 70,
+ "windows_test": 71,
+ "test_decision_points": 3747,
+ "market_brier_test_row": 0.17636,
+ "market_brier_test_window": 0.15402,
+ "settlement_base_rate": 0.453,
+ "lambda_path": [
+  {
+   "lambda": 0,
+   "bss_val": 0.0088,
+   "bss_test_row": -0.0292,
+   "bss_test_window": -0.0351,
+   "bss_train": 0.0256,
+   "mean_abs_delta": 0.1996,
+   "p90_abs_delta": 0.3868,
+   "frac_delta_gt_1pp": 0.982,
+   "corr_with_market": 0.989
+  },
+  {
+   "lambda": 1e-05,
+   "bss_val": 0.0088,
+   "bss_test_row": -0.0292,
+   "bss_test_window": -0.0351,
+   "bss_train": 0.0256,
+   "mean_abs_delta": 0.1996,
+   "p90_abs_delta": 0.3868,
+   "frac_delta_gt_1pp": 0.982,
+   "corr_with_market": 0.989
+  },
+  {
+   "lambda": 0.0001,
+   "bss_val": 0.0088,
+   "bss_test_row": -0.0292,
+   "bss_test_window": -0.035,
+   "bss_train": 0.0256,
+   "mean_abs_delta": 0.1995,
+   "p90_abs_delta": 0.3867,
+   "frac_delta_gt_1pp": 0.982,
+   "corr_with_market": 0.989
+  },
+  {
+   "lambda": 0.001,
+   "bss_val": 0.009,
+   "bss_test_row": -0.029,
+   "bss_test_window": -0.0348,
+   "bss_train": 0.0256,
+   "mean_abs_delta": 0.1984,
+   "p90_abs_delta": 0.385,
+   "frac_delta_gt_1pp": 0.98,
+   "corr_with_market": 0.9891
+  },
+  {
+   "lambda": 0.01,
+   "bss_val": 0.011,
+   "bss_test_row": -0.027,
+   "bss_test_window": -0.0328,
+   "bss_train": 0.0254,
+   "mean_abs_delta": 0.1889,
+   "p90_abs_delta": 0.3679,
+   "frac_delta_gt_1pp": 0.979,
+   "corr_with_market": 0.9901
+  },
+  {
+   "lambda": 0.1,
+   "bss_val": 0.0147,
+   "bss_test_row": -0.0172,
+   "bss_test_window": -0.0221,
+   "bss_train": 0.0212,
+   "mean_abs_delta": 0.1362,
+   "p90_abs_delta": 0.2726,
+   "frac_delta_gt_1pp": 0.964,
+   "corr_with_market": 0.9946
+  },
+  {
+   "lambda": 1,
+   "bss_val": 0.0055,
+   "bss_test_row": -0.004,
+   "bss_test_window": -0.0059,
+   "bss_train": 0.0072,
+   "mean_abs_delta": 0.0407,
+   "p90_abs_delta": 0.081,
+   "frac_delta_gt_1pp": 0.836,
+   "corr_with_market": 0.9995
+  },
+  {
+   "lambda": 10,
+   "bss_val": -2.5751,
+   "bss_test_row": -1.7653,
+   "bss_test_window": -1.1313,
+   "bss_train": -2.3006,
+   "mean_abs_delta": 3.1033449943804454e+178,
+   "p90_abs_delta": 6.0267084315034296e+178,
+   "frac_delta_gt_1pp": 1.0,
+   "corr_with_market": -0.0066
+  }
+ ],
+ "best": {
+  "lambda": 0.1,
+  "bss_val": 0.0147,
+  "bss_test_row": -0.0172,
+  "bss_test_window": -0.0221,
+  "bss_train": 0.0212,
+  "mean_abs_delta": 0.1362,
+  "p90_abs_delta": 0.2726,
+  "frac_delta_gt_1pp": 0.964,
+  "corr_with_market": 0.9946
+ },
+ "bss_by_time_to_expiry": {
+  "T-2..0": {
+   "n": 260,
+   "bss": 0.0303
+  },
+  "T-4..2": {
+   "n": 533,
+   "bss": -0.0087
+  },
+  "T-6..4": {
+   "n": 526,
+   "bss": -0.0121
+  },
+  "T-9..6": {
+   "n": 794,
+   "bss": -0.0318
+  },
+  "T-15..9": {
+   "n": 1634,
+   "bss": -0.0185
+  }
+ },
+ "murphy_market": {
+  "reliability": 0.00686,
+  "resolution": 0.07836,
+  "uncertainty": 0.24781
+ },
+ "murphy_candidate": {
+  "reliability": 0.00988,
+  "resolution": 0.07872,
+  "uncertainty": 0.24781
+ },
+ "placebo_block_shuffle_bss": -0.0021,
+ "external_only_bss": -0.4536,
+ "overfit_diagnosis": "CLASSIC_OVERFIT",
+ "verdict": "B_REPRICE_ONLY",
+ "note": "settlement label from Kalshi expiry resolution; unit=window; row weights 1/rows_in_window; BSS vs Kalshi mid at decision t."
+}
