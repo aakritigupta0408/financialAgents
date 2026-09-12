@@ -5,8 +5,10 @@
  "base_rate": 0.461,
  "brier": {
   "50_50": 0.25,
-  "MECH_FAIR": 0.2024,
-  "KALSHI": 0.186
+  "MECH_FAIR_level": 0.2024,
+  "MECH_FAIR_anchored": 0.2091,
+  "KALSHI": 0.186,
+  "MECH_FAIR": 0.2024
  },
  "decomposition": {
   "mechanics_gain_over_50_50": 0.0476,

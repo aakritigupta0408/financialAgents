@@ -57,11 +57,20 @@ def main():
             continue
         tte = max(1.0, ct - r["ts"])
         rows.append({"ticker": r["ticker"], "ts": r["ts"], "y": o["exact_yes"],
-                     "k_prob": r["k_prob"], "level": level,
+                     "k_prob": r["k_prob"], "level": level, "cb_price": r["cb_price"],
                      "floor": o["floor_strike"], "tte": tte,
                      "rvol": r["cb_rvol_30s"]})
     if len(rows) < 400:
         print("insufficient joined rows:", len(rows)); return
+    # ANCHORED proxy (no BRTI): floor_strike is the exact BRTI open-avg; use the
+    # Coinbase MOVE since window open (kills the static ~$18 level basis; only
+    # the small basis-CHANGE remains). cb_open = earliest cb_price per window.
+    cb_open = {}
+    for r in rows:
+        if r["ticker"] not in cb_open or r["ts"] < cb_open[r["ticker"]][0]:
+            cb_open[r["ticker"]] = (r["ts"], r["cb_price"])
+    for r in rows:
+        r["anchored_dist"] = r["cb_price"] - cb_open[r["ticker"]][1]
     # window split
     first = {}
     for r in rows:
@@ -87,15 +96,33 @@ def main():
         denom = best_sig * np.array([r["level"] for r in rs]) * np.sqrt([r["tte"] for r in rs])
         return Phiv(d / denom)
 
+    # anchored MECH_FAIR: distance = Coinbase move since open (no level basis)
+    a_tr = np.array([r["anchored_dist"] for r in tr])
+    best_asig, best_ab = None, 9
+    for sig in [3, 6, 10, 16, 26, 40, 60, 90]:      # $ move scale per sqrt(s)
+        denom = sig * np.sqrt(tte_tr)
+        p = Phiv(a_tr / denom)
+        b = brier(p, ytr)
+        if b < best_ab:
+            best_ab, best_asig = b, sig
+    def mech_anch(rs):
+        d = np.array([r["anchored_dist"] for r in rs])
+        return Phiv(d / (best_asig * np.sqrt([r["tte"] for r in rs])))
+
     yte = np.array([r["y"] for r in te], float)
     p_mkt = np.array([r["k_prob"] for r in te])
     p_mech = mech(te)
+    p_anch = mech_anch(te)
     p_half = np.full(len(te), 0.5)
     tte = np.array([r["tte"] / 60.0 for r in te])
 
     B = {"50_50": round(brier(p_half, yte), 4),
-         "MECH_FAIR": round(brier(p_mech, yte), 4),
+         "MECH_FAIR_level": round(brier(p_mech, yte), 4),
+         "MECH_FAIR_anchored": round(brier(p_anch, yte), 4),
          "KALSHI": round(brier(p_mkt, yte), 4)}
+    # use the better mechanics baseline for the decomposition
+    p_mech = p_anch if B["MECH_FAIR_anchored"] <= B["MECH_FAIR_level"] else p_mech
+    B["MECH_FAIR"] = min(B["MECH_FAIR_level"], B["MECH_FAIR_anchored"])
     mech_gain = B["50_50"] - B["MECH_FAIR"]
     mkt_gain = B["50_50"] - B["KALSHI"]
     mkt_adv_vs_mech = B["MECH_FAIR"] - B["KALSHI"]
@@ -125,7 +152,9 @@ def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(doc, indent=1))
     print(f"MECH_FAIR — n_test {len(te)}, base rate {yte.mean():.3f}, sigma {best_sig}")
-    print(f"  Brier: 50/50 {B['50_50']}  MECH_FAIR {B['MECH_FAIR']}  KALSHI {B['KALSHI']}")
+    print(f"  Brier: 50/50 {B['50_50']}  MECH_level {B['MECH_FAIR_level']}"
+          f"  MECH_anchored {B['MECH_FAIR_anchored']}  KALSHI {B['KALSHI']}")
+    print(f"  (anchored on Coinbase move since ~open; no BRTI needed)")
     print(f"  mechanics gain over 50/50: {mech_gain:+.4f}")
     print(f"  Kalshi gain over 50/50:    {mkt_gain:+.4f}")
     print(f"  Kalshi advantage vs mech:  {mkt_adv_vs_mech:+.4f}")
