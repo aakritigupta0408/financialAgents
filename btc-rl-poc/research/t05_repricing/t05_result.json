@@ -1,0 +1,276 @@
+{
+ "n_points": 19375,
+ "block_size": 40,
+ "horizons": {
+  "+5s": {
+   "cb_ofi_30s": {
+    "IC": -0.0871,
+    "ci95": [
+     -0.1006,
+     -0.0732
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_l1_imb": {
+    "IC": 0.0272,
+    "ci95": [
+     0.0119,
+     0.0413
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_micro_dev": {
+    "IC": 0.0209,
+    "ci95": [
+     0.0068,
+     0.0348
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_ret_30s": {
+    "IC": 0.2167,
+    "ci95": [
+     0.2036,
+     0.229
+    ],
+    "significant": true,
+    "kind": "MECHANICAL"
+   },
+   "cb_rvol_30s": {
+    "IC": 0.0062,
+    "ci95": [
+     -0.0112,
+     0.0224
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "trade_n_30s": {
+    "IC": 0.0062,
+    "ci95": [
+     -0.0107,
+     0.0221
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "k_spread": {
+    "IC": -0.0109,
+    "ci95": [
+     -0.027,
+     0.0024
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "logistic_auc_walkforward": 0.6676,
+   "auc_test_n": 864
+  },
+  "+15s": {
+   "cb_ofi_30s": {
+    "IC": -0.188,
+    "ci95": [
+     -0.2015,
+     -0.1747
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_l1_imb": {
+    "IC": 0.055,
+    "ci95": [
+     0.0404,
+     0.069
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_micro_dev": {
+    "IC": 0.0415,
+    "ci95": [
+     0.0282,
+     0.0572
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_ret_30s": {
+    "IC": 0.43,
+    "ci95": [
+     0.4189,
+     0.441
+    ],
+    "significant": true,
+    "kind": "MECHANICAL"
+   },
+   "cb_rvol_30s": {
+    "IC": -0.0077,
+    "ci95": [
+     -0.0275,
+     0.0123
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "trade_n_30s": {
+    "IC": 0.0044,
+    "ci95": [
+     -0.0163,
+     0.0227
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "k_spread": {
+    "IC": -0.0078,
+    "ci95": [
+     -0.0242,
+     0.0059
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "logistic_auc_walkforward": 0.7389,
+   "auc_test_n": 2562
+  },
+  "+30s": {
+   "cb_ofi_30s": {
+    "IC": -0.2422,
+    "ci95": [
+     -0.2582,
+     -0.2245
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_l1_imb": {
+    "IC": 0.1089,
+    "ci95": [
+     0.0921,
+     0.1263
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_micro_dev": {
+    "IC": 0.0886,
+    "ci95": [
+     0.0714,
+     0.1058
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_ret_30s": {
+    "IC": 0.5253,
+    "ci95": [
+     0.5112,
+     0.5367
+    ],
+    "significant": true,
+    "kind": "MECHANICAL"
+   },
+   "cb_rvol_30s": {
+    "IC": -0.0064,
+    "ci95": [
+     -0.0295,
+     0.0164
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "trade_n_30s": {
+    "IC": 0.005,
+    "ci95": [
+     -0.0161,
+     0.0271
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "k_spread": {
+    "IC": -0.0037,
+    "ci95": [
+     -0.0217,
+     0.0104
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "logistic_auc_walkforward": 0.7197,
+   "auc_test_n": 4918
+  },
+  "+60s": {
+   "cb_ofi_30s": {
+    "IC": -0.1909,
+    "ci95": [
+     -0.2103,
+     -0.1697
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_l1_imb": {
+    "IC": 0.1023,
+    "ci95": [
+     0.0879,
+     0.1185
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_micro_dev": {
+    "IC": 0.0806,
+    "ci95": [
+     0.0656,
+     0.0949
+    ],
+    "significant": true,
+    "kind": "SIGNAL"
+   },
+   "cb_ret_30s": {
+    "IC": 0.3926,
+    "ci95": [
+     0.3778,
+     0.4059
+    ],
+    "significant": true,
+    "kind": "MECHANICAL"
+   },
+   "cb_rvol_30s": {
+    "IC": -0.0061,
+    "ci95": [
+     -0.0339,
+     0.0216
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "trade_n_30s": {
+    "IC": -0.0027,
+    "ci95": [
+     -0.0314,
+     0.0274
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "k_spread": {
+    "IC": 0.0003,
+    "ci95": [
+     -0.022,
+     0.0214
+    ],
+    "significant": false,
+    "kind": "flat"
+   },
+   "logistic_auc_walkforward": 0.6213,
+   "auc_test_n": 5540
+  }
+ },
+ "verdict": "ORDER_FLOW_PREDICTS_REPRICING",
+ "note": "cb_ret_30s coupling is mechanical (price->prob) and not tradeable; the test is whether ORDER FLOW leads the reprice."
+}

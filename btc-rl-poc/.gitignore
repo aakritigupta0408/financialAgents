@@ -24,3 +24,4 @@ results/chronos_bolt_ft/
 results/hist_bars_cache.jsonl
 av_cache/
 .alphavantage_key
+research/t05_repricing/dataset.jsonl
