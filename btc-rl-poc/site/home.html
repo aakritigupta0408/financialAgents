@@ -54,6 +54,7 @@ a.ev{color:var(--series-2);text-decoration:none;border-bottom:1px dotted var(--s
   </div>
 </header>
 
+<div class="panel" id="c0"><h2>Research ladder · settlement alpha · capture</h2><div class="st">Where the program stands, and what's now capturing</div><div id="c0b">loading…</div></div>
 <div class="panel" id="c1"><h2>Card 1 · System readiness</h2><div class="st">Are the planes healthy?</div><div id="c1b">loading…</div></div>
 <div class="panel" id="c2"><h2>Card 2 · Performance funnel</h2><div class="st">Where the economics are gained and lost</div>
   <p class="sub">Signal → quoted EV → selection → execution → <b>realized</b> EV. Quoted and realized EV are never shown as the same thing.</p>
@@ -76,6 +77,28 @@ function dpr(cv,w,h){const r=window.devicePixelRatio||1;cv.width=w*r;cv.height=h
 function vpill(v){const m={PASS:"ok",FEASIBLE_POINT:"ok",FAIL:"bad",NO_FEASIBLE_POINT:"bad",INVERTED:"bad",
   COLLECTING:"warn",INSUFFICIENT_EVIDENCE:"warn",EXTEND_CAPTURE:"warn",BLOCKED:"unk",INVALID:"unk"};
   return '<span class="pill '+(m[v]||"unk")+'">'+(v||"UNKNOWN")+'</span>';}
+
+// CARD 0 — research ladder + capture status
+Promise.all([J("../results/research_state.json"),J("deriv_health.json"),J("news_health.json"),J("options_health.json")]).then(([rs,dh,nh,oh])=>{
+  const b=document.getElementById("c0b");if(!rs){b.innerHTML=UNK;return;}
+  const chip=(k,v)=>{const good=/PASS/.test(v),warn=/LIMITED|REPRICE|OVERFIT|PENDING|READY/.test(v);
+    return `<span class="pill ${good?'ok':warn?'warn':'bad'}" style="margin:2px 4px 2px 0">${k}: ${v}</span>`;}
+  let h='<div style="margin-bottom:10px">'+Object.entries(rs.ladder||{}).map(([k,v])=>chip(k,v)).join('')+'</div>';
+  h+=`<div class="tiles" style="margin-bottom:10px">
+    <div><div class="k">Settlement alpha</div><div class="v neg" style="font-size:13px">NO QUALIFIED CANDIDATE</div></div>
+    <div><div class="k">Independent Oracle</div><div class="v" style="font-size:13px">INFORMATION LIMITED</div></div>
+    <div><div class="k">Price discovery</div><div class="v pos" style="font-size:13px">PASS</div></div>
+    <div><div class="k">Execution timing</div><div class="v" style="font-size:13px">FORMAL · awaiting evidence</div></div>
+    <div><div class="k">Primary bottleneck</div><div class="v neg" style="font-size:13px">INDEPENDENT INFORMATION</div></div></div>`;
+  const cap=(name,health,ready)=>{const st=health&&health.state;const cls=st==='CONNECTED'?'ok':st?'warn':(ready?'warn':'unk');
+    return `<span class="pill ${cls}" style="margin:2px 4px 2px 0">${name}: ${st||(ready||'PENDING')}</span>`;}
+  h+='<h3 class="sec">New data capture</h3><div>'+
+    cap('derivatives(OKX)',dh,'ADAPTER_READY')+cap('AV options',oh,'ADAPTER_READY')+
+    cap('AV news',nh,'ADAPTER_READY')+`<span class="pill warn" style="margin:2px 4px">pre-open Oracle: MODULE_READY</span></div>`;
+  h+=`<p class="note" style="margin-top:10px">Honest note: the current independent-Oracle lock bins that show ~100% accuracy are dominated by <b>easy far-from-strike windows</b> — not evidence of alpha. Orthogonal families (derivatives/options/news/pre-open) are implemented and awaiting live activation to accrue prospectively.</p>
+    <div class="prov">sources: research_state.json · deriv_health.json · news_health.json · options_health.json</div>`;
+  b.innerHTML=h;
+});
 
 // CARD 1
 J("readiness.json").then(r=>{

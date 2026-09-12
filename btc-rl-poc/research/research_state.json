@@ -1,0 +1,35 @@
+{
+ "generated_utc": "2026-09-12",
+ "git_sha": "e9493ec+",
+ "ladder": {
+  "PRICE_DISCOVERY": "PASS",
+  "MICROSTRUCTURE_SETTLEMENT": "B_REPRICE_ONLY",
+  "AV_EQUITY_RETURNS": "AV_CLASSIC_OVERFIT",
+  "INDEPENDENT_ORACLE": "INFORMATION_LIMITED",
+  "EXECUTION_TIMING": "REGISTERED_FORMAL_PENDING_RUNTIME_ACTIVATION",
+  "ORTHOGONAL_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
+  "PREOPEN_ORACLE_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION"
+ },
+ "primary_bottleneck": "INDEPENDENT_INFORMATION",
+ "settlement_alpha": "NO_QUALIFIED_SETTLEMENT_EDGE_FOUND_IN_TESTED_CURRENTLY_AVAILABLE_BTC_DERIVED_INFORMATION_FAMILIES",
+ "the_one_positive_mechanism": {
+  "id": "EXEC-TIMING", "spec": "EXEC_TIMING_SPEC.yaml", "spec_hash": "9c0c89ae",
+  "classification": "EXECUTION_TIMING_PROMISING", "prospective_n": 0,
+  "note": "modest entry-price improvement (+0.5c/$1 at 5s latency); not alpha"
+ },
+ "capture_sources": {
+  "btc_coinbase_microstructure": "LIVE (existing desk)",
+  "kalshi": "LIVE (existing desk)",
+  "derivatives_okx": "ADAPTER_READY (data/adapters/derivatives.py; smoke-tested CONNECTED)",
+  "av_options": "ADAPTER_READY (data/adapters/av_options.py; endpoint verified)",
+  "av_news": "ADAPTER_READY (data/adapters/av_news.py; endpoint verified)",
+  "preopen_oracle": "MODULE_READY (btc_rl/preopen_oracle.py; leak-guarded)"
+ },
+ "untested_because_uncaptured": [
+  "derivatives positioning (funding/OI/basis/long-short) — prospective",
+  "options IV/skew (IBIT/COIN/MSTR) — prospective",
+  "news arrival (structured) — prospective",
+  "true pre-open independent Oracle snapshots — prospective"
+ ],
+ "provenance": "read from canonical research artifacts; UNKNOWN never rendered green"
+}
