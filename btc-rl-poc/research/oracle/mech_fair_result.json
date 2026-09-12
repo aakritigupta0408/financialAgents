@@ -1,0 +1,40 @@
+{
+ "n_test": 5799,
+ "sigma": 8e-05,
+ "basis_used": -3.67,
+ "base_rate": 0.461,
+ "brier": {
+  "50_50": 0.25,
+  "MECH_FAIR": 0.2024,
+  "KALSHI": 0.186
+ },
+ "decomposition": {
+  "mechanics_gain_over_50_50": 0.0476,
+  "kalshi_gain_over_50_50": 0.064,
+  "kalshi_advantage_vs_mech": 0.0164,
+  "fraction_of_kalshi_edge_explained_by_mechanics": 0.744
+ },
+ "by_time_to_expiry": {
+  "T-2..0": {
+   "n": 562,
+   "mech": 0.1374,
+   "kalshi": 0.138
+  },
+  "T-5..2": {
+   "n": 1244,
+   "mech": 0.1753,
+   "kalshi": 0.1547
+  },
+  "T-9..5": {
+   "n": 1627,
+   "mech": 0.2021,
+   "kalshi": 0.1736
+  },
+  "T-15..9": {
+   "n": 2366,
+   "mech": 0.2323,
+   "kalshi": 0.2224
+  }
+ },
+ "note": "exact target (floor_strike) + exact outcome; MECH_FAIR uses no Kalshi. Coinbase used as BRTI proxy (basis-corrected mean); the $18 basis std is a residual mismodeling this baseline cannot remove."
+}
