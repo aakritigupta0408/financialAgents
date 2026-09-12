@@ -1,0 +1,460 @@
+{
+ "generated_ts": 1789249973,
+ "generated_utc": "2026-09-12 21:52:53 UTC",
+ "git_sha": "69a8ca6",
+ "runtime_mode": "SIMULATED / PAPER \u2014 real-money execution DISABLED",
+ "invariant_wall": {
+  "passed": 29,
+  "failed": 0,
+  "health": "green"
+ },
+ "readiness": {
+  "level": "R2",
+  "headline": "REAL-MONEY-EQUIVALENT: R2 \u2014 NOT R8",
+  "weakest_planes": [
+   "execution",
+   "security"
+  ],
+  "sev0_open": 0
+ },
+ "champion_control_treatment_shadow": {
+  "control": "champion",
+  "treatment": "t_exec_reg",
+  "shadow": [
+   "kb7",
+   "kb9",
+   "pt6(MLE)"
+  ],
+  "current_experiment": "A3-v2.1"
+ },
+ "tiers": {
+  "T1_forecast": {
+   "f1_verdict": "EXTEND_CAPTURE",
+   "ess_min": 30.0,
+   "governing_metric": "MSE",
+   "per_horizon": {
+    "h5": {
+     "ess": 95.0,
+     "mde_by_metric": {
+      "MAE": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 8.1
+      },
+      "Huber": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 13.7
+      },
+      "MSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 14.7
+      },
+      "RMSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 7.4
+      }
+     }
+    },
+    "h15": {
+     "ess": 30.0,
+     "mde_by_metric": {
+      "MAE": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 16.0
+      },
+      "Huber": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 29.5
+      },
+      "MSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 39.9
+      },
+      "RMSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 19.9
+      }
+     }
+    },
+    "h30": {
+     "ess": 59.2,
+     "mde_by_metric": {
+      "MAE": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 11.4
+      },
+      "Huber": {
+       "kind": "robust",
+       "mde80_pct_of_metric": 20.8
+      },
+      "MSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 30.6
+      },
+      "RMSE": {
+       "kind": "outlier-sensitive",
+       "mde80_pct_of_metric": 15.3
+      }
+     }
+    }
+   }
+  },
+  "T2_probability": {
+   "kb2_bss_vs_market": -0.0023,
+   "kb3_bss": 0.0102,
+   "online_kb2": {
+    "n": 216,
+    "brier": 0.2087,
+    "log_loss": 0.6064,
+    "selective_acc_75": 0.78,
+    "selective_coverage_75": 0.2315,
+    "selective_n_75": 50,
+    "market_brier": 0.2082,
+    "bss_vs_market": -0.0025,
+    "market_n": 216
+   }
+  },
+  "T3_decision": {
+   "frontier_verdict": "NO_FEASIBLE_POINT \u2014 no edge threshold achieves positive EV within the bad-entry budget (consistent with: we do not beat the market)",
+   "edge_monotonicity": "INVERTED",
+   "operating_point": null
+  },
+  "T4_execution": {
+   "windows": 683,
+   "decision_ev_per_1": 0.04021,
+   "realized_ev_per_1": -0.04176,
+   "execution_gap_per_1": -0.08198
+  }
+ },
+ "decision_frontier": {
+  "verdict": "NO_FEASIBLE_POINT \u2014 no edge threshold achieves positive EV within the bad-entry budget (consistent with: we do not beat the market)",
+  "base_rate_profitable": 0.731,
+  "risk_budget_epsilon": 0.1
+ },
+ "failure_store": {
+  "top_cluster": {
+   "mechanism": "MARKET_KNEW",
+   "count": 68,
+   "share": 0.68
+  },
+  "bad_total": 828,
+  "bets_total": 1795,
+  "clusters": {
+   "MARKET_KNEW": 68,
+   "CONFIDENTLY_WRONG": 19,
+   "THIN_EDGE_LOST": 12,
+   "LATE_ENTRY": 1
+  }
+ },
+ "traders": {
+  "pt": {
+   "n_resolved": 820,
+   "n_skipped": 0,
+   "total_pnl_c": -96670,
+   "realized_ev_per_1": -1.7004,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 3011,
+   "current_action": "OPEN",
+   "rows_total": 821
+  },
+  "pt3": {
+   "n_resolved": 781,
+   "n_skipped": 0,
+   "total_pnl_c": -93099,
+   "realized_ev_per_1": -1.62,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 6257,
+   "current_action": "OPEN",
+   "rows_total": 782
+  },
+  "pt6": {
+   "n_resolved": 49,
+   "n_skipped": 670,
+   "total_pnl_c": 40409,
+   "realized_ev_per_1": 15.391,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 140409,
+   "current_action": "SKIPPED",
+   "rows_total": 719
+  },
+  "pt2": {
+   "n_resolved": 387,
+   "n_skipped": 0,
+   "total_pnl_c": -73865,
+   "realized_ev_per_1": -2.7455,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 26135,
+   "current_action": "RESOLVED",
+   "rows_total": 387
+  },
+  "pt4": {
+   "n_resolved": 150,
+   "n_skipped": 0,
+   "total_pnl_c": -898939,
+   "realized_ev_per_1": -85.7238,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 265335,
+   "current_action": "RESOLVED",
+   "rows_total": 150
+  },
+  "pt5": {
+   "n_resolved": 363,
+   "n_skipped": 0,
+   "total_pnl_c": -291196,
+   "realized_ev_per_1": -11.5708,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 2844,
+   "current_action": "RESOLVED",
+   "rows_total": 363
+  },
+  "pt7": {
+   "n_resolved": 76,
+   "n_skipped": 29,
+   "total_pnl_c": 24177,
+   "realized_ev_per_1": 5.5129,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 124177,
+   "current_action": "RESOLVED",
+   "rows_total": 105
+  },
+  "pt8": {
+   "n_resolved": 21,
+   "n_skipped": 22,
+   "total_pnl_c": -46028,
+   "realized_ev_per_1": -47.8826,
+   "quoted_ev_per_1": "UNKNOWN",
+   "bankroll_c": 53972,
+   "current_action": "RESOLVED",
+   "rows_total": 43
+  }
+ },
+ "retraining": {
+  "h1": {
+   "runs": 290,
+   "kept": 96,
+   "keep_rate": 0.331,
+   "last_decision": "KEPT"
+  },
+  "h5": {
+   "runs": 290,
+   "kept": 120,
+   "keep_rate": 0.414,
+   "last_decision": "REVERTED"
+  },
+  "h15": {
+   "runs": 290,
+   "kept": 120,
+   "keep_rate": 0.414,
+   "last_decision": "REVERTED"
+  },
+  "h30": {
+   "runs": 290,
+   "kept": 141,
+   "keep_rate": 0.486,
+   "last_decision": "REVERTED"
+  },
+  "t9-h1": {
+   "runs": 290,
+   "kept": 109,
+   "keep_rate": 0.376,
+   "last_decision": "KEPT"
+  },
+  "t10-h5": {
+   "runs": 290,
+   "kept": 135,
+   "keep_rate": 0.466,
+   "last_decision": "KEPT"
+  },
+  "t7-h15": {
+   "runs": 290,
+   "kept": 95,
+   "keep_rate": 0.328,
+   "last_decision": "REVERTED"
+  },
+  "t9-h30": {
+   "runs": 290,
+   "kept": 129,
+   "keep_rate": 0.445,
+   "last_decision": "REVERTED"
+  }
+ },
+ "experiments": {
+  "treatments": [
+   {
+    "key": "champion",
+    "verdict": "baseline",
+    "n": 683,
+    "own_ev": 0.04021,
+    "llr": 0.0
+   },
+   {
+    "key": "t_regime",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": 0.07465,
+    "llr": 0.407
+   },
+   {
+    "key": "t_knife",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.03241,
+    "llr": -2.194
+   },
+   {
+    "key": "t_cal",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.08712,
+    "llr": -1.354
+   },
+   {
+    "key": "t_cheap",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": 0.13506,
+    "llr": -1.334
+   },
+   {
+    "key": "t_both",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.01373,
+    "llr": -1.682
+   },
+   {
+    "key": "t_fshare",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.08566,
+    "llr": -1.978
+   },
+   {
+    "key": "t_fs_reg",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.10128,
+    "llr": -1.679
+   },
+   {
+    "key": "champion_real",
+    "verdict": "baseline",
+    "n": 683,
+    "own_ev": -0.04177,
+    "llr": 0.0
+   },
+   {
+    "key": "t_exec",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.02938,
+    "llr": 0.562
+   },
+   {
+    "key": "t_exec_reg",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.00398,
+    "llr": 1.341
+   },
+   {
+    "key": "t_limit",
+    "verdict": "reject",
+    "n": 683,
+    "own_ev": -0.02665,
+    "llr": -2.906
+   },
+   {
+    "key": "t_limit_reg",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": 0.05853,
+    "llr": -1.093
+   },
+   {
+    "key": "t_evlead",
+    "verdict": "collecting",
+    "n": 683,
+    "own_ev": -0.08567,
+    "llr": -2.278
+   },
+   {
+    "key": "t_edgeband",
+    "verdict": "collecting",
+    "n": 495,
+    "own_ev": 0.0117,
+    "llr": -1.47
+   }
+  ]
+ },
+ "blocked_work": [
+  "T3 decision-layer optimization",
+  "Learned dip / entry-timing tuning",
+  "Value-of-Wait ML (A4)",
+  "Sizing research",
+  "Execution research (incl. passive)",
+  "Champion simplification (CHAMPION-vLean)"
+ ],
+ "open_incidents": [
+  {
+   "sev": 0,
+   "title": "systemic error architecture"
+  },
+  {
+   "sev": 2,
+   "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+  }
+ ],
+ "settlement_counters": {
+  "settled_windows": 19955,
+  "kb_log_rows": 20000
+ },
+ "service_health": {
+  "overall": "HEALTHY",
+  "feeds": {
+   "daemon_heartbeat": {
+    "state": "HEALTHY",
+    "age_s": 52,
+    "errors": null
+   },
+   "event_capture": {
+    "state": "HEALTHY",
+    "age_s": 3,
+    "errors": 838
+   },
+   "kb_inference": {
+    "state": "HEALTHY",
+    "age_s": 88,
+    "errors": null
+   },
+   "pit_snapshot": {
+    "state": "HEALTHY",
+    "age_s": 52,
+    "errors": null
+   }
+  }
+ },
+ "data_freshness": {
+  "generated_ts": 1789249827,
+  "missingness": {
+   "mkt_p_up_null_rate": 0.0,
+   "ask_c_null_rate": 0.916,
+   "state": "HEALTHY"
+  }
+ },
+ "reconciliation": "OK",
+ "parity": "UNKNOWN",
+ "last_change": {
+  "ts": 1789247404,
+  "change_type": "SELF_HEAL_OCCURRED",
+  "entity": "daemon",
+  "before": "heartbeat stale",
+  "after": "restart attempted, verification pending",
+  "reason": "M6-R1 registered repair; scientific state untouched by construction",
+  "decision_impact": "none",
+  "evidence_preserved": true,
+  "git_sha": "f006843"
+ },
+ "bottleneck": "Accumulate A3 forward evidence \u2014 biggest current unknown",
+ "next_registered_step": "Validate A3 execution quality",
+ "provenance_note": "All values read from canonical results/*.json|jsonl artifacts. UNKNOWN = telemetry not present. History is not rewritten; this is an append-only snapshot."
+}
