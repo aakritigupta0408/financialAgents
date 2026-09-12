@@ -1,0 +1,67 @@
+{
+ "total_settled_points": 18598,
+ "fresh_points": 9524,
+ "session_coverage": 0.512,
+ "fresh_windows": 183,
+ "windows_split": [
+  109,
+  37,
+  37
+ ],
+ "market_brier_test": 0.15266,
+ "market_brier_window": 0.12521,
+ "base_rate": 0.496,
+ "lambda_path": [
+  {
+   "lambda": 0,
+   "bss_val": 0.0426,
+   "bss_test_row": -0.0409,
+   "bss_test_window": 0.0057,
+   "bss_train": 0.1799
+  },
+  {
+   "lambda": 0.0001,
+   "bss_val": 0.0427,
+   "bss_test_row": -0.0407,
+   "bss_test_window": 0.0056,
+   "bss_train": 0.1798
+  },
+  {
+   "lambda": 0.001,
+   "bss_val": 0.0435,
+   "bss_test_row": -0.039,
+   "bss_test_window": 0.005,
+   "bss_train": 0.1792
+  },
+  {
+   "lambda": 0.01,
+   "bss_val": 0.0474,
+   "bss_test_row": -0.0316,
+   "bss_test_window": -0.0034,
+   "bss_train": 0.1731
+  },
+  {
+   "lambda": 0.1,
+   "bss_val": 0.0483,
+   "bss_test_row": -0.0177,
+   "bss_test_window": -0.022,
+   "bss_train": 0.1432
+  },
+  {
+   "lambda": 1,
+   "bss_val": 0.0246,
+   "bss_test_row": 0.0037,
+   "bss_test_window": -0.0082,
+   "bss_train": 0.0657
+  }
+ ],
+ "best": {
+  "lambda": 0.1,
+  "bss_val": 0.0483,
+  "bss_test_row": -0.0177,
+  "bss_test_window": -0.022,
+  "bss_train": 0.1432
+ },
+ "verdict": "AV_CLASSIC_OVERFIT",
+ "note": "session-fresh subset only; AV equities not 24/7; target=settlement."
+}

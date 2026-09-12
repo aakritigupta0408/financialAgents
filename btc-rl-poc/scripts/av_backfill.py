@@ -40,7 +40,7 @@ TIER_A_ECON = [                            # dated macro series (full hist)
                             "interval": "daily"}),
 ]
 # Tier B — crypto-beta equity proxies (pull only if Tier A leaves budget).
-TIER_B_INTRADAY = ["COIN", "MSTR", "IBIT"]
+TIER_B_INTRADAY = ["COIN", "MSTR", "IBIT", "QQQ"]
 
 LIMIT_KEYS = {"Note", "Information", "Error Message"}
 
