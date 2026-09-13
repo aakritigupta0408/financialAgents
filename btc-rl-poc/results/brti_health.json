@@ -1,0 +1,7 @@
+{
+ "source": "kalshi-cfbenchmarks-BRTI",
+ "checked_ts": 1789259143.509525,
+ "state": "MISSING_KEY_ID",
+ "detail": "KALSHI_DEMO_KEY_ID not set; private key present. Owner action: export KALSHI_DEMO_KEY_ID=<id> (same id the daemon uses) and rerun.",
+ "endpoint_exists": true
+}

@@ -13,7 +13,7 @@
   "MECHANICS_RESIDUAL_ORACLE": "INFORMATION_LIMITED (independent features add nothing beyond mechanics OOS)",
   "LABEL_AUDIT": "TARGET_DEFINITION_MISMATCH \u2014 4.5% divergence; official BRTI outcomes now canonical"
  },
- "primary_bottleneck": "BENCHMARK_DATA",
+ "primary_bottleneck": "BRTI_ACCESS_UNVERIFIED",
  "settlement_alpha": "MECHANICS_EXPLAINS_74pct_OF_KALSHI; RESIDUAL_MID_WINDOW_GAP_IS_BENCHMARK_BASIS_NOT_FEATURES",
  "the_one_positive_mechanism": {
   "id": "EXEC-TIMING",
@@ -39,5 +39,12 @@
  ],
  "provenance": "read from canonical research artifacts; UNKNOWN never rendered green",
  "secondary_focus": "MID_WINDOW_RESIDUAL_INFORMATION",
- "canonical_labels": "results/contract_outcomes.jsonl (official Kalshi BRTI outcomes)"
+ "canonical_labels": "results/contract_outcomes.jsonl (official Kalshi BRTI outcomes)",
+ "brti_access": {
+  "endpoint": "/trade-api/v2/cfbenchmarks/values?id=BRTI (prod+demo)",
+  "state": "REAL_AUTH_GATED_401",
+  "private_key": "present (~/.kalshi_demo.pem)",
+  "missing": "KALSHI_DEMO_KEY_ID",
+  "adapter": "data/adapters/brti.py (ready; probes+history+parity on activation)"
+ }
 }
