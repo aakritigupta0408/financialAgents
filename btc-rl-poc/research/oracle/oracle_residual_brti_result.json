@@ -1,0 +1,135 @@
+{
+ "family": "A_single_venue_coinbase_microstructure",
+ "features": [
+  "cb_ofi_30s",
+  "cb_l1_imb",
+  "cb_micro_dev",
+  "cb_ret_30s",
+  "cb_rvol_30s",
+  "trade_n_30s"
+ ],
+ "n_test": 3910,
+ "windows": 370,
+ "mech_brier_test": 0.2017,
+ "kalshi_brier_test": 0.1864,
+ "linear_residual": {
+  "lambda_path": [
+   {
+    "lambda": 0,
+    "bss_val": -0.012,
+    "bss_test": -0.0461,
+    "bss_train": 0.0087,
+    "mean_abs_delta": 0.1527
+   },
+   {
+    "lambda": 0.0001,
+    "bss_val": -0.012,
+    "bss_test": -0.0461,
+    "bss_train": 0.0087,
+    "mean_abs_delta": 0.1526
+   },
+   {
+    "lambda": 0.001,
+    "bss_val": -0.0119,
+    "bss_test": -0.0458,
+    "bss_train": 0.0087,
+    "mean_abs_delta": 0.1518
+   },
+   {
+    "lambda": 0.01,
+    "bss_val": -0.0107,
+    "bss_test": -0.0429,
+    "bss_train": 0.0086,
+    "mean_abs_delta": 0.1441
+   },
+   {
+    "lambda": 0.1,
+    "bss_val": -0.0055,
+    "bss_test": -0.0274,
+    "bss_train": 0.0065,
+    "mean_abs_delta": 0.0997
+   },
+   {
+    "lambda": 1,
+    "bss_val": -0.0008,
+    "bss_test": -0.0063,
+    "bss_train": 0.0018,
+    "mean_abs_delta": 0.026
+   }
+  ],
+  "best": {
+   "lambda": 1,
+   "bss_val": -0.0008,
+   "bss_test": -0.0063,
+   "bss_train": 0.0018,
+   "mean_abs_delta": 0.026
+  }
+ },
+ "tree_baseline": {
+  "available": true,
+  "impl": "sklearn HistGradientBoosting (lightgbm N/A)",
+  "bss_test_mech_only": 0.0483,
+  "bss_test_mech_plus_X": 0.0404,
+  "incremental_bss_from_features": -0.0078
+ },
+ "by_time_to_expiry": {
+  "T-2..0": {
+   "n": 377,
+   "mech_brier": 0.1297,
+   "oracle_bss_vs_mech": -0.0058,
+   "kalshi_brier": 0.143
+  },
+  "T-5..2": {
+   "n": 837,
+   "mech_brier": 0.1771,
+   "oracle_bss_vs_mech": -0.0057,
+   "kalshi_brier": 0.1599
+  },
+  "T-9..5": {
+   "n": 1104,
+   "mech_brier": 0.2018,
+   "oracle_bss_vs_mech": -0.0077,
+   "kalshi_brier": 0.1732
+  },
+  "T-15..9": {
+   "n": 1592,
+   "mech_brier": 0.2317,
+   "oracle_bss_vs_mech": -0.0057,
+   "kalshi_brier": 0.2197
+  }
+ },
+ "mid_window_T9to2": {
+  "n": 1941,
+  "mech_brier": 0.1911,
+  "oracle_bss_vs_mech": -0.0069,
+  "kalshi_brier": 0.1675
+ },
+ "by_difficulty": {
+  "HARD": {
+   "n": 1290,
+   "mech_brier": 0.2465,
+   "oracle_bss_vs_mech": -0.0079,
+   "kalshi_brier": 0.2498
+  },
+  "MED": {
+   "n": 1290,
+   "mech_brier": 0.2231,
+   "oracle_bss_vs_mech": -0.0066,
+   "kalshi_brier": 0.2014
+  },
+  "EASY": {
+   "n": 1330,
+   "mech_brier": 0.1381,
+   "oracle_bss_vs_mech": -0.0028,
+   "kalshi_brier": 0.1109
+  }
+ },
+ "diagnosis": "INFORMATION_LIMITED",
+ "not_yet_testable_families": {
+  "B_cross_venue_lead_lag": "needs multi-venue capture (Binance/OKX/Kraken)",
+  "C_derivatives": "adapter ready (OKX); prospective capture pending",
+  "D_options": "AV adapter ready; prospective capture pending",
+  "E_news": "AV adapter ready; prospective capture pending"
+ },
+ "note": "delta scored vs MECH_FAIR_BRTI; official labels; no Kalshi input. Family A is the only historically-testable independent source."
+}

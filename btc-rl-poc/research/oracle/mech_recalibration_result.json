@@ -1,0 +1,43 @@
+{
+ "n_test": 5799,
+ "windows": 370,
+ "brier": {
+  "MECH_BRTI": 0.1989,
+  "MECH_BRTI_recalibrated": 0.1912,
+  "KALSHI": 0.1878
+ },
+ "mech_vs_kalshi_gap_before_recal": 0.0111,
+ "mech_vs_kalshi_gap_after_recal": 0.0034,
+ "fraction_of_gap_closed_by_recalibration": 0.694,
+ "by_time_to_expiry": {
+  "T-2..0": {
+   "n": 562,
+   "mech": 0.1306,
+   "mech_recal": 0.1299,
+   "kalshi": 0.1404,
+   "recal_closed_gap": null
+  },
+  "T-5..2": {
+   "n": 1244,
+   "mech": 0.1684,
+   "mech_recal": 0.1635,
+   "kalshi": 0.1541,
+   "recal_closed_gap": 0.343
+  },
+  "T-9..5": {
+   "n": 1627,
+   "mech": 0.1954,
+   "mech_recal": 0.1842,
+   "kalshi": 0.1732,
+   "recal_closed_gap": 0.505
+  },
+  "T-15..9": {
+   "n": 2366,
+   "mech": 0.2334,
+   "mech_recal": 0.2249,
+   "kalshi": 0.2264,
+   "recal_closed_gap": 1.214
+  }
+ },
+ "conclusion": "GAP_IS_MOSTLY_CALIBRATION \u2014 a monotone recalibration of mechanics (no features) closes 69% of the mech-vs-Kalshi gap; the residual is model-FORM (heavy-tail \u03c3), not missing information."
+}

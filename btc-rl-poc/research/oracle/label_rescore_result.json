@@ -1,0 +1,97 @@
+{
+ "sources_scored": 3,
+ "join_key": "ticker -> contract_outcomes.exact_yes",
+ "clean_pyes_verdict": "NO_EXPERIMENT_INVALIDATED \u2014 clean P(YES) logs mismatch official labels at <=4.4%, Brier shifts <0.005; the earlier label divergence (~4.5%) is small and does not flip model rankings or MECH/residual conclusions.",
+ "interpretation": "brier_delta = pure label-error effect with the model held fixed. Small mismatch/delta => model-training effect dominates, not labels.",
+ "results": [
+  {
+   "experiment": "kalshi_binary_log.jsonl",
+   "prob_field": "p_up",
+   "n": 19162,
+   "label_mismatch": 847,
+   "label_mismatch_rate": 0.0442,
+   "brier_stored_label": 0.1806,
+   "brier_official_label": 0.176,
+   "brier_delta": -0.0046,
+   "acc_stored": 0.7193,
+   "acc_official": 0.7272,
+   "classification": "MINOR_CHANGE"
+  },
+  {
+   "experiment": "kb_bets.jsonl",
+   "prob_field": "p_model",
+   "n": 1801,
+   "label_mismatch": 73,
+   "label_mismatch_rate": 0.0405,
+   "brier_stored_label": 0.2279,
+   "brier_official_label": 0.2235,
+   "brier_delta": -0.0045,
+   "acc_stored": 0.5997,
+   "acc_official": 0.6124,
+   "classification": "MINOR_CHANGE"
+  },
+  {
+   "experiment": "av_features.jsonl",
+   "prob_field": "mkt_p_up",
+   "n": 193,
+   "label_mismatch": 4,
+   "label_mismatch_rate": 0.0207,
+   "brier_stored_label": 0.0732,
+   "brier_official_label": 0.0702,
+   "brier_delta": -0.0031,
+   "acc_stored": 0.9016,
+   "acc_official": 0.9016,
+   "classification": "MINOR_CHANGE"
+  }
+ ],
+ "side_relative_logs": [
+  {
+   "experiment": "pt8_trades.jsonl",
+   "n": 43,
+   "actual_vs_official_mismatch_rate": 0.5814,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt7_trades.jsonl",
+   "n": 105,
+   "actual_vs_official_mismatch_rate": 0.3333,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt5_trades.jsonl",
+   "n": 362,
+   "actual_vs_official_mismatch_rate": 0.0635,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt2_trades.jsonl",
+   "n": 386,
+   "actual_vs_official_mismatch_rate": 0.0622,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt6_trades.jsonl",
+   "n": 721,
+   "actual_vs_official_mismatch_rate": 0.0541,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt_trades.jsonl",
+   "n": 823,
+   "actual_vs_official_mismatch_rate": 0.0535,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pt3_trades.jsonl",
+   "n": 783,
+   "actual_vs_official_mismatch_rate": 0.0511,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  },
+  {
+   "experiment": "pb_bets.jsonl",
+   "n": 1214,
+   "actual_vs_official_mismatch_rate": 0.0486,
+   "note": "side-relative (P(chosen side)); mismatch conflates bet-side with label error \u2014 NOT a pure label signal"
+  }
+ ]
+}

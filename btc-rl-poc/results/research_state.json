@@ -11,7 +11,9 @@
   "PREOPEN_ORACLE_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
   "CONTRACT_MECHANICS": "MECH_FAIR_ESTABLISHED (Coinbase-proxy Brier 0.2024; explains 74-76% of Kalshi edge)",
   "CONTRACT_MECHANICS_BRTI": "MECH_FAIR_BRTI (exact benchmark; Brier 0.1989; explains 82% of Kalshi edge; settlement-aware; ties/beats Kalshi at T-2..0 and on HARD contracts; gap=GAP_SHRINKS_BUT_REMAINS, mid-window +0.018)",
-  "MECHANICS_RESIDUAL_ORACLE": "INFORMATION_LIMITED (Coinbase-proxy era; to be re-tested on exact BRTI)",
+  "MECHANICS_RESIDUAL_ORACLE_BRTI": "INFORMATION_LIMITED (Family A single-venue microstructure adds nothing OOS beyond exact-BRTI mechanics, incl. mid-window; diagnosis INFORMATION_LIMITED)",
+  "MECH_RECALIBRATION": "GAP_IS_MOSTLY_CALIBRATION (isotonic recal of MECH_BRTI, no features, closes 69% of mech-vs-Kalshi gap; recalibrated mechanics BEATS Kalshi at T-15..9 and T-2..0; residual gap ~0.003 Brier is mid-window model-form, not Family-A information)",
+  "LABEL_RESCORE": "NO_EXPERIMENT_INVALIDATED (§10: clean P(YES) logs mismatch official labels <=4.4%, Brier shift <0.005; MINOR_CHANGE; prior conclusions stand)",
   "LABEL_AUDIT": "TARGET_DEFINITION_MISMATCH \u2014 4.5% divergence; official BRTI outcomes now canonical"
  },
  "primary_bottleneck": "MID_WINDOW_RESIDUAL_INFORMATION_T9to2 (exact-BRTI mechanics explains 82% of Kalshi edge and ties/beats Kalshi on HARD+near-expiry; residual gap is EASY-window sharpness + mid-window info — test whether independent features beat a better-calibrated mechanics)",
