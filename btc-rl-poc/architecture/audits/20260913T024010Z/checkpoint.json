@@ -1,0 +1,45 @@
+{
+ "checkpoint_utc": "20260913T024010Z",
+ "verdict": "FAIL",
+ "checks": {
+  "FORBIDDEN_MARKET_TO_ORACLE": {
+   "status": "PASS",
+   "violations": [],
+   "note": "oracle modules must not read a Kalshi field as p_mech/p_oracle input, and no oracle FEATS list may contain a Kalshi token"
+  },
+  "FORBIDDEN_TESTLABEL_FIT": {
+   "status": "PASS",
+   "modules_fitting_without_split": [],
+   "exempt_production_freeze": [
+    "scripts/freeze_oracle.py"
+   ],
+   "note": "evaluation isotonic/scaler .fit must use train-window rows only"
+  },
+  "LEAK_GUARD_PRESENT": {
+   "status": "PASS",
+   "leak_guard_present": true,
+   "note": "prospective capture must reject settlement fields at decision time"
+  },
+  "RUNTIME_CONTRACT_TRUTH": {
+   "status": "FAIL",
+   "detail": "RUNTIME uses a BRTI proxy / Coinbase-candle settlement, not exact BRTI",
+   "imports_exact_brti_adapter": false,
+   "uses_4venue_composite": true,
+   "settles_on_coinbase_candle": true,
+   "migration": "wire data/adapters/brti.py + btc_rl/prospective_capture.py into btc_rl/online.py contract-state + settlement; gate via PROSPECTIVE_CAPTURE_ENABLED. See architecture/dangling_threads.json."
+  },
+  "REGISTRY_RECONCILED": {
+   "status": "PASS",
+   "registered_models": 16,
+   "missing_artifacts": []
+  },
+  "CURRENT_TRUTH_FRESH": {
+   "status": "PASS",
+   "regenerated": true,
+   "unknown_core_fields": []
+  }
+ },
+ "material_change_counter": 0,
+ "fail_blocks_promotion": true,
+ "note": "machine-adjudicated architecture checkpoint (scripts/architecture_checkpoint.py)"
+}
