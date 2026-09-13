@@ -81,22 +81,32 @@ def check_forbidden_market_to_oracle():
 
 
 def check_runtime_contract_truth():
-    """DRIFT DETECTOR: is the live daemon settling on EXACT BRTI, or a proxy?"""
+    """DRIFT DETECTOR (three states):
+      FAIL             daemon has no code path to exact BRTI (structural drift)
+      PASS_WITH_WATCH  exact-BRTI settlement is WIRED + flag-gated but not ACTIVE in
+                       the running daemon (operational, not structural)
+      PASS             the running daemon actually settles on exact BRTI."""
     online = _read("btc_rl/online.py")
-    imports_exact = bool(re.search(r"data\.adapters\.brti|from\s+data\.adapters\s+import\s+brti|"
-                                   r"prospective_capture", online))
-    uses_composite = bool(re.search(r"fetch_brti_composite|brti_composite", online))
-    settle_on_candle = bool(re.search(r"settle_bar\[.close.\]\s*>=|by_ts\.get\(close_ts", online))
-    if imports_exact and not settle_on_candle:
-        return "PASS", {"detail": "runtime imports exact BRTI and does not settle on a candle close"}
-    return "FAIL", {
-        "detail": "RUNTIME uses a BRTI proxy / Coinbase-candle settlement, not exact BRTI",
-        "imports_exact_brti_adapter": imports_exact,
-        "uses_4venue_composite": uses_composite,
-        "settles_on_coinbase_candle": settle_on_candle,
-        "migration": "wire data/adapters/brti.py + btc_rl/prospective_capture.py into "
-                     "btc_rl/online.py contract-state + settlement; gate via "
-                     "PROSPECTIVE_CAPTURE_ENABLED. See architecture/dangling_threads.json."}
+    wired = bool(re.search(r"contract_truth\.resolve_outcome", online)) and \
+        bool(re.search(r"import\s+contract_truth|from\s+\.\s+import\s+contract_truth", online))
+    if not wired:
+        return "FAIL", {
+            "detail": "RUNTIME has no exact-BRTI settlement path (structural drift)",
+            "wired": False,
+            "migration": "route every settlement site through contract_truth.resolve_outcome"}
+    # is it ACTIVE in the running daemon? read the health the daemon emits.
+    rh = _jload("results/brti_runtime_health.json") or {}
+    active = bool((rh.get("migration") or {}).get("runtime_enabled"))
+    parity = ((rh.get("migration") or {}).get("shadow_parity") or {})
+    if active:
+        return "PASS", {"detail": "daemon settles on exact BRTI (EXACT_BRTI_RUNTIME_ENABLED)",
+                        "shadow_parity": parity}
+    return "PASS_WITH_WATCH", {
+        "detail": "exact-BRTI settlement WIRED + flag-gated, not yet ACTIVE in the "
+                  "running daemon (set EXACT_BRTI_RUNTIME_ENABLED=1 to activate)",
+        "wired": True, "runtime_enabled": False,
+        "deploy_sequence": "architecture/change_impact.json",
+        "note": "structural drift resolved; remaining gap is operational activation"}
 
 
 def check_testlabel_fit():

@@ -25,13 +25,13 @@ def test_testlabel_fit_uses_splits():
     assert "scripts/freeze_oracle.py" in detail["exempt_production_freeze"]
 
 
-def test_runtime_contract_truth_detects_drift():
-    # documents the KNOWN SEV-1: runtime not yet on exact BRTI. When migrated,
-    # this flips to PASS and the assertion below should be updated.
+def test_runtime_contract_truth_three_states():
+    # after DT-01 wiring: settlement is routed through contract_truth.resolve_outcome,
+    # so structural drift is resolved -> PASS_WITH_WATCH until the daemon activates
+    # the flag (then PASS). FAIL only if the code path is removed.
     status, detail = ac.check_runtime_contract_truth()
-    assert status in ("PASS", "FAIL")
-    if status == "FAIL":
-        assert detail["settles_on_coinbase_candle"] or detail["uses_4venue_composite"]
+    assert status in ("PASS", "PASS_WITH_WATCH", "FAIL")
+    assert detail.get("wired") is not False, "runtime settlement must stay wired to exact BRTI"
 
 
 def test_checks_registry_shape():

@@ -1,6 +1,6 @@
 {
- "checkpoint_utc": "20260913T074349Z",
- "verdict": "FAIL",
+ "checkpoint_utc": "20260913T080622Z",
+ "verdict": "PASS_WITH_WATCH",
  "checks": {
   "FORBIDDEN_MARKET_TO_ORACLE": {
    "status": "PASS",
@@ -21,12 +21,12 @@
    "note": "prospective capture must reject settlement fields at decision time"
   },
   "RUNTIME_CONTRACT_TRUTH": {
-   "status": "FAIL",
-   "detail": "RUNTIME uses a BRTI proxy / Coinbase-candle settlement, not exact BRTI",
-   "imports_exact_brti_adapter": false,
-   "uses_4venue_composite": true,
-   "settles_on_coinbase_candle": true,
-   "migration": "wire data/adapters/brti.py + btc_rl/prospective_capture.py into btc_rl/online.py contract-state + settlement; gate via PROSPECTIVE_CAPTURE_ENABLED. See architecture/dangling_threads.json."
+   "status": "PASS_WITH_WATCH",
+   "detail": "exact-BRTI settlement WIRED + flag-gated, not yet ACTIVE in the running daemon (set EXACT_BRTI_RUNTIME_ENABLED=1 to activate)",
+   "wired": true,
+   "runtime_enabled": false,
+   "deploy_sequence": "architecture/change_impact.json",
+   "note": "structural drift resolved; remaining gap is operational activation"
   },
   "REGISTRY_RECONCILED": {
    "status": "PASS",
@@ -58,11 +58,12 @@
   },
   "CHANGE_IMPACT_MATCHES_OBSERVED": {
    "status": "PASS",
-   "declaration": null,
-   "note": "no pending change_impact.json to verify"
+   "change_id": "2026-09-13-DT01-exact-brti-runtime",
+   "observed_vs_declared_drift": [],
+   "note": "declared-removed edges must be absent from system_dag.json"
   }
  },
  "material_change_counter": 0,
- "fail_blocks_promotion": true,
+ "fail_blocks_promotion": false,
  "note": "machine-adjudicated architecture checkpoint (scripts/architecture_checkpoint.py)"
 }

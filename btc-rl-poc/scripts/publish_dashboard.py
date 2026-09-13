@@ -33,6 +33,7 @@ PAGES = ["home.html", "traders.html", "tiers.html", "features.html",
          "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("architecture_dag.json", None),   # §37 developer DAG drill-down
+    ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
     ("online_status.json", None),

@@ -129,3 +129,31 @@ input by construction.
 ### Degradation (§40-41)
 If live BRTI is unhealthy, records are written with
 `contract_state_quality=DEGRADED|PROXY`, never a silent Coinbase substitution.
+
+---
+
+## DT-01 — Exact-BRTI runtime contract truth (merge-ready, flag OFF by default)
+
+Closes the split-brain where research used exact CF-BRTI but the daemon settled on
+a Coinbase-candle / 4-venue-composite proxy. All 11 settlement sites in
+`btc_rl/online.py` now route through `contract_truth.resolve_outcome(...)`:
+
+- flag OFF → returns the legacy Coinbase-candle outcome (**merge is a no-op**)
+- flag ON + BRTI EXACT_BRTI → exact 60s-average outcome (YES iff close_avg >= open_avg)
+- flag ON + BRTI incomplete → legacy outcome tagged `PROXY_DEGRADED` (never silent)
+
+`contract_truth_quality` is stamped on every settled row; a legacy/exact/official
+shadow row is logged to `results/settlement_shadow.jsonl` while the flag is ON.
+
+### Activation (owner, main checkout) — never needs a code edit
+1. Deploy code (flag off). Smoke: daemon heartbeat + invariants healthy.
+2. `python3 scripts/emit_brti_health.py` → `results/brti_runtime_health.json` shows
+   `connected`, cadence, `history_ok`.
+3. `export EXACT_BRTI_CAPTURE_ENABLED=1` — verify BRTI state populates.
+4. `export EXACT_BRTI_RUNTIME_ENABLED=1` — verify the first window settles at
+   `contract_truth_quality=EXACT_BRTI` and `settlement_shadow.jsonl` exact==official.
+5. `python3 scripts/architecture_checkpoint.py` → `RUNTIME_CONTRACT_TRUTH=PASS`.
+
+Rollback: unset `EXACT_BRTI_RUNTIME_ENABLED` → legacy settlement, no code change.
+Golden + shadow-parity + failover tests: `tests/test_contract_truth.py` (5/5).
+Declaration + deploy sequence: `architecture/change_impact.json`.

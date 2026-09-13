@@ -313,6 +313,12 @@
    "to": "prospective_capture",
    "type": "MODEL_DEPENDENCY",
    "why": "live p_oracle (offline until PROSPECTIVE_CAPTURE_ENABLED)"
+  },
+  {
+   "from": "brti_exact",
+   "to": "runtime_settlement",
+   "type": "RUNTIME_DEPENDENCY",
+   "why": "DT-01 wired: contract_truth.resolve_outcome settles on exact BRTI when EXACT_BRTI_RUNTIME_ENABLED (proxy remains explicit fallback)"
   }
  ],
  "edges_that_should_be_removed_but_still_exist": [

@@ -8,39 +8,39 @@
  },
  "runtime_online": {
   "settled_windows": {
-   "settled_windows": 19900,
+   "settled_windows": 20000,
    "kb_log_rows": 20000
   },
   "traders": {
    "pt": {
-    "n_resolved": 843,
+    "n_resolved": 845,
     "n_skipped": 0,
-    "total_pnl_c": -96606,
-    "realized_ev_per_1": -1.6558,
+    "total_pnl_c": -96211,
+    "realized_ev_per_1": -1.6455,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 3100,
-    "current_action": "OPEN",
-    "rows_total": 844
+    "bankroll_c": 3789,
+    "current_action": "RESOLVED",
+    "rows_total": 845
    },
    "pt3": {
-    "n_resolved": 799,
+    "n_resolved": 801,
     "n_skipped": 0,
-    "total_pnl_c": -94075,
-    "realized_ev_per_1": -1.6011,
+    "total_pnl_c": -93765,
+    "realized_ev_per_1": -1.5916,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 5397,
-    "current_action": "OPEN",
-    "rows_total": 800
+    "bankroll_c": 6235,
+    "current_action": "RESOLVED",
+    "rows_total": 801
    },
    "pt6": {
-    "n_resolved": 51,
+    "n_resolved": 52,
     "n_skipped": 691,
     "total_pnl_c": 40409,
-    "realized_ev_per_1": 14.8401,
+    "realized_ev_per_1": 14.5633,
     "quoted_ev_per_1": "UNKNOWN",
     "bankroll_c": 140409,
-    "current_action": "SKIPPED",
-    "rows_total": 742
+    "current_action": "RESOLVED",
+    "rows_total": 743
    },
    "pt2": {
     "n_resolved": 387,
@@ -94,26 +94,26 @@
    }
   },
   "service_health": {
-   "overall": "CRITICAL",
+   "overall": "WATCH",
    "feeds": {
     "daemon_heartbeat": {
-     "state": "CRITICAL",
-     "age_s": 6117,
+     "state": "HEALTHY",
+     "age_s": 96,
      "errors": null
     },
     "event_capture": {
      "state": "HEALTHY",
-     "age_s": 9,
+     "age_s": 4,
      "errors": 852
     },
     "kb_inference": {
-     "state": "CRITICAL",
-     "age_s": 6163,
+     "state": "WATCH",
+     "age_s": 188,
      "errors": null
     },
     "pit_snapshot": {
-     "state": "CRITICAL",
-     "age_s": 6152,
+     "state": "HEALTHY",
+     "age_s": 166,
      "errors": null
     }
    }

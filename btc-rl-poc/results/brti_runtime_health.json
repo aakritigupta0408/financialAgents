@@ -1,0 +1,20 @@
+{
+ "checked_ts": 1789286697.534837,
+ "connected": true,
+ "last_observation": 1789286697.0,
+ "age_s": 1.2,
+ "expected_cadence_hz": 5.0,
+ "observed_cadence_hz": 1.0,
+ "gaps": 0,
+ "rest_ok": true,
+ "history_ok": true,
+ "runtime_enabled": false,
+ "capture_enabled": false,
+ "migration": {
+  "runtime_enabled": false,
+  "capture_enabled": false,
+  "settlement_path": "PROXY_LEGACY",
+  "shadow_parity": null,
+  "note": "DT-01: exact-BRTI settlement is ACTIVE only when runtime_enabled; otherwise the daemon runs the legacy Coinbase-candle proxy."
+ }
+}

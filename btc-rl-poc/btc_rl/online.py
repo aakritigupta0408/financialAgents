@@ -26,6 +26,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
+from . import contract_truth          # DT-01: exact-BRTI contract truth (flag-gated)
 from . import metrics as M
 from .history import append_history
 from . import treatments
@@ -3698,7 +3699,11 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(r["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue  # settle only on authoritative candles
-                outcome = int(settle_bar["close"] >= r["strike"])
+                # DT-01: exact-BRTI contract truth when EXACT_BRTI_RUNTIME_ENABLED;
+                # legacy Coinbase-candle proxy otherwise (flag off = unchanged).
+                outcome, r["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    r["ticker"], r["close_ts"], r["strike"],
+                    int(settle_bar["close"] >= r["strike"]))
                 r["actual"] = outcome
                 r["hit"] = int(r["call"] == outcome)
                 r["brier"] = round((r["p_up"] - outcome) ** 2, 4)
@@ -3910,7 +3915,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(b["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue  # settle only on authoritative candles
-                outcome = int(settle_bar["close"] >= b["strike"])
+                outcome, b["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    b.get("ticker"), b["close_ts"], b["strike"],
+                    int(settle_bar["close"] >= b["strike"]))
                 b["actual"] = outcome
                 b["win"] = int((b["side"] == "yes") == bool(outcome))
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
@@ -3925,7 +3932,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(b["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue  # settle only on authoritative candles
-                outcome = int(settle_bar["close"] >= b["strike"])
+                outcome, b["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    b.get("ticker"), b["close_ts"], b["strike"],
+                    int(settle_bar["close"] >= b["strike"]))
                 b["actual"] = outcome
                 b["win"] = int((b["side"] == "yes") == bool(outcome))
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
@@ -3938,7 +3947,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(b["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= b["strike"])
+                outcome, b["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    b.get("ticker"), b["close_ts"], b["strike"],
+                    int(settle_bar["close"] >= b["strike"]))
                 b["actual"] = outcome
                 b["win"] = int((b["side"] == "yes") == bool(outcome))
                 b["pnl_c"] = round((100 - b["price_c"]) if b["win"]
@@ -3957,7 +3968,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue  # settle only on authoritative candles
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -3985,7 +3998,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -4014,7 +4029,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -4040,7 +4057,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -4075,7 +4094,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -4105,7 +4126,9 @@ def run(once: bool = False) -> None:
                 settle_bar = by_ts.get(t["close_ts"] - 60)
                 if settle_bar is None or settle_bar.get("synth"):
                     continue
-                outcome = int(settle_bar["close"] >= t["strike"])
+                outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                 t["actual"] = outcome
                 t["win"] = int((t["side"] == "yes") == bool(outcome))
                 payout = t["contracts"] * 100 if t["win"] else 0
@@ -4160,7 +4183,9 @@ def run(once: bool = False) -> None:
                     settle_bar = by_ts.get(t["close_ts"] - 60)
                     if settle_bar is None or settle_bar.get("synth"):
                         continue
-                    outcome = int(settle_bar["close"] >= t["strike"])
+                    outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                    t.get("ticker"), t["close_ts"], t["strike"],
+                    int(settle_bar["close"] >= t["strike"]))
                     t["actual"] = outcome
                     t["win"] = int((t["side"] == "yes") == bool(outcome))
                     payout = t["contracts"] * 100 if t["win"] else 0

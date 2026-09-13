@@ -1,0 +1,32 @@
+{
+ "change_id": "2026-09-13-DT01-exact-brti-runtime",
+ "reason": "Close DT-01: make the live daemon settle on exact CF-BRTI (contract truth) instead of the Coinbase-candle / 4-venue-composite proxy, so runtime and research share one definition of the KXBTC15M contract. Flag-gated, default off, activated without a code edit.",
+ "nodes_added": ["contract_truth (btc_rl/contract_truth.py)", "runtime_brti_health"],
+ "nodes_changed": ["runtime_settlement", "paper_accounts", "brti_composite_4venue (demoted to fallback)"],
+ "nodes_removed": [],
+ "edges_added": [
+  {"from": "brti_exact", "to": "runtime_settlement", "why": "exact contract truth at runtime (flag-gated)"},
+  {"from": "brti_exact", "to": "paper_accounts", "why": "paper P&L settles on exact outcome (flag-gated)"}],
+ "edges_removed": [],
+ "edges_removed_on_activation": [
+  {"from": "brti_composite_4venue", "to": "runtime_settlement",
+   "note": "proxy path remains as explicit fallback until EXACT_BRTI_RUNTIME_ENABLED; not removed, demoted"},
+  {"from": "runtime_settlement_proxy", "to": "paper_accounts",
+   "note": "replaced by exact outcome only when the flag is ON"}],
+ "scientific_semantics_changed": true,
+ "runtime_changed": true,
+ "UI_contract_changed": false,
+ "migration_required": true,
+ "flag": "EXACT_BRTI_RUNTIME_ENABLED (default false); EXACT_BRTI_CAPTURE_ENABLED for capture-only",
+ "deploy_sequence": [
+  "deploy code (flag off)",
+  "smoke: daemon heartbeat + invariants healthy",
+  "enable EXACT_BRTI_CAPTURE_ENABLED; verify results/brti_runtime_health.json (connected, cadence, history_ok)",
+  "enable EXACT_BRTI_RUNTIME_ENABLED; verify first window settles at contract_truth_quality=EXACT_BRTI and shadow parity matches official",
+  "mark migration complete; re-run architecture_checkpoint -> RUNTIME_CONTRACT_TRUTH=PASS"],
+ "failover": "contract_truth_quality in {EXACT_BRTI, PROXY_DEGRADED, UNAVAILABLE}; never silent Coinbase substitution; settlement-dependent assertions fail closed until official Kalshi outcome available",
+ "rollback": "unset EXACT_BRTI_RUNTIME_ENABLED -> daemon reverts to legacy composite/candle settlement with no code change",
+ "tests": ["tests/test_contract_truth.py (golden + shadow parity + failover, 5/5)",
+           "tests/test_architecture_checkpoint.py"],
+ "note": "Applied in the worktree as a flag-gated integration into btc_rl/online.py; the RUNTIME_CONTRACT_TRUTH checkpoint check flips to PASS only when the running daemon has the flag ON. Until the owner activates in the main checkout, checkpoint stays FAIL by design."
+}
