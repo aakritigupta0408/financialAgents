@@ -95,3 +95,37 @@ preopen_oracle.attach_settlement(expiry, settlement_0_or_1)
   never crash core capture).
 - One formal treatment only (EXEC-TIMING); the Independent Oracle stays DEV.
 - Pre-open Oracle rejects Kalshi inputs at the API boundary (assertion).
+
+---
+
+## Exact-BRTI Oracle + Prospective Capture (merge-ready, DISABLED by default)
+
+New files only; inert until env flags are set in the main checkout.
+
+**Contract truth = BRTI.** Credential bundle `~/.kalshi_key_api` (RSA PEM + key-id
+UUID, parsed apart by `data/adapters/brti.py`). Endpoints verified:
+`cfbenchmarks/values?id=BRTI` (rolling 1h @5Hz) and `cfbenchmarks/history/values`
+(`timespan=HOUR`, hour-truncated ISO `timestamp`; full hour/call).
+
+Frozen Independent Oracle: `research/oracle/oracle_frozen.json`
+(MECH_FAIR_BRTI sigma + isotonic recalibration; hash `71c3bcffa964`). No Kalshi
+input by construction.
+
+### Activation (owner, main checkout)
+1. Confirm BRTI health: `python3 data/adapters/brti.py` -> `AVAILABLE`.
+2. Wire live capture into the desk's decision loop:
+   `from btc_rl.prospective_capture import capture; capture(window_ctx)`
+   where `window_ctx` carries decision-time-only state (BRTI, official_target,
+   time_remaining_s, k_prob). A leak-guard refuses any settlement/outcome field.
+3. Enable: `export PROSPECTIVE_CAPTURE_ENABLED=1` (default off = no-op).
+4. After settlement, the desk appends the official `exact_yes` to each record.
+5. Records land in `results/prospective_capture.jsonl` (append-only, PIT).
+
+### What it confirms
+- The PROMISING_PENDING_PROSPECTIVE disagreement edge (retrospective n=111 only).
+- Families B-E (multi-venue / derivatives / options / news) that could not be
+  tested historically — captured live for the first true OOS test.
+
+### Degradation (§40-41)
+If live BRTI is unhealthy, records are written with
+`contract_state_quality=DEGRADED|PROXY`, never a silent Coinbase substitution.
