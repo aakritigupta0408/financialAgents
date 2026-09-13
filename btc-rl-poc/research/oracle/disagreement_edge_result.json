@@ -1,0 +1,162 @@
+{
+ "oracle": "recalibrated MECH_FAIR_BRTI (no Kalshi input)",
+ "test_windows": 111,
+ "executable_assumptions": "enter at market+half-spread; $1 binary; fee 0.07*p*(1-p)",
+ "selective_edge_curve": [
+  {
+   "min_disagreement": 0.0,
+   "coverage": 1.0,
+   "trades": 111,
+   "win_rate": 0.5586,
+   "ev_per_trade": 0.0216,
+   "ev_per_eligible_window": 0.0216,
+   "median_entry_tte_min": 14.6
+  },
+  {
+   "min_disagreement": 0.02,
+   "coverage": 1.0,
+   "trades": 111,
+   "win_rate": 0.5225,
+   "ev_per_trade": -0.0122,
+   "ev_per_eligible_window": -0.0122,
+   "median_entry_tte_min": 14.6
+  },
+  {
+   "min_disagreement": 0.05,
+   "coverage": 1.0,
+   "trades": 111,
+   "win_rate": 0.5766,
+   "ev_per_trade": 0.0506,
+   "ev_per_eligible_window": 0.0506,
+   "median_entry_tte_min": 14.3
+  },
+  {
+   "min_disagreement": 0.08,
+   "coverage": 1.0,
+   "trades": 111,
+   "win_rate": 0.5766,
+   "ev_per_trade": 0.1284,
+   "ev_per_eligible_window": 0.1284,
+   "median_entry_tte_min": 13.0
+  },
+  {
+   "min_disagreement": 0.12,
+   "coverage": 0.991,
+   "trades": 110,
+   "win_rate": 0.4636,
+   "ev_per_trade": 0.0977,
+   "ev_per_eligible_window": 0.0968,
+   "median_entry_tte_min": 10.5
+  },
+  {
+   "min_disagreement": 0.15,
+   "coverage": 0.964,
+   "trades": 107,
+   "win_rate": 0.4019,
+   "ev_per_trade": 0.0948,
+   "ev_per_eligible_window": 0.0914,
+   "median_entry_tte_min": 7.6
+  },
+  {
+   "min_disagreement": 0.2,
+   "coverage": 0.748,
+   "trades": 83,
+   "win_rate": 0.3855,
+   "ev_per_trade": 0.1357,
+   "ev_per_eligible_window": 0.1015,
+   "median_entry_tte_min": 5.0
+  }
+ ],
+ "who_is_right_by_gap": {
+  "0-2pp": {
+   "n": 1023,
+   "oracle_dir_acc": 0.694,
+   "market_dir_acc": 0.694,
+   "ev_per_trade": -0.0045
+  },
+  "2-5pp": {
+   "n": 1341,
+   "oracle_dir_acc": 0.695,
+   "market_dir_acc": 0.6808,
+   "ev_per_trade": 0.0167
+  },
+  "5-8pp": {
+   "n": 1181,
+   "oracle_dir_acc": 0.7036,
+   "market_dir_acc": 0.6427,
+   "ev_per_trade": 0.0375
+  },
+  "8-12pp": {
+   "n": 874,
+   "oracle_dir_acc": 0.7643,
+   "market_dir_acc": 0.7059,
+   "ev_per_trade": 0.0305
+  },
+  "12pp+": {
+   "n": 1380,
+   "oracle_dir_acc": 0.7891,
+   "market_dir_acc": 0.7594,
+   "ev_per_trade": 0.0187
+  }
+ },
+ "ev_by_earliness_tau0.05": {
+  "T-2..0": {
+   "n": 396,
+   "win_rate": 0.3662,
+   "ev_per_trade": 0.1059
+  },
+  "T-5..2": {
+   "n": 910,
+   "win_rate": 0.2407,
+   "ev_per_trade": 0.0265
+  },
+  "T-9..5": {
+   "n": 1016,
+   "win_rate": 0.2982,
+   "ev_per_trade": -0.0241
+  },
+  "T-15..9": {
+   "n": 1113,
+   "win_rate": 0.5265,
+   "ev_per_trade": 0.0497
+  }
+ },
+ "best_operating_point": {
+  "min_disagreement": 0.08,
+  "coverage": 1.0,
+  "trades": 111,
+  "win_rate": 0.5766,
+  "ev_per_trade": 0.1284,
+  "ev_per_eligible_window": 0.1284,
+  "median_entry_tte_min": 13.0
+ },
+ "bootstrap_ci_95": {
+  "at_min_disagreement": 0.08,
+  "ev_per_eligible_window": {
+   "point": 0.1284,
+   "ci": [
+    0.0367,
+    0.224
+   ],
+   "significant_positive": true
+  },
+  "oracle_minus_market_dir_acc": {
+   "point": 0.1712,
+   "ci": [
+    0.0541,
+    0.2973
+   ],
+   "significant_positive": true
+  },
+  "n_windows": 111
+ },
+ "verdict": "PROMISING_PENDING_PROSPECTIVE \u2014 point estimates favor the Oracle and the moving-block 95% CI excludes 0, BUT n=111 windows, retrospective, adjacent-window recalibration, and a non-monotone earliness profile (T-9..5 negative) mean this is NOT a confirmed edge. Must be validated on live prospective paper before any claim.",
+ "integrity_caveats": [
+  "111 test windows over ~1.3 days \u2014 severely underpowered.",
+  "EV curve non-monotonic across tau and earliness \u2014 noise signature.",
+  "isotonic recalibration fit on temporally-adjacent train windows (regime leak risk).",
+  "oracle uses exact current BRTI; near expiry it approaches settlement, so late-window 'edge' vs a possibly-laggy stored k_prob may be artifactual.",
+  "no independent predictive feature cleared OOS \u2014 edge (if real) is bounded by mechanics recalibration alone."
+ ],
+ "note": "Oracle uses only exact BRTI mechanics + recalibration; no independent predictive features cleared OOS (INFORMATION_LIMITED), so this bounds the tradeable edge available from mechanics ALONE."
+}

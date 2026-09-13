@@ -14,9 +14,10 @@
   "MECHANICS_RESIDUAL_ORACLE_BRTI": "INFORMATION_LIMITED (Family A single-venue microstructure adds nothing OOS beyond exact-BRTI mechanics, incl. mid-window; diagnosis INFORMATION_LIMITED)",
   "MECH_RECALIBRATION": "GAP_IS_MOSTLY_CALIBRATION (isotonic recal of MECH_BRTI, no features, closes 69% of mech-vs-Kalshi gap; recalibrated mechanics BEATS Kalshi at T-15..9 and T-2..0; residual gap ~0.003 Brier is mid-window model-form, not Family-A information)",
   "LABEL_RESCORE": "NO_EXPERIMENT_INVALIDATED (§10: clean P(YES) logs mismatch official labels <=4.4%, Brier shift <0.005; MINOR_CHANGE; prior conclusions stand)",
+  "DISAGREEMENT_EDGE": "PROMISING_PENDING_PROSPECTIVE (§28-31: recalibrated-MECH_BRTI oracle vs Kalshi; in disagreement buckets oracle dir-acc 0.70-0.79 > market 0.64-0.76; selective paper EV/eligible-window +0.128 at 8pp gap, moving-block 95% CI [0.037,0.224]; but n=111 windows retrospective + non-monotone earliness => NOT confirmed; needs live paper)",
   "LABEL_AUDIT": "TARGET_DEFINITION_MISMATCH \u2014 4.5% divergence; official BRTI outcomes now canonical"
  },
- "primary_bottleneck": "MID_WINDOW_RESIDUAL_INFORMATION_T9to2 (exact-BRTI mechanics explains 82% of Kalshi edge and ties/beats Kalshi on HARD+near-expiry; residual gap is EASY-window sharpness + mid-window info — test whether independent features beat a better-calibrated mechanics)",
+ "primary_bottleneck": "PROSPECTIVE_CAPTURE — retrospective single-venue data is exhausted: exact-BRTI mechanics (recalibrated) matches/beats Kalshi, Family-A microstructure adds nothing OOS, and a disagreement-based selective paper edge is PROMISING but underpowered (n=111 windows). Confirming that edge AND testing genuinely-independent Families B-E (multi-venue lead/lag, derivatives, options, news) both require LIVE prospective capture.",
  "settlement_alpha": "MECHANICS_EXPLAINS_74pct_OF_KALSHI; RESIDUAL_MID_WINDOW_GAP_IS_BENCHMARK_BASIS_NOT_FEATURES",
  "the_one_positive_mechanism": {
   "id": "EXEC-TIMING",
