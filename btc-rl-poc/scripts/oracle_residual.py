@@ -1,4 +1,9 @@
-"""P0.6 — MECHANICS-RESIDUAL ORACLE. The core question (override §33):
+"""HISTORICAL / SUPERSEDED (architecture/dangling_threads.json DT-03). The CURRENT
+canonical residual Oracle is scripts/oracle_residual_brti.py (mechanics base built
+on EXACT BRTI). This file's p_mech uses a Coinbase basis-corrected proxy level; keep
+as evidence only.
+
+P0.6 — MECHANICS-RESIDUAL ORACLE. The core question (override §33):
 after fixing the target (exact floor_strike) and the label (official outcome),
 does independent information improve the mechanics fair value MECH_FAIR,
 especially MID-WINDOW where Kalshi's residual advantage lives?

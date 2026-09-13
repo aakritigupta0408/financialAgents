@@ -1,4 +1,11 @@
-"""INDEPENDENT ORACLE (handoff O1/O2/O5) — an independent estimate of
+"""HISTORICAL / SUPERSEDED (see architecture/dangling_threads.json DT-03).
+Kept as evidence. The CURRENT canonical Oracle uses EXACT BRTI as contract truth
+(scripts/mech_fair_brti.py, scripts/oracle_residual_brti.py, scripts/freeze_oracle.py).
+This module models P(final Coinbase settlement > strike) — a Gen-4/5 assumption:
+Coinbase spot is NOT the settlement benchmark (BRTI is), so its contract state is
+a proxy. Do not treat its Coinbase-as-mechanic semantics as current.
+
+INDEPENDENT ORACLE (handoff O1/O2/O5) — an independent estimate of
 P(final Coinbase settlement > strike) using BTC-only information (never
 Kalshi price), evaluated by EARLINESS, with fixed-confidence lock curves.
 

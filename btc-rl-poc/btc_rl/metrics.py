@@ -79,6 +79,22 @@ def pt_test(pred_up: list[bool], actual_up: list[bool]) -> float | None:
     return (p_hat - p_star) / math.sqrt(v_hat - v_star)
 
 
+def brier(ps: list[float], ys: list[int],
+          weights: list[float] | None = None) -> float | None:
+    """CANONICAL Brier score (architecture/dangling_threads.json DT-04): mean
+    squared error of probabilistic forecasts, optionally window-weighted. This is
+    the single owner — inline (p-y)**2 copies across online.py / emitters should
+    migrate here. Returns None on empty input."""
+    if not ps:
+        return None
+    if weights is None:
+        return sum((p - y) ** 2 for p, y in zip(ps, ys)) / len(ps)
+    wsum = sum(weights)
+    if wsum <= 0:
+        return None
+    return sum(w * (p - y) ** 2 for p, y, w in zip(ps, ys, weights)) / wsum
+
+
 def brier_skill(brier: float, reference: float) -> float | None:
     """Brier Skill Score vs a reference forecaster (market, or 0.25 for the
     coin-flip climatology). >0 beats the reference; 1 is perfect."""

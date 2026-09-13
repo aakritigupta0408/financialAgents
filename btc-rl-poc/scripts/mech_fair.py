@@ -1,4 +1,9 @@
-"""MECH_FAIR (Phase 4/5) — contract-mechanics fair value, and the decomposition
+"""HISTORICAL / SUPERSEDED (architecture/dangling_threads.json DT-03). The CURRENT
+canonical mechanics fair value is scripts/mech_fair_brti.py (EXACT BRTI). This file
+uses a Coinbase basis-corrected proxy for the BRTI level — a $18-std approximation
+retained only as the MECH_COINBASE_PROXY historical baseline. Not current truth.
+
+MECH_FAIR (Phase 4/5) — contract-mechanics fair value, and the decomposition
 of what Kalshi knows beyond mechanics.
 
 Uses the EXACT target (floor_strike = opening 60s-BRTI avg) and EXACT outcome
