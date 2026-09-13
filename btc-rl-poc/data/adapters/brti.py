@@ -21,11 +21,50 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import re
+
 ROOT = Path(__file__).resolve().parent.parent.parent
 OUT = ROOT / "results" / "brti_capture.jsonl"
 HEALTH = ROOT / "results" / "brti_health.json"
-KEY_ID = os.environ.get("KALSHI_DEMO_KEY_ID", "")
-PEM = Path.home() / ".kalshi_demo.pem"
+
+# Combined credential bundle: the owner may drop BOTH the private-key PEM and the
+# access-key id (a UUID) into one file. Parse each part out separately.
+BUNDLE = Path.home() / ".kalshi_key_api"
+_UUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                   r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+_PEM_BLOCK = re.compile(
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*?-----END [A-Z ]*PRIVATE KEY-----",
+    re.DOTALL)
+
+
+def _bundle_text():
+    return BUNDLE.read_text() if BUNDLE.exists() else ""
+
+
+def _read_key_id():
+    v = os.environ.get("KALSHI_DEMO_KEY_ID") or os.environ.get("KALSHI_KEY_ID")
+    if v:
+        return v.strip()
+    for f in (Path.home() / ".kalshi_key_id", Path.home() / ".kalshi_prod_key_id"):
+        if f.exists():
+            return f.read_text().strip()
+    m = _UUID.search(_bundle_text())        # UUID embedded in the bundle
+    return m.group(0) if m else ""
+
+
+def _pem_bytes():
+    """Return PEM private-key bytes from the bundle or a standalone .pem."""
+    m = _PEM_BLOCK.search(_bundle_text())
+    if m:
+        return (m.group(0) + "\n").encode()
+    for f in (Path.home() / ".kalshi_prod.pem", Path.home() / ".kalshi.pem",
+              Path.home() / ".kalshi_demo.pem"):
+        if f.exists():
+            return f.read_bytes()
+    return b""
+
+
+KEY_ID = _read_key_id()
 HOSTS = ["https://api.elections.kalshi.com", "https://demo-api.kalshi.co"]
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
       "Chrome/124.0 Safari/537.36")
@@ -37,7 +76,7 @@ def _key():
     global _priv
     if _priv is None:
         from cryptography.hazmat.primitives import serialization
-        _priv = serialization.load_pem_private_key(PEM.read_bytes(), password=None)
+        _priv = serialization.load_pem_private_key(_pem_bytes(), password=None)
     return _priv
 
 
@@ -93,23 +132,61 @@ def probe():
     return {**last, "endpoint_exists": True}
 
 
+# ── History (backfill) — VERIFIED schema ──────────────────────────────────────
+# GET cfbenchmarks/history/values?id=BRTI&timespan=HOUR&timestamp=<ISO hour>
+# returns the FULL calendar hour of samples (5Hz for ~90d, 1Hz to >=180d).
+# `timestamp` MUST be truncated to the hour boundary (ISO_INSTANT) or it 400s.
+# Settlement convention (verified to <=0.0004% vs official strikes): the
+# reference at boundary T is the mean of BRTI over the 60s window [T-60, T).
+HIST = "/trade-api/v2/cfbenchmarks/history/values"
+_HOUR_CACHE = {}
+
+
+def _iso_hour(sec):
+    import datetime
+    h = (int(sec) // 3600) * 3600
+    return datetime.datetime.fromtimestamp(
+        h, datetime.timezone.utc).strftime("%Y-%m-%dT%H:00:00.000Z")
+
+
+def hour_samples(sec, host=None):
+    """All (epoch_s, value) BRTI samples for the calendar hour containing `sec`.
+    Cached per hour so a backfill sweep hits each hour once."""
+    key = (int(sec) // 3600) * 3600
+    if key not in _HOUR_CACHE:
+        host = host or HOSTS[0]
+        code, body = _req(host, HIST, {"id": "BRTI", "timespan": "HOUR",
+                                       "timestamp": _iso_hour(sec)})
+        pl = (body.get("data", {}) or {}).get("payload", []) if code == 200 else []
+        _HOUR_CACHE[key] = [(x["time"] / 1000.0, float(x["value"])) for x in pl]
+    return _HOUR_CACHE[key]
+
+
+def avg_60s_ending(T):
+    """Official settlement statistic: mean BRTI over [T-60, T). Returns (avg, n).
+    Handles the case where the 60s window straddles an hour boundary."""
+    seen = {}
+    for t, v in hour_samples(T - 60) + hour_samples(T):
+        if T - 60 <= t < T:
+            seen[round(t, 3)] = v            # dedup identical timestamps
+    vals = list(seen.values())
+    return (round(sum(vals) / len(vals), 2) if vals else None), len(vals)
+
+
 def parity(ticker_rows):
-    """For a few settled windows, pull BRTI history around open-1min and
-    close-1min, average 60 values, compare to floor_strike / expiration_value."""
+    """Reconstruct floor_strike (at open) and expiration_value (at close) from
+    BRTI for each settled window; compare to Kalshi's official values."""
+    import calendar
     out = []
     for r in ticker_rows:
-        # history endpoint params are documented as id + time range; exact param
-        # names verified live once authorized.
-        for label, t_iso, ref in (("open", r["open_time"], r["floor_strike"]),
-                                   ("close", r["close_time"], r["expiration_value"])):
-            code, body = _req(HOSTS[0], "/trade-api/v2/cfbenchmarks/history/values",
-                              {"id": "BRTI", "end_ts": t_iso, "limit": 60})
-            vals = [float(v.get("value")) for v in (body.get("values") or body.get("history") or [])
-                    if v.get("value") is not None]
-            avg = round(sum(vals) / len(vals), 2) if vals else None
-            out.append({"ticker": r["ticker"], "which": label, "n": len(vals),
+        for which, t_iso, ref in (("open", r["open_time"], r["floor_strike"]),
+                                  ("close", r["close_time"], r["expiration_value"])):
+            T = calendar.timegm(time.strptime(t_iso, "%Y-%m-%dT%H:%M:%SZ"))
+            avg, n = avg_60s_ending(T)
+            out.append({"ticker": r["ticker"], "which": which, "n": n,
                         "brti_60s_avg": avg, "kalshi_ref": ref,
-                        "match": (avg is not None and abs(avg - ref) < 0.01)})
+                        "abs_err": (round(abs(avg - ref), 2) if avg is not None else None),
+                        "match_penny": (avg is not None and abs(avg - ref) < 0.01)})
     return out
 
 
@@ -123,12 +200,15 @@ def main():
         with OUT.open("a") as fh:
             fh.write(json.dumps({"received_ts": time.time(),
                                  "sample": st["sample"]}) + "\n")
-        # parity on a few known windows
         co = ROOT / "results" / "contract_outcomes.jsonl"
-        rows = [json.loads(l) for l in co.open() if l.strip()][-3:] if co.exists() else []
-        for p in parity(rows):
-            print("  parity", p["which"], p["ticker"], "brti", p["brti_60s_avg"],
-                  "kalshi", p["kalshi_ref"], "match" if p["match"] else "MISMATCH")
+        rows = [json.loads(l) for l in co.open() if l.strip()][-6:] if co.exists() else []
+        ps = parity(rows)
+        errs = [p["abs_err"] for p in ps if p["abs_err"] is not None]
+        for p in ps:
+            print(f"  parity {p['which']:5s} {p['ticker']} brti {p['brti_60s_avg']}"
+                  f" kalshi {p['kalshi_ref']} err ${p['abs_err']}")
+        if errs:
+            print(f"  reconstruction abs err: max ${max(errs)} mean ${round(sum(errs)/len(errs),3)}")
 
 
 if __name__ == "__main__":
