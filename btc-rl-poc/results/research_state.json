@@ -3,7 +3,7 @@
  "git_sha": "e9493ec+",
  "ladder": {
   "PRICE_DISCOVERY": "PASS",
-  "MICROSTRUCTURE_SETTLEMENT": "B_REPRICE_ONLY",
+  "MICROSTRUCTURE_SETTLEMENT": "B_REPRICE_ONLY (DT-02 relabel: CONFIRMED on official BRTI labels; 0% label mismatch on Gate B's decisive-window scope; residual test-window BSS negative even with correct labels; UNAFFECTED)",
   "AV_EQUITY_RETURNS": "AV_CLASSIC_OVERFIT",
   "INDEPENDENT_ORACLE": "INFORMATION_LIMITED",
   "EXECUTION_TIMING": "REGISTERED_FORMAL_PENDING_RUNTIME_ACTIVATION",

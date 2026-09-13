@@ -1,0 +1,134 @@
+{
+ "label_effect_on_market_baseline": {
+  "market_window_brier_old_label": 0.15787,
+  "market_window_brier_official_label": 0.15787,
+  "delta": 0.0,
+  "note": "pure label effect: same market prediction (k_prob), different label"
+ },
+ "label_mismatch_old_vs_official": {
+  "overall": 0.0,
+  "early_T>9": 0.0,
+  "mid_T5-9": 0.0,
+  "late_T<5": 0.0,
+  "hard_|k-.5|<.15": 0.0,
+  "easy_|k-.5|>=.3": 0.0,
+  "official_UP": 0.0,
+  "official_DOWN": 0.0
+ },
+ "old_quote_label": {
+  "market_brier_test_window": 0.15787,
+  "best": {
+   "lambda": 0,
+   "bss_val_window": 0.0325,
+   "bss_test_window": -0.007
+  },
+  "shrunk_bss_window": -0.0021,
+  "verdict": "B_REPRICE_ONLY",
+  "path": [
+   {
+    "lambda": 0,
+    "bss_val_window": 0.0325,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 1e-05,
+    "bss_val_window": 0.0325,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.0001,
+    "bss_val_window": 0.0324,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.001,
+    "bss_val_window": 0.0323,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.01,
+    "bss_val_window": 0.031,
+    "bss_test_window": -0.0066
+   },
+   {
+    "lambda": 0.1,
+    "bss_val_window": 0.0221,
+    "bss_test_window": -0.0052
+   },
+   {
+    "lambda": 1,
+    "bss_val_window": 0.0058,
+    "bss_test_window": -0.0021
+   },
+   {
+    "lambda": 10,
+    "bss_val_window": -1.451,
+    "bss_test_window": -0.7824
+   }
+  ]
+ },
+ "official_brti_label": {
+  "market_brier_test_window": 0.15787,
+  "best": {
+   "lambda": 0,
+   "bss_val_window": 0.0325,
+   "bss_test_window": -0.007
+  },
+  "shrunk_bss_window": -0.0021,
+  "verdict": "B_REPRICE_ONLY",
+  "path": [
+   {
+    "lambda": 0,
+    "bss_val_window": 0.0325,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 1e-05,
+    "bss_val_window": 0.0325,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.0001,
+    "bss_val_window": 0.0324,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.001,
+    "bss_val_window": 0.0323,
+    "bss_test_window": -0.007
+   },
+   {
+    "lambda": 0.01,
+    "bss_val_window": 0.031,
+    "bss_test_window": -0.0066
+   },
+   {
+    "lambda": 0.1,
+    "bss_val_window": 0.0221,
+    "bss_test_window": -0.0052
+   },
+   {
+    "lambda": 1,
+    "bss_val_window": 0.0058,
+    "bss_test_window": -0.0021
+   },
+   {
+    "lambda": 10,
+    "bss_val_window": -1.451,
+    "bss_test_window": -0.7824
+   }
+  ]
+ },
+ "verdict_change": {
+  "old": "B_REPRICE_ONLY",
+  "official": "B_REPRICE_ONLY",
+  "changed": false
+ },
+ "classification": "UNAFFECTED",
+ "readjudication": "B_REPRICE_ONLY CONFIRMED on official labels \u2014 microstructure residual does not become durable settlement skill beyond Kalshi",
+ "n_test_windows": 65,
+ "n_rows": 16891,
+ "scoping_caveat": "Gate B's label set is DECISIVE windows only (settlement_map keeps |terminal quote-0.5|>0.35). On that decisive subset the terminal quote and official BRTI outcome coincide (0% mismatch here), so the label correction is a no-op FOR GATE B specifically. This does NOT mean the old proxy was globally correct \u2014 the ~4.5% divergence lives in the non-decisive/boundary windows Gate B excludes. B_REPRICE_ONLY is therefore confirmed within its (decisive-window) scope.",
+ "feature_family_settlement_edge": "NONE \u2014 best residual test-window BSS negative on official labels; the microstructure family predicts short-horizon repricing (Gate A) but not durable settlement beyond the market, early or late.",
+ "note": "Brier/BSS are diagnostic here; window-weighted, window-split, official labels from contract_outcomes.jsonl. Reuses t05_gateb math."
+}
