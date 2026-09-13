@@ -1,0 +1,16 @@
+{
+ "schema": "brti-decision-v1",
+ "windows": 370,
+ "windows_emitted": 370,
+ "rows_emitted": 19485,
+ "rows_skipped": 0,
+ "parity_drift_windows": 0,
+ "boundary_recon_abs_err_usd": {
+  "mean": 0.169,
+  "p95": 0.52,
+  "max": 1.5
+ },
+ "span": "2026-09-08..2026-09-12 (~4.25d)",
+ "note": "BRTI = contract-state truth; coinbase_spot retained as independent predictor only. Window is the statistical unit (do not count samples).",
+ "generated_ts": 1789264989.2804961
+}

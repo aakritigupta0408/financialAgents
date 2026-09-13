@@ -1,0 +1,69 @@
+{
+ "n_test": 5799,
+ "windows": 370,
+ "sigma_rel_per_sqrt_s": 6e-05,
+ "base_rate": 0.461,
+ "brier": {
+  "50_50": 0.25,
+  "MECH_FAIR_BRTI": 0.1989,
+  "KALSHI": 0.1878,
+  "MECH_COINBASE_PROXY_historical": 0.2024
+ },
+ "decomposition": {
+  "mech_brti_gain_over_50_50": 0.0511,
+  "kalshi_gain_over_50_50": 0.0622,
+  "kalshi_advantage_vs_mech_brti": 0.0111,
+  "frac_of_kalshi_edge_explained_by_MECH_BRTI": 0.822,
+  "frac_explained_by_MECH_COINBASE_proxy": 0.765,
+  "improvement_from_exact_brti": 0.056
+ },
+ "by_time_to_expiry": {
+  "T-2..0": {
+   "n": 562,
+   "mech_brti": 0.1306,
+   "kalshi": 0.1404,
+   "mech_minus_kalshi": -0.0098
+  },
+  "T-5..2": {
+   "n": 1244,
+   "mech_brti": 0.1684,
+   "kalshi": 0.1541,
+   "mech_minus_kalshi": 0.0143
+  },
+  "T-9..5": {
+   "n": 1627,
+   "mech_brti": 0.1954,
+   "kalshi": 0.1732,
+   "mech_minus_kalshi": 0.0222
+  },
+  "T-15..9": {
+   "n": 2366,
+   "mech_brti": 0.2334,
+   "kalshi": 0.2264,
+   "mech_minus_kalshi": 0.007
+  }
+ },
+ "by_difficulty": {
+  "HARD": {
+   "n": 1914,
+   "mech_brti": 0.2456,
+   "kalshi": 0.2526,
+   "mech_minus_kalshi": -0.007
+  },
+  "MED": {
+   "n": 1913,
+   "mech_brti": 0.228,
+   "kalshi": 0.2131,
+   "mech_minus_kalshi": 0.0148
+  },
+  "EASY": {
+   "n": 1972,
+   "mech_brti": 0.1263,
+   "kalshi": 0.1014,
+   "mech_minus_kalshi": 0.0249
+  }
+ },
+ "gap_verdict": "GAP_SHRINKS_BUT_REMAINS",
+ "note": "MECH_FAIR_BRTI uses exact current BRTI as contract state; Gaussian diffusion + settlement-aware final-60s override; no Kalshi input. Difficulty = |distance|/(sigma*brti*sqrt(tte)); HARD=near boundary.",
+ "mid_window_mech_minus_kalshi": 0.0183
+}

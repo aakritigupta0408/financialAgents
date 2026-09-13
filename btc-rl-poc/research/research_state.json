@@ -9,11 +9,12 @@
   "EXECUTION_TIMING": "REGISTERED_FORMAL_PENDING_RUNTIME_ACTIVATION",
   "ORTHOGONAL_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
   "PREOPEN_ORACLE_CAPTURE": "IMPLEMENTATION_READY_PENDING_RUNTIME_ACTIVATION",
-  "CONTRACT_MECHANICS": "MECH_FAIR_ESTABLISHED (Brier 0.2024; explains 74% of Kalshi edge)",
-  "MECHANICS_RESIDUAL_ORACLE": "INFORMATION_LIMITED (independent features add nothing beyond mechanics OOS)",
+  "CONTRACT_MECHANICS": "MECH_FAIR_ESTABLISHED (Coinbase-proxy Brier 0.2024; explains 74-76% of Kalshi edge)",
+  "CONTRACT_MECHANICS_BRTI": "MECH_FAIR_BRTI (exact benchmark; Brier 0.1989; explains 82% of Kalshi edge; settlement-aware; ties/beats Kalshi at T-2..0 and on HARD contracts; gap=GAP_SHRINKS_BUT_REMAINS, mid-window +0.018)",
+  "MECHANICS_RESIDUAL_ORACLE": "INFORMATION_LIMITED (Coinbase-proxy era; to be re-tested on exact BRTI)",
   "LABEL_AUDIT": "TARGET_DEFINITION_MISMATCH \u2014 4.5% divergence; official BRTI outcomes now canonical"
  },
- "primary_bottleneck": "MECH_FAIR_BRTI_RESCORE_PENDING (BRTI access solved; rebuild fair value + Oracle on exact benchmark, replacing the Coinbase proxy)",
+ "primary_bottleneck": "MID_WINDOW_RESIDUAL_INFORMATION_T9to2 (exact-BRTI mechanics explains 82% of Kalshi edge and ties/beats Kalshi on HARD+near-expiry; residual gap is EASY-window sharpness + mid-window info — test whether independent features beat a better-calibrated mechanics)",
  "settlement_alpha": "MECHANICS_EXPLAINS_74pct_OF_KALSHI; RESIDUAL_MID_WINDOW_GAP_IS_BENCHMARK_BASIS_NOT_FEATURES",
  "the_one_positive_mechanism": {
   "id": "EXEC-TIMING",
