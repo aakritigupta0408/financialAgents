@@ -1,6 +1,10 @@
 {
- "material_change_counter": 0,
+ "material_change_counter": 1,
  "checkpoint_every_n": 3,
- "last_checkpoint_utc": "20260913T080622Z",
- "log": []
+ "last_checkpoint_utc": "20260913T081033Z",
+ "log": [
+  {
+   "reason": "DT-01 runtime contract-truth wiring + DT-02 Gate B relabel"
+  }
+ ]
 }

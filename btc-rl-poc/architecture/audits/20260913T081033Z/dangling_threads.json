@@ -15,7 +15,8 @@
    ],
    "recommended_action": "MIGRATE: wire exact BRTI into online.py contract-state + settlement behind PROSPECTIVE_CAPTURE_ENABLED; reconcile paper accounting to official outcomes. Owner-gated (touches the running desk).",
    "safe_to_remove": false,
-   "detected_by": "RUNTIME_CONTRACT_TRUTH checkpoint check"
+   "detected_by": "RUNTIME_CONTRACT_TRUTH checkpoint check",
+   "status": "WIRED_PENDING_ACTIVATION (2026-09-13): all 11 online.py settlement sites route through contract_truth.resolve_outcome, flag EXACT_BRTI_RUNTIME_ENABLED (default off = no-op). Checkpoint FAIL->PASS_WITH_WATCH. Full PASS on owner activation in the running daemon."
   },
   {
    "id": "DT-02",
@@ -29,7 +30,8 @@
    ],
    "recommended_action": "Rejoin labels to contract_outcomes.jsonl (exact_yes); rescore Gate B.",
    "safe_to_remove": false,
-   "detected_by": "stale-assumption sweep"
+   "detected_by": "stale-assumption sweep",
+   "status": "RESCORED (2026-09-13, scripts/gateb_relabel.py): 0% label mismatch on Gate B's decisive-window scope; B_REPRICE_ONLY UNAFFECTED. Residual proxy label in t05_gateb remains for non-decisive windows (unused by the verdict) \u2014 replace opportunistically."
   },
   {
    "id": "DT-03",

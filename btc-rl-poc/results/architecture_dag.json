@@ -1,6 +1,6 @@
 {
  "verdict": "PASS_WITH_WATCH",
- "checkpoint_utc": "20260913T080622Z",
+ "checkpoint_utc": "20260913T081033Z",
  "nodes": [
   {
    "node_id": "coinbase",
