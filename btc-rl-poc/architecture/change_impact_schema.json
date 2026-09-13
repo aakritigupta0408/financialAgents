@@ -1,0 +1,19 @@
+{
+ "doc": "§35 CHANGE IMPACT DECLARATION schema. Before a material change, write architecture/change_impact.json matching this shape; the checkpoint's CHANGE_IMPACT_MATCHES_OBSERVED check (§36) then verifies the actual DAG matches the declaration (e.g. a declared-removed edge must be absent from system_dag.json), flagging ARCHITECTURE_DRIFT otherwise.",
+ "example": {
+  "change_id": "2026-09-13-wire-exact-brti-runtime",
+  "reason": "migrate runtime settlement from Coinbase-candle proxy to exact BRTI (DT-01)",
+  "nodes_added": ["runtime_brti_exact"],
+  "nodes_changed": ["runtime_settlement"],
+  "nodes_removed": [],
+  "edges_added": [{"from": "brti_exact", "to": "runtime_settlement", "why": "exact contract truth"}],
+  "edges_removed": [{"from": "brti_composite_4venue", "to": "runtime_settlement"},
+                    {"from": "runtime_settlement", "to": "paper_accounts"}],
+  "scientific_semantics_changed": true,
+  "runtime_changed": true,
+  "UI_contract_changed": false,
+  "migration_required": true,
+  "rollback": "revert to fetch_brti_composite settlement; flag off PROSPECTIVE_CAPTURE_ENABLED",
+  "tests": ["tests/test_prospective_capture.py", "tests/test_architecture_checkpoint.py"]
+ }
+}

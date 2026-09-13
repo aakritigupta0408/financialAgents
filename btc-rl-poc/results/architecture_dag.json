@@ -1,0 +1,339 @@
+{
+ "verdict": "FAIL",
+ "checkpoint_utc": "20260913T074349Z",
+ "nodes": [
+  {
+   "node_id": "coinbase",
+   "type": "DATA_SOURCE",
+   "role": "INDEPENDENT_PREDICTIVE_INPUT",
+   "path": "btc_rl/sources.py:37",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": true
+  },
+  {
+   "node_id": "kalshi_market",
+   "type": "DATA_SOURCE",
+   "role": "MARKET_PRICE_INPUT+EXECUTION_INPUT",
+   "path": "btc_rl/sources.py:223",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": true
+  },
+  {
+   "node_id": "brti_composite_4venue",
+   "type": "DATA_SOURCE",
+   "role": "CONTRACT_STATE(PROXY)",
+   "path": "btc_rl/sources.py:292",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "in-house approximation; NOT exact CF-BRTI (DT-01)"
+  },
+  {
+   "node_id": "brti_exact",
+   "type": "DATA_SOURCE",
+   "role": "CONTRACT_TRUTH",
+   "path": "data/adapters/brti.py",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "exact CF-BRTI; OFFLINE-ONLY \u2014 not yet wired to daemon (DT-01)"
+  },
+  {
+   "node_id": "okx_deribit_mempool_fng",
+   "type": "DATA_SOURCE",
+   "role": "INDEPENDENT_PREDICTIVE_INPUT",
+   "path": "btc_rl/sources.py:104-200",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": true
+  },
+  {
+   "node_id": "contract_outcomes",
+   "type": "SETTLEMENT",
+   "role": "CONTRACT_TRUTH",
+   "path": "results/contract_outcomes.jsonl",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "official Kalshi BRTI outcomes; canonical labels"
+  },
+  {
+   "node_id": "runtime_settlement",
+   "type": "SETTLEMENT",
+   "role": "CONTRACT_STATE(PROXY)",
+   "path": "btc_rl/online.py:3701",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "int(coinbase_candle_close>=strike); ~4.4% divergent from official (DT-01)"
+  },
+  {
+   "node_id": "features_live",
+   "type": "PROCESSED_FEATURE",
+   "role": "INDEPENDENT_PREDICTIVE_INPUT",
+   "path": "btc_rl/features.py",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": true,
+   "note": "PIT-clean trailing windows"
+  },
+  {
+   "node_id": "brti_decision_dataset",
+   "type": "RAW_DATASET",
+   "role": "CONTRACT_TRUTH",
+   "path": "results/brti_decision_dataset.jsonl",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true
+  },
+  {
+   "node_id": "mech_fair_brti",
+   "type": "MODEL",
+   "role": "CONTRACT_TRUTH",
+   "path": "scripts/mech_fair_brti.py",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true
+  },
+  {
+   "node_id": "oracle_frozen",
+   "type": "MODEL",
+   "role": "INDEPENDENT",
+   "path": "research/oracle/oracle_frozen.json",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "recalibrated MECH_FAIR_BRTI; no Kalshi input"
+  },
+  {
+   "node_id": "prediction_arms",
+   "type": "MODEL",
+   "role": "INDEPENDENT_PREDICTIVE_INPUT",
+   "path": "btc_rl/online.py (ctl,t2,t6,t8,t9,t10,t11)",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false
+  },
+  {
+   "node_id": "probability_arms",
+   "type": "MODEL_OUTPUT",
+   "role": "INDEPENDENT+MARKET_AWARE",
+   "path": "btc_rl/online.py (kb..kb9)",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "kb2 = deliverable; kb/kb4/kb5/kb6/kb8 market-aware challengers"
+  },
+  {
+   "node_id": "fail_closed_gate",
+   "type": "LOCK_POLICY",
+   "role": "MONITORING_ONLY",
+   "path": "btc_rl/online.py:535",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false
+  },
+  {
+   "node_id": "traders",
+   "type": "TRADER",
+   "role": "EXECUTION_INPUT",
+   "path": "btc_rl/online.py:320-475",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "pt(control),pt3,pt6(shadow),kb,pb active; pt2/4/5/7/8 retired"
+  },
+  {
+   "node_id": "exec_timing",
+   "type": "EXECUTION_POLICY",
+   "role": "EXECUTION_INPUT",
+   "path": "btc_rl/exec_timing.py",
+   "status": "REGISTERED_OFFLINE",
+   "runtime_reachable": false,
+   "research_reachable": true
+  },
+  {
+   "node_id": "paper_accounts",
+   "type": "PAPER_ACCOUNT",
+   "role": "MONITORING_ONLY",
+   "path": "btc_rl/online.py:3350-3560",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false
+  },
+  {
+   "node_id": "run_audit",
+   "type": "METRIC",
+   "role": "MONITORING_ONLY",
+   "path": "scripts/run_audit.py",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": true
+  },
+  {
+   "node_id": "publisher",
+   "type": "API_RESOURCE",
+   "role": "MONITORING_ONLY",
+   "path": "scripts/publish_dashboard.py",
+   "status": "ACTIVE",
+   "runtime_reachable": true,
+   "research_reachable": false
+  },
+  {
+   "node_id": "ui_console_5page",
+   "type": "UI_VIEW",
+   "role": "MONITORING_ONLY",
+   "path": "site/{home,traders,tiers,features,health,perf}.html",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "5-page IA, intended HOME+ORACLE (DT-07)"
+  },
+  {
+   "node_id": "model_registry",
+   "type": "REGISTRY",
+   "role": "MONITORING_ONLY",
+   "path": "results/model_registry.json",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true
+  },
+  {
+   "node_id": "arch_checkpoint",
+   "type": "REGISTRY",
+   "role": "MONITORING_ONLY",
+   "path": "scripts/architecture_checkpoint.py",
+   "status": "ACTIVE",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "installed 2026-09-13"
+  }
+ ],
+ "edges": [
+  {
+   "from": "coinbase",
+   "to": "features_live",
+   "type": "DATA_FLOW",
+   "why": "microstructure/price features"
+  },
+  {
+   "from": "brti_composite_4venue",
+   "to": "runtime_settlement",
+   "type": "DATA_FLOW",
+   "why": "DRIFT: runtime contract state uses proxy not exact BRTI"
+  },
+  {
+   "from": "kalshi_market",
+   "to": "traders",
+   "type": "DATA_FLOW",
+   "why": "executable price + valuation"
+  },
+  {
+   "from": "kalshi_market",
+   "to": "probability_arms",
+   "type": "FEATURE_LINEAGE",
+   "why": "ALLOWED: market-aware challengers only (kb/kb4/kb6/kb8, t10)"
+  },
+  {
+   "from": "brti_exact",
+   "to": "brti_decision_dataset",
+   "type": "DATA_FLOW",
+   "why": "backfilled exact contract state"
+  },
+  {
+   "from": "brti_decision_dataset",
+   "to": "mech_fair_brti",
+   "type": "MODEL_DEPENDENCY",
+   "why": "mechanics fair value"
+  },
+  {
+   "from": "mech_fair_brti",
+   "to": "oracle_frozen",
+   "type": "MODEL_DEPENDENCY",
+   "why": "recalibration freeze"
+  },
+  {
+   "from": "contract_outcomes",
+   "to": "mech_fair_brti",
+   "type": "FEATURE_LINEAGE",
+   "why": "official labels (as target, not feature)"
+  },
+  {
+   "from": "features_live",
+   "to": "prediction_arms",
+   "type": "FEATURE_LINEAGE",
+   "why": "bandit/linear contexts"
+  },
+  {
+   "from": "prediction_arms",
+   "to": "probability_arms",
+   "type": "MODEL_DEPENDENCY",
+   "why": "p_up -> binary prob heads"
+  },
+  {
+   "from": "probability_arms",
+   "to": "traders",
+   "type": "CONTROL_FLOW",
+   "why": "leader signal drives paper entries"
+  },
+  {
+   "from": "traders",
+   "to": "paper_accounts",
+   "type": "DATA_FLOW",
+   "why": "stakes/payouts"
+  },
+  {
+   "from": "runtime_settlement",
+   "to": "paper_accounts",
+   "type": "DATA_FLOW",
+   "why": "DRIFT: settles P&L on proxy outcome"
+  },
+  {
+   "from": "paper_accounts",
+   "to": "run_audit",
+   "type": "MONITORING_DEPENDENCY",
+   "why": "recompute health from ledgers"
+  },
+  {
+   "from": "run_audit",
+   "to": "publisher",
+   "type": "PUBLICATION_DEPENDENCY",
+   "why": "audit_report.json shipped"
+  },
+  {
+   "from": "publisher",
+   "to": "ui_console_5page",
+   "type": "UI_DEPENDENCY",
+   "why": "renders results/*.json"
+  },
+  {
+   "from": "oracle_frozen",
+   "to": "prospective_capture",
+   "type": "MODEL_DEPENDENCY",
+   "why": "live p_oracle (offline until PROSPECTIVE_CAPTURE_ENABLED)"
+  }
+ ],
+ "edges_that_should_be_removed_but_still_exist": [
+  {
+   "from": "brti_composite_4venue",
+   "to": "runtime_settlement",
+   "should_be": "brti_exact -> runtime_settlement",
+   "thread": "DT-01"
+  },
+  {
+   "from": "runtime_settlement(coinbase_candle)",
+   "to": "paper_accounts",
+   "should_be": "official BRTI outcome -> paper_accounts",
+   "thread": "DT-01"
+  },
+  {
+   "from": "kalshi_terminal_quote",
+   "to": "t05_gateb_label",
+   "should_be": "contract_outcomes.exact_yes -> label",
+   "thread": "DT-02"
+  }
+ ],
+ "dangling_thread_count": 13
+}

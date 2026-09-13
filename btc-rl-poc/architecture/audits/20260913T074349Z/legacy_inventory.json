@@ -1,0 +1,43 @@
+{
+ "legacy_filters": {
+  "active": [
+   "FREEZE_NEW_ENTRIES(fail-closed)",
+   "_pt_leader eligibility(PT_MIN_REC=5/PT_LAST_N=10)",
+   "mins_left<=12 envelope",
+   "PT_TAU=0.62",
+   "PT3_TAU=0.77",
+   "ask band 5-80c",
+   "KB_BET_EDGE_C=3",
+   "PT6_MIN_EDGE_C=10(shadow)",
+   "SPRT VetoTreatment"
+  ],
+  "dormant": [
+   "REGIME_FLOOR=0.62(only pt8, retired)",
+   "PT4/PT7/PT8 gates(retired traders)",
+   "KNIFE_BAND, t_cheap, maker limits(retired treatments)"
+  ],
+  "note": "all hard-coded consts (not registered config) except SPRT edge/min_n persisted overrides"
+ },
+ "retired_models": [
+  "kb6(fast-info falsified)",
+  "kbf(T-3min)"
+ ],
+ "retired_traders": [
+  "pt2(Ladder)",
+  "pt4(Gambler)",
+  "pt5(Saver)",
+  "pt7(Patient/maker)",
+  "pt8(Ideal)"
+ ],
+ "retired_treatments": [
+  "t_cal",
+  "t_knife",
+  "t_cheap",
+  "t_both",
+  "t_fshare",
+  "t_fs_reg",
+  "t_limit",
+  "t_evlead",
+  "t_limit_reg"
+ ]
+}

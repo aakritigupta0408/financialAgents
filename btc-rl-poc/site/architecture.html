@@ -1,0 +1,91 @@
+<!-- §37 Architecture DAG — developer drill-down for debugging lineage. Reads the
+     shippable results/architecture_dag.json emitted by scripts/architecture_checkpoint.py.
+     Compact by design: filter by domain, drift edges surfaced first. -->
+<link rel="stylesheet" href="theme.css">
+<style>
+  :root{--good:#1a7f37;--warn:#9a6700;--bad:#cf222e;--ink:#1f2328;--muted:#656d76;
+        --line:#d0d7de;--card:#ffffff;--bg:#f6f8fa}
+  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+    --ink:#e6edf3;--muted:#8b949e;--line:#30363d;--card:#161b22;--bg:#0d1117;
+    --good:#3fb950;--warn:#d29922;--bad:#f85149}}
+  .arch{max-width:1080px;margin:0 auto;padding:18px;color:var(--ink);background:var(--bg);
+        font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  .arch h1{font-size:20px;margin:0 0 4px} .sub{color:var(--muted);margin:0 0 14px}
+  .verdict{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:600;font-size:12px}
+  .v-FAIL{background:rgba(207,34,46,.12);color:var(--bad)}
+  .v-PASS{background:rgba(26,127,55,.12);color:var(--good)}
+  .v-PASS_WITH_WATCH{background:rgba(154,103,0,.12);color:var(--warn)}
+  .filters{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+  .filters button{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:4px 12px;border-radius:999px;cursor:pointer;font-size:13px}
+  .filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .drift{border:1px solid var(--bad);border-radius:10px;padding:10px 14px;margin:10px 0;
+    background:rgba(207,34,46,.05)}
+  .drift h3{margin:0 0 6px;color:var(--bad);font-size:14px}
+  .drift div{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;margin:3px 0}
+  table{width:100%;border-collapse:collapse;margin-top:8px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  td.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
+  .pill{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);white-space:nowrap}
+  .r-CONTRACT_TRUTH{color:var(--good);border-color:var(--good)}
+  .r-DRIFT{color:var(--bad);border-color:var(--bad)}
+  .off{opacity:.28}
+  .prov{color:var(--muted);font-size:12px;margin-top:16px}
+</style>
+<div class="arch">
+  <h1>Architecture DAG <span id="verdict" class="verdict"></span></h1>
+  <p class="sub">Developer drill-down for lineage debugging. Source of truth:
+     <code>scripts/architecture_checkpoint.py</code> → <code>architecture/</code>.</p>
+  <div id="drift"></div>
+  <div class="filters" id="filters"></div>
+  <table><thead><tr><th>node</th><th>type</th><th>role</th><th>path</th>
+    <th>runtime</th><th>research</th><th>status</th></tr></thead>
+    <tbody id="rows"></tbody></table>
+  <div class="prov" id="prov">loading results/architecture_dag.json…</div>
+</div>
+<script>
+const DOMAINS={DATA:["DATA_SOURCE","RAW_DATASET","CONTRACT_STATE","SETTLEMENT"],
+  FEATURE:["RAW_FEATURE","PROCESSED_FEATURE"],MODEL:["MODEL","MODEL_OUTPUT","LOCK_POLICY"],
+  TRADER:["TRADER","EXECUTION_POLICY","PAPER_ACCOUNT"],
+  EXPERIMENT:["EXPERIMENT","METRIC","REGISTRY","AGENT"],UI:["UI_VIEW","API_RESOURCE"]};
+let DATA=null,active=new Set(Object.keys(DOMAINS));
+function domainOf(t){for(const d in DOMAINS)if(DOMAINS[d].includes(t))return d;return "EXPERIMENT";}
+function render(){
+  const v=document.getElementById("verdict");v.textContent=DATA.verdict||"—";
+  v.className="verdict v-"+(DATA.verdict||"PASS");
+  const drift=document.getElementById("drift");
+  const de=DATA.edges_that_should_be_removed_but_still_exist||[];
+  drift.innerHTML=de.length?('<div class="drift"><h3>⚠ Edges that should have been removed but still exist ('
+    +de.length+')</h3>'+de.map(e=>'<div>'+(e.from||'?')+' → '+(e.to||e.should_be||'?')
+    +'  <span class="pill r-DRIFT">'+(e.thread||'drift')+'</span></div>').join('')+'</div>'):'';
+  const rows=document.getElementById("rows");rows.innerHTML="";
+  (DATA.nodes||[]).slice().sort((a,b)=>domainOf(a.type).localeCompare(domainOf(b.type)))
+    .forEach(n=>{
+    const dom=domainOf(n.type),on=active.has(dom);
+    const drifted=String(n.status||"").includes("DRIFT");
+    const tr=document.createElement("tr");if(!on)tr.className="off";
+    tr.innerHTML='<td><b>'+n.node_id+'</b></td><td class="mono">'+n.type+'</td>'
+      +'<td><span class="pill '+(n.role==="CONTRACT_TRUTH"?"r-CONTRACT_TRUTH":drifted?"r-DRIFT":"")
+      +'">'+(n.role||"")+'</span></td>'
+      +'<td class="mono">'+(n.path||"")+'</td>'
+      +'<td>'+(n.runtime_reachable?"●":"○")+'</td><td>'+(n.research_reachable?"●":"○")+'</td>'
+      +'<td class="mono">'+(n.status||"")+'</td>';
+    rows.appendChild(tr);
+  });
+  document.getElementById("prov").textContent="checkpoint "+(DATA.checkpoint_utc||"?")
+    +" · "+(DATA.nodes||[]).length+" nodes · "+(DATA.dangling_thread_count||0)
+    +" dangling threads · source: results/architecture_dag.json";
+}
+function buildFilters(){
+  const f=document.getElementById("filters");
+  Object.keys(DOMAINS).forEach(d=>{const b=document.createElement("button");
+    b.textContent=d;b.className="on";b.onclick=()=>{active.has(d)?active.delete(d):active.add(d);
+      b.classList.toggle("on");render();};f.appendChild(b);});
+}
+fetch("architecture_dag.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(!d){document.getElementById("prov").textContent=
+    "results/architecture_dag.json not found — run scripts/architecture_checkpoint.py";return;}
+  DATA=d;buildFilters();render();
+}).catch(e=>{document.getElementById("prov").textContent="load error: "+e;});
+</script>

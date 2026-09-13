@@ -1,84 +1,185 @@
 {
- "doc": "Dangling-thread registry (§25). Defects found by the initial system-archaeology audit (2026-09-13), from actual code/runtime evidence across 6 domain sweeps. severity: SEV-1 blocks the checkpoint; SEV-2 material; SEV-3 debt.",
+ "doc": "Dangling-thread registry (\u00a725). Defects found by the initial system-archaeology audit (2026-09-13), from actual code/runtime evidence across 6 domain sweeps. severity: SEV-1 blocks the checkpoint; SEV-2 material; SEV-3 debt.",
  "generated_utc": "2026-09-13",
  "threads": [
-  {"id": "DT-01", "category": "RETIRED_BUT_ACTIVE", "severity": "SEV-1",
+  {
+   "id": "DT-01",
+   "category": "RETIRED_BUT_ACTIVE",
+   "severity": "SEV-1",
    "component": "btc_rl/online.py runtime contract-state + settlement",
    "reason": "Live daemon settles on a Coinbase candle close (int(settle_bar['close']>=strike), online.py:3701) and derives contract state from an in-house 4-venue 'BRTI composite' (sources.fetch_brti_composite), NOT the exact CF-BRTI index. This is the Gen-4/5 assumption the Gen-6 exact-BRTI work replaced. Runtime paper P&L is settled against labels that diverge ~4.4% from official BRTI (see research/oracle/label_rescore_result.json).",
-   "dependencies": ["data/adapters/brti.py", "btc_rl/prospective_capture.py", "results/contract_outcomes.jsonl"],
+   "dependencies": [
+    "data/adapters/brti.py",
+    "btc_rl/prospective_capture.py",
+    "results/contract_outcomes.jsonl"
+   ],
    "recommended_action": "MIGRATE: wire exact BRTI into online.py contract-state + settlement behind PROSPECTIVE_CAPTURE_ENABLED; reconcile paper accounting to official outcomes. Owner-gated (touches the running desk).",
-   "safe_to_remove": false, "detected_by": "RUNTIME_CONTRACT_TRUTH checkpoint check"},
-  {"id": "DT-02", "category": "STALE_ASSUMPTION", "severity": "SEV-2",
+   "safe_to_remove": false,
+   "detected_by": "RUNTIME_CONTRACT_TRUTH checkpoint check"
+  },
+  {
+   "id": "DT-02",
+   "category": "STALE_ASSUMPTION",
+   "severity": "SEV-2",
    "component": "scripts/t05_gateb.py",
    "reason": "settlement_map derives the binary LABEL from Kalshi's terminal quote (last captured quote per ticker), not official BRTI exact_yes. Actively regenerated (gateb_result.json, 2026-09-12).",
-   "dependencies": ["research/t05_repricing/gateb_result.json", "results/contract_outcomes.jsonl"],
+   "dependencies": [
+    "research/t05_repricing/gateb_result.json",
+    "results/contract_outcomes.jsonl"
+   ],
    "recommended_action": "Rejoin labels to contract_outcomes.jsonl (exact_yes); rescore Gate B.",
-   "safe_to_remove": false, "detected_by": "stale-assumption sweep"},
-  {"id": "DT-03", "category": "STALE_ASSUMPTION", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "stale-assumption sweep"
+  },
+  {
+   "id": "DT-03",
+   "category": "STALE_ASSUMPTION",
+   "severity": "SEV-3",
    "component": "scripts/oracle.py, scripts/mech_fair.py, scripts/oracle_residual.py",
    "reason": "Legacy Coinbase-as-contract-mechanic / Kalshi-resolution-as-label read as CURRENT within their own files though superseded by the _brti variants. mech_fair_brti.py tags its Coinbase path 'historical' but these do not.",
-   "dependencies": ["scripts/mech_fair_brti.py", "scripts/oracle_residual_brti.py"],
-   "recommended_action": "Add a HISTORICAL/SUPERSEDED header banner pointing at the _brti canonical owner. Keep as evidence (§39).",
-   "safe_to_remove": false, "detected_by": "stale-assumption sweep"},
-  {"id": "DT-04", "category": "DUPLICATED", "severity": "SEV-2",
-   "component": "Brier score — no canonical owner",
+   "dependencies": [
+    "scripts/mech_fair_brti.py",
+    "scripts/oracle_residual_brti.py"
+   ],
+   "recommended_action": "Add a HISTORICAL/SUPERSEDED header banner pointing at the _brti canonical owner. Keep as evidence (\u00a739).",
+   "safe_to_remove": false,
+   "detected_by": "stale-assumption sweep"
+  },
+  {
+   "id": "DT-04",
+   "category": "DUPLICATED",
+   "severity": "SEV-2",
+   "component": "Brier score \u2014 no canonical owner",
    "reason": "(p-y)**2 reimplemented inline in 5+ places (online.py:3704/3706/984/990/1912, emit_manifest.py:164, emit_model_observatory.py:85, agent_model_researcher.py:60-74). Highest drift risk of the formula set.",
-   "dependencies": ["btc_rl/metrics.py"],
+   "dependencies": [
+    "btc_rl/metrics.py"
+   ],
    "recommended_action": "Add metrics.brier() canonical owner; migrate consumers incrementally.",
-   "safe_to_remove": false, "detected_by": "duplicated-logic sweep"},
-  {"id": "DT-05", "category": "DUPLICATED", "severity": "SEV-2",
-   "component": "Kalshi fee — ~12 inline copies, ceil/float drift",
+   "safe_to_remove": false,
+   "detected_by": "duplicated-logic sweep"
+  },
+  {
+   "id": "DT-05",
+   "category": "DUPLICATED",
+   "severity": "SEV-2",
+   "component": "Kalshi fee \u2014 ~12 inline copies, ceil/float drift",
    "reason": "7*p*(1-p) reimplemented ~12x; some ceil, some float; disagreement_edge.py:47 uses it as a dollar fraction. A prior fee-rounding drift already caused $2,355 phantom fees (online.py:605-615).",
-   "dependencies": ["btc_rl/metrics.py:108 kalshi_fee_c", "btc_rl/online.py:605 _order_fee_c"],
+   "dependencies": [
+    "btc_rl/metrics.py:108 kalshi_fee_c",
+    "btc_rl/online.py:605 _order_fee_c"
+   ],
    "recommended_action": "Route all fee math through metrics.kalshi_fee_c (per-contract) / online._order_fee_c (per-order); fix disagreement_edge unit fork.",
-   "safe_to_remove": false, "detected_by": "duplicated-logic sweep"},
-  {"id": "DT-06", "category": "DUPLICATED", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "duplicated-logic sweep"
+  },
+  {
+   "id": "DT-06",
+   "category": "DUPLICATED",
+   "severity": "SEV-3",
    "component": "BSS / drawdown / EV inline reimplementations",
    "reason": "metrics.py owns brier_skill/max_drawdown/ but emit_model_observatory.py:109 (BSS), eod_exec_selection.py:77 + eval_engine.py:145 + run_audit.py:85 (drawdown), and several inline EV calcs bypass the owners.",
-   "dependencies": ["btc_rl/metrics.py", "btc_rl/treatments.py:278 bet_ev"],
+   "dependencies": [
+    "btc_rl/metrics.py",
+    "btc_rl/treatments.py:278 bet_ev"
+   ],
    "recommended_action": "Migrate inline copies to the metrics/treatments owners.",
-   "safe_to_remove": false, "detected_by": "duplicated-logic sweep"},
-  {"id": "DT-07", "category": "STALE_UI", "severity": "SEV-2",
+   "safe_to_remove": false,
+   "detected_by": "duplicated-logic sweep"
+  },
+  {
+   "id": "DT-07",
+   "category": "STALE_UI",
+   "severity": "SEV-2",
    "component": "site/nav.js + publish_dashboard.py PAGES",
    "reason": "Shipped IA is a 5-page research console (Home/Traders/Tiers/Data/Watchtower), not the intended HOME+ORACLE (with Oracle sub-sections). nav.js carries 3 conflicting historical IA directives.",
-   "dependencies": ["site/home.html", "site/traders.html", "site/tiers.html", "site/features.html", "site/health.html", "site/perf.html"],
+   "dependencies": [
+    "site/home.html",
+    "site/traders.html",
+    "site/tiers.html",
+    "site/features.html",
+    "site/health.html",
+    "site/perf.html"
+   ],
    "recommended_action": "Collapse to HOME + ORACLE(2 top-level) with Oracle sub-nav (Input Data/Feature Processing/Modelling/Output Processing/Sevs&Tickets/Graveyard); map existing pages per architecture_diff.",
-   "safe_to_remove": false, "detected_by": "UI sweep"},
-  {"id": "DT-08", "category": "STALE_UI", "severity": "SEV-2",
+   "safe_to_remove": false,
+   "detected_by": "UI sweep"
+  },
+  {
+   "id": "DT-08",
+   "category": "STALE_UI",
+   "severity": "SEV-2",
    "component": "In-browser scientific-metric computation",
    "reason": "traders.html:124, perf.html:102, tiers.html:96, health.html compute PnL/EV/Brier/BSS/CIs in JS from raw *_trades.jsonl instead of reading backend summaries. features.html is the correct read-only counter-example.",
-   "dependencies": ["results/pm_snapshot.json", "results/metrics.json"],
+   "dependencies": [
+    "results/pm_snapshot.json",
+    "results/metrics.json"
+   ],
    "recommended_action": "Move Brier/EV/PnL/CI computation server-side; UI renders pre-computed values (UI_TO_CANONICAL_CALC forbidden edge).",
-   "safe_to_remove": false, "detected_by": "UI sweep"},
-  {"id": "DT-09", "category": "DEAD_BUT_REACHABLE", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "UI sweep"
+  },
+  {
+   "id": "DT-09",
+   "category": "DEAD_BUT_REACHABLE",
+   "severity": "SEV-3",
    "component": "~24 orphan site/*.html pages",
    "reason": "index.html, home_classic.html, museum.html, archive.html, models.html, universe.html, play.html, paper.html, backend.html, sev0.html, experiment_review.html, ... are unlinked in nav AND pruned by publish_dashboard copy_bundle, but remain in-tree carrying stale Coinbase/BRTI-composite/wait-for-dip narrative.",
    "dependencies": [],
-   "recommended_action": "Delete or move to an explicit site/_archive/ (git preserves history, §21/§39). DELETE_SAFE for pages the publisher already prunes.",
-   "safe_to_remove": true, "detected_by": "UI sweep"},
-  {"id": "DT-10", "category": "ORPHANED", "severity": "SEV-3",
+   "recommended_action": "Delete or move to an explicit site/_archive/ (git preserves history, \u00a721/\u00a739). DELETE_SAFE for pages the publisher already prunes.",
+   "safe_to_remove": true,
+   "detected_by": "UI sweep"
+  },
+  {
+   "id": "DT-10",
+   "category": "ORPHANED",
+   "severity": "SEV-3",
    "component": "Legacy batch model artifacts",
-   "reason": "results/dqn_h{1,5,15,30}.pt, lstm_h{1,5,15,30}.pt, q_table.json, linear_q.json — pre-online L1/L2/L3 checkpoints (Aug 20), superseded by *_t8/t9/_online artifacts, NOT in model_registry. But checksummed in build_manifest.json.",
-   "dependencies": ["results/build_manifest.json"],
+   "reason": "results/dqn_h{1,5,15,30}.pt, lstm_h{1,5,15,30}.pt, q_table.json, linear_q.json \u2014 pre-online L1/L2/L3 checkpoints (Aug 20), superseded by *_t8/t9/_online artifacts, NOT in model_registry. But checksummed in build_manifest.json.",
+   "dependencies": [
+    "results/build_manifest.json"
+   ],
    "recommended_action": "Classify HISTORICAL_ONLY; do not delete while build_manifest checksums them. Prune from manifest first if removal desired.",
-   "safe_to_remove": false, "detected_by": "inventory sweep"},
-  {"id": "DT-11", "category": "ORPHANED", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "inventory sweep"
+  },
+  {
+   "id": "DT-11",
+   "category": "ORPHANED",
+   "severity": "SEV-3",
    "component": "orphan feature 'price'; retired arm kb6 artifact on disk; btc_rl/live.py; ticks.py capture",
    "reason": "features 'price' never enters any feature vector; kb6 tombstoned but kb6_logit.json remains; btc_rl/live.py is DEPRECATED Gen-1 (unscheduled); results/ticks.jsonl captured but 'no model consumes it yet'.",
    "dependencies": [],
    "recommended_action": "Document as known-orphans; live.py -> add DEPRECATED header (already present); ticks capture is intentional forward-investment (keep, labelled).",
-   "safe_to_remove": false, "detected_by": "inventory + runtime sweep"},
-  {"id": "DT-12", "category": "LOOKAHEAD_RISK", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "inventory + runtime sweep"
+  },
+  {
+   "id": "DT-12",
+   "category": "LOOKAHEAD_RISK",
+   "severity": "SEV-3",
    "component": "required_remaining_average / settle_remaining (scripts/brti_backfill.py:92-96)",
-   "reason": "Uses n_c = total sample count over the full settlement window [close-60,close), which includes post-decision samples; the exact future cadence/count is not strictly known at a decision inside the final 60s. Small (cadence ~constant) but not strictly PIT. Propagates into mech_fair_brti / oracle_residual_brti via the §8 override.",
-   "dependencies": ["scripts/mech_fair_brti.py", "scripts/oracle_residual_brti.py"],
+   "reason": "Uses n_c = total sample count over the full settlement window [close-60,close), which includes post-decision samples; the exact future cadence/count is not strictly known at a decision inside the final 60s. Small (cadence ~constant) but not strictly PIT. Propagates into mech_fair_brti / oracle_residual_brti via the \u00a78 override.",
+   "dependencies": [
+    "scripts/mech_fair_brti.py",
+    "scripts/oracle_residual_brti.py"
+   ],
    "recommended_action": "In the final 60s, estimate remaining count from elapsed cadence (samples_seen / elapsed) rather than the realized n_c; or restrict the settlement-aware override to counts observable at decision time.",
-   "safe_to_remove": false, "detected_by": "PIT/leakage sweep"},
-  {"id": "DT-13", "category": "FORBIDDEN_EDGE", "severity": "SEV-3",
+   "safe_to_remove": false,
+   "detected_by": "PIT/leakage sweep"
+  },
+  {
+   "id": "DT-13",
+   "category": "FORBIDDEN_EDGE",
+   "severity": "SEV-3",
    "component": "Oracle independence rests on hardcoded FEATS lists",
    "reason": "The independent-oracle isolation is enforced only by FEATS lists selecting cb_*-only columns; the source datasets (dataset.jsonl, brti_decision_dataset.jsonl) carry a k_prob column. Adding 'k_prob' to any FEATS list would silently convert an oracle to market-dependent.",
-   "dependencies": ["scripts/oracle_residual_brti.py", "scripts/oracle_residual.py"],
+   "dependencies": [
+    "scripts/oracle_residual_brti.py",
+    "scripts/oracle_residual.py"
+   ],
    "recommended_action": "Add a checkpoint assertion that no oracle FEATS list contains a Kalshi token (extend FORBIDDEN_MARKET_TO_ORACLE).",
-   "safe_to_remove": false, "detected_by": "market-info sweep"}
+   "safe_to_remove": false,
+   "detected_by": "market-info sweep"
+  }
  ]
 }

@@ -156,6 +156,53 @@ def check_current_truth():
             {"regenerated": r.returncode == 0, "unknown_core_fields": unknown_core})
 
 
+def check_guardrails():
+    """§24 — PAPER/SIMULATION/REAL-MONEY-DISABLED must hold at runtime boundaries
+    and must NOT alter labels/features/oracle/experiment stats."""
+    std = ROOT / "REAL_MONEY_EQUIVALENT_STANDARD.yaml"
+    online = _read("btc_rl/online.py")
+    paper = bool(re.search(r"paper|simulat", online, re.I))
+    # a real-money execution switch must not be enabled
+    live_money = bool(re.search(r"REAL_MONEY_ENABLED\s*=\s*True|LIVE_TRADING\s*=\s*True", online))
+    ok = std.exists() and paper and not live_money
+    return ("PASS" if ok else "FAIL",
+            {"standard_present": std.exists(), "paper_markers": paper,
+             "real_money_enabled": live_money,
+             "note": "paper/sim only; real money disabled; guardrails must not touch "
+                     "labels/features/oracle"})
+
+
+def check_incident_rules():
+    """§23 — incident monitoring must match current architecture; a BRTI-health
+    alert is required now that BRTI is contract-critical."""
+    health_files = [p for p in ("results/data_health.json", "results/brti_health.json",
+                                "results/incidents.jsonl", "results/invariants.json")
+                    if (ROOT / p).exists()]
+    brti_monitored = (ROOT / "results/brti_health.json").exists()
+    return ("PASS" if brti_monitored else "WATCH",
+            {"monitoring_present": health_files, "brti_health_alert": brti_monitored,
+             "note": "missing a runtime BRTI-health alert is WATCH until exact BRTI is "
+                     "wired into the daemon (DT-01)"})
+
+
+def check_change_impact():
+    """§35/§36 — if a change-impact declaration exists, verify observed state matches
+    it (observed-vs-declared drift). Absent declaration = nothing to verify = PASS."""
+    decl = _jload("architecture/change_impact.json")
+    if not decl:
+        return "PASS", {"declaration": None, "note": "no pending change_impact.json to verify"}
+    dag = _jload("architecture/system_dag.json") or {}
+    edge_keys = {(e["from"], e["to"]) for e in dag.get("edges", [])}
+    drift = []
+    for e in decl.get("edges_removed", []):
+        key = (e.get("from"), e.get("to"))
+        if key in edge_keys:
+            drift.append({"declared_removed": key, "still_present_in_dag": True})
+    return ("FAIL" if drift else "PASS",
+            {"change_id": decl.get("change_id"), "observed_vs_declared_drift": drift,
+             "note": "declared-removed edges must be absent from system_dag.json"})
+
+
 CHECKS = [
     ("FORBIDDEN_MARKET_TO_ORACLE", check_forbidden_market_to_oracle),
     ("FORBIDDEN_TESTLABEL_FIT", check_testlabel_fit),
@@ -163,7 +210,61 @@ CHECKS = [
     ("RUNTIME_CONTRACT_TRUTH", check_runtime_contract_truth),
     ("REGISTRY_RECONCILED", check_registry_reconciled),
     ("CURRENT_TRUTH_FRESH", check_current_truth),
+    ("PRODUCT_GUARDRAILS", check_guardrails),
+    ("INCIDENT_RULES_MATCH_ARCH", check_incident_rules),
+    ("CHANGE_IMPACT_MATCHES_OBSERVED", check_change_impact),
 ]
+
+
+def emit_artifacts(outdir):
+    """§32 — emit the full required checkpoint file set into the audit dir."""
+    inv = _jload("architecture/inventories.json") or {}
+    ct = _jload("research/current_truth.json") or {}
+    # split inventories
+    _dump(outdir / "feature_inventory.json", inv.get("features"))
+    _dump(outdir / "model_inventory.json", inv.get("models"))
+    _dump(outdir / "trader_inventory.json", inv.get("traders"))
+    _dump(outdir / "experiment_inventory.json", inv.get("experiments"))
+    _dump(outdir / "legacy_inventory.json",
+          {"legacy_filters": inv.get("legacy_filters"),
+           "retired_models": (inv.get("models") or {}).get("retired_in_code"),
+           "retired_traders": (inv.get("traders") or {}).get("retired"),
+           "retired_treatments": (inv.get("experiments") or {}).get("retired_treatments")})
+    # machine-readable architecture diff (companion to the .md)
+    dag = _jload("architecture/system_dag.json") or {}
+    _dump(outdir / "architecture_diff.json", {
+        "edges_that_should_be_removed_but_still_exist":
+            dag.get("edges_that_should_be_removed_but_still_exist", []),
+        "changed_semantics_source": "architecture/architecture_diff.md",
+        "drift_nodes": [n for n in dag.get("nodes", []) if "DRIFT" in str(n.get("status"))]})
+    # §16/§38 offline+online scorecard (kept separate, never combined)
+    _dump(outdir / "offline_online_scorecard.json", {
+        "note": "offline and online evidence kept separate (§16); highlight OFFLINE-WINNER/ONLINE-LOSER",
+        "oracle_offline": {
+            "MECH_FAIR_BRTI": 0.1989, "MECH_FAIR_BRTI_recalibrated": 0.1912,
+            "KALSHI": 0.1878, "disagreement_edge": "PROMISING_PENDING_PROSPECTIVE"},
+        "runtime_online": {
+            "settled_windows": (ct.get("settlement_counters") or {}),
+            "traders": ct.get("traders"), "service_health": ct.get("service_health"),
+            "caveat": "online settlement on PROXY (Coinbase candle), not exact BRTI (DT-01)"}})
+    # copy curated graph/thread/edge/generation artifacts
+    for name in ("system_dag.json", "dangling_threads.json", "forbidden_edges.json",
+                 "generations.json"):
+        src = _jload(f"architecture/{name}")
+        if src is not None:
+            _dump(outdir / name, src)
+    # §37 — shippable compact DAG for the developer drill-down UI (results/ is published)
+    latest = _jload("architecture/latest.json") or {}
+    _dump(ROOT / "results" / "architecture_dag.json", {
+        "verdict": latest.get("verdict"), "checkpoint_utc": latest.get("checkpoint_utc"),
+        "nodes": dag.get("nodes", []), "edges": dag.get("edges", []),
+        "edges_that_should_be_removed_but_still_exist":
+            dag.get("edges_that_should_be_removed_but_still_exist", []),
+        "dangling_thread_count": len((_jload("architecture/dangling_threads.json") or {}).get("threads", []))})
+
+
+def _dump(path, obj):
+    path.write_text(json.dumps(obj, indent=1))
 
 
 def governance(bump_reason=None):
@@ -208,6 +309,7 @@ def main():
               "note": "machine-adjudicated architecture checkpoint (scripts/architecture_checkpoint.py)"}
     (outdir / "checkpoint.json").write_text(json.dumps(report, indent=1))
     (ARCH / "latest.json").write_text(json.dumps(report, indent=1))
+    emit_artifacts(outdir)                       # §32 full required file set
     print(f"ARCHITECTURE CHECKPOINT — {verdict}   ({stamp})")
     for name, r in results.items():
         print(f"  {r['status']:14s} {name}")

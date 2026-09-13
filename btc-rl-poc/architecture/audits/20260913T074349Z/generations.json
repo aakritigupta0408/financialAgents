@@ -1,0 +1,86 @@
+{
+ "doc": "Architecture-change timeline (\u00a71). Each generation records what the system believed and where the semantics changed in code. HISTORICAL generations may survive only as evidence/rollback; CURRENT is the intended architecture.",
+ "generations": [
+  {
+   "gen": 1,
+   "name": "GENERIC_BTC_BINARY_FORECASTING",
+   "arch": "BTC data -> features -> UP/DOWN model -> confidence -> trader",
+   "status": "HISTORICAL",
+   "surviving_code": [
+    "btc_rl/live.py (DEPRECATED, unscheduled)",
+    "results/q_table*.json"
+   ],
+   "note": "predicted integer BTC price at fixed clock slots from Coinbase candles"
+  },
+  {
+   "gen": 2,
+   "name": "MARKET_RELATIVE_MULTI_MODEL",
+   "arch": "add market-prob comparison, kb model families, traders, calibration, edge gates, RL, execution experiments",
+   "status": "PARTIALLY_ACTIVE",
+   "surviving_code": [
+    "btc_rl/agents.py",
+    "btc_rl/treatments.py",
+    "results/kalshi_binary_log.jsonl",
+    "results/kb_bets.jsonl"
+   ]
+  },
+  {
+   "gen": 3,
+   "name": "EXECUTION_RESEARCH",
+   "arch": "T0.5 Kalshi repricing predictability; separate settlement prediction from execution; wait-for-dip falsified",
+   "status": "ACTIVE_EVIDENCE",
+   "surviving_code": [
+    "btc_rl/exec_timing.py",
+    "EXEC_TIMING_SPEC.yaml",
+    "research/t05_repricing/"
+   ]
+  },
+  {
+   "gen": 4,
+   "name": "CONTRACT_MECHANICS_DISCOVERY",
+   "arch": "target = opening BRTI 60s avg; settlement = closing BRTI 60s avg; YES iff close>=open",
+   "status": "ACTIVE",
+   "surviving_code": [
+    "research/contract_specs/KXBTC15M_2026-09.json",
+    "scripts/fetch_contract_specs.py",
+    "results/contract_outcomes.jsonl"
+   ]
+  },
+  {
+   "gen": 5,
+   "name": "LABEL_CORRECTION",
+   "arch": "Coinbase proxy != settlement truth; ~4.5% label divergence; official BRTI outcomes canonical",
+   "status": "ACTIVE",
+   "surviving_code": [
+    "scripts/label_audit.py",
+    "research/label_audit.json",
+    "scripts/rescore_labels.py"
+   ]
+  },
+  {
+   "gen": 6,
+   "name": "EXACT_BRTI",
+   "arch": "authenticated live+historical BRTI; reconstruction parity; exact benchmark usable as contract truth",
+   "status": "CURRENT",
+   "surviving_code": [
+    "data/adapters/brti.py",
+    "scripts/brti_backfill.py",
+    "scripts/brti_parity.py",
+    "results/brti_decision_dataset.jsonl"
+   ]
+  },
+  {
+   "gen": 7,
+   "name": "CURRENT_INTENDED",
+   "arch": "Exact BRTI + exact rule -> ContractState -> MECH_FAIR_BRTI -> Independent delta -> Independent Oracle -> Selective Lock -> Kalshi valuation -> T0.5 execution -> Trader -> Paper account -> Exact settlement -> Offline/Online eval -> A/B -> Promotion/Rollback -> HOME+ORACLE",
+   "status": "CURRENT_INTENDED",
+   "surviving_code": [
+    "scripts/mech_fair_brti.py",
+    "scripts/mech_recalibration.py",
+    "scripts/freeze_oracle.py",
+    "research/oracle/oracle_frozen.json",
+    "btc_rl/prospective_capture.py"
+   ]
+  }
+ ]
+}

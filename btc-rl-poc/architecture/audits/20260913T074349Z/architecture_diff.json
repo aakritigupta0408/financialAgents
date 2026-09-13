@@ -1,0 +1,55 @@
+{
+ "edges_that_should_be_removed_but_still_exist": [
+  {
+   "from": "brti_composite_4venue",
+   "to": "runtime_settlement",
+   "should_be": "brti_exact -> runtime_settlement",
+   "thread": "DT-01"
+  },
+  {
+   "from": "runtime_settlement(coinbase_candle)",
+   "to": "paper_accounts",
+   "should_be": "official BRTI outcome -> paper_accounts",
+   "thread": "DT-01"
+  },
+  {
+   "from": "kalshi_terminal_quote",
+   "to": "t05_gateb_label",
+   "should_be": "contract_outcomes.exact_yes -> label",
+   "thread": "DT-02"
+  }
+ ],
+ "changed_semantics_source": "architecture/architecture_diff.md",
+ "drift_nodes": [
+  {
+   "node_id": "brti_composite_4venue",
+   "type": "DATA_SOURCE",
+   "role": "CONTRACT_STATE(PROXY)",
+   "path": "btc_rl/sources.py:292",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "in-house approximation; NOT exact CF-BRTI (DT-01)"
+  },
+  {
+   "node_id": "runtime_settlement",
+   "type": "SETTLEMENT",
+   "role": "CONTRACT_STATE(PROXY)",
+   "path": "btc_rl/online.py:3701",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "int(coinbase_candle_close>=strike); ~4.4% divergent from official (DT-01)"
+  },
+  {
+   "node_id": "ui_console_5page",
+   "type": "UI_VIEW",
+   "role": "MONITORING_ONLY",
+   "path": "site/{home,traders,tiers,features,health,perf}.html",
+   "status": "ACTIVE_DRIFT",
+   "runtime_reachable": true,
+   "research_reachable": false,
+   "note": "5-page IA, intended HOME+ORACLE (DT-07)"
+  }
+ ]
+}

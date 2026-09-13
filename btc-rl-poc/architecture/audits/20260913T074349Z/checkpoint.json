@@ -1,5 +1,5 @@
 {
- "checkpoint_utc": "20260913T024010Z",
+ "checkpoint_utc": "20260913T074349Z",
  "verdict": "FAIL",
  "checks": {
   "FORBIDDEN_MARKET_TO_ORACLE": {
@@ -37,6 +37,29 @@
    "status": "PASS",
    "regenerated": true,
    "unknown_core_fields": []
+  },
+  "PRODUCT_GUARDRAILS": {
+   "status": "PASS",
+   "standard_present": true,
+   "paper_markers": true,
+   "real_money_enabled": false,
+   "note": "paper/sim only; real money disabled; guardrails must not touch labels/features/oracle"
+  },
+  "INCIDENT_RULES_MATCH_ARCH": {
+   "status": "PASS",
+   "monitoring_present": [
+    "results/data_health.json",
+    "results/brti_health.json",
+    "results/incidents.jsonl",
+    "results/invariants.json"
+   ],
+   "brti_health_alert": true,
+   "note": "missing a runtime BRTI-health alert is WATCH until exact BRTI is wired into the daemon (DT-01)"
+  },
+  "CHANGE_IMPACT_MATCHES_OBSERVED": {
+   "status": "PASS",
+   "declaration": null,
+   "note": "no pending change_impact.json to verify"
   }
  },
  "material_change_counter": 0,

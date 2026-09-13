@@ -1,0 +1,25 @@
+{
+ "owner": "btc_rl/features.py",
+ "active_families": [
+  "base feature_vector(10)",
+  "tech_feature_vector(8)",
+  "trend_feature_vector",
+  "live_feature_vector(5: funding/basis/disp/gap/fee)",
+  "book_feature_vector(2)",
+  "llm_feature_vector(3)",
+  "ofi_feature_vector(4)",
+  "kalshi_feature_vector(4, t10 only)",
+  "kb_logit_features(24)",
+  "seq/LSTM ret_seq(60)"
+ ],
+ "orphans": [
+  "price (never enters any feature vector)"
+ ],
+ "intentional_dups": [
+  "rsi_14, ema_dist duplicated in feature_vector + tech_feature_vector (documented)"
+ ],
+ "frequently_neutral": [
+  "disp_bp, gap_bp (None unless BRTI composite present)"
+ ],
+ "pit_status": "PASS (trailing windows ending at decision bar; discretize thresholds fixed)"
+}

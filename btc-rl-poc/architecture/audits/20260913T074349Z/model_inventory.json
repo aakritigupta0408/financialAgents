@@ -1,0 +1,43 @@
+{
+ "owner": "results/model_registry.json (17 entries, Prediction->Probability->Decision planes)",
+ "prediction": [
+  "ctl(tabular-Q control)",
+  "t2/t6/t10/t11(LinUCB)",
+  "t7(linear-Q, mostly retired)",
+  "t8(distributional MLP)",
+  "t9(LSTM)",
+  "z-bridge(formula)"
+ ],
+ "probability": [
+  "kb(frozen control)",
+  "kb2(market-anchored, THE deliverable, ~96% market echo)",
+  "kb3(online logit)",
+  "kb4(stack)",
+  "kb5(EV player)",
+  "kb7(Chronos-Bolt)",
+  "kb8(log-opinion pool, frequent leader)",
+  "kb9(TimesFM)",
+  "M1-platt(shadow calibrator)"
+ ],
+ "decision": [
+  "pt6-mle(shadow edge logit)"
+ ],
+ "retired_in_code": [
+  "kb6(fast-info falsified)",
+  "kbf(T-3min)"
+ ],
+ "retired_per_horizon": [
+  "t7-h5",
+  "t7-h30",
+  "t6-h5",
+  "t8-h30",
+  "t9-h5"
+ ],
+ "legacy_batch_artifacts_unregistered": [
+  "dqn_h{1,5,15,30}.pt",
+  "lstm_h{1,5,15,30}.pt",
+  "q_table.json",
+  "linear_q.json"
+ ],
+ "complexity_budget_note": "prediction+probability arm count is large; kb2 is the single deliverable; treat kb3/kb4/kb5/kb8 as active challengers, rest evidence/shadow"
+}

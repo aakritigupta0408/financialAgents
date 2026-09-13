@@ -1,0 +1,123 @@
+{
+ "note": "offline and online evidence kept separate (\u00a716); highlight OFFLINE-WINNER/ONLINE-LOSER",
+ "oracle_offline": {
+  "MECH_FAIR_BRTI": 0.1989,
+  "MECH_FAIR_BRTI_recalibrated": 0.1912,
+  "KALSHI": 0.1878,
+  "disagreement_edge": "PROMISING_PENDING_PROSPECTIVE"
+ },
+ "runtime_online": {
+  "settled_windows": {
+   "settled_windows": 19900,
+   "kb_log_rows": 20000
+  },
+  "traders": {
+   "pt": {
+    "n_resolved": 843,
+    "n_skipped": 0,
+    "total_pnl_c": -96606,
+    "realized_ev_per_1": -1.6558,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 3100,
+    "current_action": "OPEN",
+    "rows_total": 844
+   },
+   "pt3": {
+    "n_resolved": 799,
+    "n_skipped": 0,
+    "total_pnl_c": -94075,
+    "realized_ev_per_1": -1.6011,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 5397,
+    "current_action": "OPEN",
+    "rows_total": 800
+   },
+   "pt6": {
+    "n_resolved": 51,
+    "n_skipped": 691,
+    "total_pnl_c": 40409,
+    "realized_ev_per_1": 14.8401,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 140409,
+    "current_action": "SKIPPED",
+    "rows_total": 742
+   },
+   "pt2": {
+    "n_resolved": 387,
+    "n_skipped": 0,
+    "total_pnl_c": -73865,
+    "realized_ev_per_1": -2.7455,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 26135,
+    "current_action": "RESOLVED",
+    "rows_total": 387
+   },
+   "pt4": {
+    "n_resolved": 150,
+    "n_skipped": 0,
+    "total_pnl_c": -898939,
+    "realized_ev_per_1": -85.7238,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 265335,
+    "current_action": "RESOLVED",
+    "rows_total": 150
+   },
+   "pt5": {
+    "n_resolved": 363,
+    "n_skipped": 0,
+    "total_pnl_c": -291196,
+    "realized_ev_per_1": -11.5708,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 2844,
+    "current_action": "RESOLVED",
+    "rows_total": 363
+   },
+   "pt7": {
+    "n_resolved": 76,
+    "n_skipped": 29,
+    "total_pnl_c": 24177,
+    "realized_ev_per_1": 5.5129,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 124177,
+    "current_action": "RESOLVED",
+    "rows_total": 105
+   },
+   "pt8": {
+    "n_resolved": 21,
+    "n_skipped": 22,
+    "total_pnl_c": -46028,
+    "realized_ev_per_1": -47.8826,
+    "quoted_ev_per_1": "UNKNOWN",
+    "bankroll_c": 53972,
+    "current_action": "RESOLVED",
+    "rows_total": 43
+   }
+  },
+  "service_health": {
+   "overall": "CRITICAL",
+   "feeds": {
+    "daemon_heartbeat": {
+     "state": "CRITICAL",
+     "age_s": 6117,
+     "errors": null
+    },
+    "event_capture": {
+     "state": "HEALTHY",
+     "age_s": 9,
+     "errors": 852
+    },
+    "kb_inference": {
+     "state": "CRITICAL",
+     "age_s": 6163,
+     "errors": null
+    },
+    "pit_snapshot": {
+     "state": "CRITICAL",
+     "age_s": 6152,
+     "errors": null
+    }
+   }
+  },
+  "caveat": "online settlement on PROXY (Coinbase candle), not exact BRTI (DT-01)"
+ }
+}

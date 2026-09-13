@@ -29,9 +29,10 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 # FIVE SECTIONS ONLY — the research console (spec). Everything else is a
 # tab/drill-down inside these; no other top-level page is published.
 PAGES = ["home.html", "traders.html", "tiers.html", "features.html",
-         "health.html", "perf.html", "theme.css", "nav.js", "header.js",
-         "glossary.js", "glossary.json"]
+         "health.html", "perf.html", "architecture.html", "theme.css", "nav.js",
+         "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
+    ("architecture_dag.json", None),   # §37 developer DAG drill-down
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
     ("online_status.json", None),

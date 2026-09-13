@@ -1,0 +1,38 @@
+{
+ "owner": "btc_rl/online.py:320-475 (roster capped at 5, Great Simplification)",
+ "active": [
+  {
+   "id": "pt",
+   "role": "CONTROL (Follower)",
+   "consumes": "leaderboard leader over PT_ARMS",
+   "gate": "PT_TAU=0.62, 10% stake, one entry/window"
+  },
+  {
+   "id": "pt3",
+   "role": "THESIS (Disciplined)",
+   "gate": "PT3_TAU=0.77"
+  },
+  {
+   "id": "pt6",
+   "role": "SHADOW (MLE)",
+   "gate": "PT6_MIN_EDGE_C=10c, half-Kelly, stakes 0"
+  },
+  {
+   "id": "kb",
+   "role": "one-shot paper bets",
+   "gate": "edge gate"
+  },
+  {
+   "id": "pb",
+   "role": "Conviction Book",
+   "gate": "kb5 p_win gate"
+  }
+ ],
+ "retired": [
+  "pt2(Ladder)",
+  "pt4(Gambler)",
+  "pt5(Saver)",
+  "pt7(Patient/maker)",
+  "pt8(Ideal)"
+ ]
+}

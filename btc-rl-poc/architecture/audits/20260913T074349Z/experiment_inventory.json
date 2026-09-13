@@ -1,0 +1,32 @@
+{
+ "specs": [
+  "A3_SPEC/A3_V2/A3_V2_1/A3_SHADOW(wait-for-dip, CLOSED/REJECTED)",
+  "A4_SPEC",
+  "EXEC_TIMING_SPEC(registered, offline)",
+  "F_AV1_SPEC(SCREEN_ONLY)",
+  "H_MICRO_EXEC_SPEC",
+  "T1_1/T1_2_SPEC + T1T2_PROGRAM",
+  "X1_EXECUTION_ATTRIBUTION_SPEC",
+  "CHAMPION_VLEAN_SPEC"
+ ],
+ "active_treatments": [
+  "champion(0.62)",
+  "champion_real",
+  "t_exec(M10)",
+  "t_exec_reg",
+  "t_regime",
+  "t_edgeband(M13)"
+ ],
+ "retired_treatments": [
+  "t_cal",
+  "t_knife",
+  "t_cheap",
+  "t_both",
+  "t_fshare",
+  "t_fs_reg",
+  "t_limit",
+  "t_evlead",
+  "t_limit_reg"
+ ],
+ "wait_for_dip": "A3 line CLOSED/REJECTED 2026-09-08 (evaluator no-ops); correctly historical"
+}
