@@ -79,7 +79,7 @@ function vpill(v){const m={PASS:"ok",FEASIBLE_POINT:"ok",FAIL:"bad",NO_FEASIBLE_
   return '<span class="pill '+(m[v]||"unk")+'">'+(v||"UNKNOWN")+'</span>';}
 
 // CARD 0 — research ladder + capture status
-Promise.all([J("../results/research_state.json"),J("deriv_health.json"),J("news_health.json"),J("options_health.json")]).then(([rs,dh,nh,oh])=>{
+Promise.all([J("research_state.json"),J("deriv_health.json"),J("news_health.json"),J("options_health.json")]).then(([rs,dh,nh,oh])=>{
   const b=document.getElementById("c0b");if(!rs){b.innerHTML=UNK;return;}
   const chip=(k,v)=>{const good=/PASS/.test(v),warn=/LIMITED|REPRICE|OVERFIT|PENDING|READY/.test(v);
     return `<span class="pill ${good?'ok':warn?'warn':'bad'}" style="margin:2px 4px 2px 0">${k}: ${v}</span>`;}
