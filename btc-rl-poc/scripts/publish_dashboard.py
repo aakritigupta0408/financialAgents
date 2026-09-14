@@ -38,6 +38,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("home_snapshot.json", None),      # DT-07 HOME (all numbers backend-computed)
     ("oracle_snapshot.json", None),    # DT-07 ORACLE six subtabs
     ("experiments_snapshot.json", None),  # A/B platform (paired deltas, CI, ESS)
+    ("trader_detail.json", None),      # trader-family detail: equity, trades, policy, A/B
     ("architecture_dag.json", None),   # §37 developer DAG drill-down
     ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
     ("prediction_log.jsonl", 4000),
@@ -258,6 +259,7 @@ SNAPSHOT_EMITTERS = [          # regenerate typed UI snapshots BEFORE every publ
     "emit_home_snapshot.py",   # the deployed pages never fetch a missing/stale file
     "emit_oracle_snapshot.py",
     "emit_experiments_snapshot.py",
+    "emit_trader_detail.py",
 ]
 
 

@@ -1,6 +1,7 @@
 <!-- HOME — renders results/home_snapshot.json on the shared theme.css. Presentation
      only (formatting + SVG plotting of precomputed series); no canonical science in
      JS. Guarded by tests/test_no_frontend_science.py. -->
+<meta charset="utf-8">
 <link rel="stylesheet" href="theme.css">
 <style>
   main{gap:26px}
@@ -28,31 +29,68 @@
   .chart .cl{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;margin-bottom:6px}
   .emptychart{color:var(--muted);padding:24px 0;font-size:13.5px}
   .sec-head{margin-bottom:16px}
-  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:18px}
-  .tc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;
-    display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s}
-  .tc:hover{box-shadow:0 12px 34px rgba(22,32,44,.09);transform:translateY(-2px)}
-  .tc.shadow{background:var(--surface-2)}
-  .tc .chip{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-    padding:4px 11px;border-radius:7px;margin-bottom:15px}
-  .tc .nm{font:500 22px/1.05 var(--display);color:var(--ink)}
-  .tc .blurb{font-size:12.5px;color:var(--muted);line-height:1.55;margin:7px 0 0;min-height:56px}
-  .tc .metric{margin-top:4px}
-  .tc .big{font-size:32px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1}
-  .tc .big.pos{color:var(--up)} .tc .big.neg{color:var(--down)} .tc .big.mut{color:var(--ink-2);font-size:24px}
-  .tc .unit{font-size:11px;color:var(--muted);margin-top:6px}
-  .tc .evbar{height:6px;border-radius:999px;background:var(--surface);border:1px solid var(--border);
-    overflow:hidden;margin:14px 0 4px}
-  .tc.shadow .evbar{background:var(--surface)}
-  .tc .evbar>i{display:block;height:100%;border-radius:999px;background:var(--up)}
-  .tc .stats{display:flex;gap:18px;margin-top:14px;font-size:12px;color:var(--muted)}
-  .tc .stats b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
-  .tc .reason{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:14px}
-  .tc .foot{margin-top:auto;padding-top:16px;display:flex;justify-content:space-between;align-items:center;
-    border-top:1px solid var(--grid);font-size:12px}
-  .tc .live{color:var(--muted);display:flex;align-items:center;gap:6px}
-  .tc .vd{font-weight:600}
-  .vd.good{color:var(--up)} .vd.mut{color:var(--muted)} .vd.warn{color:var(--series-4)}
+  /* ---- trader family experience ---- */
+  .fambadge{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .fambadge .fb{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--border);
+    border-radius:12px;padding:9px 14px}
+  .fambadge .fb .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;
+    background:var(--surface)}
+  .fambadge .fb .t{font-size:13px;font-weight:600;color:var(--ink)} .fambadge .fb .s{font-size:11px;color:var(--muted)}
+  .fambadge .arrow{color:var(--faint);font-size:18px}
+  .selrow{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0 24px}
+  @media(max-width:900px){.selrow{grid-template-columns:repeat(2,1fr)}}
+  .sc{text-align:left;background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:15px 16px;
+    cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .15s}
+  .sc:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(22,32,44,.07)}
+  .sc.on{box-shadow:0 8px 26px rgba(22,32,44,.10)}
+  .sc .hd{display:flex;justify-content:space-between;align-items:center}
+  .sc .tag{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:6px}
+  .sc .ic{font-size:18px}
+  .sc .nm{font:500 18px/1.1 var(--display);color:var(--ink);margin:11px 0 3px}
+  .sc .tl{font-size:12px;color:var(--muted)}
+  .split2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:860px){.split2{grid-template-columns:1fr}}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px}
+  .panel .lab{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .panel h3{font:500 26px/1.05 var(--display);color:var(--ink);margin:4px 0 0;display:flex;align-items:center;gap:10px}
+  .rolepill{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:6px}
+  .pdesc{font-size:13px;color:var(--ink-2);margin:12px 0 2px} .pdesc .mut{color:var(--muted);display:block;margin-top:2px}
+  .kpis{display:flex;gap:14px;margin:18px 0 0;flex-wrap:wrap}
+  .kpi{border:1px solid var(--border);border-radius:12px;padding:14px 16px;min-width:120px}
+  .kpi .big{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1}
+  .kpi .big.pos{color:var(--up)} .kpi .big.neg{color:var(--down)} .kpi .big.mut{color:var(--ink-2);font-size:23px}
+  .kpi .cap{font-size:11px;color:var(--muted);margin-top:6px}
+  .kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  .kpi3 .b{border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+  .kpi3 .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums} .kpi3 .k{font-size:10px;color:var(--muted);margin-top:3px}
+  .tabs2{display:inline-flex;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px}
+  .tabs2 button{border:0;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;padding:6px 14px;border-radius:7px;cursor:pointer}
+  .tabs2 button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(22,32,44,.08)}
+  .chartbadge{float:right;font-size:11px;font-weight:600;color:var(--series-7);background:rgba(13,122,78,.10);padding:4px 10px;border-radius:999px}
+  .flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:center;margin-top:8px}
+  .flow .col{border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface-2)}
+  .flow .col.p{background:rgba(36,97,184,.05);border-color:rgba(36,97,184,.25)}
+  .flow .col .ct{font-size:12px;font-weight:700;color:var(--ink);text-align:center;margin-bottom:9px}
+  .flow .col .st{font-size:11.5px;color:var(--ink-2);background:var(--surface);border:1px solid var(--border);
+    border-radius:7px;padding:6px 8px;margin:5px 0;text-align:center;font-variant-numeric:tabular-nums}
+  .flow .ar{color:var(--faint);font-size:16px;text-align:center}
+  .offperf{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:16px}
+  .offperf .b{text-align:center} .offperf .v{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+  .offperf .v.pos{color:var(--up)} .offperf .k{font-size:10px;color:var(--muted);margin-top:3px}
+  .rt{width:100%;border-collapse:collapse;font-size:12.5px;min-width:0}
+  .rt th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);text-align:left;padding:8px 10px 8px 0;border-bottom:1px solid var(--border)}
+  .rt td{padding:9px 10px 9px 0;border-bottom:1px solid var(--grid);color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .rt .sd{font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px}
+  .rt .sd.yes{color:var(--up);background:rgba(12,138,77,.10)} .rt .sd.no{color:var(--down);background:rgba(209,60,60,.10)}
+  .rt .res.win{color:var(--up);font-weight:600} .rt .res.loss{color:var(--down);font-weight:600}
+  .rt .pl.pos{color:var(--up)} .rt .pl.neg{color:var(--down)}
+  .abrow{display:flex;align-items:center;gap:14px;margin:12px 0 16px}
+  .abside{flex:1;border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;gap:10px;align-items:center}
+  .abside .t{font-size:13px;font-weight:600;color:var(--ink)} .abside .s{font-size:11px;color:var(--muted)}
+  .abmetrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .abmetrics .b{border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+  .abmetrics .v{font-size:18px;font-weight:650;color:var(--ink-2)} .abmetrics .k{font-size:10px;color:var(--muted);margin-top:3px}
+  .notstarted{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
   .waiting{text-align:center;padding:56px 20px}
   .waiting h2{font-family:var(--display);font-size:1.5rem;margin-bottom:8px}
   .waiting p{color:var(--muted);max-width:46ch;margin:0 auto}
@@ -133,48 +171,143 @@ function hero(o){
 }
 const VD={QUALIFIED_FOR_PROSPECTIVE:["Qualified","good"],INFORMATION_LIMITED:["Info-limited","mut"],
   SHADOW_ONLY:["Shadow","warn"],NOT_QUALIFIED:["Locked","mut"],REJECTED:["Rejected","mut"]};
-function famCard(t){
-  const [fg,bgc]=ROLE[t.role]||["var(--faint)","var(--surface-2)"];
-  const bt=t.backtest||{};
-  const isShadow=(t.role==="SHADOW"||t.role==="NOT_QUALIFIED");
-  let metric,extra="";
-  if(bt.ev_per_eligible_c!=null){
-    const ev=bt.ev_per_eligible_c, w=Math.max(4,Math.min(100,ev/15*100));
-    metric=`<div class="metric"><div class="big ${ev>=0?'pos':'neg'}">${ev>=0?'+':''}${ev.toFixed(1)}¢</div>
-      <div class="unit">backtest EV per eligible window</div></div>
-      <div class="evbar"><i style="width:${w}%"></i></div>
-      <div class="stats"><span>Coverage <b>${pctN(bt.coverage)}</b></span>
-        <span>Accuracy <b>${pctN(bt.accuracy,0)}</b></span>
-        <span>Drawdown <b>${usd(bt.max_drawdown_c)}</b></span></div>`;
-  } else if(bt.best_holdout_auc!=null){
-    metric=`<div class="metric"><div class="big mut">AUC ${bt.best_holdout_auc}</div>
-      <div class="unit">holdout · 0.50 = no signal</div></div>`;
-  } else if(bt.leverage_only!=null){
-    metric=`<div class="metric"><div class="big mut">Leverage only</div>
-      <div class="unit">no risk-adjusted edge vs baselines</div></div>`;
-  } else {
-    metric=`<div class="metric"><div class="big mut">Locked</div>
-      <div class="unit">awaiting component qualification</div></div>`;
-  }
-  const [vlab,vcls]=VD[t.verdict]||["—","mut"];
-  return `<div class="tc ${isShadow?'shadow':''}">
-    <span class="chip" style="color:${fg};background:${bgc}">${t.id} · ${t.role.replace(/_/g," ")}</span>
-    <div class="nm">${t.name}</div>
-    <div class="blurb">${t.blurb||""}</div>
-    ${metric}
-    <div class="reason">${t.reason||""}</div>
-    <div class="foot">
-      <span class="live"><span class="live-dot stale"></span> Live · n=${t.live?t.live.n:0}</span>
-      <span class="vd ${vcls}">${vlab}</span>
+const SVG={
+  crown:'<path d="M3 8l4 3 5-6 5 6 4-3-2 11H5L3 8z"/>',
+  bolt:'<path d="M13 2L5 13h5l-1 9 9-12h-6l1-8z"/>',
+  brain:'<circle cx="7" cy="8" r="2.4"/><circle cx="17" cy="8" r="2.4"/><circle cx="12" cy="16" r="2.4"/><path d="M8.7 9.3l2.3 5M15.3 9.3L13 14.2M9 8h6"/>',
+  chart:'<path d="M5 20V11M12 20V5M19 20v-6"/>',
+  layers:'<path d="M12 3l8.5 4.5L12 12 3.5 7.5 12 3z"/><path d="M3.5 12L12 16.5 20.5 12M3.5 16.5L12 21l8.5-4.5"/>',
+  target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/>',
+  compass:'<circle cx="12" cy="12" r="8.5"/><path d="M15.5 8.5l-2 5-5 2 2-5 5-2z"/>'};
+function icon(name,color,sz){return `<svg viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="${color||'currentColor'}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">${SVG[name]||''}</svg>`;}
+const TR={T0:["var(--series-2)","rgba(36,97,184,.09)","crown"],T1:["var(--series-7)","rgba(13,122,78,.09)","bolt"],
+  T2:["var(--series-4)","rgba(143,96,0,.10)","brain"],T3:["var(--series-9)","rgba(95,80,199,.10)","chart"],
+  T4:["var(--series-3)","rgba(180,58,110,.09)","layers"]};
+let SNAP=null, DETAIL=null, SEL="T0", CHTAB="backtest";
+const byId=id=>(SNAP.trader_family||[]).find(t=>t.id===id)||{};
+
+function selCard(t){
+  const [c,bg,ic]=TR[t.id]||["var(--faint)","var(--surface-2)","target"];
+  const on=t.id===SEL;
+  return `<button class="sc ${on?'on':''}" onclick="selectTrader('${t.id}')"
+    style="border-color:${on?c:'var(--border)'};${on?'background:'+bg:''}">
+    <div class="hd"><span class="tag" style="color:${c};background:${bg}">${t.id} · ${t.role.replace(/_/g," ")}</span>
+      <span class="ic" style="color:${c}">${icon(ic,c,20)}</span></div>
+    <div class="nm">${t.name}</div><div class="tl">${t.tagline||t.blurb||""}</div></button>`;
+}
+function equitySVG(curve){
+  if(!curve||curve.length<3) return `<div class="emptychart">No equity curve for this policy.</div>`;
+  const W=560,H=230,pad=34;
+  const ys=curve.map(p=>p.equity_c/100), maxY=Math.max(2,...ys), minY=Math.min(-2,...ys), n=curve.length;
+  const X=i=>pad+i/(n-1)*(W-2*pad), Y=v=>pad+(1-(v-minY)/((maxY-minY)||1))*(H-2*pad);
+  const line=curve.map((p,i)=>(i?"L":"M")+X(i).toFixed(1)+" "+Y(p.equity_c/100).toFixed(1)).join(" ");
+  const zero=Y(0);
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:230px">
+    <line class="gridline" x1="${pad}" y1="${zero}" x2="${W-pad}" y2="${zero}"></line>
+    <text x="${pad-6}" y="${Y(maxY)+4}" text-anchor="end">$${maxY.toFixed(0)}</text>
+    <text x="${pad-6}" y="${zero+4}" text-anchor="end">$0</text>
+    <text x="${pad-6}" y="${Y(minY)+4}" text-anchor="end">$${minY.toFixed(0)}</text>
+    <path d="${line}" fill="none" stroke="var(--series-2)" stroke-width="2.2" stroke-linejoin="round"></path>
+    <text x="${W-pad}" y="${H-8}" text-anchor="end">${n} windows (unseen historical)</text></svg>`;
+}
+function traderPanel(){
+  const t=byId(SEL), d=(DETAIL&&DETAIL.traders[SEL])||{}, bt=t.backtest||{};
+  const [c,bg]=TR[SEL]||["var(--faint)","var(--surface-2)"];
+  const evOK=bt.ev_per_eligible_c!=null;
+  const kpi=evOK
+    ? `<div class="kpi"><div class="big ${bt.ev_per_eligible_c>=0?'pos':'neg'}">${bt.ev_per_eligible_c>=0?'+':''}${bt.ev_per_eligible_c.toFixed(1)}¢</div><div class="cap">EV / eligible window<br>(backtest)</div></div>
+       <div class="kpi"><div class="big">${d.n_trades||'—'}</div><div class="cap">trades over ${DETAIL?DETAIL.holdout_windows:93}<br>unseen windows</div></div>`
+    : `<div class="kpi"><div class="big mut">${bt.best_holdout_auc!=null?('AUC '+bt.best_holdout_auc):(bt.leverage_only!=null?'Leverage only':'Locked')}</div><div class="cap">${t.reason||''}</div></div>`;
+  const stats=evOK?`<div class="kpi3">
+      <div class="b"><div class="v">${pctN(bt.coverage)}</div><div class="k">Coverage</div></div>
+      <div class="b"><div class="v">${pctN(bt.accuracy,1)}</div><div class="k">Accuracy</div></div>
+      <div class="b"><div class="v">${usd(bt.max_drawdown_c)}</div><div class="k">Max DD</div></div></div>`:"";
+  const chart=CHTAB==="backtest"?equitySVG(d.equity_curve)
+    :`<div class="emptychart">Live equity collects once the exact-BRTI runtime is activated · n=0</div>`;
+  return `<div class="panel">
+    <div class="lab">Selected trader</div>
+    <h3>${SEL} · ${t.name}</h3>
+    <div style="margin-top:8px"><span class="rolepill" style="color:${c};background:${bg}">${(t.role||'').replace(/_/g," ")}</span></div>
+    <div class="pdesc">${t.tagline||''}<span class="mut">${t.blurb||''}</span></div>
+    <div class="kpis">${kpi}</div>${stats}
+    <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center">
+      <div class="tabs2"><button class="${CHTAB==='backtest'?'on':''}" onclick="setTab('backtest')">Backtest</button>
+        <button class="${CHTAB==='live'?'on':''}" onclick="setTab('live')">Live</button></div>
+      ${CHTAB==='backtest'?'<span class="chartbadge">Backtest only</span>':'<span class="notstarted"><span class="live-dot stale"></span> Not started</span>'}
     </div>
-  </div>`;
+    ${chart}</div>`;
+}
+function policyPanel(){
+  const t=byId(SEL), d=(DETAIL&&DETAIL.traders[SEL])||{}, bt=t.backtest||{};
+  const os=(d.oracle_state||[]).map(s=>`<div class="st">${s}</div>`).join("");
+  const ps=(d.policy_steps||[]).map(s=>`<div class="st">${s}</div>`).join("");
+  const ts=(d.trade_steps||[]).map(s=>`<div class="st">${s}</div>`).join("");
+  const off=bt.ev_per_eligible_c!=null?`<div class="offperf">
+      <div class="b"><div class="v pos">+${bt.ev_per_eligible_c.toFixed(1)}¢</div><div class="k">EV / eligible</div></div>
+      <div class="b"><div class="v pos">${bt.ev_per_trade_c!=null?('+'+bt.ev_per_trade_c.toFixed(1)+'¢'):'—'}</div><div class="k">EV / trade</div></div>
+      <div class="b"><div class="v">${pctN(bt.coverage)}</div><div class="k">Coverage</div></div>
+      <div class="b"><div class="v">${pctN(bt.accuracy,1)}</div><div class="k">Accuracy</div></div>
+      <div class="b"><div class="v">${usd(bt.max_drawdown_c)}</div><div class="k">Max DD</div></div></div>`
+    :`<div class="pdesc mut" style="margin-top:14px">${t.reason||''}</div>`;
+  return `<div class="panel">
+    <div class="lab">Policy architecture</div>
+    <p class="pdesc" style="margin-top:4px">How ${SEL} uses the Oracle and decides.</p>
+    <div class="flow">
+      <div class="col"><div class="ct">Oracle State</div>${os}</div><div class="ar">→</div>
+      <div class="col p"><div class="ct">${SEL} Policy</div>${ps}</div><div class="ar">→</div>
+      <div class="col"><div class="ct">Trade</div>${ts}</div></div>
+    <div class="lab" style="margin-top:20px">Offline (backtest) performance</div>${off}</div>`;
+}
+function tradesPanel(){
+  const d=(DETAIL&&DETAIL.traders[SEL])||{}, rows=d.recent_trades||[];
+  if(!rows.length) return `<div class="panel"><div class="lab">Recent trades (backtest)</div>
+     <div class="emptychart">No backtest trades for this policy.</div></div>`;
+  const body=rows.map((r,i)=>`<tr><td>${i+1}</td><td>${r.time}</td>
+    <td>$${(r.brti||0).toLocaleString()} / $${(r.target||0).toLocaleString()}</td>
+    <td><span class="sd ${r.side==='YES'?'yes':'no'}">${r.side}</span></td>
+    <td>$${r.entry_price.toFixed(2)}</td>
+    <td><span class="res ${r.result.toLowerCase()}">${r.result}</span></td>
+    <td class="pl ${r.pnl_c>=0?'pos':'neg'}">${r.pnl_c>=0?'+':'−'}$${Math.abs(r.pnl_c/100).toFixed(2)}</td>
+    <td>${r.status}</td></tr>`).join("");
+  return `<div class="panel"><div class="lab">Recent trades (backtest)</div>
+    <div class="scroll"><table class="rt"><thead><tr><th>#</th><th>Contract time</th><th>BRTI / Target</th>
+      <th>Side</th><th>Entry</th><th>Result</th><th>P&L</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>
+    <div class="mini">Showing ${rows.length} of ${d.n_trades} trades · unseen historical holdout</div></div>`;
+}
+function abPanel(){
+  const ab=(DETAIL&&DETAIL.ab_experiment)||{};
+  return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="lab">Live A/B test</div><span class="notstarted"><span class="live-dot stale"></span> Not started</span></div>
+    <p class="pdesc" style="margin-top:4px">Live results collect once the exact-BRTI runtime is activated.</p>
+    <div class="abrow">
+      <div class="abside"><span class="ic" style="color:var(--series-2)">${icon('crown','var(--series-2)',20)}</span><div><div class="t">Control · T0</div><div class="s">Baseline Follower</div></div></div>
+      <span class="muted" style="font-weight:600">vs</span>
+      <div class="abside"><span class="ic" style="color:var(--series-7)">${icon('bolt','var(--series-7)',20)}</span><div><div class="t">Treatment · T1</div><div class="s">Selective Edge</div></div></div></div>
+    <div class="abmetrics">
+      <div class="b"><div class="v">—</div><div class="k">Paired Δ EV / window<br>(collecting)</div></div>
+      <div class="b"><div class="v">0</div><div class="k">Live n paired</div></div>
+      <div class="b"><div class="v">—</div><div class="k">95% CI (collecting)</div></div>
+      <div class="b"><div class="v">0%</div><div class="k">Sequential test</div></div></div>
+    <div class="mini" style="margin-top:14px"><span class="live-dot stale"></span> Live trading begins once the exact-BRTI runtime is activated. · spec ${ab.spec_hash||''}</div></div>`;
+}
+window.selectTrader=id=>{SEL=id;CHTAB="backtest";paintFamily();};
+window.setTab=t=>{CHTAB=t;paintFamily();};
+function paintFamily(){
+  $("#family").innerHTML=`<div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">
+      <div><span class="eyebrow">The trader family</span><h2>One Oracle, five policies</h2>
+        <p class="sub" style="margin-top:6px">Every policy consumes the same Oracle and differs only in how it acts. Backtest and live are shown separately.</p></div>
+      <div class="fambadge"><div class="fb"><span class="ic" style="color:var(--series-2)">${icon('target','var(--series-2)',18)}</span><div><div class="t">Oracle</div><div class="s">Same signal for all</div></div></div>
+        <span class="arrow">→</span>
+        <div class="fb"><span class="ic" style="color:var(--series-9)">${icon('compass','var(--series-9)',18)}</span><div><div class="t">Five policies</div><div class="s">Different actions</div></div></div></div></div>
+    <div class="selrow">${(SNAP.trader_family||[]).map(selCard).join("")}</div>
+    <div class="split2" style="margin-bottom:20px">${traderPanel()}${policyPanel()}</div>
+    <div class="split2">${tradesPanel()}${abPanel()}</div>
+    <div class="mini" style="margin-top:18px;text-align:center">All traders use the same Oracle — the difference is only in how they act.</div>`;
 }
 function render(d){
-  $("#app").innerHTML=hero(d.oracle_strip||{})
-    +`<section><div class="sec-head"><span class="eyebrow">The trader family</span>
-        <h2>One Oracle, five policies</h2>
-        <p class="sub">Every policy consumes the same Oracle and differs only in how it acts. Backtest and live are shown separately — live collects once the exact-BRTI runtime is activated.</p></div>
-        <div class="fam">${(d.trader_family||[]).map(famCard).join("")}</div></section>`;
+  SNAP=d;
+  $("#app").innerHTML=hero(d.oracle_strip||{})+`<section id="family"></section>`;
+  paintFamily();
   if(d.paper_banner){const p=d.paper_banner.split("—");$("#banner").innerHTML=`<b>${p[0].trim()}.</b> ${p.slice(1).join(" · ").replace(/\s+/g,' ').trim()}`;}
 }
 function waiting(){
@@ -182,6 +315,8 @@ function waiting(){
     <span class="live-dot stale"></span> BTC Oracle</span><h2>Waiting for the live desk</h2>
     <p>No current paper snapshot is available yet. The desk publishes a fresh snapshot each cycle — check back shortly.</p></section>`;
 }
-fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null)
-  .then(d=>{ if(!d||!d.trader_family){waiting();return;} render(d); }).catch(()=>waiting());
+Promise.all([
+  fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch("trader_detail.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
+]).then(([d,det])=>{ if(!d||!d.trader_family){waiting();return;} DETAIL=det; render(d); }).catch(()=>waiting());
 </script>
