@@ -104,7 +104,8 @@
    ],
    "recommended_action": "Collapse to HOME + ORACLE(2 top-level) with Oracle sub-nav (Input Data/Feature Processing/Modelling/Output Processing/Sevs&Tickets/Graveyard); map existing pages per architecture_diff.",
    "safe_to_remove": false,
-   "detected_by": "UI sweep"
+   "detected_by": "UI sweep",
+   "status": "CLOSED (2026-09-13): nav.js + publish PAGES = HOME + ORACLE (+architecture dev). ORACLE has the 6 subtabs; traders/perf/tiers/features/health deleted (absorbed). ORACLE tab detail is summary-level; deep per-model/feature detail enrichment tracked as follow-up."
   },
   {
    "id": "DT-08",
@@ -118,7 +119,8 @@
    ],
    "recommended_action": "Move Brier/EV/PnL/CI computation server-side; UI renders pre-computed values (UI_TO_CANONICAL_CALC forbidden edge).",
    "safe_to_remove": false,
-   "detected_by": "UI sweep"
+   "detected_by": "UI sweep",
+   "status": "CLOSED (2026-09-13): canonical owners btc_rl/economics.py + metrics.py; HOME/ORACLE render results/{home,oracle}_snapshot.json verbatim; guard test tests/test_no_frontend_science.py fails on any browser-side Brier/EV/PnL/BSS/bootstrap/drawdown in the published set."
   },
   {
    "id": "DT-09",

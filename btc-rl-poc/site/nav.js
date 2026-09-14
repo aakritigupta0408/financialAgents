@@ -27,30 +27,27 @@
      it is testing, Watchtower proves it can be trusted. Everything
      else (ledgers, metrics lab, agents, museum, backend, play) is a
      drill-down that lives INSIDE those worlds and in More/search. */
-  // FIVE SECTIONS ONLY (research-console spec). Everything else is a
-  // tab or drill-down inside these — never its own top-level page.
+  // DT-07: TWO TOP-LEVEL VIEWS ONLY — HOME + ORACLE. The old research-console
+  // pages (Traders/Tiers/Data/Watchtower) are absorbed into HOME (traders) and
+  // ORACLE's six subtabs (Input Data / Feature Processing / Modelling / Output
+  // Processing / Sevs & Tickets / Graveyard). Architecture is a dev drill-down.
   var PRIMARY = [
-    { label: "Home",       href: "home.html" },
-    { label: "Traders",    href: "traders.html" },
-    { label: "Tiers",      href: "tiers.html" },
-    { label: "Data",       href: "features.html" },
-    { label: "Watchtower", href: "health.html" }
+    { label: "Home",   href: "home.html" },
+    { label: "Oracle", href: "oracle.html" }
   ];
 
-  var MORE = [];
+  var MORE = [
+    { label: "Architecture", href: "architecture.html" }
+  ];
 
-  /* Static search index: every page, 3-6 honest keywords each. */
+  /* Static search index. */
   var PAGE_INDEX = [
-    { title: "Home — executive research summary", href: "home.html",
-      kw: "home, readiness, performance funnel, market beating, decision frontier, failure store, bottleneck" },
-    { title: "Traders — the $1K Desk", href: "traders.html",
-      kw: "traders, control, treatment, shadow, realized ev, profit per trade, skips, decisions" },
-    { title: "Tiers — T0 through T7", href: "tiers.html",
-      kw: "tiers, forecast, probability, decision, execution, capital, evaluation, governance, control treatment, ab" },
-    { title: "Data & Features", href: "features.html",
-      kw: "data, features, provenance, freshness, missing, drift, importance, leakage canary, calibration" },
-    { title: "Watchtower — trust & integrity", href: "health.html",
-      kw: "watchtower, invariants, sev, parity, freeze convergence, graveyard, incubator, failure flywheel" }
+    { title: "Home — paper desk", href: "home.html",
+      kw: "home, traders, paper equity, realized ev, win rate, drawdown, oracle strip, control treatment" },
+    { title: "Oracle — input data, features, modelling, outputs, sevs, graveyard", href: "oracle.html",
+      kw: "oracle, brti, contract truth, features, models, mech fair, sevs tickets, graveyard, calibration, bss" },
+    { title: "Architecture — DAG drill-down", href: "architecture.html",
+      kw: "architecture, dag, lineage, drift, dangling threads, checkpoint" }
   ];
 
   /* ------------------------------------------------------------ util -- */

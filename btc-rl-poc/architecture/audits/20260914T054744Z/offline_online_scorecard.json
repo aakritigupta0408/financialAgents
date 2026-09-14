@@ -8,39 +8,39 @@
  },
  "runtime_online": {
   "settled_windows": {
-   "settled_windows": 20000,
+   "settled_windows": 19992,
    "kb_log_rows": 20000
   },
   "traders": {
    "pt": {
-    "n_resolved": 845,
+    "n_resolved": 902,
     "n_skipped": 0,
-    "total_pnl_c": -96211,
-    "realized_ev_per_1": -1.6455,
+    "total_pnl_c": -97313,
+    "realized_ev_per_1": -1.5589,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 3789,
+    "bankroll_c": 2687,
     "current_action": "RESOLVED",
-    "rows_total": 845
+    "rows_total": 902
    },
    "pt3": {
-    "n_resolved": 801,
+    "n_resolved": 844,
     "n_skipped": 0,
-    "total_pnl_c": -93765,
-    "realized_ev_per_1": -1.5916,
+    "total_pnl_c": -92397,
+    "realized_ev_per_1": -1.489,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 6235,
+    "bankroll_c": 7603,
     "current_action": "RESOLVED",
-    "rows_total": 801
+    "rows_total": 844
    },
    "pt6": {
-    "n_resolved": 52,
-    "n_skipped": 691,
+    "n_resolved": 55,
+    "n_skipped": 745,
     "total_pnl_c": 40409,
-    "realized_ev_per_1": 14.5633,
+    "realized_ev_per_1": 13.8631,
     "quoted_ev_per_1": "UNKNOWN",
     "bankroll_c": 140409,
-    "current_action": "RESOLVED",
-    "rows_total": 743
+    "current_action": "SKIPPED",
+    "rows_total": 800
    },
    "pt2": {
     "n_resolved": 387,
@@ -94,26 +94,26 @@
    }
   },
   "service_health": {
-   "overall": "WATCH",
+   "overall": "CRITICAL",
    "feeds": {
     "daemon_heartbeat": {
-     "state": "HEALTHY",
-     "age_s": 96,
+     "state": "CRITICAL",
+     "age_s": 7747,
      "errors": null
     },
     "event_capture": {
      "state": "HEALTHY",
-     "age_s": 4,
-     "errors": 852
+     "age_s": 10,
+     "errors": 880
     },
     "kb_inference": {
-     "state": "WATCH",
-     "age_s": 188,
+     "state": "CRITICAL",
+     "age_s": 9319,
      "errors": null
     },
     "pit_snapshot": {
-     "state": "HEALTHY",
-     "age_s": 166,
+     "state": "CRITICAL",
+     "age_s": 7774,
      "errors": null
     }
    }

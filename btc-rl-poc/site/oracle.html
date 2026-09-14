@@ -1,0 +1,105 @@
+<!-- ORACLE (DT-07 §17) — six subtabs rendering results/oracle_snapshot.json VERBATIM.
+     No scientific/economic formula in the browser (aggregates like mean-BSS are
+     precomputed by scripts/emit_oracle_snapshot.py). Enforced by
+     tests/test_no_frontend_science.py. -->
+<link rel="stylesheet" href="theme.css">
+<style>
+  :root{--ink:#1f2328;--muted:#656d76;--line:#d0d7de;--card:#fff;--bg:#f6f8fa;
+        --good:#1a7f37;--bad:#cf222e;--warn:#9a6700;--accent:#0969da}
+  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
+    --ink:#e6edf3;--muted:#8b949e;--line:#30363d;--card:#161b22;--bg:#0d1117;
+    --good:#3fb950;--bad:#f85149;--warn:#d29922;--accent:#58a6ff}}
+  .o{max-width:1080px;margin:0 auto;padding:16px;background:var(--bg);color:var(--ink);
+     font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  h1{font-size:20px;margin:0 0 2px} .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+  .tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:5px 13px;border-radius:999px;cursor:pointer;font-size:13px}
+  .tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .panel{display:none} .panel.on{display:block}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .cell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .cell.truth{border-color:var(--accent);border-width:2px}
+  .cell h4{margin:0 0 6px;font-size:14px}
+  .kv{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:1px 0}
+  .kv span:last-child{color:var(--ink);font-variant-numeric:tabular-nums}
+  .role{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .badge{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line)}
+  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  th,td{padding:6px 9px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase}
+  .prov{color:var(--muted);font-size:11px;margin-top:14px}
+</style>
+<div class="o">
+  <h1>ORACLE</h1>
+  <p class="sub">Why the system believes what it believes, and is every layer healthy?
+     <a href="home.html" style="color:var(--accent);text-decoration:none">← HOME</a></p>
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+  <div class="prov" id="prov">loading results/oracle_snapshot.json…</div>
+</div>
+<script>
+const TABS=[["input_data","Input Data"],["feature_processing","Feature Processing"],
+  ["modelling","Modelling"],["output_processing","Output Processing"],
+  ["sevs_and_tickets","Sevs & Tickets"],["graveyard","Graveyard"]];
+const esc=s=>String(s==null?"—":s);
+function kv(k,v){return `<div class="kv"><span>${k}</span><span>${esc(v)}</span></div>`;}
+function render(snap){
+  const S=snap.subtabs, P={};
+  // Input Data — BRTI prominent
+  const b=S.input_data.brti;
+  P.input_data=`<div class="grid">
+    <div class="cell truth"><div class="role">Contract truth</div><h4>BRTI</h4>
+      ${kv("Connected",b.connected)}${kv("REST",b.rest_ok)}${kv("History",b.history_ok)}
+      ${kv("Age (s)",b.age_s)}${kv("Cadence Hz",b.observed_cadence_hz+" / "+b.expected_cadence_hz)}
+      ${kv("Gaps",b.gaps)}<div class="kv"><span>Runtime activation</span><span class="badge">${esc(b.runtime_activation)}</span></div></div>
+    ${S.input_data.sources.map(s=>`<div class="cell"><div class="role">${s.role}</div><h4>${s.id}</h4></div>`).join("")}
+  </div>`;
+  // Feature Processing
+  const fm=S.feature_processing.feature_monitor||{};
+  P.feature_processing=`<div class="cell"><h4>Feature health (precomputed)</h4>
+    ${kv("Features tracked",(fm.features||fm.rows||[]).length||Object.keys(fm).length)}
+    <div class="role" style="margin-top:6px">distributions · calibration · drift computed server-side (feature_monitor.json)</div></div>`;
+  // Modelling — model cards with server-computed mean BSS
+  P.modelling=`<div class="grid">${(S.modelling.model_cards||[]).map(m=>`<div class="cell">
+    <h4>${m.model_id}</h4>${kv("Offline mean BSS",m.offline_mean_bss)}${kv("Folds",m.n_folds)}
+    <div class="role">${m.provenance}</div></div>`).join("")}</div>
+    <div class="role" style="margin-top:8px">Registry models: ${S.modelling.registry_count} · loss functions visible: ${S.modelling.loss_functions_visible}</div>`;
+  // Output Processing
+  P.output_processing=`<table><thead><tr><th>Output</th><th>Source model</th></tr></thead><tbody>
+    ${S.output_processing.outputs.map(o=>`<tr><td>${o.id}</td><td>${o.source}</td></tr>`).join("")}</tbody></table>
+    <div class="role" style="margin-top:6px">oracle spec ${esc(S.output_processing.spec_hash)}</div>`;
+  // Sevs & Tickets — DT-01 visible
+  const aw=S.sevs_and_tickets.architecture_watch||[];
+  P.sevs_and_tickets=`<div class="grid">${aw.map(i=>`<div class="cell" style="border-left:3px solid var(--warn)">
+    <div class="role">${i.category} · ${i.severity}</div><h4>${i.id} — ${i.status}</h4>
+    <div style="font-size:12.5px">${i.summary}</div><div class="role" style="margin-top:6px">${i.checkpoint}</div></div>`).join("")}
+    ${(S.sevs_and_tickets.incidents||[]).slice(-8).map(i=>`<div class="cell"><div class="role">SEV-${esc(i.sev)}</div><div style="font-size:12.5px">${esc(i.title)}</div></div>`).join("")}</div>`;
+  // Graveyard
+  const g=S.graveyard;
+  P.graveyard=`<div class="grid">
+    <div class="cell"><h4>Retired models</h4><div style="font-size:12.5px">${(g.retired_models||[]).join(", ")||"—"}</div></div>
+    <div class="cell"><h4>Retired traders</h4><div style="font-size:12.5px">${(g.retired_traders||[]).join(", ")||"—"}</div></div>
+    <div class="cell"><h4>Retired treatments</h4><div style="font-size:12.5px">${(g.retired_treatments||[]).join(", ")||"—"}</div></div>
+    <div class="cell"><h4>wait-for-dip</h4><div style="font-size:12.5px">${esc(g.wait_for_dip)}</div></div></div>`;
+
+  const tabsEl=document.getElementById("tabs"),panelsEl=document.getElementById("panels");
+  TABS.forEach(([k,label],i)=>{
+    const btn=document.createElement("button");btn.textContent=label;if(i===0)btn.classList.add("on");
+    btn.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+      document.querySelectorAll(".panel").forEach(x=>x.classList.remove("on"));
+      btn.classList.add("on");document.getElementById("panel-"+k).classList.add("on");};
+    tabsEl.appendChild(btn);
+    const div=document.createElement("div");div.className="panel"+(i===0?" on":"");div.id="panel-"+k;
+    div.innerHTML=P[k]||"<div class='cell'>—</div>";panelsEl.appendChild(div);
+  });
+  document.getElementById("prov").textContent=`schema ${snap.schema_version} · `
+    +`${snap.dag.nodes.length} DAG nodes · ${snap.dag.drift_edges.length} drift edges · `
+    +`source: results/oracle_snapshot.json (backend-computed)`;
+}
+fetch("oracle_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
+  if(!d){document.getElementById("prov").textContent="oracle_snapshot.json not found — run scripts/emit_oracle_snapshot.py";return;}
+  render(d);
+}).catch(e=>{document.getElementById("prov").textContent="load error: "+e;});
+</script>

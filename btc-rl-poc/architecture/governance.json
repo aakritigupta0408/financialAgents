@@ -1,10 +1,13 @@
 {
- "material_change_counter": 1,
+ "material_change_counter": 2,
  "checkpoint_every_n": 3,
- "last_checkpoint_utc": "20260913T081033Z",
+ "last_checkpoint_utc": "20260914T054744Z",
  "log": [
   {
    "reason": "DT-01 runtime contract-truth wiring + DT-02 Gate B relabel"
+  },
+  {
+   "reason": "DT-08 backend metric canonicalization + DT-07 HOME/ORACLE consolidation"
   }
  ]
 }
