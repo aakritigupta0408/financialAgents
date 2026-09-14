@@ -216,7 +216,10 @@ def research_snapshot(health):
             "A_CORE": "NO_OFFLINE_QUALIFIED_MODEL (TEST_V1, spent)",
             "A_AV": "AV_NO_OOS_VALUE (edge was leakage)",
             "A_DERIV": "DERIV_NO_OOS_VALUE (funding only; OI/liq/LS/taker/basis HISTORICALLY_UNAVAILABLE)",
+            "A_NEWS": "NEWS_NO_OOS_VALUE (1,310 articles, 85% active, 0 leakage)",
+            "OPTIONS": "HISTORICALLY_UNAVAILABLE for 15m (daily EOD ETF proxy excluded)",
         },
+        "news_incremental": _j(ROOT / "research" / "true15m" / "news_incremental_test.json") or None,
         "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
             "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,
