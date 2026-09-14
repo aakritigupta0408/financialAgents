@@ -1,0 +1,32 @@
+{
+ "schema_version": "test-v2-capture-audit-1",
+ "generated_at": 1789413658.4588192,
+ "cutoff_T0": 1789254900,
+ "target_windows": 672,
+ "source": "results/contract_outcomes.jsonl (authoritative forward settled feed)",
+ "membership_file": "research/true15m/TEST_V2_MEMBERSHIP.jsonl",
+ "membership_sha256_16": "0944084f47b768be",
+ "post_cutoff_windows_seen": 175,
+ "post_cutoff_windows_settled": 175,
+ "post_cutoff_windows_label_verified": 175,
+ "post_cutoff_windows_integrity_complete": 175,
+ "post_cutoff_windows_registered_to_V2": 175,
+ "first_post_cutoff_window_id": "KXBTC15M-26SEP121945-45",
+ "latest_post_cutoff_window_id": "KXBTC15M-26SEP141515-15",
+ "contiguity_missing_slots": 0,
+ "exclusion_reason_counts": {
+  "missing_settlement_values": 0,
+  "no_official_result": 0,
+  "non_900s_duration": 0,
+  "duplicate_ticker": 0
+ },
+ "invariant": "for every eligible window with T0 > cutoff: if settlement_verified and integrity_complete then market_window_id in TEST_V2 membership",
+ "invariant_holds": true,
+ "membership_rule": "T0>cutoff AND has floor_strike+expiration_value AND official result AND 900s duration AND not duplicate \u2014 never by outcome value",
+ "seal": "SEALED \u2014 membership carries labels but is NEVER read for feature/model/architecture/hyperparameter/calibration/threshold/ensemble selection. Outcome distribution intentionally NOT surfaced in this audit.",
+ "root_cause": {
+  "feed_stall": "fetch_contract_specs.py stopped ~Sep 12; contract_outcomes.jsonl ended at the cutoff window. Repaired by re-fetching all settled markets (feed now current).",
+  "counter_bug": "sealed_test_governance.py counted post-cutoff windows from the FROZEN research inventory (ends at cutoff by design) -> always 0. Fixed to count from this forward membership."
+ },
+ "status": "ACCUMULATING"
+}

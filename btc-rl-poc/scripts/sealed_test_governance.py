@@ -28,6 +28,7 @@ from btc_rl import research_events as EV  # noqa: E402
 T = ROOT / "research" / "true15m"
 SPLIT = T / "SPLIT_SPEC_V1.json"
 INV = T / "contract_inventory.jsonl"
+V2_MEMBERSHIP = T / "TEST_V2_MEMBERSHIP.jsonl"   # forward-rolling sealed accrual
 OUT = T / "SEALED_TEST_STATUS.json"
 TARGET_V2 = 672          # ~7 days @ 96/day — minimum for a meaningful blind test
 
@@ -36,8 +37,15 @@ def build():
     split = json.loads(SPLIT.read_text())
     v1 = split["sealed_test"]
     cutoff = v1["range"][1]                 # TEST_V2 starts strictly after TEST_V1 end
-    inv = [json.loads(l) for l in INV.open() if l.strip()]
-    v2_n = sum(1 for w in inv if w["T0"] > cutoff)
+    # TEST_V2 accrues FORWARD — it must be counted from the live settled feed's
+    # membership (test_v2_capture_audit.py), NOT from the FROZEN research inventory
+    # (contract_inventory.jsonl ends at the cutoff by construction, so counting it
+    # always yielded 0 — the original accumulator bug). If the membership file is
+    # missing, run scripts/test_v2_capture_audit.py first.
+    if V2_MEMBERSHIP.exists():
+        v2_n = sum(1 for _ in V2_MEMBERSHIP.open() if _.strip())
+    else:
+        v2_n = 0
 
     doc = {
         "schema_version": "sealed-test-status-1", "generated_at": time.time(),
@@ -58,7 +66,12 @@ def build():
             "cutoff_T0": cutoff, "start_after": v1["range"][1],
             "accumulated_windows": v2_n, "target_windows": TARGET_V2,
             "eta_note": "L0 live capture accrues ~96 windows/day; ~7 days -> 672, ~14 -> 1,344.",
-            "source": "live prospective capture (L0) + settled-market backfill after the cutoff",
+            "source": "forward settled feed (results/contract_outcomes.jsonl) -> "
+                      "research/true15m/TEST_V2_MEMBERSHIP.jsonl (built by rule, not outcome)",
+            "membership_file": "research/true15m/TEST_V2_MEMBERSHIP.jsonl",
+            "capture_audit": "research/true15m/TEST_V2_CAPTURE_AUDIT.json",
+            "accumulator_fix": "counts the forward membership, NOT the frozen inventory "
+                               "(contract_inventory.jsonl ends at the cutoff -> old 0-count bug).",
             "seal_rule": "NEVER used for feature selection, model selection, architecture, "
                          "hyperparameters, calibration, thresholds, or ensembles.",
             "open_when": "model registry + finalists frozen — opened exactly once.",

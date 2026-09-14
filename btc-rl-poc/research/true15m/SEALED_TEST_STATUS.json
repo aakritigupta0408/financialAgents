@@ -1,0 +1,52 @@
+{
+ "schema_version": "sealed-test-status-1",
+ "generated_at": 1789413705.449708,
+ "TEST_V1": {
+  "status": "EXPOSED_SPENT",
+  "range": [
+   1788390900,
+   1789254900
+  ],
+  "n": 923,
+  "hash": "689395a6e9ee43c6",
+  "reason": "Observed during ongoing research (RF finalist scored on it) while derivatives/news/neural/foundation lanes remain untested. No longer blind.",
+  "data_quality": "FINE \u2014 not contaminated data; simply no longer eligible as the final blind audit for the eventual champion.",
+  "valid_historical_results": {
+   "A_CORE": "NO_OFFLINE_QUALIFIED_MODEL on TEST_V1 (remains a valid historical result)"
+  },
+  "rule": "Future model selection must NOT optimize against TEST_V1 and then claim success on TEST_V1."
+ },
+ "TEST_V2": {
+  "status": "SEALED_ACCUMULATING",
+  "cutoff_T0": 1789254900,
+  "start_after": 1789254900,
+  "accumulated_windows": 175,
+  "target_windows": 672,
+  "eta_note": "L0 live capture accrues ~96 windows/day; ~7 days -> 672, ~14 -> 1,344.",
+  "source": "forward settled feed (results/contract_outcomes.jsonl) -> research/true15m/TEST_V2_MEMBERSHIP.jsonl (built by rule, not outcome)",
+  "membership_file": "research/true15m/TEST_V2_MEMBERSHIP.jsonl",
+  "capture_audit": "research/true15m/TEST_V2_CAPTURE_AUDIT.json",
+  "accumulator_fix": "counts the forward membership, NOT the frozen inventory (contract_inventory.jsonl ends at the cutoff -> old 0-count bug).",
+  "seal_rule": "NEVER used for feature selection, model selection, architecture, hyperparameters, calibration, thresholds, or ensembles.",
+  "open_when": "model registry + finalists frozen \u2014 opened exactly once."
+ },
+ "INVALIDATED_RESULTS": [
+  {
+   "id": "AV_incremental_v0",
+   "claim": "BASE+AV cross-asset context improves log loss by ~0.042",
+   "delta_logloss_raw": -0.042,
+   "status": "INVALIDATED_RESULT",
+   "cause": "future 5-minute bar leakage \u2014 AV bars timestamped at bar START; as-of join on ts<=T0 admitted a bar whose interval extends ~5 min past T0.",
+   "corrected_delta_logloss": -0.001,
+   "corrected_verdict": "AV_NO_OOS_VALUE",
+   "lesson": "the system caught itself cheating; a strong result collapsed under causal alignment. Kept in history, never erased."
+  }
+ ],
+ "test_state_taxonomy": [
+  "DEVELOPMENT/WALK-FORWARD",
+  "VALIDATION",
+  "TEST_V1 \u2014 SPENT",
+  "TEST_V2 \u2014 SEALED",
+  "PROSPECTIVE \u2014 COLLECTING"
+ ]
+}

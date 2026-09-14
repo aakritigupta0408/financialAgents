@@ -225,6 +225,28 @@ def research_snapshot(health):
             "stack_healthy": (_j(ROOT / "research" / "true15m" / "MODEL_FAILURE_DIAGNOSTICS_V1.json") or {}).get("stack_healthy"),
             "summary": (_j(ROOT / "research" / "true15m" / "MODEL_FAILURE_DIAGNOSTICS_V1.json") or {}).get("summary")},
         "distributional_family": (_j(ROOT / "research" / "true15m" / "distributional_models_result.json") or {}).get("family_verdict"),
+        "loss_calibration_sweeps": (lambda d: {
+            "verdict": d.get("verdict"),
+            "interpretation": d.get("interpretation"),
+            "baseline_val_logloss": (d.get("baseline_val") or {}).get("log_loss"),
+            "val_beats_baseline": d.get("val_beats_baseline"),
+            "walk_forward": (d.get("walk_forward_corroboration") or {}).get("results"),
+        } if d else None)(_j(ROOT / "research" / "true15m" / "LOSS_CALIBRATION_SWEEPS_V1.json")),
+        "test_v2_capture_audit": (lambda d: {
+            "registered_to_V2": d.get("post_cutoff_windows_registered_to_V2"),
+            "seen": d.get("post_cutoff_windows_seen"),
+            "target": d.get("target_windows"),
+            "invariant_holds": d.get("invariant_holds"),
+            "latest_window": d.get("latest_post_cutoff_window_id"),
+            "status": d.get("status"),
+        } if d else None)(_j(ROOT / "research" / "true15m" / "TEST_V2_CAPTURE_AUDIT.json")),
+        "current_evidence": (
+            "CURRENT EVIDENCE: weak or unstable generalizable signal in the tested "
+            "feature/model combinations. Feature search CLOSED; training stack HEALTHY; "
+            "A_CORE/A_AV/A_DERIV/A_NEWS and distributional CatBoost/NGBoost TESTED_NEGATIVE; "
+            "loss-formulation sweep surfaced only a WEAK_UNSTABLE_CANDIDATE (quantile). "
+            "GLOBAL INFORMATION_LIMITED is NOT YET RATIFIED — neural/temporal/foundation "
+            "families and the one-time blind TEST_V2 audit remain."),
         "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
             "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,

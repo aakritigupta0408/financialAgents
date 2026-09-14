@@ -1,0 +1,165 @@
+{
+ "schema_version": "loss-calibration-sweeps-2",
+ "generated_at": 1789414418.242924,
+ "cohort": "A_CORE",
+ "baseline_val": {
+  "log_loss": 0.69315,
+  "brier": 0.25,
+  "auc": 0.5,
+  "accuracy": 0.487
+ },
+ "loss_formulations": {
+  "TGT-B_huber": {
+   "log_loss": 0.6924,
+   "brier": 0.24963,
+   "auc": 0.5153,
+   "accuracy": 0.5249
+  },
+  "TGT-C_mse": {
+   "log_loss": 0.69986,
+   "brier": 0.25331,
+   "auc": 0.4815,
+   "accuracy": 0.4924
+  },
+  "TGT-D_quantile": {
+   "log_loss": 0.68943,
+   "brier": 0.24815,
+   "auc": 0.5528,
+   "accuracy": 0.538
+  },
+  "TGT-E1_gaussian_nll": {
+   "log_loss": 0.71716,
+   "brier": 0.25622,
+   "auc": 0.4904,
+   "accuracy": 0.4837
+  },
+  "TGT-E2_studentt_nll": {
+   "status": "UNSTABLE",
+   "log_loss": null,
+   "auc": null,
+   "reason": "isolated NGBoost-T fit exited rc=1 (segfault/overflow: df->inf in Student-t score)"
+  },
+  "TGT-MT_multitask_best": {
+   "log_loss": 0.69016,
+   "brier": 0.24859,
+   "auc": 0.5452,
+   "accuracy": 0.5249,
+   "best_lambda": "lambda=1.0"
+  }
+ },
+ "multitask_lambda_sweep": {
+  "lambda=0.0": {
+   "log_loss": 0.696,
+   "brier": 0.25142,
+   "auc": 0.443,
+   "accuracy": 0.5022
+  },
+  "lambda=0.25": {
+   "log_loss": 0.6937,
+   "brier": 0.25029,
+   "auc": 0.5156,
+   "accuracy": 0.5119
+  },
+  "lambda=0.5": {
+   "log_loss": 0.69591,
+   "brier": 0.2514,
+   "auc": 0.5183,
+   "accuracy": 0.5098
+  },
+  "lambda=0.75": {
+   "log_loss": 0.69356,
+   "brier": 0.25026,
+   "auc": 0.5215,
+   "accuracy": 0.5043
+  },
+  "lambda=1.0": {
+   "log_loss": 0.69016,
+   "brier": 0.24859,
+   "auc": 0.5452,
+   "accuracy": 0.5249
+  }
+ },
+ "calibration_sweep": {
+  "scorer": "TGT-B huber (representative)",
+  "results": {
+   "raw": {
+    "log_loss": 0.69337,
+    "brier": 0.25017,
+    "auc": 0.5192,
+    "accuracy": 0.5141
+   },
+   "platt": {
+    "log_loss": 0.69542,
+    "brier": 0.25113,
+    "auc": 0.4808,
+    "accuracy": 0.487
+   },
+   "isotonic": {
+    "log_loss": 0.69473,
+    "brier": 0.25079,
+    "auc": 0.5066,
+    "accuracy": 0.487
+   },
+   "temperature": {
+    "log_loss": 0.69235,
+    "brier": 0.2496,
+    "auc": 0.5192,
+    "accuracy": 0.5141
+   }
+  }
+ },
+ "walk_forward_corroboration": {
+  "folds": 5,
+  "scheme": "expanding chronological, scaler re-fit per fold, raw features",
+  "candidates_checked": [
+   "TGT-B_huber",
+   "TGT-D_quantile"
+  ],
+  "results": {
+   "TGT-B_huber": {
+    "per_fold": [
+     0.69223,
+     0.69631,
+     0.72813,
+     0.69069,
+     0.69276
+    ],
+    "median": 0.69276,
+    "folds_beating_baseline": 3,
+    "n_folds": 5,
+    "consistency": 0.6,
+    "median_beats": false
+   },
+   "TGT-D_quantile": {
+    "per_fold": [
+     0.69109,
+     0.6955,
+     0.69876,
+     0.68952,
+     0.68896
+    ],
+    "median": 0.69109,
+    "folds_beating_baseline": 3,
+    "n_folds": 5,
+    "consistency": 0.6,
+    "median_beats": true
+   }
+  },
+  "rule": "a VAL dip counts only if its WF median LL < baseline - 0.0005"
+ },
+ "val_beats_baseline": [
+  "TGT-B_huber",
+  "TGT-D_quantile",
+  "TGT-MT_multitask_best"
+ ],
+ "auc_summary": {
+  "TGT-B_huber": 0.5153,
+  "TGT-C_mse": 0.4815,
+  "TGT-D_quantile": 0.5528,
+  "TGT-E1_gaussian_nll": 0.4904,
+  "TGT-MT_multitask_best": 0.5452
+ },
+ "verdict": "WEAK_UNSTABLE_CANDIDATE",
+ "interpretation": "A magnitude-aware loss shows a WEAK, UNSTABLE edge: TGT-D_quantile: WF median 0.69109 vs base 0.69315, 3/5 folds beat baseline. The WF median passes the threshold but folds disagree (not >=80% consistent) and AUCs are ~0.5, so there is no reliable ranking for calibration to rescue. Consistent with the prescribed global wording (weak/unstable). NOT qualified; carry as a candidate into the full battery + sealed TEST_V2 \u2014 do not adopt.",
+ "note": "TRAIN+VAL only; TEST_V1 spent, TEST_V2 sealed."
+}
