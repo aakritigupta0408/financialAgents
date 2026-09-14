@@ -69,6 +69,7 @@ def _stats(trades):
 
 def build():
     pt = _rows(PT)
+    pt.sort(key=lambda r: r.get("close_ts") or r.get("made_ts") or 0)
     settled = [r for r in pt if r.get("pnl_c") is not None]
     open_rows = [r for r in pt if r.get("pnl_c") is None]
 
@@ -94,17 +95,33 @@ def build():
             cur["entry_c"] = po[-1].get("ask_c")
             cur["stake_c"] = po[-1].get("stake_c")
 
-    recent = []
-    for t in settled[-8:]:
-        recent.append({
-            "time": _et(t.get("close_ts")),
+    # BRTI-at-entry per ticker from the binary log (pt rows carry only the strike)
+    brti_at = {}
+    for k in kb:
+        if k.get("ticker") and k.get("base") is not None:
+            brti_at.setdefault(k["ticker"], k["base"])  # first (earliest) seen
+
+    def _trow(t, status):
+        return {
+            "sort_ts": t.get("close_ts") or t.get("made_ts") or 0,
+            "time": _et(t.get("close_ts") or t.get("made_ts")),
             "ticker": t.get("ticker"),
+            "brti": round(brti_at[t["ticker"]], 0) if t.get("ticker") in brti_at else None,
+            "target": round(t["strike"], 0) if t.get("strike") else None,
             "side": (t.get("side") or "").upper(),
             "entry_c": t.get("ask_c"),
-            "result": "WIN" if t.get("win") else "LOSS",
+            "result": (None if status == "Open" else ("WIN" if t.get("win") else "LOSS")),
             "pnl_c": t.get("pnl_c"),
             "bankroll_c": t.get("bankroll_c"),
-        })
+            "status": status,
+        }
+
+    # live trades table: open trade(s) pinned first, then settled most-recent-first
+    opens = sorted((_trow(r, "Open") for r in open_rows[-2:]),
+                   key=lambda x: x["sort_ts"], reverse=True)
+    setts = sorted((_trow(r, "Settled") for r in settled),
+                   key=lambda x: x["sort_ts"], reverse=True)[:14]
+    recent = opens + setts
 
     # equity curve: real running bankroll over the recent session (last 80 trades)
     session = settled[-80:]
@@ -129,7 +146,7 @@ def build():
         "current_window": cur,
         "since_activation": _stats(since),
         "session": _stats(session),
-        "recent_trades": list(reversed(recent)),
+        "recent_trades": recent,
         "equity_curve": curve,
         "note": "Live paper desk — the Oracle's Follower policy (trader T0's lineage) "
                 "trading live Kalshi 15-minute windows, settled on official BRTI. The "
