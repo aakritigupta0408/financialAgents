@@ -1,62 +1,57 @@
-<!-- HOME — renders results/home_snapshot.json VERBATIM on the shared site design
-     system (theme.css). No scientific/economic formula runs here; only presentation
-     (cents->$, %, SVG plotting of precomputed series). Backend owners:
-     btc_rl/economics.py + btc_rl/metrics.py. Guarded by test_no_frontend_science.py. -->
+<!-- HOME — renders results/home_snapshot.json on the shared theme.css. Presentation
+     only (formatting + SVG plotting of precomputed series); no canonical science in
+     JS. Guarded by tests/test_no_frontend_science.py. -->
 <link rel="stylesheet" href="theme.css">
 <style>
-  .hero{background:linear-gradient(160deg,var(--surface),var(--surface-2));
-    border:1px solid var(--border);border-radius:20px;padding:28px 30px}
-  .hero .eyebrow{margin-bottom:10px}
-  .hero h1{font-size:2.05rem;line-height:1.06;max-width:22ch}
-  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:20px 30px;margin:22px 0 4px}
-  .fact .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.13em;color:var(--muted);font-weight:600}
-  .fact .v{font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:3px}
+  main{gap:26px}
+  .hero{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 36px}
+  .hero .eyebrow{margin-bottom:14px}
+  .hero h1{font-size:2rem;line-height:1.12;max-width:20ch}
+  .hero .tk{font-size:12px;color:var(--muted);margin-top:8px;font-variant-numeric:tabular-nums}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:24px 34px;margin:28px 0 6px}
+  .fact .k{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:600}
+  .fact .v{font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:5px}
   .fact .v.up{color:var(--up)} .fact .v.down{color:var(--down)}
-  .oraclebar{margin-top:26px;display:grid;grid-template-columns:1fr;gap:14px}
-  .compose{display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--display);
-    font-size:19px;color:var(--ink-2)}
-  .compose b{font-weight:600;color:var(--ink)} .compose .op{color:var(--faint);font-size:22px}
-  .compose .oracle{font-size:28px;color:var(--series-2)}
-  .scale{position:relative;height:46px;margin-top:6px}
-  .scale .rail{position:absolute;top:20px;left:0;right:0;height:6px;border-radius:999px;
-    background:linear-gradient(90deg,rgba(209,60,60,.20),var(--surface-2),rgba(12,138,77,.20));border:1px solid var(--border)}
-  .scale .mk{position:absolute;top:8px;transform:translateX(-50%);text-align:center}
-  .scale .mk .dot{width:12px;height:12px;border-radius:50%;margin:0 auto;border:2px solid var(--surface)}
-  .scale .mk .lb{font-size:10px;color:var(--muted);margin-top:3px;white-space:nowrap;font-weight:600}
-  .scale .mk .pv{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
-  .statebadge{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;
-    letter-spacing:.08em;text-transform:uppercase;padding:5px 14px;border-radius:999px;border:1px solid var(--border)}
-  .statebadge.locked{color:var(--series-2);background:rgba(36,97,184,.10)}
-  .statebadge.searching{color:var(--muted);background:var(--surface-2)}
-  .chartwrap{margin-top:24px;border-top:1px solid var(--border);padding-top:18px}
-  .chartwrap .cl{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
-  .legend2{display:flex;gap:16px;font-size:12px;color:var(--ink-2)}
-  .legend2 i{display:inline-block;width:16px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
-  .emptychart{text-align:center;color:var(--muted);padding:30px;font-size:13px}
-  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px;margin-top:8px}
-  .tcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;
-    display:flex;flex-direction:column;transition:box-shadow .18s,transform .18s}
-  .tcard:hover{box-shadow:0 10px 30px rgba(22,32,44,.09);transform:translateY(-2px)}
-  .tcard .top{display:flex;justify-content:space-between;align-items:flex-start}
-  .rolechip{font-size:9.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;padding:4px 10px;border-radius:7px}
-  .tcard .nm{font:500 21px/1.1 var(--display);color:var(--ink);margin:12px 0 3px}
-  .tcard .ty{font-size:12px;color:var(--muted);line-height:1.5;min-height:36px}
-  .seg{margin-top:14px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
-  .seg .h{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
-    padding:7px 12px;background:var(--surface-2);border-bottom:1px solid var(--border)}
-  .seg .b{padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
-  .seg .m .k{font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .seg .m .v{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
-  .seg .v.pos{color:var(--up)} .seg .v.neg{color:var(--down)}
-  .collect{padding:14px 12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px}
-  .verdict{margin-top:12px;font-size:12px;color:var(--ink-2)}
-  .verdict b{color:var(--ink)}
-  .waiting{text-align:center;padding:52px 20px}
+  .badge{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;padding:6px 15px;
+    border-radius:999px;border:1px solid var(--border);color:var(--ink-2)}
+  .badge.locked{color:var(--series-2);border-color:rgba(36,97,184,.4);background:rgba(36,97,184,.07)}
+  .probs{margin-top:30px;display:grid;gap:18px;max-width:560px}
+  .pr .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
+  .pr .nm{font-size:14px;color:var(--ink-2)} .pr .nm b{color:var(--ink);font-weight:600}
+  .pr .pv{font-size:20px;font-weight:650;font-variant-numeric:tabular-nums}
+  .pr .bar{height:10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden}
+  .pr .fill{height:100%;border-radius:999px;transition:width .5s ease}
+  .pr.oracle .pv{color:var(--series-2)}
+  .relate{margin-top:16px;font-size:13.5px;color:var(--muted);line-height:1.6;max-width:60ch}
+  .relate b{color:var(--ink-2);font-weight:600}
+  .chart{margin-top:30px;border-top:1px solid var(--border);padding-top:22px}
+  .chart .cl{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;margin-bottom:6px}
+  .emptychart{color:var(--muted);padding:24px 0;font-size:13.5px}
+  .sec-head{margin-bottom:16px}
+  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+  .tc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 22px 20px;
+    display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s}
+  .tc:hover{box-shadow:0 12px 34px rgba(22,32,44,.08);transform:translateY(-2px)}
+  .tc .chip{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    padding:4px 11px;border-radius:7px;margin-bottom:14px}
+  .tc .nm{font:500 22px/1.05 var(--display);color:var(--ink)}
+  .tc .ty{font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 18px;min-height:38px}
+  .tc .headline{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1}
+  .tc .headline.pos{color:var(--up)} .tc .headline.neg{color:var(--down)} .tc .headline.neutral{color:var(--ink)}
+  .tc .hl{font-size:11px;color:var(--muted);margin-top:5px}
+  .tc .grid2{display:flex;gap:26px;margin-top:16px}
+  .tc .grid2 .k{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+  .tc .grid2 .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:2px}
+  .tc .foot{margin-top:auto;padding-top:18px;display:flex;justify-content:space-between;align-items:center;
+    border-top:1px solid var(--grid);font-size:12px}
+  .tc .live{color:var(--muted);display:flex;align-items:center;gap:6px}
+  .tc .vd{font-weight:600;color:var(--ink-2)}
+  .waiting{text-align:center;padding:56px 20px}
   .waiting h2{font-family:var(--display);font-size:1.5rem;margin-bottom:8px}
   .waiting p{color:var(--muted);max-width:46ch;margin:0 auto}
-  @keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  main>section{animation:fadein .4s ease both}
-  @media (prefers-reduced-motion:reduce){main>section{animation:none}}
+  @keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  main>section{animation:fadein .45s ease both}
+  @media (prefers-reduced-motion:reduce){main>section{animation:none} .pr .fill{transition:none}}
 </style>
 <div class="topnav">
   <a class="brand" href="home.html">BTC Oracle</a>
@@ -74,115 +69,101 @@
 const $=(s,e=document)=>e.querySelector(s);
 const A=n=>n==null||n==="UNAVAILABLE"?null:n;
 const usd=c=>c==null?"—":(c<0?"−$":"$")+Math.abs(c/100).toLocaleString(undefined,{maximumFractionDigits:0});
-const pct=x=>x==null?"—":(100*x).toFixed(0)+"%";
-const pct1=x=>x==null?"—":(100*x).toFixed(1)+"%";
+const pctN=(x,d=0)=>x==null?"—":(100*x).toFixed(d)+"%";
 const dol=v=>v==null?"—":"$"+Number(v).toLocaleString(undefined,{maximumFractionDigits:0});
-const ROLE={CONTROL:["var(--series-1)","rgba(102,114,131,.13)"],
+const ROLE={CONTROL:["var(--series-1)","rgba(102,114,131,.12)"],
   FORMAL_TREATMENT:["var(--series-7)","rgba(13,122,78,.12)"],
   SHADOW:["var(--series-4)","rgba(143,96,0,.12)"],
   NOT_QUALIFIED:["var(--faint)","var(--surface-2)"]};
 
-function marker(pos,color,lb,pv){
-  return `<div class="mk" style="left:${Math.max(3,Math.min(97,pos*100))}%">
-    <div class="pv">${pv}</div><div class="dot" style="background:${color}"></div><div class="lb">${lb}</div></div>`;
+function probBar(name,v,color,cls){
+  const p=v==null?0:Math.max(0,Math.min(1,v));
+  return `<div class="pr ${cls||''}"><div class="top"><span class="nm">${name}</span>
+    <span class="pv" style="${cls?'':'color:var(--ink)'}">${v==null?"—":pctN(v)}</span></div>
+    <div class="bar"><div class="fill" style="width:${(p*100).toFixed(1)}%;background:${color}"></div></div></div>`;
 }
 function trajChart(traj){
-  if(!traj||traj.length<4) return `<div class="emptychart">Probability trajectory collects over the live window — no chart yet for this contract.</div>`;
-  const W=720,H=180,pad=28;
+  if(!traj||traj.length<4) return `<div class="emptychart">Trajectory collects over the live window — no chart yet for this contract.</div>`;
+  const W=920,H=190,pad=30;
   const xs=traj.map(p=>p.t_left_min), maxX=Math.max(...xs), minX=Math.min(...xs);
-  const X=t=>pad+(1-(t-minX)/((maxX-minX)||1))*(W-2*pad); // left = window start (more time left)
+  const X=t=>pad+(1-(t-minX)/((maxX-minX)||1))*(W-2*pad);
   const Y=p=>pad+(1-p)*(H-2*pad);
   const line=traj.map((p,i)=>(i?"L":"M")+X(p.t_left_min).toFixed(1)+" "+Y(p.p_mech).toFixed(1)).join(" ");
-  const area=`M${X(traj[0].t_left_min).toFixed(1)} ${(H-pad).toFixed(1)} `+traj.map(p=>"L"+X(p.t_left_min).toFixed(1)+" "+Y(p.p_mech).toFixed(1)).join(" ")+` L${X(traj[traj.length-1].t_left_min).toFixed(1)} ${(H-pad).toFixed(1)} Z`;
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:180px">
-    <line class="gridline" x1="${pad}" y1="${Y(.5)}" x2="${W-pad}" y2="${Y(.5)}" stroke-dasharray="4 4"></line>
-    <text x="${pad+2}" y="${Y(.5)-4}">50%</text>
-    <path d="${area}" fill="rgba(36,97,184,.08)"></path>
-    <path d="${line}" fill="none" stroke="var(--series-2)" stroke-width="2.5" stroke-linejoin="round"></path>
-    <circle cx="${X(traj[traj.length-1].t_left_min)}" cy="${Y(traj[traj.length-1].p_mech)}" r="4" fill="var(--series-2)"></circle>
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:190px">
+    <line class="gridline" x1="${pad}" y1="${Y(.5)}" x2="${W-pad}" y2="${Y(.5)}" stroke-dasharray="3 5"></line>
+    <text x="${pad}" y="${Y(.5)-6}">50%</text>
+    <path d="${line}" fill="none" stroke="var(--series-2)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></path>
+    <circle cx="${X(traj[traj.length-1].t_left_min)}" cy="${Y(traj[traj.length-1].p_mech)}" r="4.5" fill="var(--series-2)"></circle>
     <text x="${pad}" y="${H-8}">${maxX.toFixed(0)}m left</text>
-    <text x="${W-pad}" y="${H-8}" text-anchor="end">${minX.toFixed(1)}m left</text>
+    <text x="${W-pad}" y="${H-8}" text-anchor="end">now</text>
   </svg>`;
 }
 function hero(o){
   const brti=A(o.official_brti),tgt=A(o.official_target),dist=A(o.distance),tte=A(o.time_remaining_min);
-  const pm=A(o.p_mech),po=A(o.p_oracle),pk=A(o.p_market),od=A(o.oracle_delta);
-  const st=(o.oracle_state||"SEARCHING");
-  const distCls=dist==null?"":dist>=0?"up":"down";
-  const compose=(pm!=null&&po!=null)
-    ? `<div class="compose"><span>MECH <b>${pct(pm)}</b></span><span class="op">+</span>
-        <span>independent Δ <b>${od==null?"—":(od>=0?"+":"")+(100*od).toFixed(0)+"pp"}</b></span>
-        <span class="op">=</span><span class="oracle">Oracle ${pct(po)}</span></div>`
-    : `<div class="compose muted">Oracle belief populates from the current window's BRTI state.</div>`;
-  const mk=(pm!=null)?marker(pm,"var(--series-1)","Mech",pct(pm)):"";
-  const mo=(po!=null)?marker(po,"var(--series-2)","Oracle",pct(po)):"";
-  const mkk=(pk!=null)?marker(pk,"var(--series-6)","Kalshi",pct(pk)):"";
+  const pm=A(o.p_mech),po=A(o.p_oracle),pk=A(o.p_market);
+  const st=(o.oracle_state||"SEARCHING"), distCls=dist==null?"":dist>=0?"up":"down";
   return `<section class="hero">
-    <span class="eyebrow"><span class="live-dot"></span> BTC Oracle · Independent Research Desk</span>
-    <h1>${(o.contract||"BTC 15M")} — will the close print above the open?</h1>
+    <span class="eyebrow"><span class="live-dot"></span> BTC 15-minute contract · live</span>
+    <h1>Will the close print above the open?</h1>
+    <div class="tk">${o.contract||"KXBTC15M"}</div>
     <div class="facts">
-      <div class="fact"><div class="k">Official BRTI</div><div class="v">${dol(brti)}</div></div>
+      <div class="fact"><div class="k">BRTI now</div><div class="v">${dol(brti)}</div></div>
       <div class="fact"><div class="k">Target</div><div class="v">${dol(tgt)}</div></div>
       <div class="fact"><div class="k">Distance</div><div class="v ${distCls}">${dist==null?"—":(dist>=0?"+$":"−$")+Math.abs(dist).toFixed(0)}</div></div>
       <div class="fact"><div class="k">Time left</div><div class="v">${tte==null?"—":tte+"m"}</div></div>
-      <div class="fact"><div class="k">Oracle</div><div class="v"><span class="statebadge ${st.includes("LOCK")?"locked":"searching"}">${st}</span></div></div>
+      <div class="fact"><div class="k">Oracle</div><div class="v"><span class="badge ${st.includes("LOCK")?"locked":""}">${st}</span></div></div>
     </div>
-    <div class="oraclebar">
-      ${compose}
-      <div class="scale"><div class="rail"></div>${mk}${mo}${mkk}</div>
+    <div class="probs">
+      ${probBar("Oracle — P(up)",po,"var(--series-2)","oracle")}
+      ${probBar("Kalshi market — reference",pk,"var(--series-6)")}
     </div>
-    <div class="chartwrap">
-      <div class="cl"><span class="eyebrow">Mechanical probability this window</span>
-        <span class="legend2"><span><i style="background:var(--series-2)"></i>p_mech(t)</span></span></div>
+    <div class="relate">The Oracle is <b>mechanics ${pm==null?"—":pctN(pm)}</b> adjusted by independent information; Kalshi is the market's price, shown only as a reference — never an Oracle input.</div>
+    <div class="chart">
+      <div class="cl">Mechanical probability, this window</div>
       ${trajChart(o.trajectory)}
-      <div class="mini">Kalshi is the market reference and executable price — never an Oracle input. Benchmark: ${o.benchmark_provenance||"—"}.</div>
     </div>
   </section>`;
 }
 function famCard(t){
   const [fg,bgc]=ROLE[t.role]||["var(--faint)","var(--surface-2)"];
   const bt=t.backtest||{};
-  const hasBt=bt.ev_per_eligible_c!=null;
-  const btBody=hasBt?`<div class="seg"><div class="h">Historical unseen holdout · 93 windows</div>
-      <div class="b">
-        <div class="m"><div class="k">EV / eligible</div><div class="v ${bt.ev_per_eligible_c>=0?'pos':'neg'}">${bt.ev_per_eligible_c.toFixed(1)}¢</div></div>
-        <div class="m"><div class="k">EV / trade</div><div class="v">${bt.ev_per_trade_c==null?"—":bt.ev_per_trade_c.toFixed(1)+"¢"}</div></div>
-        <div class="m"><div class="k">Coverage</div><div class="v">${pct(bt.coverage)}</div></div>
-        <div class="m"><div class="k">Accuracy</div><div class="v">${pct1(bt.accuracy)}</div></div>
-        <div class="m"><div class="k">P&L</div><div class="v ${bt.total_pnl_c>=0?'pos':'neg'}">${usd(bt.total_pnl_c)}</div></div>
-        <div class="m"><div class="k">Max drawdown</div><div class="v">${usd(bt.max_drawdown_c)}</div></div>
-      </div></div>`
-    :`<div class="seg"><div class="h">Backtest</div><div class="collect">${bt.best_holdout_auc!=null?("Holdout AUC "+bt.best_holdout_auc+" — no learnable edge"):(bt.leverage_only?"Leverage only — no sizing skill":"—")}</div></div>`;
-  const live=t.live?`<div class="seg"><div class="h">Live prospective</div>
-      <div class="collect"><span class="live-dot stale"></span> ${t.live.n>0?("n = "+t.live.n):"Collecting · n = 0"}</div></div>`:"";
-  const eff=t.holdout_effect?`<div class="verdict">Formal paired Δ <b>${t.holdout_effect.paired_delta_c}¢</b> · ${(t.holdout_effect.status||"").replace(/_/g," ")}</div>`:"";
-  return `<div class="tcard">
-    <div class="top"><span class="rolechip" style="color:${fg};background:${bgc}">${t.id} · ${t.role.replace(/_/g," ")}</span></div>
+  let headline,hl,g2="";
+  if(bt.ev_per_eligible_c!=null){
+    headline=`<div class="headline ${bt.ev_per_eligible_c>=0?'pos':'neg'}">${bt.ev_per_eligible_c>=0?'+':''}${bt.ev_per_eligible_c.toFixed(1)}¢</div><div class="hl">backtest EV / eligible window · 93 unseen windows</div>`;
+    g2=`<div class="grid2"><div><div class="k">Coverage</div><div class="val">${pctN(bt.coverage)}</div></div>
+        <div><div class="k">Accuracy</div><div class="val">${pctN(bt.accuracy,1)}</div></div>
+        <div><div class="k">Max DD</div><div class="val">${usd(bt.max_drawdown_c)}</div></div></div>`;
+  } else if(bt.best_holdout_auc!=null){
+    headline=`<div class="headline neutral">AUC ${bt.best_holdout_auc}</div><div class="hl">no learnable edge on holdout</div>`;
+  } else if(bt.leverage_only!=null){
+    headline=`<div class="headline neutral">leverage only</div><div class="hl">no sizing skill vs baselines</div>`;
+  } else {
+    headline=`<div class="headline neutral">—</div><div class="hl">not qualified</div>`;
+  }
+  return `<div class="tc">
+    <span class="chip" style="color:${fg};background:${bgc}">${t.id} · ${t.role.replace(/_/g," ")}</span>
     <div class="nm">${t.name}</div>
     <div class="ty">${t.identity}</div>
-    ${btBody}${live}
-    <div class="verdict">Verdict <b>${(t.verdict||"—").replace(/_/g," ")}</b></div>${eff}
+    ${headline}${g2}
+    <div class="foot">
+      <span class="live"><span class="live-dot stale"></span> Live n=${t.live?t.live.n:0}</span>
+      <span class="vd">${(t.verdict||"—").replace(/_/g," ").replace("QUALIFIED FOR PROSPECTIVE","Qualified").replace("INFORMATION LIMITED","Info-limited").replace("SHADOW ONLY","Shadow").replace("NOT QUALIFIED","Locked")}</span>
+    </div>
   </div>`;
 }
 function render(d){
   $("#app").innerHTML=hero(d.oracle_strip||{})
-    +`<section><span class="eyebrow">The trader family</span>
-        <h2>One Oracle brain, five policies</h2>
-        <p class="sub">Every policy consumes the same Oracle; they differ only in how they act.
-           Backtest and live evidence are shown separately and never blended — live results
-           collect once the exact-BRTI runtime is activated.</p>
+    +`<section><div class="sec-head"><span class="eyebrow">The trader family</span>
+        <h2>One Oracle, five policies</h2>
+        <p class="sub">Every policy consumes the same Oracle and differs only in how it acts. Backtest and live are shown separately — live collects once the exact-BRTI runtime is activated.</p></div>
         <div class="fam">${(d.trader_family||[]).map(famCard).join("")}</div></section>`;
-  if(d.paper_banner){const p=d.paper_banner.split("—");$("#banner").innerHTML=`<b>${p[0].trim()}.</b> ${p.slice(1).join("· ").replace(/\s+/g,' ').trim()}`;}
+  if(d.paper_banner){const p=d.paper_banner.split("—");$("#banner").innerHTML=`<b>${p[0].trim()}.</b> ${p.slice(1).join(" · ").replace(/\s+/g,' ').trim()}`;}
 }
 function waiting(){
-  $("#app").innerHTML=`<section class="waiting">
-    <span class="eyebrow" style="justify-content:center"><span class="live-dot stale"></span> BTC Oracle</span>
-    <h2>Waiting for the live desk</h2>
-    <p>No current paper snapshot is available yet. The research desk publishes a fresh
-       snapshot each cycle — check back shortly.</p></section>`;
+  $("#app").innerHTML=`<section class="waiting"><span class="eyebrow" style="justify-content:center">
+    <span class="live-dot stale"></span> BTC Oracle</span><h2>Waiting for the live desk</h2>
+    <p>No current paper snapshot is available yet. The desk publishes a fresh snapshot each cycle — check back shortly.</p></section>`;
 }
-fetch("home_snapshot.json",{cache:"no-store"})
-  .then(r=>r.ok?r.json():null)
-  .then(d=>{ if(!d||!d.trader_family){waiting();return;} render(d); })
-  .catch(()=>waiting());
+fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null)
+  .then(d=>{ if(!d||!d.trader_family){waiting();return;} render(d); }).catch(()=>waiting());
 </script>
