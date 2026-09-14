@@ -52,6 +52,20 @@
   @media(max-width:860px){.split2{grid-template-columns:1fr}}
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 24px}
   .panel .lab{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  .livestrip{margin:20px 0 4px;border-color:var(--up);box-shadow:0 1px 0 rgba(12,138,77,.04)}
+  .livegrid{display:grid;grid-template-columns:1.1fr 1.2fr 1.5fr;gap:20px;align-items:center;margin-top:14px}
+  @media(max-width:900px){.livegrid{grid-template-columns:1fr}}
+  .lwcur .lwk{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .lwcur .lwtk{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}
+  .lwcur .lwtk.mut{color:var(--muted);font-weight:400}
+  .lwprobs{display:flex;gap:16px;margin-top:8px;font-size:12.5px;color:var(--muted)} .lwprobs b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .lwbet{margin-top:8px;font-size:12.5px;color:var(--ink-2)}
+  .livestats{margin-top:0}
+  .livetrades{overflow-x:auto}
+  .sd{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px}
+  .sd.yes{color:var(--up);background:rgba(12,138,77,.10)} .sd.no{color:var(--down);background:rgba(209,60,60,.10)}
+  .res{font-size:10px;font-weight:700} .res.win{color:var(--up)} .res.loss{color:var(--down)}
+  .pl.pos{color:var(--up)} .pl.neg{color:var(--down)}
   .panel h3{font:500 26px/1.05 var(--display);color:var(--ink);margin:4px 0 0;display:flex;align-items:center;gap:10px}
   .rolepill{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:6px}
   .pdesc{font-size:13px;color:var(--ink-2);margin:12px 0 2px} .pdesc .mut{color:var(--muted);display:block;margin-top:2px}
@@ -183,7 +197,7 @@ function icon(name,color,sz){return `<svg viewBox="0 0 24 24" width="${sz||18}" 
 const TR={T0:["var(--series-2)","rgba(36,97,184,.09)","crown"],T1:["var(--series-7)","rgba(13,122,78,.09)","bolt"],
   T2:["var(--series-4)","rgba(143,96,0,.10)","brain"],T3:["var(--series-9)","rgba(95,80,199,.10)","chart"],
   T4:["var(--series-3)","rgba(180,58,110,.09)","layers"]};
-let SNAP=null, DETAIL=null, SEL="T0", CHTAB="backtest";
+let SNAP=null, DETAIL=null, LIVE=null, SEL="T0", CHTAB="backtest";
 const byId=id=>(SNAP.trader_family||[]).find(t=>t.id===id)||{};
 
 function selCard(t){
@@ -222,8 +236,10 @@ function traderPanel(){
       <div class="b"><div class="v">${pctN(bt.coverage)}</div><div class="k">Coverage</div></div>
       <div class="b"><div class="v">${pctN(bt.accuracy,1)}</div><div class="k">Accuracy</div></div>
       <div class="b"><div class="v">${usd(bt.max_drawdown_c)}</div><div class="k">Max DD</div></div></div>`:"";
+  const liveOK=SEL==="T0" && LIVE && LIVE.equity_curve && LIVE.equity_curve.length>2;
   const chart=CHTAB==="backtest"?equitySVG(d.equity_curve)
-    :`<div class="emptychart">Live equity collects once the exact-BRTI runtime is activated · n=0</div>`;
+    :(liveOK?equitySVG(LIVE.equity_curve)
+      :`<div class="emptychart">${SEL==="T0"?"Live equity is collecting — the desk trades one window at a time.":"This policy runs as backtest/shadow only; it is not live-distinct yet."}</div>`);
   return `<div class="panel">
     <div class="lab">Selected trader</div>
     <h3>${SEL} · ${t.name}</h3>
@@ -233,7 +249,7 @@ function traderPanel(){
     <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center">
       <div class="tabs2"><button class="${CHTAB==='backtest'?'on':''}" onclick="setTab('backtest')">Backtest</button>
         <button class="${CHTAB==='live'?'on':''}" onclick="setTab('live')">Live</button></div>
-      ${CHTAB==='backtest'?'<span class="chartbadge">Backtest only</span>':'<span class="notstarted"><span class="live-dot stale"></span> Not started</span>'}
+      ${CHTAB==='backtest'?'<span class="chartbadge">Backtest only</span>':(liveOK?'<span class="notstarted"><span class="live-dot"></span> Live · running bankroll</span>':'<span class="notstarted"><span class="live-dot stale"></span> Collecting</span>')}
     </div>
     ${chart}</div>`;
 }
@@ -276,19 +292,53 @@ function tradesPanel(){
 }
 function abPanel(){
   const ab=(DETAIL&&DETAIL.ab_experiment)||{};
+  const sa=(LIVE&&LIVE.since_activation)||{n:0};
+  const active=LIVE&&LIVE.daemon_alive_age_s!=null&&LIVE.daemon_alive_age_s<180;
+  const badge=active?`<span class="notstarted"><span class="live-dot"></span> Collecting</span>`
+    :`<span class="notstarted"><span class="live-dot stale"></span> Not started</span>`;
   return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="lab">Live A/B test</div><span class="notstarted"><span class="live-dot stale"></span> Not started</span></div>
-    <p class="pdesc" style="margin-top:4px">Live results collect once the exact-BRTI runtime is activated.</p>
+      <div class="lab">Live A/B test</div>${badge}</div>
+    <p class="pdesc" style="margin-top:4px">Exact-BRTI runtime is <b>${active?'active':'inactive'}</b> — the frozen T0-vs-T1 paired experiment now accrues one settled window at a time.</p>
     <div class="abrow">
       <div class="abside"><span class="ic" style="color:var(--series-2)">${icon('crown','var(--series-2)',20)}</span><div><div class="t">Control · T0</div><div class="s">Baseline Follower</div></div></div>
       <span class="muted" style="font-weight:600">vs</span>
       <div class="abside"><span class="ic" style="color:var(--series-7)">${icon('bolt','var(--series-7)',20)}</span><div><div class="t">Treatment · T1</div><div class="s">Selective Edge</div></div></div></div>
     <div class="abmetrics">
       <div class="b"><div class="v">—</div><div class="k">Paired Δ EV / window<br>(collecting)</div></div>
-      <div class="b"><div class="v">0</div><div class="k">Live n paired</div></div>
+      <div class="b"><div class="v">${sa.n}</div><div class="k">Windows since<br>activation</div></div>
       <div class="b"><div class="v">—</div><div class="k">95% CI (collecting)</div></div>
-      <div class="b"><div class="v">0%</div><div class="k">Sequential test</div></div></div>
-    <div class="mini" style="margin-top:14px"><span class="live-dot stale"></span> Live trading begins once the exact-BRTI runtime is activated. · spec ${ab.spec_hash||''}</div></div>`;
+      <div class="b"><div class="v">—</div><div class="k">Sequential test</div></div></div>
+    <div class="mini" style="margin-top:14px"><span class="live-dot ${active?'':'stale'}"></span> Paired capture needs many windows to reach significance; the live desk above shows current activity. · spec ${ab.spec_hash||''}</div></div>`;
+}
+function liveDeskStrip(){
+  const L=LIVE; if(!L||!L.session) return "";
+  const cw=L.current_window, s=L.session, sa=L.since_activation||{n:0};
+  const live=L.daemon_alive_age_s!=null && L.daemon_alive_age_s<180;
+  const dot=live?'<span class="live-dot"></span>':'<span class="live-dot stale"></span>';
+  const cur=cw?`<div class="lwcur">
+      <div class="lwk">Current window · ${cw.mins_left!=null?cw.mins_left.toFixed(1)+'m left':'live'}</div>
+      <div class="lwtk">${cw.ticker||''}</div>
+      <div class="lwprobs"><span>Oracle <b>${cw.oracle_p_up!=null?Math.round(cw.oracle_p_up*100)+'%':'—'}</b></span>
+        <span>Market <b>${cw.market_p_up!=null?Math.round(cw.market_p_up*100)+'%':'—'}</b></span></div>
+      <div class="lwbet">${cw.side?`Desk in <span class="sd ${cw.side==='YES'?'yes':'no'}">${cw.side}</span> @ ${cw.entry_c}¢`:'Awaiting entry'}</div></div>`
+    :`<div class="lwcur"><div class="lwk">Current window</div><div class="lwtk mut">Between windows…</div></div>`;
+  const trs=(L.recent_trades||[]).slice(0,5).map(r=>`<tr><td>${r.time}</td>
+     <td><span class="sd ${r.side==='YES'?'yes':'no'}">${r.side}</span></td>
+     <td>${r.entry_c}¢</td><td><span class="res ${r.result.toLowerCase()}">${r.result}</span></td>
+     <td class="pl ${r.pnl_c>=0?'pos':'neg'}">${r.pnl_c>=0?'+':'−'}$${Math.abs(r.pnl_c/100).toFixed(2)}</td></tr>`).join("");
+  return `<div class="panel livestrip">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div class="lab">${dot} Live paper desk</div>
+      <span class="mini">Settling on official BRTI · ${live?'live':'stale'}${L.daemon_alive_age_s!=null?' ('+L.daemon_alive_age_s+'s)':''}</span></div>
+    <div class="livegrid">
+      ${cur}
+      <div class="kpi3 livestats">
+        <div class="b"><div class="v">${pctN(s.hit_rate,1)}</div><div class="k">Hit rate (last ${s.n})</div></div>
+        <div class="b"><div class="v ${s.pnl_c>=0?'pos':'neg'}">${s.pnl_c>=0?'+':'−'}$${Math.abs(s.pnl_c/100).toFixed(2)}</div><div class="k">P&L (last ${s.n})</div></div>
+        <div class="b"><div class="v">$${(s.bankroll_c/100).toFixed(2)}</div><div class="k">Bankroll</div></div></div>
+      <div class="livetrades"><table class="rt"><thead><tr><th>Time</th><th>Side</th><th>Entry</th><th>Result</th><th>P&L</th></tr></thead><tbody>${trs}</tbody></table></div>
+    </div>
+    <div class="mini" style="margin-top:10px">${sa.n} window${sa.n===1?'':'s'} settled since exact-BRTI activation · the Oracle's Follower policy (trader T0 lineage). The formal T0-vs-T1 paired A/B accrues separately.</div></div>`;
 }
 window.selectTrader=id=>{SEL=id;CHTAB="backtest";paintFamily();};
 window.setTab=t=>{CHTAB=t;paintFamily();};
@@ -299,6 +349,7 @@ function paintFamily(){
       <div class="fambadge"><div class="fb"><span class="ic" style="color:var(--series-2)">${icon('target','var(--series-2)',18)}</span><div><div class="t">Oracle</div><div class="s">Same signal for all</div></div></div>
         <span class="arrow">→</span>
         <div class="fb"><span class="ic" style="color:var(--series-9)">${icon('compass','var(--series-9)',18)}</span><div><div class="t">Five policies</div><div class="s">Different actions</div></div></div></div></div>
+    ${liveDeskStrip()}
     <div class="selrow">${(SNAP.trader_family||[]).map(selCard).join("")}</div>
     <div class="split2" style="margin-bottom:20px">${traderPanel()}${policyPanel()}</div>
     <div class="split2">${tradesPanel()}${abPanel()}</div>
@@ -317,6 +368,7 @@ function waiting(){
 }
 Promise.all([
   fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
-  fetch("trader_detail.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
-]).then(([d,det])=>{ if(!d||!d.trader_family){waiting();return;} DETAIL=det; render(d); }).catch(()=>waiting());
+  fetch("trader_detail.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch("live_desk.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
+]).then(([d,det,live])=>{ if(!d||!d.trader_family){waiting();return;} DETAIL=det; LIVE=live; render(d); }).catch(()=>waiting());
 </script>
