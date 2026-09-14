@@ -1,7 +1,7 @@
 {
  "schema_version": "home-1",
  "metric_definition_version": "econ-1/prob-1",
- "generated_at": 1789384669.271084,
+ "generated_at": 1789385310.960311,
  "source_versions": {
   "git_sha": "623f188",
   "current_truth_utc": "2026-09-14 10:45:20 UTC",
@@ -36,189 +36,181 @@
  },
  "oracle_strip": {
   "contract": "KXBTC15M-26SEP140730-30",
-  "official_brti": 77748.31,
-  "official_target": 77740.51,
-  "distance": 7.8,
-  "time_remaining_min": 12.2,
+  "official_brti": 77850.32,
+  "official_target": 77740.48,
+  "distance": 109.84,
+  "time_remaining_min": 1.5,
   "trajectory": [
    {
     "t_left_min": 15.0,
-    "p_mech": 0.4817
-   },
-   {
-    "t_left_min": 14.93,
-    "p_mech": 0.4819
-   },
-   {
-    "t_left_min": 14.87,
-    "p_mech": 0.4976
-   },
-   {
-    "t_left_min": 14.8,
-    "p_mech": 0.4691
-   },
-   {
-    "t_left_min": 14.73,
-    "p_mech": 0.4769
+    "p_mech": 0.4818
    },
    {
     "t_left_min": 14.67,
-    "p_mech": 0.4849
-   },
-   {
-    "t_left_min": 14.6,
-    "p_mech": 0.4845
-   },
-   {
-    "t_left_min": 14.53,
-    "p_mech": 0.4879
-   },
-   {
-    "t_left_min": 14.47,
-    "p_mech": 0.5002
-   },
-   {
-    "t_left_min": 14.4,
-    "p_mech": 0.4969
+    "p_mech": 0.485
    },
    {
     "t_left_min": 14.33,
-    "p_mech": 0.4872
-   },
-   {
-    "t_left_min": 14.27,
-    "p_mech": 0.4851
-   },
-   {
-    "t_left_min": 14.2,
-    "p_mech": 0.4589
-   },
-   {
-    "t_left_min": 14.13,
-    "p_mech": 0.4839
-   },
-   {
-    "t_left_min": 14.07,
-    "p_mech": 0.475
+    "p_mech": 0.4873
    },
    {
     "t_left_min": 14.0,
-    "p_mech": 0.4781
-   },
-   {
-    "t_left_min": 13.93,
-    "p_mech": 0.4699
-   },
-   {
-    "t_left_min": 13.87,
-    "p_mech": 0.4895
-   },
-   {
-    "t_left_min": 13.8,
-    "p_mech": 0.4881
-   },
-   {
-    "t_left_min": 13.73,
-    "p_mech": 0.4861
+    "p_mech": 0.4782
    },
    {
     "t_left_min": 13.67,
-    "p_mech": 0.4872
-   },
-   {
-    "t_left_min": 13.6,
-    "p_mech": 0.4912
-   },
-   {
-    "t_left_min": 13.53,
-    "p_mech": 0.5057
-   },
-   {
-    "t_left_min": 13.47,
-    "p_mech": 0.5004
-   },
-   {
-    "t_left_min": 13.4,
-    "p_mech": 0.5085
+    "p_mech": 0.4873
    },
    {
     "t_left_min": 13.33,
-    "p_mech": 0.5149
-   },
-   {
-    "t_left_min": 13.27,
-    "p_mech": 0.5155
-   },
-   {
-    "t_left_min": 13.2,
-    "p_mech": 0.5195
-   },
-   {
-    "t_left_min": 13.13,
-    "p_mech": 0.5321
-   },
-   {
-    "t_left_min": 13.07,
-    "p_mech": 0.476
+    "p_mech": 0.515
    },
    {
     "t_left_min": 13.0,
     "p_mech": 0.4766
    },
    {
-    "t_left_min": 12.93,
-    "p_mech": 0.4752
-   },
-   {
-    "t_left_min": 12.87,
-    "p_mech": 0.4789
-   },
-   {
-    "t_left_min": 12.8,
-    "p_mech": 0.4859
-   },
-   {
-    "t_left_min": 12.73,
-    "p_mech": 0.4857
-   },
-   {
     "t_left_min": 12.67,
     "p_mech": 0.5154
    },
    {
-    "t_left_min": 12.6,
-    "p_mech": 0.516
-   },
-   {
-    "t_left_min": 12.53,
-    "p_mech": 0.5128
-   },
-   {
-    "t_left_min": 12.47,
-    "p_mech": 0.5051
-   },
-   {
-    "t_left_min": 12.4,
-    "p_mech": 0.508
-   },
-   {
     "t_left_min": 12.33,
-    "p_mech": 0.5087
+    "p_mech": 0.5088
    },
    {
-    "t_left_min": 12.27,
-    "p_mech": 0.5314
+    "t_left_min": 12.0,
+    "p_mech": 0.5372
    },
    {
-    "t_left_min": 12.2,
-    "p_mech": 0.5289
+    "t_left_min": 11.67,
+    "p_mech": 0.5371
+   },
+   {
+    "t_left_min": 11.33,
+    "p_mech": 0.5568
+   },
+   {
+    "t_left_min": 11.0,
+    "p_mech": 0.5603
+   },
+   {
+    "t_left_min": 10.67,
+    "p_mech": 0.5523
+   },
+   {
+    "t_left_min": 10.33,
+    "p_mech": 0.5316
+   },
+   {
+    "t_left_min": 10.0,
+    "p_mech": 0.5518
+   },
+   {
+    "t_left_min": 9.67,
+    "p_mech": 0.6253
+   },
+   {
+    "t_left_min": 9.33,
+    "p_mech": 0.6942
+   },
+   {
+    "t_left_min": 9.0,
+    "p_mech": 0.7448
+   },
+   {
+    "t_left_min": 8.67,
+    "p_mech": 0.7547
+   },
+   {
+    "t_left_min": 8.33,
+    "p_mech": 0.7438
+   },
+   {
+    "t_left_min": 8.0,
+    "p_mech": 0.7614
+   },
+   {
+    "t_left_min": 7.67,
+    "p_mech": 0.7524
+   },
+   {
+    "t_left_min": 7.33,
+    "p_mech": 0.772
+   },
+   {
+    "t_left_min": 7.0,
+    "p_mech": 0.7941
+   },
+   {
+    "t_left_min": 6.67,
+    "p_mech": 0.7992
+   },
+   {
+    "t_left_min": 6.33,
+    "p_mech": 0.8016
+   },
+   {
+    "t_left_min": 6.0,
+    "p_mech": 0.8005
+   },
+   {
+    "t_left_min": 5.67,
+    "p_mech": 0.8139
+   },
+   {
+    "t_left_min": 5.33,
+    "p_mech": 0.8354
+   },
+   {
+    "t_left_min": 5.0,
+    "p_mech": 0.8886
+   },
+   {
+    "t_left_min": 4.67,
+    "p_mech": 0.9333
+   },
+   {
+    "t_left_min": 4.33,
+    "p_mech": 0.9453
+   },
+   {
+    "t_left_min": 4.0,
+    "p_mech": 0.961
+   },
+   {
+    "t_left_min": 3.67,
+    "p_mech": 0.9401
+   },
+   {
+    "t_left_min": 3.33,
+    "p_mech": 0.9418
+   },
+   {
+    "t_left_min": 3.0,
+    "p_mech": 0.9472
+   },
+   {
+    "t_left_min": 2.67,
+    "p_mech": 0.9542
+   },
+   {
+    "t_left_min": 2.33,
+    "p_mech": 0.9656
+   },
+   {
+    "t_left_min": 2.0,
+    "p_mech": 0.9821
+   },
+   {
+    "t_left_min": 1.67,
+    "p_mech": 0.9897
    }
   ],
-  "p_mech": 0.5247,
-  "p_oracle": 0.5288,
-  "oracle_delta": -0.0062,
-  "p_market": 0.535,
-  "oracle_state": "SEARCHING",
+  "p_mech": 0.9934,
+  "p_oracle": 0.9742,
+  "oracle_delta": -0.0213,
+  "p_market": 0.9954999999999999,
+  "oracle_state": "LOCKED",
   "oracle_spec_hash": "71c3bcffa964",
   "benchmark_provenance": "EXACT CF-BRTI (current window computed live)",
   "runtime_contract_truth": "LEGACY / ACTIVATION_PENDING",
@@ -726,7 +718,8 @@
    "name": "Baseline Follower",
    "role": "CONTROL",
    "type": "Rule-based",
-   "identity": "lock + executable EV >= min -> fixed stake",
+   "blurb": "Takes every eligible Oracle trade at a fixed stake \u2014 the reference policy.",
+   "reason": "Positive on unseen windows.",
    "backtest": {
     "ev_per_eligible_c": 3.8164376344086026,
     "ev_per_trade_c": 4.609463636363637,
@@ -747,7 +740,8 @@
    "name": "Selective Edge",
    "role": "FORMAL_TREATMENT",
    "type": "Rule-based",
-   "identity": "T0 + require |p_oracle - p_market| >= 0.15 (FROZEN, spec_hash 51b49617)",
+   "blurb": "Trades only when the Oracle disagrees strongly with the market (\u226515pp).",
+   "reason": "Higher EV per trade, lower drawdown than the baseline.",
    "backtest": {
     "ev_per_eligible_c": 11.04069247311828,
     "ev_per_trade_c": 20.535688,
@@ -775,8 +769,9 @@
    "id": "T2",
    "name": "Meta-ML",
    "role": "SHADOW",
-   "type": "Machine-learned TAKE/SKIP",
-   "identity": "Oracle opportunity -> P(profitable trade) -> TAKE/SKIP",
+   "type": "Machine-learned",
+   "blurb": "Learns whether a given Oracle trade is worth taking, and skips the rest.",
+   "reason": "No learnable signal beyond the Oracle on this data.",
    "backtest": {
     "best_holdout_auc": 0.4787
    },
@@ -790,8 +785,9 @@
    "id": "T3",
    "name": "RL Policy",
    "role": "SHADOW",
-   "type": "Contextual-bandit size policy",
-   "identity": "state -> policy -> SKIP/SMALL/MEDIUM/LARGE (Oracle side immutable)",
+   "type": "Reinforcement learning",
+   "blurb": "Learns how much capital to size on the Oracle's trade (the side is fixed).",
+   "reason": "Only learned to bet big \u2014 no real sizing skill vs baselines.",
    "backtest": {
     "t3_return_to_risk": 0.02313,
     "best_baseline_return_to_risk": 78574371428.57143,
@@ -809,8 +805,9 @@
    "id": "T4",
    "name": "Composite",
    "role": "NOT_QUALIFIED",
-   "type": "-",
-   "identity": "created only after components independently qualify",
+   "type": "Combination",
+   "blurb": "Combines the best components \u2014 unlocked only after each qualifies on its own.",
+   "reason": "Waiting on component qualification.",
    "backtest": null,
    "live": null,
    "verdict": "NOT_QUALIFIED"

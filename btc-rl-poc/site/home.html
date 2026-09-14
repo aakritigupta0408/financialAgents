@@ -28,24 +28,31 @@
   .chart .cl{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;margin-bottom:6px}
   .emptychart{color:var(--muted);padding:24px 0;font-size:13.5px}
   .sec-head{margin-bottom:16px}
-  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
-  .tc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 22px 20px;
+  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:18px}
+  .tc{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px;
     display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s}
-  .tc:hover{box-shadow:0 12px 34px rgba(22,32,44,.08);transform:translateY(-2px)}
+  .tc:hover{box-shadow:0 12px 34px rgba(22,32,44,.09);transform:translateY(-2px)}
+  .tc.shadow{background:var(--surface-2)}
   .tc .chip{align-self:flex-start;font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
-    padding:4px 11px;border-radius:7px;margin-bottom:14px}
+    padding:4px 11px;border-radius:7px;margin-bottom:15px}
   .tc .nm{font:500 22px/1.05 var(--display);color:var(--ink)}
-  .tc .ty{font-size:12.5px;color:var(--muted);line-height:1.5;margin:6px 0 18px;min-height:38px}
-  .tc .headline{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1}
-  .tc .headline.pos{color:var(--up)} .tc .headline.neg{color:var(--down)} .tc .headline.neutral{color:var(--ink)}
-  .tc .hl{font-size:11px;color:var(--muted);margin-top:5px}
-  .tc .grid2{display:flex;gap:26px;margin-top:16px}
-  .tc .grid2 .k{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
-  .tc .grid2 .val{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:2px}
-  .tc .foot{margin-top:auto;padding-top:18px;display:flex;justify-content:space-between;align-items:center;
+  .tc .blurb{font-size:12.5px;color:var(--muted);line-height:1.55;margin:7px 0 0;min-height:56px}
+  .tc .metric{margin-top:4px}
+  .tc .big{font-size:32px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1}
+  .tc .big.pos{color:var(--up)} .tc .big.neg{color:var(--down)} .tc .big.mut{color:var(--ink-2);font-size:24px}
+  .tc .unit{font-size:11px;color:var(--muted);margin-top:6px}
+  .tc .evbar{height:6px;border-radius:999px;background:var(--surface);border:1px solid var(--border);
+    overflow:hidden;margin:14px 0 4px}
+  .tc.shadow .evbar{background:var(--surface)}
+  .tc .evbar>i{display:block;height:100%;border-radius:999px;background:var(--up)}
+  .tc .stats{display:flex;gap:18px;margin-top:14px;font-size:12px;color:var(--muted)}
+  .tc .stats b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .tc .reason{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:14px}
+  .tc .foot{margin-top:auto;padding-top:16px;display:flex;justify-content:space-between;align-items:center;
     border-top:1px solid var(--grid);font-size:12px}
   .tc .live{color:var(--muted);display:flex;align-items:center;gap:6px}
-  .tc .vd{font-weight:600;color:var(--ink-2)}
+  .tc .vd{font-weight:600}
+  .vd.good{color:var(--up)} .vd.mut{color:var(--muted)} .vd.warn{color:var(--series-4)}
   .waiting{text-align:center;padding:56px 20px}
   .waiting h2{font-family:var(--display);font-size:1.5rem;margin-bottom:8px}
   .waiting p{color:var(--muted);max-width:46ch;margin:0 auto}
@@ -124,30 +131,41 @@ function hero(o){
     </div>
   </section>`;
 }
+const VD={QUALIFIED_FOR_PROSPECTIVE:["Qualified","good"],INFORMATION_LIMITED:["Info-limited","mut"],
+  SHADOW_ONLY:["Shadow","warn"],NOT_QUALIFIED:["Locked","mut"],REJECTED:["Rejected","mut"]};
 function famCard(t){
   const [fg,bgc]=ROLE[t.role]||["var(--faint)","var(--surface-2)"];
   const bt=t.backtest||{};
-  let headline,hl,g2="";
+  const isShadow=(t.role==="SHADOW"||t.role==="NOT_QUALIFIED");
+  let metric,extra="";
   if(bt.ev_per_eligible_c!=null){
-    headline=`<div class="headline ${bt.ev_per_eligible_c>=0?'pos':'neg'}">${bt.ev_per_eligible_c>=0?'+':''}${bt.ev_per_eligible_c.toFixed(1)}¢</div><div class="hl">backtest EV / eligible window · 93 unseen windows</div>`;
-    g2=`<div class="grid2"><div><div class="k">Coverage</div><div class="val">${pctN(bt.coverage)}</div></div>
-        <div><div class="k">Accuracy</div><div class="val">${pctN(bt.accuracy,1)}</div></div>
-        <div><div class="k">Max DD</div><div class="val">${usd(bt.max_drawdown_c)}</div></div></div>`;
+    const ev=bt.ev_per_eligible_c, w=Math.max(4,Math.min(100,ev/15*100));
+    metric=`<div class="metric"><div class="big ${ev>=0?'pos':'neg'}">${ev>=0?'+':''}${ev.toFixed(1)}¢</div>
+      <div class="unit">backtest EV per eligible window</div></div>
+      <div class="evbar"><i style="width:${w}%"></i></div>
+      <div class="stats"><span>Coverage <b>${pctN(bt.coverage)}</b></span>
+        <span>Accuracy <b>${pctN(bt.accuracy,0)}</b></span>
+        <span>Drawdown <b>${usd(bt.max_drawdown_c)}</b></span></div>`;
   } else if(bt.best_holdout_auc!=null){
-    headline=`<div class="headline neutral">AUC ${bt.best_holdout_auc}</div><div class="hl">no learnable edge on holdout</div>`;
+    metric=`<div class="metric"><div class="big mut">AUC ${bt.best_holdout_auc}</div>
+      <div class="unit">holdout · 0.50 = no signal</div></div>`;
   } else if(bt.leverage_only!=null){
-    headline=`<div class="headline neutral">leverage only</div><div class="hl">no sizing skill vs baselines</div>`;
+    metric=`<div class="metric"><div class="big mut">Leverage only</div>
+      <div class="unit">no risk-adjusted edge vs baselines</div></div>`;
   } else {
-    headline=`<div class="headline neutral">—</div><div class="hl">not qualified</div>`;
+    metric=`<div class="metric"><div class="big mut">Locked</div>
+      <div class="unit">awaiting component qualification</div></div>`;
   }
-  return `<div class="tc">
+  const [vlab,vcls]=VD[t.verdict]||["—","mut"];
+  return `<div class="tc ${isShadow?'shadow':''}">
     <span class="chip" style="color:${fg};background:${bgc}">${t.id} · ${t.role.replace(/_/g," ")}</span>
     <div class="nm">${t.name}</div>
-    <div class="ty">${t.identity}</div>
-    ${headline}${g2}
+    <div class="blurb">${t.blurb||""}</div>
+    ${metric}
+    <div class="reason">${t.reason||""}</div>
     <div class="foot">
-      <span class="live"><span class="live-dot stale"></span> Live n=${t.live?t.live.n:0}</span>
-      <span class="vd">${(t.verdict||"—").replace(/_/g," ").replace("QUALIFIED FOR PROSPECTIVE","Qualified").replace("INFORMATION LIMITED","Info-limited").replace("SHADOW ONLY","Shadow").replace("NOT QUALIFIED","Locked")}</span>
+      <span class="live"><span class="live-dot stale"></span> Live · n=${t.live?t.live.n:0}</span>
+      <span class="vd ${vcls}">${vlab}</span>
     </div>
   </div>`;
 }
