@@ -15,6 +15,7 @@ Install:  * * * * * /opt/anaconda3/bin/python3 "<repo>/scripts/publish_dashboard
 """
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -269,14 +270,18 @@ SNAPSHOT_EMITTERS = [          # regenerate typed UI snapshots BEFORE every publ
     "emit_trader_detail.py",
     "emit_live_desk.py",
 ]
+# The fast lane: only the LIVE snapshots (current window + live desk). These are
+# cheap to regenerate; the backtest-heavy emit_trader_detail (full replay) is
+# deliberately excluded so a per-minute refresh loop stays light.
+LIVE_EMITTERS = ["emit_home_snapshot.py", "emit_live_desk.py"]
 
 
-def refresh_snapshots() -> None:
+def refresh_snapshots(only: list[str] | None = None) -> None:
     """Root-cause fix: the publisher must GENERATE the snapshots it ships, not just
     copy whatever happens to be on disk. Each emitter is best-effort — a failure
     logs and never blocks the publish (the page degrades to WAITING FOR LIVE DESK)."""
     here = Path(__file__).resolve().parent
-    for script in SNAPSHOT_EMITTERS:
+    for script in (only or SNAPSHOT_EMITTERS):
         try:
             r = subprocess.run(["python3", str(here / script)],
                                capture_output=True, text=True, timeout=180)
@@ -287,12 +292,14 @@ def refresh_snapshots() -> None:
 
 
 def main() -> None:
-    refresh_snapshots()
+    live = "--live" in sys.argv          # fast lane: only live snapshots, gh-pages only
+    refresh_snapshots(LIVE_EMITTERS if live else None)
     publish_ghpages()
-    try:
-        sync_main()
-    except subprocess.CalledProcessError as e:
-        print("main sync failed:", str(e)[:120])
+    if not live:
+        try:
+            sync_main()
+        except subprocess.CalledProcessError as e:
+            print("main sync failed:", str(e)[:120])
 
 
 if __name__ == "__main__":

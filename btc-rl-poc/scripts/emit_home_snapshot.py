@@ -179,6 +179,9 @@ def _oracle_strip():
     fresh = bool(brti and target)
     return {
         "contract": contract,
+        # absolute epochs so the client can tick the countdown every second
+        "close_ts": ((int(time.time()) // 900) + 1) * 900,
+        "now_ts": int(time.time()),
         "official_brti": round(brti, 2) if (fresh and brti) else U,
         "official_target": round(target, 2) if (fresh and target) else U,
         "distance": round(brti - target, 2) if (fresh and brti and target) else U,

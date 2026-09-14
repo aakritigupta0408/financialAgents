@@ -93,6 +93,7 @@ def build():
             "brti": round(k["base"], 0) if k.get("base") else None,
             "target": round(k["strike"], 0) if k.get("strike") else None,
             "mins_left": k.get("mins_left"),
+            "close_ts": k.get("close_ts"),   # absolute epoch for a live client countdown
         }
         po = [r for r in open_rows if r.get("ticker") == k.get("ticker")]
         if po:

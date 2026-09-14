@@ -163,14 +163,14 @@ function hero(o){
   const pm=A(o.p_mech),po=A(o.p_oracle),pk=A(o.p_market);
   const st=(o.oracle_state||"SEARCHING"), distCls=dist==null?"":dist>=0?"up":"down";
   return `<section class="hero">
-    <span class="eyebrow"><span class="live-dot"></span> BTC 15-minute contract · live</span>
+    <span class="eyebrow"><span class="live-dot"></span> BTC 15-minute contract · live<span id="freshness" class="mut"></span></span>
     <h1>Will the close print above the open?</h1>
     <div class="tk">${o.contract||"KXBTC15M"}</div>
     <div class="facts">
       <div class="fact"><div class="k">BRTI now</div><div class="v">${dol(brti)}</div></div>
       <div class="fact"><div class="k">Target</div><div class="v">${dol(tgt)}</div></div>
       <div class="fact"><div class="k">Distance</div><div class="v ${distCls}">${dist==null?"—":(dist>=0?"+$":"−$")+Math.abs(dist).toFixed(0)}</div></div>
-      <div class="fact"><div class="k">Time left</div><div class="v">${tte==null?"—":tte+"m"}</div></div>
+      <div class="fact"><div class="k">Time left</div><div class="v" id="tleft" data-close="${o.close_ts||0}">${tte==null?"—":tte+"m"}</div></div>
       <div class="fact"><div class="k">Oracle</div><div class="v"><span class="badge ${st.includes("LOCK")?"locked":""}">${st}</span></div></div>
     </div>
     <div class="probs">
@@ -353,7 +353,7 @@ function liveDeskStrip(){
   const live=L.daemon_alive_age_s!=null && L.daemon_alive_age_s<180;
   const dot=live?'<span class="live-dot"></span>':'<span class="live-dot stale"></span>';
   const cur=cw?`<div class="lwcur">
-      <div class="lwk">Current window · ${cw.mins_left!=null?cw.mins_left.toFixed(1)+'m left':'live'}</div>
+      <div class="lwk">Current window · <span id="cwleft" data-close="${cw.close_ts||0}">${cw.mins_left!=null?cw.mins_left.toFixed(1)+'m left':'live'}</span></div>
       <div class="lwtk">${cw.ticker||''}</div>
       <div class="lwprobs"><span>Oracle <b>${cw.oracle_p_up!=null?Math.round(cw.oracle_p_up*100)+'%':'—'}</b></span>
         <span>Market <b>${cw.market_p_up!=null?Math.round(cw.market_p_up*100)+'%':'—'}</b></span></div>
@@ -407,9 +407,41 @@ function waiting(){
     <span class="live-dot stale"></span> BTC Oracle</span><h2>Waiting for the live desk</h2>
     <p>No current paper snapshot is available yet. The desk publishes a fresh snapshot each cycle — check back shortly.</p></section>`;
 }
-Promise.all([
-  fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
-  fetch("trader_detail.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
-  fetch("live_desk.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
-]).then(([d,det,live])=>{ if(!d||!d.trader_family){waiting();return;} DETAIL=det; LIVE=live; render(d); }).catch(()=>waiting());
+// ---- live refresh -----------------------------------------------------------
+// The countdown ticks every second locally; the underlying snapshots are
+// re-fetched on a short cycle (the desk republishes them continuously). Data is
+// as fresh as the last publish, so we also show how long ago it was generated.
+let LOADED=false;
+const POLL_MS=5000;
+function fmtLeft(closeTs){
+  if(!closeTs) return null;
+  let s=Math.round(closeTs-Date.now()/1000);
+  if(s<0) s=0;
+  return Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+}
+function tick(){
+  document.querySelectorAll("[data-close]").forEach(el=>{
+    const t=+el.getAttribute("data-close"); if(!t) return;
+    const f=fmtLeft(t); if(f==null) return;
+    el.textContent = el.id==="cwleft" ? f+" left" : f;
+  });
+  const fr=document.getElementById("freshness");
+  if(fr && SNAP && SNAP.generated_at){
+    const age=Math.max(0,Math.round(Date.now()/1000-SNAP.generated_at));
+    fr.textContent=" · updated "+(age<60?age+"s":Math.floor(age/60)+"m "+(age%60)+"s")+" ago";
+  }
+}
+function loadData(){
+  return Promise.all([
+    fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch("trader_detail.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+    fetch("live_desk.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
+  ]).then(([d,det,live])=>{
+    if(!d||!d.trader_family){ if(!LOADED) waiting(); return; }
+    DETAIL=det; LIVE=live; render(d); LOADED=true; tick();
+  }).catch(()=>{ if(!LOADED) waiting(); });
+}
+loadData();
+setInterval(loadData, POLL_MS);
+setInterval(tick, 1000);
 </script>
