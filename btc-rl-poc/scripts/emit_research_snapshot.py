@@ -129,6 +129,10 @@ def research_snapshot(health):
         _lane("L9", "Falsification", "PASS" if ladder.get("falsification") else "QUEUED",
               "label-shuffle placebo run", None),
         _lane("L10", "UI / Research Narrator", "RUNNING", "private live feed online", None),
+        _lane("L11", "Research Intelligence", "RUNNING",
+              f"{len((_j(ROOT/'research'/'true15m'/'RESEARCH_INTELLIGENCE_QUEUE.json') or {}).get('queue',[]))} "
+              "experiment specs queued (specs only, no training)", None,
+              "all specs QUEUED_AFTER_DATASET_GATE"),
     ]
 
     jobs = (_j(R / "research_jobs.json") or {}).get("jobs", [])
@@ -202,6 +206,9 @@ def research_snapshot(health):
                       "complete": sum(1 for x in jobs if x.get("status") == "COMPLETE"),
                       "running": sum(1 for x in jobs if x.get("status") == "RUNNING"),
                       "failed": sum(1 for x in jobs if x.get("status") in ("FAILED", "BLOCKED"))},
+        "milestone": "P1.3 — EXTERNAL CONTEXT RESOLUTION",
+        "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
+            "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,
         "cohorts": covmat.get("cohorts") if covmat else None,
         "coarse_cohorts": recon.get("cohorts") if recon else None,
