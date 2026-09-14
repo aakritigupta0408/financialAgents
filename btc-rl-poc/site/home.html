@@ -16,6 +16,9 @@
   .badge{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.04em;padding:6px 15px;
     border-radius:999px;border:1px solid var(--border);color:var(--ink-2)}
   .badge.locked{color:var(--series-2);border-color:rgba(36,97,184,.4);background:rgba(36,97,184,.07)}
+  .badge.up{color:var(--up);border-color:rgba(12,138,77,.4);background:rgba(12,138,77,.07)}
+  .badge.down{color:var(--down);border-color:rgba(209,60,60,.4);background:rgba(209,60,60,.07)}
+  .badge.neutral{color:var(--muted)}
   .probs{margin-top:30px;display:grid;gap:18px;max-width:560px}
   .pr .top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px}
   .pr .nm{font-size:14px;color:var(--ink-2)} .pr .nm b{color:var(--ink);font-weight:600}
@@ -161,7 +164,7 @@ function trajChart(traj){
 function hero(o){
   const brti=A(o.official_brti),tgt=A(o.official_target),dist=A(o.distance),tte=A(o.time_remaining_min);
   const pm=A(o.p_mech),po=A(o.p_oracle),pk=A(o.p_market);
-  const st=(o.oracle_state||"SEARCHING"), distCls=dist==null?"":dist>=0?"up":"down";
+  const st=(o.oracle_state||"—"), distCls=dist==null?"":dist>=0?"up":"down";
   return `<section class="hero">
     <span class="eyebrow"><span class="live-dot"></span> BTC 15-minute contract · live<span id="freshness" class="mut"></span></span>
     <h1>Will the close print above the open?</h1>
@@ -171,7 +174,7 @@ function hero(o){
       <div class="fact"><div class="k">Target</div><div class="v">${dol(tgt)}</div></div>
       <div class="fact"><div class="k">Distance</div><div class="v ${distCls}">${dist==null?"—":(dist>=0?"+$":"−$")+Math.abs(dist).toFixed(0)}</div></div>
       <div class="fact"><div class="k">Time left</div><div class="v" id="tleft" data-close="${o.close_ts||0}">${tte==null?"—":tte+"m"}</div></div>
-      <div class="fact"><div class="k">Oracle</div><div class="v"><span class="badge ${st.includes("LOCK")?"locked":""}">${st}</span></div></div>
+      <div class="fact"><div class="k">Oracle</div><div class="v"><span class="badge ${st.includes("UP")?"up":st.includes("DOWN")?"down":"neutral"}">${st}</span></div></div>
     </div>
     <div class="probs">
       ${probBar("Oracle — P(up)",po,"var(--series-2)","oracle")}

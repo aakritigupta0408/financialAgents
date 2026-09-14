@@ -191,8 +191,11 @@ def _oracle_strip():
         "p_oracle": p_oracle if p_oracle is not None else U,
         "oracle_delta": odelta if odelta is not None else U,
         "p_market": p_market if (fresh and p_market is not None) else U,
-        "oracle_state": ("LOCKED" if (p_oracle is not None and abs(p_oracle - 0.5) > 0.15)
-                         else "SEARCHING"),
+        # directional conviction of the LIVE p_oracle (it recomputes each tick as
+        # price/time move — this is a lean, never a frozen "lock")
+        "oracle_state": (U if p_oracle is None else
+                         "LEANING UP" if p_oracle > 0.65 else
+                         "LEANING DOWN" if p_oracle < 0.35 else "TOSS-UP"),
         "oracle_spec_hash": frozen.get("spec_hash"),
         "benchmark_provenance": ("EXACT CF-BRTI (current window computed live)"
                                  if p_mech is not None else
