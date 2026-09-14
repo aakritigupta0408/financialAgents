@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from btc_rl import metrics as MET          # noqa: E402
 from btc_rl import research_events as EV    # noqa: E402
+from btc_rl.test_v2_firewall import guard_rows  # noqa: E402
 
 T = ROOT / "research" / "true15m"
 INV = T / "contract_inventory.jsonl"
@@ -93,6 +94,9 @@ def build_dataset():
                      "features": feats, "max_source_close_ts": r["max_source_close_ts"],
                      "cohort": "A_CORE"})
     rows.sort(key=lambda r: r["T0"])
+    # firewall: the offline program's dataset (DEV + TEST_V1) must never contain a
+    # post-cutoff / TEST_V2 window — enforced explicitly, not just by construction.
+    guard_rows(rows, "true15m_offline_program")
     return rows
 
 

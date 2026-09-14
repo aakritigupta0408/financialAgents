@@ -37,7 +37,10 @@ SRC = ROOT / "results" / "contract_outcomes.jsonl"          # forward authoritat
 SPLIT = ROOT / "research" / "true15m" / "SPLIT_SPEC_V1.json"
 MEMBERSHIP = ROOT / "research" / "true15m" / "TEST_V2_MEMBERSHIP.jsonl"
 AUDIT = ROOT / "research" / "true15m" / "TEST_V2_CAPTURE_AUDIT.json"
+STATE = ROOT / "research" / "true15m" / "TEST_V2_MEMBERSHIP_STATE.json"
+POWER = ROOT / "research" / "true15m" / "TEST_V2_POWER_ANALYSIS.json"
 WINDOW_S = 900
+FALLBACK_TARGET = 672    # used only if the power analysis hasn't pre-registered N yet
 
 
 def _epoch(iso):
@@ -112,13 +115,49 @@ def build():
     MEMBERSHIP.write_text(body)
     mem_sha = hashlib.sha256(body.encode()).hexdigest()[:16]
 
-    target = 672
+    # ---- APPEND_ONLY membership state (rolling until the pre-registered target N) ----
+    # V2 is rolling, so the current hash is NOT final. Track mode=APPEND_ONLY with a
+    # prefix hash; enforce that a window once registered never disappears; and freeze the
+    # immutable final_membership_hash EXACTLY ONCE, when the pre-registered target is hit.
+    target = FALLBACK_TARGET
+    if POWER.exists():
+        target = json.loads(POWER.read_text()).get("pre_registered_target_N") or FALLBACK_TARGET
+    cur_ids = [m["market_window_id"] for m in members]
+    prefix_hash = hashlib.sha256("".join(sorted(cur_ids)).encode()).hexdigest()[:16]
+    prev = json.loads(STATE.read_text()) if STATE.exists() else None
+    prev_ids = set(prev.get("member_ids", [])) if prev else set()
+    vanished = sorted(prev_ids - set(cur_ids))
+    append_only_ok = not vanished
+    prev_final = (prev or {}).get("final_membership_hash", "UNSET")
+    closed = len(members) >= target
+    if prev_final not in (None, "UNSET"):
+        final_hash = prev_final                 # already frozen — never recompute
+    elif closed:
+        final_hash = prefix_hash                # freeze once, now
+    else:
+        final_hash = "UNSET"
+    state = {"schema_version": "test-v2-membership-state-1", "generated_at": time.time(),
+             "mode": "CLOSED" if final_hash not in (None, "UNSET") else "APPEND_ONLY",
+             "current_N": len(members), "target_N": target,
+             "current_prefix_hash": prefix_hash, "final_membership_hash": final_hash,
+             "append_only_invariant_holds": append_only_ok,
+             "vanished_windows": vanished[:10],
+             "target_source": "TEST_V2_POWER_ANALYSIS.json" if POWER.exists() else "fallback(672)",
+             "member_ids": cur_ids}
+    if not append_only_ok:
+        EV.emit("ERROR", f"TEST_V2 append-only invariant VIOLATED: {len(vanished)} windows vanished",
+                lane="L9", severity="high", technical=str(vanished[:5]))
+    STATE.write_text(json.dumps(state, indent=1))
     audit = {
         "schema_version": "test-v2-capture-audit-1", "generated_at": time.time(),
         "cutoff_T0": cutoff, "target_windows": target,
         "source": "results/contract_outcomes.jsonl (authoritative forward settled feed)",
         "membership_file": "research/true15m/TEST_V2_MEMBERSHIP.jsonl",
         "membership_sha256_16": mem_sha,
+        "membership_mode": state["mode"],
+        "current_prefix_hash": prefix_hash,
+        "final_membership_hash": final_hash,
+        "append_only_invariant_holds": append_only_ok,
 
         "post_cutoff_windows_seen": seen,
         "post_cutoff_windows_settled": settled,

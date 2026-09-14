@@ -1,0 +1,55 @@
+{
+ "schema_version": "test-v2-power-analysis-1",
+ "generated_at": 1789418391.992024,
+ "basis": "DEV only (TRAIN fit; VAL+TEST_V1 eval). TEST_V2 outcomes UNSEEN.",
+ "reference_baseline": "p=0.5 constant (per-window log-loss = 0.693147)",
+ "metric": "per-window log-loss; sigma = std across DEV-eval windows",
+ "sigma_per_window_used": 0.07423,
+ "scorer_stats": {
+  "quantile": {
+   "mean_ll": 0.69152,
+   "sigma_per_window": 0.04966,
+   "n_eval": 1845
+  },
+  "logistic": {
+   "mean_ll": 0.6926,
+   "sigma_per_window": 0.07423,
+   "n_eval": 1845
+  }
+ },
+ "test": "one-sample, two-sided alpha=0.05; N=(z_a+z_b)^2 * sigma^2 / delta^2",
+ "required_N_by_delta": {
+  "delta=0.002": {
+   "power_0.80": 10813,
+   "power_0.90": 14475
+  },
+  "delta=0.003": {
+   "power_0.80": 4806,
+   "power_0.90": 6433
+  },
+  "delta=0.005": {
+   "power_0.80": 1730,
+   "power_0.90": 2316
+  },
+  "delta=0.01": {
+   "power_0.80": 433,
+   "power_0.90": 579
+  },
+  "delta=0.02": {
+   "power_0.80": 109,
+   "power_0.90": 145
+  }
+ },
+ "mde_at_672_windows": {
+  "power_0.80": 0.00802,
+  "power_0.90": 0.00928
+ },
+ "pre_registered_delta_star": 0.01,
+ "pre_registered_delta_star_rationale": "0.01 nats log-loss (~1.4% of the 0.693 baseline) is the smallest edge we would call practically meaningful for a 15-min ~50%-base-rate binary; smaller dev blips (~0.004, unstable) are treated as noise.",
+ "required_N_for_delta_star_power80": 433,
+ "fallback_N": 672,
+ "pre_registered_target_N": 672,
+ "is_672_enough_for_delta_star": true,
+ "interpretation": "sigma\u22480.07423. At N=672 the test resolves only an edge of ~0.00802 nats at 80% power; detecting the pre-registered delta*=0.01 needs N\u2248433. Pre-registered target set to 672 (672 is sufficient). Edges below the resolvable MDE are TEST-POWER-LIMITED, not disprovable by V2 \u2014 a distinct, honest limit from information-limited.",
+ "seal_note": "This analysis fixes N BEFORE opening V2; it never inspects V2 outcomes."
+}

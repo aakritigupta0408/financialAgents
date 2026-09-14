@@ -30,6 +30,7 @@ from catboost import CatBoostClassifier
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from btc_rl import research_events as EV  # noqa: E402
+from btc_rl.test_v2_firewall import guard_rows  # noqa: E402
 
 T = ROOT / "research" / "true15m"
 DS = T / "TRUE15M_DATASET_V1.jsonl"
@@ -74,7 +75,7 @@ def run():
     EV.emit("PLAN", "L12 model-failure diagnostics (memorization ladder etc.)", lane="L12",
             narrative="Proving the training stack is healthy before any INFORMATION_LIMITED "
                       "claim. TRAIN+VAL only; TEST_V1 spent, TEST_V2 sealed.")
-    rows = [json.loads(l) for l in DS.open() if l.strip()]
+    rows = guard_rows([json.loads(l) for l in DS.open() if l.strip()], "model_failure_diagnostics")
     rows.sort(key=lambda r: r["T0"])
     fids = list(rows[0]["features"].keys())
     X = np.array([[r["features"][k] for k in fids] for r in rows], float)

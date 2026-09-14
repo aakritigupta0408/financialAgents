@@ -238,8 +238,23 @@ def research_snapshot(health):
             "target": d.get("target_windows"),
             "invariant_holds": d.get("invariant_holds"),
             "latest_window": d.get("latest_post_cutoff_window_id"),
+            "membership_mode": d.get("membership_mode"),
+            "final_membership_hash": d.get("final_membership_hash"),
+            "append_only_invariant_holds": d.get("append_only_invariant_holds"),
             "status": d.get("status"),
         } if d else None)(_j(ROOT / "research" / "true15m" / "TEST_V2_CAPTURE_AUDIT.json")),
+        "test_v2_power_analysis": (lambda d: {
+            "pre_registered_target_N": d.get("pre_registered_target_N"),
+            "pre_registered_delta_star": d.get("pre_registered_delta_star"),
+            "sigma_per_window": d.get("sigma_per_window_used"),
+            "mde_at_672": d.get("mde_at_672_windows"),
+            "is_672_enough_for_delta_star": d.get("is_672_enough_for_delta_star"),
+            "interpretation": d.get("interpretation"),
+        } if d else None)(_j(ROOT / "research" / "true15m" / "TEST_V2_POWER_ANALYSIS.json")),
+        "test_v2_firewall": "NO_TEST_V2_DEV_ACCESS enforced in all dev loaders "
+                            "(offline_program, loss_calibration, model_diagnostics, "
+                            "distributional_models, power_analysis); guarded by "
+                            "tests/test_test_v2_firewall.py.",
         "current_evidence": (
             "CURRENT EVIDENCE: weak or unstable generalizable signal in the tested "
             "feature/model combinations. Feature search CLOSED; training stack HEALTHY; "
