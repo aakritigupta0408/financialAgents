@@ -210,6 +210,13 @@ def research_snapshot(health):
         "offline_verdict": _j(ROOT / "research" / "true15m" / "OFFLINE_FINAL_VERDICT_V1.json") or None,
         "sealed_test_status": _j(ROOT / "research" / "true15m" / "SEALED_TEST_STATUS.json") or None,
         "av_incremental": _j(ROOT / "research" / "true15m" / "av_incremental_test.json") or None,
+        "deriv_incremental": _j(ROOT / "research" / "true15m" / "deriv_incremental_test.json") or None,
+        "deriv_coverage": (_j(ROOT / "research" / "true15m" / "derivatives_coverage.json") or {}).get("verdicts"),
+        "family_verdicts": {
+            "A_CORE": "NO_OFFLINE_QUALIFIED_MODEL (TEST_V1, spent)",
+            "A_AV": "AV_NO_OOS_VALUE (edge was leakage)",
+            "A_DERIV": "DERIV_NO_OOS_VALUE (funding only; OI/liq/LS/taker/basis HISTORICALLY_UNAVAILABLE)",
+        },
         "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
             "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,
