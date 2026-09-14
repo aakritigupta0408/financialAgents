@@ -96,6 +96,7 @@ def research_snapshot(health):
     dmeta = _j(R / "open_oracle_15m_dataset.meta.json")
     ladder = _j(R / "open_oracle_15m_ladder.json")
     brtiC = _j(ROOT / "research" / "true15m" / "brti_state_coverage.json")
+    covmat = _j(ROOT / "research" / "true15m" / "COVERAGE_MATRIX.json")
     total = inv.get("total_windows") or 0
     raw_cov = (inv.get("raw_60s_observation_coverage") or {}).get("n") or 0
     verdict = ladder.get("verdict", "—")
@@ -185,6 +186,10 @@ def research_snapshot(health):
             "note": "INTERNAL adopted benchmark, NOT a course baseline — repo has no "
                     "official one. See research/true15m/INTERNAL_ADOPTED_BASELINE_V1.yaml"},
         "latest_discovery": {"title": disc.get("title"), "narrative": disc.get("narrative")} if disc else None,
+        "coverage_matrix": covmat.get("families") if covmat else None,
+        "cohorts": covmat.get("cohorts") if covmat else None,
+        "model_family_plan": covmat.get("model_family_plan") if covmat else None,
+        "research_question": covmat.get("research_question") if covmat else None,
         "recent_events": events,           # bounded list; UI appends by seq cursor (§30)
         "max_seq": max((e.get("seq", 0) for e in events), default=0),
         "system_health": {"events_total": len(EV.recent(limit=100000)),
