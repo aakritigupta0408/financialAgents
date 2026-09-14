@@ -179,11 +179,17 @@ def copy_bundle(dest: Path) -> None:
         src = ROOT / "results" / name
         if not src.exists():
             continue
+        # The five deployed pages fetch data by BARE filename, so it must sit
+        # next to them in site/. Keep the results/ copy too for the
+        # ../results/ consumers (analyst.html, ab_dashboard.html).
+        targets = [dest / "results" / name, dest / "site" / name]
         if cap is None:
-            shutil.copy2(src, dest / "results" / name)
+            for t in targets:
+                shutil.copy2(src, t)
         else:
-            lines = src.read_text().splitlines()[-cap:]
-            (dest / "results" / name).write_text("\n".join(lines) + "\n")
+            body = "\n".join(src.read_text().splitlines()[-cap:]) + "\n"
+            for t in targets:
+                t.write_text(body)
 
 
 def publish_ghpages() -> None:
