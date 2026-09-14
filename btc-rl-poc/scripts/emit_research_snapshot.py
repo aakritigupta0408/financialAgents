@@ -95,6 +95,7 @@ def research_snapshot(health):
     inv = _j(ROOT / "research" / "true15m" / "contract_inventory_report.json")
     dmeta = _j(R / "open_oracle_15m_dataset.meta.json")
     ladder = _j(R / "open_oracle_15m_ladder.json")
+    brtiC = _j(ROOT / "research" / "true15m" / "brti_state_coverage.json")
     total = inv.get("total_windows") or 0
     raw_cov = (inv.get("raw_60s_observation_coverage") or {}).get("n") or 0
     verdict = ladder.get("verdict", "—")
@@ -133,13 +134,20 @@ def research_snapshot(health):
 
     doc = {
         "schema_version": "research-live-snapshot-1", "generated_at": time.time(),
-        "headline": ("Foundation online: contract inventory verified and the "
-                     "price-path model ladder ran; broad real-data backfill (Alpha "
-                     "Vantage / derivatives / options / news) is the next lane."),
-        "why": "A fully causal, leak-free T0 dataset must exist before complex models "
-               "are allowed to compete against the class baseline.",
-        "next": "Discover the official class baseline, then begin the rich historical "
-                "backfill on cohorts while live capture keeps adding real windows.",
+        "headline": (
+            "I am determining what the 6,337 historical contracts genuinely knew at T0. "
+            + ("BRTI coverage audited (coarse 2h: {c}/{n}; fine 5m: {f}). ".format(
+                c=(brtiC.get("core_cohorts", {}).get("COARSE_BTC_STATE (>=2h @15m res)", {}) or {}).get("n", "?"),
+                n=brtiC.get("windows_audited", total),
+                f=(brtiC.get("core_cohorts", {}).get("FINE_BTC_STATE (real 5m sub-minute)", {}) or {}).get("n", "?"))
+               if brtiC else "BRTI coverage audit running. ")
+            + "Alpha Vantage cross-asset history and derivatives backfill in parallel. "
+              "No model competes until feature coverage and the full leakage gate are frozen."),
+        "why": "The genuine BTC-state core is only as large as the real pre-T0 BRTI lookback. "
+               "We measure it before building features, so nothing assumes coverage it lacks.",
+        "next": "Build COARSE_BTC_STATE features on the ~6,189 large core + FINE features on "
+                "the ~363 sub-minute block; expand AV cross-asset; then coverage matrix, "
+                "TRUE15M_DATASET_V1, full integrity gate, frozen split — then models.",
         "capture": health,
         "lanes": lanes,
         "blockers": [{"lane": b["id"], "reason": b["blocked_reason"]} for b in blockers],
@@ -150,6 +158,10 @@ def research_snapshot(health):
             "raw_brti_reconstruction_n": raw_cov,
             "verified_t0_dataset_windows": dmeta.get("market_window_n"),
             "class_balance_up": dmeta.get("class_balance_up"),
+            "brti_state_coverage": ({h: v.get("any_n") for h, v in
+                                     (brtiC.get("per_horizon") or {}).items()}
+                                    if brtiC else None),
+            "core_cohorts": brtiC.get("core_cohorts") if brtiC else None,
             "note": "Official outcomes/targets from Kalshi settled records cover all "
                     f"{total} windows; exact 60s-BRTI PATHS reconstructed for {raw_cov} "
                     "only. We do NOT claim path reconstruction for all windows.",
