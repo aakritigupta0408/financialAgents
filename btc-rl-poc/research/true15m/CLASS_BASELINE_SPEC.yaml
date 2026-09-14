@@ -1,0 +1,73 @@
+# TRUE-15M CLASS BASELINE SPEC (directive §1)
+# Frozen qualification threshold for the OPEN_ORACLE_15M task.
+# Every field carries provenance; nothing is assumed.
+
+schema_version: true15m-class-baseline-1
+frozen_at_utc: "2026-09-14"
+task: >
+  At KXBTC15M open T0, using only info <= T0, estimate
+  P(final 60s-BRTI settlement avg >= opening 60s-BRTI avg) 15 min later.
+  One prediction per window, frozen until settlement. Exact BRTI label.
+
+# ------------------------------------------------------------------ finding
+official_course_baseline_exists: false
+provenance_of_finding:
+  method: exhaustive repo search (README/*.md/*.yaml/*.json/specs/tests)
+  conclusion: >
+    No syllabus, rubric, grading spec, assignment sheet, or course-mandated
+    numeric threshold exists anywhere in the repository. The project is an
+    "NYU Deep Learning course project" with a TA cited, but no file carries
+    course authority defining a metric+score+threshold to pass.
+  only_literal_class_baseline:
+    text: '"80/80 class baseline" — per-class (UP/DOWN) precision >= 0.80'
+    where: README.md:64 ; tests/window_call_eval.py:31 ; tests/two_threshold_policy.py
+    interpretation: >
+      "class" = classification class (UP vs DOWN), NOT a classroom number.
+      A self-imposed per-class precision operating point, no external authority.
+  de_facto_project_bar:
+    text: "beat the Kalshi market's own probability — BSS_vs_market > 0"
+    where: REAL_MONEY_EQUIVALENT_STANDARD.yaml:120-130 (master directive strategy gate);
+           docs/PAPER.md:7,11 ; T1T2_PROGRAM.yaml:70-76
+    current_status_in_repo: "NO QUALIFIED EDGE — best BSS_vs_market = -0.0016"
+  research_reference_points:
+    mech_fair_brti_brier: 0.2024   # research/oracle/mech_fair_result.json (no Kalshi input)
+    kalshi_brier: 0.186            # same file — market, benchmark only
+    fifty_fifty_brier: 0.25
+    base_rate_test: 0.461          # (n_test 5799 in that file)
+
+# ------------------------------------------------------------- adopted rule
+# Because no course baseline exists, adopt an explicit, defensible threshold
+# and record it as a project decision (not a course fact).
+adopted_qualification:
+  primary_class_baseline:
+    name: EMPIRICAL_CLASS_FREQUENCY (B2) with 50/50 (B1) as the trivial floor
+    rationale: >
+      The honest "class baseline" for a binary task with no course number is the
+      training base rate. On the true-15m dataset the base rate is 0.5002, so B1
+      (0.5) and B2 coincide numerically -> Brier 0.25 / log loss 0.693.
+    primary_metric: log_loss           # proper scoring; Brier reported alongside
+    secondary_metrics: [brier, accuracy, calibration_ece, selective_accuracy]
+  market_relative_benchmark:
+    name: BSS_vs_market vs KALSHI_AT_OPEN
+    rule: report BSS_vs_market > 0 as the project's meaningful bar
+    kalshi_role: BENCHMARK ONLY — never an Oracle feature (directive §0)
+    status: PENDING — requires per-window Kalshi-at-open capture (Phase-B)
+  qualify_iff: >
+    a challenger beats the class-frequency baseline on log_loss AND brier out of
+    sample (walk-forward median AND worst fold AND sealed test), survives
+    placebo/leakage/seed checks, AND (once available) shows BSS_vs_market > 0.
+  evaluation_protocol:
+    unit: market_window_id
+    split: chronological TRAIN 70% / VAL 15% / sealed TEST 15% (SPLIT_SPEC)
+    no_holdout_fit: true
+    bootstrap: moving-block, time-aware CI on the sealed test
+
+current_offline_result:
+  dataset: open_oracle_15m_dataset (F-CONTRACT price-path family, 6251 windows)
+  verdict: NO_CANDIDATE
+  classification: INFORMATION_LIMITED
+  evidence: >
+    ladder M0-M4 holdout log_loss ~= 0.693 (== class baseline); label-shuffle
+    placebo scores the same as the best real model -> no exploitable pre-open
+    price-path signal. Independent feature families (AV/derivatives/options/
+    news) untested — Phase-2/B backfill required before a full claim.

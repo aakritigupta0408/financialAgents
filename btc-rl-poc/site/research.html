@@ -1,0 +1,153 @@
+<!-- PRIVATE — Research Narrator (directive §20-62). Live feed of the TRUE-15M
+     research lab. Renders results/research_live_snapshot.json VERBATIM (lanes,
+     events, dataset progress). Presentation only — no science computed in JS.
+     Owner/research surface; not linked from the public nav. -->
+<meta charset="utf-8">
+<link rel="stylesheet" href="theme.css">
+<style>
+  main{gap:22px}
+  .rhead{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 30px}
+  .rhead .live{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--up)}
+  .rhead .live.stale{color:var(--muted)}
+  .rhead h1{font:500 1.7rem/1.15 var(--display);margin:12px 0 0;max-width:40ch}
+  .wwn{display:grid;gap:10px;margin-top:18px}
+  .wwn .row{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:start}
+  .wwn .k{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:600;padding-top:2px}
+  .wwn .v{font-size:14px;line-height:1.5}
+  .capbar{display:flex;flex-wrap:wrap;gap:22px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+  .capbar .c .k{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+  .capbar .c .v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:3px}
+  .lanes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+  .lane{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:13px 15px}
+  .lane .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .lane .nm{font-size:12.5px;font-weight:600}
+  .lane .id{font-size:10px;color:var(--faint)}
+  .st{font-size:10px;font-weight:700;letter-spacing:.03em;padding:2px 8px;border-radius:999px;border:1px solid var(--border)}
+  .st.RUNNING,.st.PASS,.st.COMPLETE{color:var(--up);background:rgba(12,138,77,.08);border-color:rgba(12,138,77,.35)}
+  .st.PARTIAL{color:var(--series-4);background:rgba(143,96,0,.08);border-color:rgba(143,96,0,.3)}
+  .st.QUEUED,.st.STALE{color:var(--muted);background:var(--surface-2)}
+  .st.FAIL{color:var(--down);background:rgba(209,60,60,.08);border-color:rgba(209,60,60,.35)}
+  .lane .dt{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.4}
+  .lane .bl{font-size:11px;color:var(--series-4);margin-top:5px}
+  .lane .pg{font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;margin-top:4px}
+  .controls{display:flex;gap:6px;align-items:center;margin:4px 0 2px}
+  .controls button{font:600 11px/1 var(--sans);padding:6px 11px;border:1px solid var(--border);border-radius:999px;background:var(--surface);color:var(--muted);cursor:pointer}
+  .controls button.on{color:var(--ink);border-color:var(--ink-2)}
+  .feed{display:flex;flex-direction:column;gap:9px}
+  .ev{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;border-left:3px solid var(--border)}
+  .ev.DISCOVERY{border-left-color:var(--series-2);background:rgba(36,97,184,.03)}
+  .ev.BUG_FOUND,.ev.ERROR,.ev.TEST_FAILED{border-left-color:var(--down)}
+  .ev.TEST_PASSED,.ev.INTEGRITY_CHECK,.ev.BUG_FIXED,.ev.MODEL_QUALIFIED{border-left-color:var(--up)}
+  .ev.GIT_COMMIT,.ev.DEPLOYMENT{border-left-color:var(--series-9)}
+  .ev .eh{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+  .ev .ty{font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--faint)}
+  .ev .tm{font-size:11px;color:var(--faint);font-variant-numeric:tabular-nums}
+  .ev .ti{font-size:13.5px;font-weight:600;flex:1}
+  .ev .na{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:5px}
+  .ev .fin{font-size:12px;line-height:1.5;margin-top:6px}
+  .ev .fin b{color:var(--muted);font-weight:600;text-transform:uppercase;font-size:9.5px;letter-spacing:.06em}
+  .ev .meta{font-size:11px;color:var(--faint);margin-top:6px;font-variant-numeric:tabular-nums}
+  .ev .meta code{background:var(--surface-2);padding:1px 5px;border-radius:4px}
+  .sec-h{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:6px 2px}
+  .waiting{text-align:center;padding:50px;color:var(--muted)}
+</style>
+
+<main>
+  <div id="head"></div>
+  <div class="sec-h">Research lanes</div>
+  <div class="lanes" id="lanes"></div>
+  <div class="controls">
+    <span class="sec-h" style="margin-right:auto">Live feed</span>
+    <button data-v="STORY">Story</button>
+    <button data-v="TECHNICAL" class="on">Technical</button>
+    <button data-v="EVERYTHING">Everything</button>
+  </div>
+  <div class="feed" id="feed"><div class="waiting">Connecting to the research lab…</div></div>
+</main>
+
+<script>
+const $=s=>document.querySelector(s);
+let VERB="TECHNICAL", LAST=0;
+const PT=ts=>ts?new Date(ts*1000).toLocaleString("en-US",{timeZone:"America/Los_Angeles",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}):"";
+const STORY_TYPES=new Set(["PLAN","DISCOVERY","MODEL_QUALIFIED","MODEL_PROMISING","MODEL_REJECTED","BUG_FOUND","BUG_FIXED","LIVE_CONTRACT","JOB_COMPLETE","DEPLOYMENT","ERROR","NEXT_STEP","GIT_COMMIT"]);
+const TECH_HIDE=new Set(["FILE_MODIFIED","DOWNLOAD_PROGRESS","MODEL_TRAINING_PROGRESS"]);
+
+function keep(e){
+  if(VERB==="EVERYTHING") return true;
+  if(VERB==="STORY") return STORY_TYPES.has(e.event_type)||e.severity==="high";
+  return !TECH_HIDE.has(e.event_type);           // TECHNICAL
+}
+
+function headHTML(d){
+  const cap=d.capture||{}, live=cap.status==="LIVE";
+  const c=(k,v)=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  const dp=d.dataset_progress||{}, cb=d.current_best_model||{}, bl=d.baseline||{};
+  return `<div class="rhead">
+    <span class="live ${live?'':'stale'}"><span class="live-dot ${live?'':'stale'}"></span> Live research lab · ${cap.status||'—'}</span>
+    <h1>${d.headline||''}</h1>
+    <div class="wwn">
+      <div class="row"><div class="k">Now</div><div class="v">${d.headline||''}</div></div>
+      <div class="row"><div class="k">Why</div><div class="v">${d.why||''}</div></div>
+      <div class="row"><div class="k">Next</div><div class="v">${d.next||''}</div></div>
+    </div>
+    <div class="capbar">
+      ${c("Current contract", cap.current_contract||"—")}
+      ${c("Historical windows", (dp.historical_windows||0).toLocaleString())}
+      ${c("Verified T0 dataset", (dp.verified_t0_dataset_windows||0).toLocaleString())}
+      ${c("Class baseline", bl.status||"—")}
+      ${c("Best model", (cb.verdict||"—")+" · "+(cb.classification||""))}
+      ${c("Heartbeat", cap.heartbeat_age_s!=null?cap.heartbeat_age_s+"s":"—")}
+    </div>
+  </div>`;
+}
+
+function lanesHTML(lanes){
+  return (lanes||[]).map(l=>`<div class="lane">
+    <div class="top"><div><span class="nm">${l.name}</span> <span class="id">${l.id}</span></div>
+      <span class="st ${l.status}">${l.status}</span></div>
+    <div class="dt">${l.detail||''}</div>
+    ${l.progress?`<div class="pg">${l.progress}</div>`:''}
+    ${l.blocked_reason?`<div class="bl">⛔ ${l.blocked_reason}</div>`:''}
+  </div>`).join("");
+}
+
+function evHTML(e){
+  const fin=[];
+  if(e.fact) fin.push(`<div class="fin"><b>Fact</b> ${e.fact}</div>`);
+  if(e.interpretation) fin.push(`<div class="fin"><b>Interpretation</b> ${e.interpretation}</div>`);
+  if(e.next_action) fin.push(`<div class="fin"><b>Next</b> ${e.next_action}</div>`);
+  const meta=[];
+  if((e.files||[]).length) meta.push((e.files).map(f=>`<code>${f}</code>`).join(" "));
+  if((e.tests||[]).length) meta.push("tests: "+e.tests.join(", "));
+  if(e.metrics&&Object.keys(e.metrics).length) meta.push(Object.entries(e.metrics).map(([k,v])=>`${k}=${v}`).join("  "));
+  if(e.git&&e.git.sha) meta.push("commit "+e.git.sha);
+  return `<div class="ev ${e.event_type}">
+    <div class="eh"><span class="ty">${e.event_type}</span><span class="ti">${e.title||''}</span><span class="tm">${PT(e.timestamp)}</span></div>
+    ${e.narrative?`<div class="na">${e.narrative}</div>`:''}
+    ${fin.join("")}
+    ${meta.length?`<div class="meta">${meta.join(" · ")}</div>`:''}
+  </div>`;
+}
+
+function render(d){
+  $("#head").innerHTML=headHTML(d);
+  $("#lanes").innerHTML=lanesHTML(d.lanes);
+  const evs=(d.recent_events||[]).filter(keep).slice().reverse();   // newest first
+  $("#feed").innerHTML=evs.length?evs.map(evHTML).join(""):'<div class="waiting">No events at this verbosity.</div>';
+  LAST=d.max_seq||LAST;
+}
+
+document.querySelectorAll(".controls button").forEach(b=>b.onclick=()=>{
+  VERB=b.getAttribute("data-v");
+  document.querySelectorAll(".controls button").forEach(x=>x.classList.toggle("on",x===b));
+  if(window.__LASTSNAP) render(window.__LASTSNAP);
+});
+
+function poll(){
+  fetch("research_live_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null)
+    .then(d=>{ if(d){window.__LASTSNAP=d; render(d);} })
+    .catch(()=>{});
+}
+poll();
+setInterval(poll, 2500);
+</script>

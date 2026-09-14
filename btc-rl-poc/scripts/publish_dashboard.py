@@ -34,7 +34,7 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 # HOME + ORACLE and no longer published; publish_dashboard prunes any site/*.html
 # not listed here.
 PAGES = ["home.html", "oracle.html", "experiments.html", "modelling.html",
-         "architecture.html",
+         "architecture.html", "research.html",   # research.html = private (not in nav)
          "theme.css", "nav.js", "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("home_snapshot.json", None),      # DT-07 HOME (all numbers backend-computed)
@@ -45,6 +45,9 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("architecture_dag.json", None),   # §37 developer DAG drill-down
     ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
     ("modelling_snapshot.json", None),   # OPEN_ORACLE_15M modelling page (§57)
+    ("research_live_snapshot.json", None),  # private Research Narrator feed
+    ("live_capture_health.json", None),     # always-live collector heartbeat
+    ("research_events.jsonl", 400),         # recent research event ledger (capped)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
     ("online_status.json", None),
@@ -272,11 +275,13 @@ SNAPSHOT_EMITTERS = [          # regenerate typed UI snapshots BEFORE every publ
     "emit_trader_detail.py",
     "emit_live_desk.py",
     "emit_modelling_snapshot.py",
+    "emit_research_snapshot.py",
 ]
-# The fast lane: only the LIVE snapshots (current window + live desk). These are
-# cheap to regenerate; the backtest-heavy emit_trader_detail (full replay) is
-# deliberately excluded so a per-minute refresh loop stays light.
-LIVE_EMITTERS = ["emit_home_snapshot.py", "emit_live_desk.py"]
+# The fast lane: only the LIVE snapshots (current window + live desk + the
+# research narrator's capture heartbeat/lanes). These are cheap to regenerate;
+# the backtest-heavy emit_trader_detail (full replay) is deliberately excluded
+# so a per-minute refresh loop stays light.
+LIVE_EMITTERS = ["emit_home_snapshot.py", "emit_live_desk.py", "emit_research_snapshot.py"]
 
 
 def refresh_snapshots(only: list[str] | None = None) -> None:
