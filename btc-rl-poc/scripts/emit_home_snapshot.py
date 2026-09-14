@@ -121,9 +121,19 @@ def _oracle_strip():
         close_ts = ((now // 900) + 1) * 900
         open_ts = close_ts - 900
         cs = CT.contract_state(open_ts, close_ts, now)
-        # exact target from BRTI history; current level from the fresh live BRTI
-        # (history lags the in-progress minute) — daemon composite is ~fresh.
-        cur = cs.get("current_brti") or ((st.get("brti") or {}) or {}).get("price")
+        # exact target from BRTI 60s open-average; current LEVEL from the live values
+        # endpoint (rolling 1h of 1s samples, always fresh) — robust between windows;
+        # falls back to contract_state / daemon composite only if the live call fails.
+        cur = None
+        try:
+            import data.adapters.brti as _b
+            pr = _b.probe()
+            payload = (pr.get("sample") or {}).get("data", {}).get("payload", [])
+            if payload:
+                cur = float(max(payload, key=lambda x: x["time"])["value"])
+        except Exception:
+            cur = None
+        cur = cur or cs.get("current_brti") or ((st.get("brti") or {}) or {}).get("price")
         if cur and cs.get("official_target"):
             brti = round(cur, 2)
             target = round(cs["official_target"], 2)
