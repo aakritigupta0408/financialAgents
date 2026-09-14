@@ -15,7 +15,11 @@ results/live_desk.json.
 import json
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+PACIFIC = ZoneInfo("America/Los_Angeles")  # desk owner is US Pacific; show PT (PST/PDT)
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -48,7 +52,8 @@ def _rows(path):
 
 
 def _et(ts):
-    return time.strftime("%b %d, %H:%M", time.gmtime(ts)) if ts else None
+    # Pacific Time (PST/PDT) — the desk owner trades US markets
+    return datetime.fromtimestamp(ts, PACIFIC).strftime("%b %d, %H:%M") if ts else None
 
 
 def _stats(trades):

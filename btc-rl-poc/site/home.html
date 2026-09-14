@@ -308,7 +308,7 @@ function tradesPanel(){
     return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center">
         <div class="lab"><span class="live-dot"></span> Recent trades (live)</div>
         <span class="mini">Settled on official BRTI</span></div>
-      <div class="scroll"><table class="rt"><thead><tr><th>Contract time</th><th>BRTI / Target</th>
+      <div class="scroll"><table class="rt"><thead><tr><th>Contract time (PT)</th><th>BRTI / Target</th>
         <th>Side</th><th>Entry</th><th>Result</th><th>P&L</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>
       <div class="mini">Live paper desk · the Oracle's Follower policy trading live 15-minute windows.</div></div>`;
   }
@@ -323,7 +323,7 @@ function tradesPanel(){
     <td class="pl ${r.pnl_c>=0?'pos':'neg'}">${r.pnl_c>=0?'+':'−'}$${Math.abs(r.pnl_c/100).toFixed(2)}</td>
     <td>${r.status}</td></tr>`).join("");
   return `<div class="panel"><div class="lab">Recent trades (backtest)</div>
-    <div class="scroll"><table class="rt"><thead><tr><th>#</th><th>Contract time</th><th>BRTI / Target</th>
+    <div class="scroll"><table class="rt"><thead><tr><th>#</th><th>Contract time (PT)</th><th>BRTI / Target</th>
       <th>Side</th><th>Entry</th><th>Result</th><th>P&L</th><th>Status</th></tr></thead><tbody>${body}</tbody></table></div>
     <div class="mini">Showing ${rows.length} of ${d.n_trades} trades · unseen historical holdout</div></div>`;
 }
@@ -373,7 +373,7 @@ function liveDeskStrip(){
         <div class="b"><div class="v">${pctN(s.hit_rate,1)}</div><div class="k">Hit rate (last ${s.n})</div></div>
         <div class="b"><div class="v ${s.pnl_c>=0?'pos':'neg'}">${s.pnl_c>=0?'+':'−'}$${Math.abs(s.pnl_c/100).toFixed(2)}</div><div class="k">P&L (last ${s.n})</div></div>
         <div class="b"><div class="v">$${(s.bankroll_c/100).toFixed(2)}</div><div class="k">Bankroll</div></div></div>
-      <div class="livetrades"><table class="rt"><thead><tr><th>Time</th><th>Side</th><th>Entry</th><th>Result</th><th>P&L</th></tr></thead><tbody>${trs}</tbody></table></div>
+      <div class="livetrades"><table class="rt"><thead><tr><th>Time (PT)</th><th>Side</th><th>Entry</th><th>Result</th><th>P&L</th></tr></thead><tbody>${trs}</tbody></table></div>
     </div>
     <div class="mini" style="margin-top:10px">${sa.n} window${sa.n===1?'':'s'} settled since exact-BRTI activation · the Oracle's Follower policy (trader T0 lineage). The formal T0-vs-T1 paired A/B accrues separately.</div></div>`;
 }

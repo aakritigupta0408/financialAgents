@@ -10,8 +10,11 @@ import calendar
 import json
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
+PACIFIC = ZoneInfo("America/Los_Angeles")  # desk owner is US Pacific; show PT (PST/PDT)
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -32,8 +35,8 @@ TRADE_STEPS = ["Order", "Fill", "Settle", "P&L"]
 
 
 def _et(ts):
-    # display timestamp (UTC label; the desk trades US markets, shown as captured)
-    return time.strftime("%b %d, %H:%M", time.gmtime(ts))
+    # display timestamp in Pacific Time (PST/PDT) — the desk owner trades US markets
+    return datetime.fromtimestamp(ts, PACIFIC).strftime("%b %d, %H:%M")
 
 
 def build():
