@@ -1,7 +1,7 @@
 {
- "material_change_counter": 3,
+ "material_change_counter": 4,
  "checkpoint_every_n": 3,
- "last_checkpoint_utc": "20260914T075436Z",
+ "last_checkpoint_utc": "20260914T094207Z",
  "log": [
   {
    "reason": "DT-01 runtime contract-truth wiring + DT-02 Gate B relabel"
@@ -11,6 +11,9 @@
   },
   {
    "reason": "A/B platform + P0 activation harness"
+  },
+  {
+   "reason": "new trader family T0-T3 + exact-BRTI replay + prospective freeze/registration"
   }
  ]
 }

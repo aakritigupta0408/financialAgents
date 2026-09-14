@@ -1,0 +1,90 @@
+{
+ "schema_version": "prospective-freeze-1",
+ "frozen_versions": {
+  "contract_spec": "research/contract_specs/KXBTC15M_2026-09.json",
+  "mech_fair_version": "MECH_FAIR_BRTI",
+  "oracle_model_version": "71c3bcffa964",
+  "oracle_note": "recalibrated MECH_FAIR_BRTI; NO Kalshi input",
+  "feature_version": "brti-decision-v1",
+  "lock_policy": {
+   "lock_max_s": 720,
+   "min_edge": 0.02
+  },
+  "trader_policies": {
+   "lock_max_s": 720,
+   "min_edge": 0.02,
+   "fixed_stake": 1,
+   "t1_edge_tau": 0.08,
+   "t3_max_stake": 3,
+   "t3_edge_full": 0.12,
+   "fee_rate": 0.07
+  },
+  "t1_edge_tau_frozen_on": "DEV+VAL",
+  "t1_edge_tau": 0.15,
+  "fee_model": "0.07*p*(1-p) per contract",
+  "execution_assumption": "enter at Kalshi mid + half-spread",
+  "metric_version": "econ-1/prob-1",
+  "settlement": "OFFICIAL_EXACT_BRTI"
+ },
+ "first_experiment": {
+  "experiment_id": "PROSPECTIVE-T0-vs-T1-exactBRTI",
+  "spec_hash": "51b49617cbde",
+  "hypothesis": "Abstaining unless the independent Oracle materially disagrees with the executable market (|p_oracle - p_market| >= tau) improves prospective realized paper EV per eligible window.",
+  "control": "T0",
+  "treatment": "T1",
+  "unit": "market_window_id",
+  "primary_metric": "paired_delta(REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW)",
+  "secondary_metrics": [
+   "ev_per_trade",
+   "coverage",
+   "accuracy",
+   "earliness",
+   "total_pnl",
+   "max_drawdown",
+   "bad_entry_rate"
+  ],
+  "backtest_holdout": {
+   "T0": {
+    "eligible_windows": 93,
+    "trades": 77,
+    "coverage": 0.8279569892473119,
+    "accuracy": 0.5714,
+    "median_lock_time_min": 11.6,
+    "ev_per_eligible_c": 3.8164376344086026,
+    "ev_per_trade_c": 4.609463636363637,
+    "total_pnl_c": 354.92870000000005,
+    "max_drawdown_c": 377.38599999999997,
+    "bad_entry_rate": 0.42857142857142855
+   },
+   "T1": {
+    "eligible_windows": 93,
+    "trades": 50,
+    "coverage": 0.5376344086021505,
+    "accuracy": 0.56,
+    "median_lock_time_min": 6.3,
+    "ev_per_eligible_c": 11.04069247311828,
+    "ev_per_trade_c": 20.535688,
+    "total_pnl_c": 1026.7844,
+    "max_drawdown_c": 178.69319999999982,
+    "bad_entry_rate": 0.44
+   },
+   "verdicts": {
+    "T0": "QUALIFIED_FOR_PROSPECTIVE",
+    "T1": "QUALIFIED_FOR_PROSPECTIVE",
+    "T2": "SHADOW_ONLY",
+    "T3": "SHADOW_ONLY"
+   }
+  },
+  "prospective_state": "REGISTERED_PENDING_LIVE_CAPTURE",
+  "blocked_on": "DT-01 live activation (EXACT_BRTI_RUNTIME_ENABLED=1) \u2014 prospective windows accrue only once the live daemon settles on exact BRTI",
+  "promotion_rule": "No promotion from retrospective/backtest evidence; requires prospective paired-\u0394 CI excluding 0 on unseen live windows."
+ },
+ "lineage_map": {
+  "Follower/pt": "T0",
+  "MLE/pt6 selective abstention": "T1",
+  "execution-timing/exec_timing": "T2",
+  "Gambler/Saver sizing": "T3",
+  "other legacy traders": "EVIDENCE_ONLY / RETIRED"
+ },
+ "note": "Frozen prospective version set (P11). Do not change mid-experiment; new research runs in shadow."
+}

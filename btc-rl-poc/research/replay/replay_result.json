@@ -1,0 +1,226 @@
+{
+ "schema_version": "replay-1",
+ "dataset": {
+  "rows": 19485,
+  "windows": 370,
+  "dev_windows": 185,
+  "val_windows": 92,
+  "holdout_windows": 93,
+  "lookahead_rows_dropped": 0
+ },
+ "oracle_fit": {
+  "scope": "DEV+VAL only (holdout out-of-sample)",
+  "sigma": 6e-05
+ },
+ "t0_holdout_entry_earliness": {
+  "median_entry_min": 11.6,
+  "frac_entries_under_2min": 0.013,
+  "frac_entries_over_9min": 0.844
+ },
+ "frozen_policy": {
+  "lock_max_s": 720,
+  "min_edge": 0.02,
+  "fixed_stake": 1,
+  "t1_edge_tau": 0.08,
+  "t3_max_stake": 3,
+  "t3_edge_full": 0.12,
+  "fee_rate": 0.07
+ },
+ "frozen_t1_tau_from_devval": 0.15,
+ "t1_disagreement_surface_devval": [
+  {
+   "tau": 0.02,
+   "coverage": 0.9963898916967509,
+   "trades": 276,
+   "accuracy": 0.6667,
+   "ev_per_eligible_c": 4.151908664259928,
+   "ev_per_trade_c": 4.166951811594203,
+   "total_pnl_c": 1150.0787,
+   "max_drawdown_c": 386.45400000000006,
+   "bad_entry_rate": 0.3333333333333333
+  },
+  {
+   "tau": 0.05,
+   "coverage": 0.9675090252707581,
+   "trades": 268,
+   "accuracy": 0.6455,
+   "ev_per_eligible_c": 4.623493501805055,
+   "ev_per_trade_c": 4.778760074626867,
+   "total_pnl_c": 1280.7077000000002,
+   "max_drawdown_c": 534.3552999999995,
+   "bad_entry_rate": 0.35447761194029853
+  },
+  {
+   "tau": 0.08,
+   "coverage": 0.9169675090252708,
+   "trades": 254,
+   "accuracy": 0.6575,
+   "ev_per_eligible_c": 7.483047292418774,
+   "ev_per_trade_c": 8.160646062992127,
+   "total_pnl_c": 2072.8041000000003,
+   "max_drawdown_c": 451.5345000000002,
+   "bad_entry_rate": 0.3425196850393701
+  },
+  {
+   "tau": 0.1,
+   "coverage": 0.8592057761732852,
+   "trades": 238,
+   "accuracy": 0.6555,
+   "ev_per_eligible_c": 8.68747545126354,
+   "ev_per_trade_c": 10.11105336134454,
+   "total_pnl_c": 2406.4307000000003,
+   "max_drawdown_c": 281.32830000000035,
+   "bad_entry_rate": 0.3445378151260504
+  },
+  {
+   "tau": 0.12,
+   "coverage": 0.8014440433212996,
+   "trades": 222,
+   "accuracy": 0.6396,
+   "ev_per_eligible_c": 8.39094512635379,
+   "ev_per_trade_c": 10.469782882882884,
+   "total_pnl_c": 2324.2918,
+   "max_drawdown_c": 282.54419999999993,
+   "bad_entry_rate": 0.36036036036036034
+  },
+  {
+   "tau": 0.15,
+   "coverage": 0.7148014440433214,
+   "trades": 198,
+   "accuracy": 0.6818,
+   "ev_per_eligible_c": 12.36014440433213,
+   "ev_per_trade_c": 17.291717171717174,
+   "total_pnl_c": 3423.76,
+   "max_drawdown_c": 317.9021999999999,
+   "bad_entry_rate": 0.3181818181818182
+  }
+ ],
+ "development_econ_devval": {
+  "T0": {
+   "eligible_windows": 277,
+   "trades": 276,
+   "coverage": 0.9963898916967509,
+   "accuracy": 0.6667,
+   "median_lock_time_min": 11.8,
+   "ev_per_eligible_c": 4.151908664259928,
+   "ev_per_trade_c": 4.166951811594203,
+   "total_pnl_c": 1150.0787,
+   "max_drawdown_c": 386.45400000000006,
+   "bad_entry_rate": 0.3333333333333333
+  },
+  "T1": {
+   "eligible_windows": 277,
+   "trades": 198,
+   "coverage": 0.7148014440433214,
+   "accuracy": 0.6818,
+   "median_lock_time_min": 10.4,
+   "ev_per_eligible_c": 12.36014440433213,
+   "ev_per_trade_c": 17.291717171717174,
+   "total_pnl_c": 3423.76,
+   "max_drawdown_c": 317.9021999999999,
+   "bad_entry_rate": 0.3181818181818182
+  },
+  "T2": {
+   "eligible_windows": 277,
+   "trades": 276,
+   "coverage": 0.9963898916967509,
+   "accuracy": 0.6667,
+   "median_lock_time_min": 9.9,
+   "ev_per_eligible_c": 13.214890252707582,
+   "ev_per_trade_c": 13.262770289855073,
+   "total_pnl_c": 3660.5246,
+   "max_drawdown_c": 290.2126000000003,
+   "bad_entry_rate": 0.3333333333333333
+  },
+  "T3": {
+   "eligible_windows": 277,
+   "trades": 276,
+   "coverage": 0.9963898916967509,
+   "accuracy": 0.6667,
+   "median_lock_time_min": 11.8,
+   "ev_per_eligible_c": 10.348778339350181,
+   "ev_per_trade_c": 10.386273913043478,
+   "total_pnl_c": 2866.6116,
+   "max_drawdown_c": 1019.3854999999996,
+   "bad_entry_rate": 0.3333333333333333
+  }
+ },
+ "t2_paired_execution_devval": {
+  "paired_windows": 276,
+  "delta": {
+   "paired_delta": 9.0958,
+   "ci95": [
+    7.7409,
+    10.5043
+   ],
+   "n_pairs": 276,
+   "significant": true
+  }
+ },
+ "final_holdout": {
+  "T0": {
+   "eligible_windows": 93,
+   "trades": 77,
+   "coverage": 0.8279569892473119,
+   "accuracy": 0.5714,
+   "median_lock_time_min": 11.6,
+   "ev_per_eligible_c": 3.8164376344086026,
+   "ev_per_trade_c": 4.609463636363637,
+   "total_pnl_c": 354.92870000000005,
+   "max_drawdown_c": 377.38599999999997,
+   "bad_entry_rate": 0.42857142857142855
+  },
+  "T1": {
+   "eligible_windows": 93,
+   "trades": 50,
+   "coverage": 0.5376344086021505,
+   "accuracy": 0.56,
+   "median_lock_time_min": 6.3,
+   "ev_per_eligible_c": 11.04069247311828,
+   "ev_per_trade_c": 20.535688,
+   "total_pnl_c": 1026.7844,
+   "max_drawdown_c": 178.69319999999982,
+   "bad_entry_rate": 0.44
+  },
+  "T2": {
+   "eligible_windows": 93,
+   "trades": 77,
+   "coverage": 0.8279569892473119,
+   "accuracy": 0.5714,
+   "median_lock_time_min": 7.9,
+   "ev_per_eligible_c": 11.590605376344087,
+   "ev_per_trade_c": 13.999042857142857,
+   "total_pnl_c": 1077.9263,
+   "max_drawdown_c": 270.6282,
+   "bad_entry_rate": 0.42857142857142855
+  },
+  "T3": {
+   "eligible_windows": 93,
+   "trades": 77,
+   "coverage": 0.8279569892473119,
+   "accuracy": 0.5714,
+   "median_lock_time_min": 11.6,
+   "ev_per_eligible_c": 11.597655913978496,
+   "ev_per_trade_c": 14.007558441558443,
+   "total_pnl_c": 1078.582,
+   "max_drawdown_c": 713.4834000000001,
+   "bad_entry_rate": 0.42857142857142855
+  }
+ },
+ "offline_verdicts": {
+  "T0": "QUALIFIED_FOR_PROSPECTIVE",
+  "T1": "QUALIFIED_FOR_PROSPECTIVE",
+  "T2": "SHADOW_ONLY",
+  "T3": "SHADOW_ONLY"
+ },
+ "caveats": [
+  "Oracle fit on DEV+VAL only; holdout=93 windows OOS (still modest n).",
+  "T2 is a HINDSIGHT lowest-cost-entry upper bound, NOT a realizable timing policy \u2014 a real T0.5 must predict the dip; T2 overstates timing benefit.",
+  "T3 sizing shows similar EV to T0 with materially higher drawdown -> not preferred; sizing is judged on drawdown/tail, not raw EV.",
+  "Executable price = Kalshi mid + half-spread; assumes k_prob is contemporaneous with the decision row.",
+  "OFFLINE historical replay \u2014 decides what enters the arena, NOT proof; prospective exact-BRTI evidence decides what is real."
+ ],
+ "settlement_provenance": "OFFICIAL_EXACT_BRTI (contract_outcomes.jsonl)",
+ "oracle": "recalibrated MECH_FAIR_BRTI (oracle_frozen) \u2014 no Kalshi input",
+ "note": "Real timestamped replay (decision-time state only). T1 tau frozen on DEV+VAL before the holdout was opened. Primary metric = EV/eligible window; win rate is not a decision metric."
+}
