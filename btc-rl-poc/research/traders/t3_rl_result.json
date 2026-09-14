@@ -1,0 +1,124 @@
+{
+ "schema_version": "t3-rl-1",
+ "role": "SHADOW",
+ "formulation": "CONTEXTUAL_BANDIT (one-shot size decision per window; not multi-step RL \u2014 stated honestly)",
+ "side_immutable": true,
+ "actions": [
+  "SKIP",
+  "BUY_SMALL",
+  "BUY_MEDIUM",
+  "BUY_LARGE"
+ ],
+ "reward": "realized paper pnl - fees",
+ "small_n": {
+  "train_windows": 276,
+  "holdout_windows": 77,
+  "effective_independent_n": 77,
+  "note": "unit=market_window_id; bandit, not millions of samples"
+ },
+ "oracle_fit": "DEV+VAL only (holdout OOS)",
+ "holdout": {
+  "T3_rl": {
+   "n_eligible": 77,
+   "trades": 56,
+   "coverage": 0.7272727272727273,
+   "ev_per_eligible_c": 17.433428571428575,
+   "ev_per_trade_c": 23.97096428571429,
+   "total_pnl_c": 1342.3740000000003,
+   "max_drawdown_c": 753.5528999999999,
+   "action_distribution": {
+    "SKIP": 21,
+    "BUY_SMALL": 0,
+    "BUY_MEDIUM": 0,
+    "BUY_LARGE": 56
+   }
+  },
+  "baseline_T0_fixed_small": {
+   "n_eligible": 77,
+   "trades": 77,
+   "coverage": 1.0,
+   "ev_per_eligible_c": 4.609463636363637,
+   "ev_per_trade_c": 4.609463636363637,
+   "total_pnl_c": 354.92870000000005,
+   "max_drawdown_c": 377.38599999999997,
+   "action_distribution": {
+    "SKIP": 0,
+    "BUY_SMALL": 77,
+    "BUY_MEDIUM": 0,
+    "BUY_LARGE": 0
+   }
+  },
+  "baseline_T0_fixed_large": {
+   "n_eligible": 77,
+   "trades": 77,
+   "coverage": 1.0,
+   "ev_per_eligible_c": 13.828390909090912,
+   "ev_per_trade_c": 13.828390909090912,
+   "total_pnl_c": 1064.7861000000003,
+   "max_drawdown_c": 1132.158,
+   "action_distribution": {
+    "SKIP": 0,
+    "BUY_SMALL": 0,
+    "BUY_MEDIUM": 0,
+    "BUY_LARGE": 77
+   }
+  },
+  "baseline_edge_prop": {
+   "n_eligible": 77,
+   "trades": 44,
+   "coverage": 0.5714285714285714,
+   "ev_per_eligible_c": 78.57437142857142,
+   "ev_per_trade_c": 137.50515,
+   "total_pnl_c": 6050.2266,
+   "max_drawdown_c": 0.0,
+   "action_distribution": {
+    "SKIP": 33,
+    "BUY_SMALL": 0,
+    "BUY_MEDIUM": 0,
+    "BUY_LARGE": 44
+   }
+  },
+  "baseline_random": {
+   "n_eligible": 77,
+   "trades": 58,
+   "coverage": 0.7532467532467533,
+   "ev_per_eligible_c": 4.138016883116885,
+   "ev_per_trade_c": 5.493574137931036,
+   "total_pnl_c": 318.6273000000001,
+   "max_drawdown_c": 473.87429999999995,
+   "action_distribution": {
+    "SKIP": 19,
+    "BUY_SMALL": 16,
+    "BUY_MEDIUM": 18,
+    "BUY_LARGE": 24
+   }
+  }
+ },
+ "risk_adjusted": {
+  "t3_return_to_risk": 0.02313,
+  "best_baseline_return_to_risk": 78574371428.57143,
+  "beats_baselines_risk_adjusted": false,
+  "max_size_share_of_trades": 1.0,
+  "leverage_only": true
+ },
+ "sanity": {
+  "reward_shuffle_control_ev": 14.31587142857143,
+  "edge_vs_reward_shuffle_c": 3.118,
+  "seed_stable": true,
+  "action_collapse": false,
+  "never_trades": false,
+  "always_trades": false,
+  "action_distribution": {
+   "SKIP": 21,
+   "BUY_SMALL": 0,
+   "BUY_MEDIUM": 0,
+   "BUY_LARGE": 56
+  }
+ },
+ "beats_random": true,
+ "verdict": "SHADOW_ONLY",
+ "caveats": [
+  "Contextual bandit on a tiny state space; holdout n=77 windows. SHADOW only; may not size real capital from retrospective evidence.",
+  "T3 cannot change the Oracle side (invariant test RL_SIDE_IMMUTABILITY)."
+ ]
+}

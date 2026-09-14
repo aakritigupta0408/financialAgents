@@ -121,6 +121,45 @@ def _oracle_strip():
     }
 
 
+def _trader_family():
+    """Track F/G — the current active trader family T0-T4 with model identity and
+    BACKTEST vs LIVE separated (never blended). All numbers backend-computed."""
+    rep = _jload("replay_result.json", ROOT / "research" / "replay") or {}
+    eff = _jload("t1_effect_result.json", ROOT / "research" / "replay") or {}
+    t2 = _jload("t2_meta_ml_result.json", ROOT / "research" / "traders") or {}
+    t3 = _jload("t3_rl_result.json", ROOT / "research" / "traders") or {}
+    hold = rep.get("final_holdout", {}) or {}
+
+    def bt(name):
+        h = hold.get(name) or {}
+        return {"ev_per_eligible_c": h.get("ev_per_eligible_c"),
+                "coverage": h.get("coverage"), "max_drawdown_c": h.get("max_drawdown_c")}
+    live = {"n": 0, "state": "COLLECTING (pending DT-01 live activation)"}
+    return [
+        {"id": "T0", "name": "Baseline Follower", "role": "CONTROL", "type": "Rule-based",
+         "identity": "lock + executable EV >= min -> fixed stake",
+         "backtest": bt("T0"), "live": live, "verdict": (rep.get("offline_verdicts") or {}).get("T0")},
+        {"id": "T1", "name": "Selective Edge", "role": "FORMAL_TREATMENT", "type": "Rule-based",
+         "identity": "T0 + require |p_oracle - p_market| >= 0.15 (FROZEN, spec_hash 51b49617)",
+         "backtest": bt("T1"), "live": live,
+         "verdict": (rep.get("offline_verdicts") or {}).get("T1"),
+         "holdout_effect": {"paired_delta_c": eff.get("paired_delta_ev_per_eligible_c"),
+                            "ci95": eff.get("moving_block_bootstrap_95ci_c"),
+                            "status": eff.get("verdict")}},
+        {"id": "T2", "name": "Meta-ML", "role": "SHADOW", "type": "Machine-learned TAKE/SKIP",
+         "identity": "Oracle opportunity -> P(profitable trade) -> TAKE/SKIP",
+         "backtest": {"best_holdout_auc": t2.get("best_holdout_auc")},
+         "live": live, "verdict": t2.get("verdict")},
+        {"id": "T3", "name": "RL Policy", "role": "SHADOW", "type": "Contextual-bandit size policy",
+         "identity": "state -> policy -> SKIP/SMALL/MEDIUM/LARGE (Oracle side immutable)",
+         "backtest": (t3.get("risk_adjusted") or {}),
+         "live": live, "verdict": t3.get("verdict")},
+        {"id": "T4", "name": "Composite", "role": "NOT_QUALIFIED", "type": "-",
+         "identity": "created only after components independently qualify",
+         "backtest": None, "live": None, "verdict": "NOT_QUALIFIED"},
+    ]
+
+
 def main():
     ct = _jload("current_truth.json", ROOT / "research") or {}
     logs = [t["log"] for t in ROSTER]
@@ -144,6 +183,7 @@ def main():
         "oracle_strip": _oracle_strip(),
         "eligible_windows_universe": {"value": n_eligible, "provenance": "DERIVED"},
         "traders": traders,
+        "trader_family": _trader_family(),          # Track F/G: T0-T4 backtest vs live
         "active_experiment": ct.get("experiments"),
         "incident_watch": {"open_incidents": ct.get("open_incidents"),
                            "dt01_activation": "PASS_WITH_WATCH (runtime flag OFF)"},

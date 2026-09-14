@@ -1,7 +1,7 @@
 {
- "material_change_counter": 5,
+ "material_change_counter": 6,
  "checkpoint_every_n": 3,
- "last_checkpoint_utc": "20260914T102509Z",
+ "last_checkpoint_utc": "20260914T104520Z",
  "log": [
   {
    "reason": "DT-01 runtime contract-truth wiring + DT-02 Gate B relabel"
@@ -17,6 +17,9 @@
   },
   {
    "reason": "T1-vs-T0 formal paired holdout + side-semantics audit"
+  },
+  {
+   "reason": "T2 meta-ML + T3 RL SHADOW traders + HOME family + DAG update"
   }
  ]
 }

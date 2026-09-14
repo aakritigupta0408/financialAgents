@@ -155,6 +155,36 @@
    "research_reachable": true
   },
   {
+   "node_id": "trader_family_t0_t1",
+   "type": "TRADER",
+   "role": "EXECUTION_INPUT",
+   "path": "btc_rl/traders_v2.py",
+   "status": "FROZEN (spec_hash 51b49617)",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "T0 control + T1 selective-edge; frozen prospective experiment"
+  },
+  {
+   "node_id": "t2_meta_ml",
+   "type": "MODEL",
+   "role": "EXECUTION_INPUT",
+   "path": "scripts/t2_meta_ml.py",
+   "status": "SHADOW / INFORMATION_LIMITED",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "meta-labeling TAKE/SKIP downstream of Oracle; market features ALLOWED here; does NOT alter Oracle probability"
+  },
+  {
+   "node_id": "t3_rl",
+   "type": "MODEL",
+   "role": "EXECUTION_INPUT",
+   "path": "scripts/t3_rl.py",
+   "status": "SHADOW / SHADOW_ONLY",
+   "runtime_reachable": false,
+   "research_reachable": true,
+   "note": "contextual-bandit size policy; Oracle side IMMUTABLE (RL_SIDE_IMMUTABILITY)"
+  },
+  {
    "node_id": "paper_accounts",
    "type": "PAPER_ACCOUNT",
    "role": "MONITORING_ONLY",
@@ -319,6 +349,36 @@
    "to": "runtime_settlement",
    "type": "RUNTIME_DEPENDENCY",
    "why": "DT-01 wired: contract_truth.resolve_outcome settles on exact BRTI when EXACT_BRTI_RUNTIME_ENABLED (proxy remains explicit fallback)"
+  },
+  {
+   "from": "oracle_frozen",
+   "to": "trader_family_t0_t1",
+   "type": "MODEL_DEPENDENCY",
+   "why": "T0/T1 consume the one Oracle; T1 side = Oracle argmax"
+  },
+  {
+   "from": "oracle_frozen",
+   "to": "t2_meta_ml",
+   "type": "MODEL_DEPENDENCY",
+   "why": "T2 meta-labels the Oracle's candidate trades; does NOT alter p_oracle"
+  },
+  {
+   "from": "oracle_frozen",
+   "to": "t3_rl",
+   "type": "MODEL_DEPENDENCY",
+   "why": "T3 sizes the Oracle's trade; side immutable"
+  },
+  {
+   "from": "kalshi_market",
+   "to": "trader_family_t0_t1",
+   "type": "DATA_FLOW",
+   "why": "ALLOWED: market price enters T1's disagreement gate + execution/valuation (downstream, not the Oracle)"
+  },
+  {
+   "from": "kalshi_market",
+   "to": "t2_meta_ml",
+   "type": "FEATURE_LINEAGE",
+   "why": "ALLOWED: market valuation features to the downstream meta-trader (not the Oracle)"
   }
  ],
  "edges_that_should_be_removed_but_still_exist": [

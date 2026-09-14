@@ -1,0 +1,150 @@
+{
+ "schema_version": "t2-metaml-1",
+ "role": "SHADOW",
+ "target": "Y_trade = 1 if T0 candidate trade realized pnl>0 after fees (meta-label)",
+ "features": [
+  "p_mech",
+  "p_oracle",
+  "oracle_delta",
+  "abs_oracle_delta",
+  "tte_min",
+  "brti_dist",
+  "norm_dist",
+  "rvol",
+  "cost",
+  "spread",
+  "quoted_ev"
+ ],
+ "no_settlement_in_features": true,
+ "small_n": {
+  "rows": 19485,
+  "windows": 370,
+  "train_windows": 185,
+  "val_windows": 91,
+  "holdout_windows": 77,
+  "effective_independent_n": 77,
+  "note": "unit = market_window_id; decision rows are NOT independent"
+ },
+ "oracle_fit": "DEV+VAL only (holdout OOS)",
+ "models_tested": [
+  "logistic",
+  "logistic_l2",
+  "histgbm"
+ ],
+ "model_report": {
+  "logistic": {
+   "accept_threshold_from_val": 0.5,
+   "economics_holdout": {
+    "n_eligible": 77,
+    "trades": 77,
+    "coverage": 1.0,
+    "ev_per_eligible_c": 4.609463636363637,
+    "ev_per_trade_c": 4.609463636363637,
+    "total_pnl_c": 354.92870000000005,
+    "max_drawdown_c": 377.38599999999997,
+    "bad_entry_rate": 0.42857142857142855
+   },
+   "diagnostics": {
+    "auc": 0.4449,
+    "brier": 0.2618,
+    "log_loss": 0.7261
+   }
+  },
+  "logistic_l2": {
+   "accept_threshold_from_val": 0.58,
+   "economics_holdout": {
+    "n_eligible": 77,
+    "trades": 70,
+    "coverage": 0.9090909090909091,
+    "ev_per_eligible_c": 8.212827272727273,
+    "ev_per_trade_c": 9.03411,
+    "total_pnl_c": 632.3877,
+    "max_drawdown_c": 300.9315,
+    "bad_entry_rate": 0.38571428571428573
+   },
+   "diagnostics": {
+    "auc": 0.4539,
+    "brier": 0.2579,
+    "log_loss": 0.7135
+   }
+  },
+  "histgbm": {
+   "accept_threshold_from_val": 0.44,
+   "economics_holdout": {
+    "n_eligible": 77,
+    "trades": 58,
+    "coverage": 0.7532467532467533,
+    "ev_per_eligible_c": 0.8220311688311691,
+    "ev_per_trade_c": 1.0913172413793106,
+    "total_pnl_c": 63.29640000000002,
+    "max_drawdown_c": 317.59310000000005,
+    "bad_entry_rate": 0.4482758620689655
+   },
+   "diagnostics": {
+    "auc": 0.4787,
+    "brier": 0.2874,
+    "log_loss": 0.7886
+   }
+  }
+ },
+ "comparison_holdout": {
+  "T0_take_all": {
+   "n_eligible": 77,
+   "trades": 77,
+   "coverage": 1.0,
+   "ev_per_eligible_c": 4.609463636363637,
+   "ev_per_trade_c": 4.609463636363637,
+   "total_pnl_c": 354.92870000000005,
+   "max_drawdown_c": 377.38599999999997,
+   "bad_entry_rate": 0.42857142857142855
+  },
+  "T1_disagree_0.15": {
+   "n_eligible": 77,
+   "trades": 28,
+   "coverage": 0.36363636363636365,
+   "ev_per_eligible_c": 5.206371428571429,
+   "ev_per_trade_c": 14.317521428571428,
+   "total_pnl_c": 400.8906,
+   "max_drawdown_c": 174.5044,
+   "bad_entry_rate": 0.42857142857142855
+  },
+  "T2_logistic": {
+   "n_eligible": 77,
+   "trades": 77,
+   "coverage": 1.0,
+   "ev_per_eligible_c": 4.609463636363637,
+   "ev_per_trade_c": 4.609463636363637,
+   "total_pnl_c": 354.92870000000005,
+   "max_drawdown_c": 377.38599999999997,
+   "bad_entry_rate": 0.42857142857142855
+  },
+  "T2_logistic_l2": {
+   "n_eligible": 77,
+   "trades": 70,
+   "coverage": 0.9090909090909091,
+   "ev_per_eligible_c": 8.212827272727273,
+   "ev_per_trade_c": 9.03411,
+   "total_pnl_c": 632.3877,
+   "max_drawdown_c": 300.9315,
+   "bad_entry_rate": 0.38571428571428573
+  },
+  "T2_histgbm": {
+   "n_eligible": 77,
+   "trades": 58,
+   "coverage": 0.7532467532467533,
+   "ev_per_eligible_c": 0.8220311688311691,
+   "ev_per_trade_c": 1.0913172413793106,
+   "total_pnl_c": 63.29640000000002,
+   "max_drawdown_c": 317.59310000000005,
+   "bad_entry_rate": 0.4482758620689655
+  }
+ },
+ "best_holdout_auc": 0.4787,
+ "verdict": "INFORMATION_LIMITED",
+ "caveats": [
+  "OFFLINE holdout n=77 windows \u2014 small; SHADOW only, may not replace T1 from retrospective evidence.",
+  "holdout AUC <= 0.5 -> meta-label NOT learnable OOS from these features; any EV 'improvement' is threshold-selection noise, not signal. Verdict reflects that, not the raw EV number.",
+  "meta-label uses proxy T0 entry economics on official BRTI settlement."
+ ],
+ "note": "T2 is downstream of the Oracle; market valuation features allowed. Oracle probability is NOT altered by T2."
+}

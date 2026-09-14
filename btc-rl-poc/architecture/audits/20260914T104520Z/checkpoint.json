@@ -1,5 +1,5 @@
 {
- "checkpoint_utc": "20260914T102509Z",
+ "checkpoint_utc": "20260914T104520Z",
  "verdict": "PASS_WITH_WATCH",
  "checks": {
   "FORBIDDEN_MARKET_TO_ORACLE": {
@@ -63,7 +63,7 @@
    "note": "declared-removed edges must be absent from system_dag.json"
   }
  },
- "material_change_counter": 5,
+ "material_change_counter": 6,
  "fail_blocks_promotion": false,
  "note": "machine-adjudicated architecture checkpoint (scripts/architecture_checkpoint.py)"
 }

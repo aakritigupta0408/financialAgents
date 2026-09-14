@@ -87,6 +87,22 @@ def test_experiments_platform_contract():
         assert md["gross_price_improvement"] == "UNAVAILABLE"
 
 
+def test_trader_family_backtest_live_separated():
+    d = _load("home_snapshot.json")
+    fam = d["trader_family"]
+    ids = [t["id"] for t in fam]
+    assert ids == ["T0", "T1", "T2", "T3", "T4"]
+    roles = {t["id"]: t["role"] for t in fam}
+    assert roles["T0"] == "CONTROL" and roles["T1"] == "FORMAL_TREATMENT"
+    assert roles["T2"] == "SHADOW" and roles["T3"] == "SHADOW"
+    assert roles["T4"] == "NOT_QUALIFIED"
+    for t in fam[:4]:
+        # backtest and live are SEPARATE objects, never blended
+        assert "backtest" in t and "live" in t
+        if t["live"]:
+            assert t["live"]["n"] == 0   # no live windows until DT-01 activation
+
+
 def test_experiments_provenance_labeled():
     # §27 — retrospective/proxy-settled evidence must be labeled, not sold as proof
     d = _load("experiments_snapshot.json")

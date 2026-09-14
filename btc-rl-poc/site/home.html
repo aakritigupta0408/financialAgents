@@ -46,6 +46,8 @@
   <div class="strip" id="oracle"></div>
   <h2>Traders</h2>
   <div class="cards" id="cards"></div>
+  <h2>Trader Family — Oracle (one brain) → policies</h2>
+  <div class="cards" id="family"></div>
   <h2>Comparison</h2>
   <table id="cmp"><thead><tr><th>Trader</th><th>Role</th><th>Equity</th><th>Realized P&L</th>
     <th>Return</th><th>EV/trade</th><th>Coverage</th><th>Win rate</th><th>Bad-entry</th></tr></thead>
@@ -81,9 +83,26 @@ function card(t){
     <div class="row"><span>Max drawdown</span><span>${c2d(o.max_drawdown_c)}</span></div>
   </div>`;
 }
+const ROLE_BADGE={CONTROL:"var(--accent)",FORMAL_TREATMENT:"var(--good)",SHADOW:"var(--warn)",NOT_QUALIFIED:"var(--muted)"};
+function familyCard(t){
+  const bt=t.backtest||{};
+  const btEv=bt.ev_per_eligible_c!=null?bt.ev_per_eligible_c.toFixed(1)+"c":
+             (bt.best_holdout_auc!=null?"AUC "+bt.best_holdout_auc:
+             (bt.t3_return_to_risk!=null?"RtR "+bt.t3_return_to_risk:"—"));
+  return `<div class="tc" style="border-top:3px solid ${ROLE_BADGE[t.role]||'var(--line)'}">
+    <div class="role">${t.role.replace(/_/g,' ')} · ${t.type}</div>
+    <h3>${t.id} — ${t.name}</h3>
+    <div class="role" style="margin:4px 0 8px">${t.identity}</div>
+    <div class="row"><span>BACKTEST</span><span>${btEv}</span></div>
+    <div class="row"><span>LIVE</span><span>${t.live?('n='+t.live.n+' · '+t.live.state.split(' ')[0]):'—'}</span></div>
+    <div class="row"><span>Verdict</span><span class="pill">${(t.verdict||'—').replace(/_/g,' ')}</span></div>
+    ${t.holdout_effect?`<div class="role" style="margin-top:6px">holdout Δ ${t.holdout_effect.paired_delta_c}c CI ${JSON.stringify(t.holdout_effect.ci95)} — ${(t.holdout_effect.status||'').replace(/_/g,' ')}</div>`:''}
+  </div>`;
+}
 fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
   if(!d){$("#prov").textContent="home_snapshot.json not found — run scripts/emit_home_snapshot.py";return;}
   $("#banner").textContent=d.paper_banner;
+  if(d.trader_family)$("#family").innerHTML=d.trader_family.map(familyCard).join("");
   oracleStrip(d.oracle_strip);
   $("#cards").innerHTML=d.traders.map(card).join("");
   $("#cmp tbody").innerHTML=d.traders.filter(t=>t.trader_id).map(t=>{const o=t.online_summary;
