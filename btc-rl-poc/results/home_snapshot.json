@@ -1,0 +1,679 @@
+{
+ "schema_version": "home-1",
+ "metric_definition_version": "econ-1/prob-1",
+ "generated_at": 1789364826.152458,
+ "source_versions": {
+  "git_sha": "10e97a1",
+  "current_truth_utc": "2026-09-13 08:10:33 UTC",
+  "economics_owner": "btc_rl/economics.py",
+  "probability_owner": "btc_rl/metrics.py"
+ },
+ "paper_banner": "PAPER / SIMULATION \u2014 REAL MONEY DISABLED \u2014 RESEARCH, NOT ADVICE",
+ "system_health": {
+  "overall": "WATCH",
+  "feeds": {
+   "daemon_heartbeat": {
+    "state": "HEALTHY",
+    "age_s": 96,
+    "errors": null
+   },
+   "event_capture": {
+    "state": "HEALTHY",
+    "age_s": 4,
+    "errors": 852
+   },
+   "kb_inference": {
+    "state": "WATCH",
+    "age_s": 188,
+    "errors": null
+   },
+   "pit_snapshot": {
+    "state": "HEALTHY",
+    "age_s": 166,
+    "errors": null
+   }
+  }
+ },
+ "oracle_strip": {
+  "contract": "KXBTC15M",
+  "official_brti": "UNAVAILABLE",
+  "official_target": "UNAVAILABLE",
+  "p_mech": "UNAVAILABLE",
+  "p_oracle": "UNAVAILABLE",
+  "oracle_delta": "UNAVAILABLE",
+  "p_market": "UNAVAILABLE",
+  "oracle_state": "SEARCHING",
+  "oracle_spec_hash": "71c3bcffa964",
+  "runtime_contract_truth": "LEGACY / ACTIVATION_PENDING",
+  "provenance": "OBSERVED where available; UNAVAILABLE not fabricated",
+  "note": "live p_mech/p_oracle populate once the runtime oracle path is active (EXACT_BRTI_RUNTIME_ENABLED); not shown from worktree evidence alone"
+ },
+ "eligible_windows_universe": {
+  "value": 1910,
+  "provenance": "DERIVED"
+ },
+ "traders": [
+  {
+   "trader_id": "pt",
+   "name": "The $1K Desk",
+   "role": "CONTROL",
+   "strategy_type": "Follower (leaderboard leader, PT_TAU 0.62)",
+   "status": "ACTIVE",
+   "online_summary": {
+    "n_trades": 902,
+    "n_eligible": 1910,
+    "coverage": 0.4722513089005236,
+    "realized_pnl_c": -97313.0,
+    "ev_per_trade_c": -107.88580931263859,
+    "realized_ev_per_eligible_c": -50.949214659685865,
+    "win_rate": 0.6807095343680709,
+    "bad_entry_rate": 0.31929046563192903,
+    "starting_capital_c": 100000,
+    "ending_capital_c": 2687.0,
+    "total_return": -0.97313,
+    "max_drawdown_c": 204233.0,
+    "profitable_trade_recall": null,
+    "missed_profit_rate": null
+   },
+   "offline_summary": null,
+   "latest_action": "KXBTC15M-26SEP132300-00",
+   "last_k_trades": [
+    {
+     "ticker": "KXBTC15M-26SEP131930-30",
+     "side": "no",
+     "pnl_c": -298,
+     "win": 0,
+     "close_ts": 1789342200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP131945-45",
+     "side": "yes",
+     "pnl_c": 59,
+     "win": 1,
+     "close_ts": 1789343100
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132000-00",
+     "side": "no",
+     "pnl_c": -255,
+     "win": 0,
+     "close_ts": 1789344000
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132030-30",
+     "side": "no",
+     "pnl_c": 133,
+     "win": 1,
+     "close_ts": 1789345800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132100-00",
+     "side": "yes",
+     "pnl_c": 141,
+     "win": 1,
+     "close_ts": 1789347600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132130-30",
+     "side": "no",
+     "pnl_c": -286,
+     "win": 0,
+     "close_ts": 1789349400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132145-45",
+     "side": "no",
+     "pnl_c": 68,
+     "win": 1,
+     "close_ts": 1789350300
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132200-00",
+     "side": "yes",
+     "pnl_c": 85,
+     "win": 1,
+     "close_ts": 1789351200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132245-45",
+     "side": "yes",
+     "pnl_c": -263,
+     "win": 0,
+     "close_ts": 1789353900
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132300-00",
+     "side": "yes",
+     "pnl_c": 76,
+     "win": 1,
+     "close_ts": 1789354800
+    }
+   ],
+   "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
+  },
+  {
+   "trader_id": "pt3",
+   "name": "The Disciplined",
+   "role": "TREATMENT",
+   "strategy_type": "High-conviction (PT3_TAU 0.77)",
+   "status": "ACTIVE",
+   "online_summary": {
+    "n_trades": 844,
+    "n_eligible": 1910,
+    "coverage": 0.4418848167539267,
+    "realized_pnl_c": -92397.0,
+    "ev_per_trade_c": -109.47511848341232,
+    "realized_ev_per_eligible_c": -48.37539267015707,
+    "win_rate": 0.726303317535545,
+    "bad_entry_rate": 0.273696682464455,
+    "starting_capital_c": 100000,
+    "ending_capital_c": 7603.0,
+    "total_return": -0.92397,
+    "max_drawdown_c": 127736.0,
+    "profitable_trade_recall": null,
+    "missed_profit_rate": null
+   },
+   "offline_summary": null,
+   "latest_action": "KXBTC15M-26SEP132300-00",
+   "last_k_trades": [
+    {
+     "ticker": "KXBTC15M-26SEP131800-00",
+     "side": "no",
+     "pnl_c": 218,
+     "win": 1,
+     "close_ts": 1789336800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP131845-45",
+     "side": "no",
+     "pnl_c": 383,
+     "win": 1,
+     "close_ts": 1789339500
+    },
+    {
+     "ticker": "KXBTC15M-26SEP131930-30",
+     "side": "no",
+     "pnl_c": -967,
+     "win": 0,
+     "close_ts": 1789342200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132000-00",
+     "side": "no",
+     "pnl_c": -861,
+     "win": 0,
+     "close_ts": 1789344000
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132030-30",
+     "side": "no",
+     "pnl_c": 356,
+     "win": 1,
+     "close_ts": 1789345800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132100-00",
+     "side": "yes",
+     "pnl_c": 424,
+     "win": 1,
+     "close_ts": 1789347600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132130-30",
+     "side": "no",
+     "pnl_c": -881,
+     "win": 0,
+     "close_ts": 1789349400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132145-45",
+     "side": "no",
+     "pnl_c": 227,
+     "win": 1,
+     "close_ts": 1789350300
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132245-45",
+     "side": "yes",
+     "pnl_c": -788,
+     "win": 0,
+     "close_ts": 1789353900
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132300-00",
+     "side": "yes",
+     "pnl_c": 230,
+     "win": 1,
+     "close_ts": 1789354800
+    }
+   ],
+   "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
+  },
+  {
+   "trader_id": "pt6",
+   "name": "The MLE",
+   "role": "TREATMENT",
+   "strategy_type": "MLE edge logit (shadow, EV>=10c)",
+   "status": "SHADOW",
+   "online_summary": {
+    "n_trades": 55,
+    "n_eligible": 1910,
+    "coverage": 0.028795811518324606,
+    "realized_pnl_c": 40409.0,
+    "ev_per_trade_c": 734.709090909091,
+    "realized_ev_per_eligible_c": 21.156544502617802,
+    "win_rate": 0.5454545454545454,
+    "bad_entry_rate": 0.18181818181818182,
+    "starting_capital_c": 100000,
+    "ending_capital_c": 140409.0,
+    "total_return": 0.40409,
+    "max_drawdown_c": 40036.0,
+    "profitable_trade_recall": null,
+    "missed_profit_rate": null
+   },
+   "offline_summary": null,
+   "latest_action": "KXBTC15M-26SEP130815-15",
+   "last_k_trades": [
+    {
+     "ticker": "KXBTC15M-26SEP111815-15",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 0,
+     "close_ts": 1789164900
+    },
+    {
+     "ticker": "KXBTC15M-26SEP120530-30",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 0,
+     "close_ts": 1789205400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP120845-45",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789217100
+    },
+    {
+     "ticker": "KXBTC15M-26SEP120900-00",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 0,
+     "close_ts": 1789218000
+    },
+    {
+     "ticker": "KXBTC15M-26SEP122330-30",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789270200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP130100-00",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789275600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP130400-00",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789286400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP130745-45",
+     "side": "yes",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789299900
+    },
+    {
+     "ticker": "KXBTC15M-26SEP130800-00",
+     "side": "yes",
+     "pnl_c": 0,
+     "win": 1,
+     "close_ts": 1789300800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP130815-15",
+     "side": "no",
+     "pnl_c": 0,
+     "win": 0,
+     "close_ts": 1789301700
+    }
+   ],
+   "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
+  },
+  {
+   "trader_id": "kb",
+   "name": "KB One-Shot",
+   "role": "TREATMENT",
+   "strategy_type": "Per-window edge bet",
+   "status": "ACTIVE",
+   "online_summary": {
+    "n_trades": 1904,
+    "n_eligible": 1910,
+    "coverage": 0.9968586387434555,
+    "realized_pnl_c": 1087.1,
+    "ev_per_trade_c": 0.5709558823529411,
+    "realized_ev_per_eligible_c": 0.5691623036649214,
+    "win_rate": 0.5367647058823529,
+    "bad_entry_rate": 0.4632352941176471,
+    "starting_capital_c": 100000,
+    "ending_capital_c": 101087.10000000006,
+    "total_return": 0.01087100000000064,
+    "max_drawdown_c": 1546.0,
+    "profitable_trade_recall": null,
+    "missed_profit_rate": null
+   },
+   "offline_summary": null,
+   "latest_action": "KXBTC15M-26SEP132300-00",
+   "last_k_trades": [
+    {
+     "ticker": "KXBTC15M-26SEP132030-30",
+     "side": "no",
+     "pnl_c": 48.0,
+     "win": 1,
+     "close_ts": 1789345800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132045-45",
+     "side": "no",
+     "pnl_c": -0.2,
+     "win": 0,
+     "close_ts": 1789346700
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132100-00",
+     "side": "yes",
+     "pnl_c": 26.0,
+     "win": 1,
+     "close_ts": 1789347600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132115-15",
+     "side": "yes",
+     "pnl_c": -56.0,
+     "win": 0,
+     "close_ts": 1789348500
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132130-30",
+     "side": "no",
+     "pnl_c": -58.0,
+     "win": 0,
+     "close_ts": 1789349400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132145-45",
+     "side": "yes",
+     "pnl_c": -48.0,
+     "win": 0,
+     "close_ts": 1789350300
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132200-00",
+     "side": "no",
+     "pnl_c": -57.0,
+     "win": 0,
+     "close_ts": 1789351200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132215-15",
+     "side": "no",
+     "pnl_c": -0.5,
+     "win": 0,
+     "close_ts": 1789352100
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132230-30",
+     "side": "no",
+     "pnl_c": -55.0,
+     "win": 0,
+     "close_ts": 1789353000
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132300-00",
+     "side": "yes",
+     "pnl_c": 27.0,
+     "win": 1,
+     "close_ts": 1789354800
+    }
+   ],
+   "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
+  },
+  {
+   "trader_id": "pb",
+   "name": "Conviction Book",
+   "role": "TREATMENT",
+   "strategy_type": "kb5-gated entries",
+   "status": "ACTIVE",
+   "online_summary": {
+    "n_trades": 1300,
+    "n_eligible": 1910,
+    "coverage": 0.680628272251309,
+    "realized_pnl_c": 2892.6,
+    "ev_per_trade_c": 2.225076923076923,
+    "realized_ev_per_eligible_c": 1.5144502617801046,
+    "win_rate": 0.5823076923076923,
+    "bad_entry_rate": 0.4176923076923077,
+    "starting_capital_c": 100000,
+    "ending_capital_c": 102892.59999999999,
+    "total_return": 0.028925999999999914,
+    "max_drawdown_c": 1187.2000000000116,
+    "profitable_trade_recall": null,
+    "missed_profit_rate": null
+   },
+   "offline_summary": null,
+   "latest_action": "KXBTC15M-26SEP132215-15",
+   "last_k_trades": [
+    {
+     "ticker": "KXBTC15M-26SEP131945-45",
+     "side": "yes",
+     "pnl_c": 21.0,
+     "win": 1,
+     "close_ts": 1789343100
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132000-00",
+     "side": "no",
+     "pnl_c": -77.0,
+     "win": 0,
+     "close_ts": 1789344000
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132030-30",
+     "side": "no",
+     "pnl_c": 25.0,
+     "win": 1,
+     "close_ts": 1789345800
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132045-45",
+     "side": "no",
+     "pnl_c": -5.1,
+     "win": 0,
+     "close_ts": 1789346700
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132100-00",
+     "side": "yes",
+     "pnl_c": 32.0,
+     "win": 1,
+     "close_ts": 1789347600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132115-15",
+     "side": "yes",
+     "pnl_c": -6.7,
+     "win": 0,
+     "close_ts": 1789348500
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132130-30",
+     "side": "no",
+     "pnl_c": -70.0,
+     "win": 0,
+     "close_ts": 1789349400
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132145-45",
+     "side": "no",
+     "pnl_c": 24.0,
+     "win": 1,
+     "close_ts": 1789350300
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132200-00",
+     "side": "no",
+     "pnl_c": -31.0,
+     "win": 0,
+     "close_ts": 1789351200
+    },
+    {
+     "ticker": "KXBTC15M-26SEP132215-15",
+     "side": "no",
+     "pnl_c": -5.0,
+     "win": 0,
+     "close_ts": 1789352100
+    }
+   ],
+   "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
+  }
+ ],
+ "active_experiment": {
+  "treatments": [
+   {
+    "key": "champion",
+    "verdict": "baseline",
+    "n": 707,
+    "own_ev": 0.04099,
+    "llr": 0.0
+   },
+   {
+    "key": "t_regime",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": 0.08215,
+    "llr": 0.762
+   },
+   {
+    "key": "t_knife",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.03241,
+    "llr": -2.254
+   },
+   {
+    "key": "t_cal",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.08712,
+    "llr": -1.405
+   },
+   {
+    "key": "t_cheap",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": 0.13506,
+    "llr": -1.39
+   },
+   {
+    "key": "t_both",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.01373,
+    "llr": -1.74
+   },
+   {
+    "key": "t_fshare",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.08566,
+    "llr": -2.034
+   },
+   {
+    "key": "t_fs_reg",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.10128,
+    "llr": -1.733
+   },
+   {
+    "key": "champion_real",
+    "verdict": "baseline",
+    "n": 707,
+    "own_ev": -0.03913,
+    "llr": 0.0
+   },
+   {
+    "key": "t_exec",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": -0.02067,
+    "llr": 0.836
+   },
+   {
+    "key": "t_exec_reg",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": 0.00427,
+    "llr": 1.459
+   },
+   {
+    "key": "t_limit",
+    "verdict": "reject",
+    "n": 707,
+    "own_ev": -0.02665,
+    "llr": -2.97
+   },
+   {
+    "key": "t_limit_reg",
+    "verdict": "collecting",
+    "n": 707,
+    "own_ev": 0.05853,
+    "llr": -1.152
+   },
+   {
+    "key": "t_evlead",
+    "verdict": "reject",
+    "n": 707,
+    "own_ev": -0.08567,
+    "llr": -2.333
+   },
+   {
+    "key": "t_edgeband",
+    "verdict": "collecting",
+    "n": 519,
+    "own_ev": 0.00455,
+    "llr": -1.568
+   }
+  ]
+ },
+ "incident_watch": {
+  "open_incidents": [
+   {
+    "sev": 0,
+    "title": "systemic error architecture"
+   },
+   {
+    "sev": 2,
+    "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+   },
+   {
+    "sev": 2,
+    "title": "TARGET_DEFINITION_MISMATCH \u2014 labels/benchmark off vs official KXBTC15M BRTI rule"
+   },
+   {
+    "sev": 2,
+    "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+   }
+  ],
+  "dt01_activation": "PASS_WITH_WATCH (runtime flag OFF)"
+ },
+ "bottleneck": "Accumulate A3 forward evidence \u2014 biggest current unknown",
+ "note": "HOME renders this verbatim; no scientific/economic formula runs in the browser (enforced by tests/test_no_frontend_science.py)."
+}
