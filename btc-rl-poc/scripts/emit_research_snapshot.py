@@ -208,6 +208,8 @@ def research_snapshot(health):
                       "failed": sum(1 for x in jobs if x.get("status") in ("FAILED", "BLOCKED"))},
         "milestone": "P2 — OFFLINE MODEL/FEATURE PROGRAM (A_CORE complete)",
         "offline_verdict": _j(ROOT / "research" / "true15m" / "OFFLINE_FINAL_VERDICT_V1.json") or None,
+        "sealed_test_status": _j(ROOT / "research" / "true15m" / "SEALED_TEST_STATUS.json") or None,
+        "av_incremental": _j(ROOT / "research" / "true15m" / "av_incremental_test.json") or None,
         "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
             "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,
