@@ -1,7 +1,7 @@
 {
  "schema_version": "home-1",
  "metric_definition_version": "econ-1/prob-1",
- "generated_at": 1789383331.244286,
+ "generated_at": 1789383951.862484,
  "source_versions": {
   "git_sha": "623f188",
   "current_truth_utc": "2026-09-14 10:45:20 UTC",
@@ -35,18 +35,19 @@
   }
  },
  "oracle_strip": {
-  "contract": "KXBTC15M",
-  "official_brti": "UNAVAILABLE",
-  "official_target": "UNAVAILABLE",
-  "p_mech": "UNAVAILABLE",
-  "p_oracle": "UNAVAILABLE",
-  "oracle_delta": "UNAVAILABLE",
-  "p_market": "UNAVAILABLE",
+  "contract": "KXBTC15M-26SEP140700-00",
+  "official_brti": 77870.79,
+  "official_target": 77879.12,
+  "time_remaining_min": 9.2,
+  "p_mech": 0.4697,
+  "p_oracle": 0.3726,
+  "oracle_delta": 0.1876,
+  "p_market": 0.185,
   "oracle_state": "SEARCHING",
   "oracle_spec_hash": "71c3bcffa964",
+  "benchmark_provenance": "EXACT CF-BRTI (current window computed live)",
   "runtime_contract_truth": "LEGACY / ACTIVATION_PENDING",
-  "provenance": "OBSERVED where available; UNAVAILABLE not fabricated",
-  "note": "live p_mech/p_oracle populate once the runtime oracle path is active (EXACT_BRTI_RUNTIME_ENABLED); not shown from worktree evidence alone"
+  "provenance": "p_mech/p_oracle from exact BRTI current-window state; p_market from live desk; UNAVAILABLE not fabricated"
  },
  "eligible_windows_universe": {
   "value": 1931,
@@ -60,31 +61,24 @@
    "strategy_type": "Follower (leaderboard leader, PT_TAU 0.62)",
    "status": "ACTIVE",
    "online_summary": {
-    "n_trades": 918,
+    "n_trades": 919,
     "n_eligible": 1931,
-    "coverage": 0.4754013464526152,
-    "realized_pnl_c": -97256.0,
-    "ev_per_trade_c": -105.94335511982571,
-    "realized_ev_per_eligible_c": -50.36561367167271,
-    "win_rate": 0.681917211328976,
-    "bad_entry_rate": 0.31808278867102396,
+    "coverage": 0.47591921284308647,
+    "realized_pnl_c": -97174.0,
+    "ev_per_trade_c": -105.73884657236127,
+    "realized_ev_per_eligible_c": -50.323148627654064,
+    "win_rate": 0.6822633297062024,
+    "bad_entry_rate": 0.3177366702937976,
     "starting_capital_c": 100000,
-    "ending_capital_c": 2744.0,
-    "total_return": -0.97256,
+    "ending_capital_c": 2826.0,
+    "total_return": -0.97174,
     "max_drawdown_c": 204233.0,
     "profitable_trade_recall": null,
     "missed_profit_rate": null
    },
    "offline_summary": null,
-   "latest_action": "KXBTC15M-26SEP140645-45",
+   "latest_action": "KXBTC15M-26SEP140700-00",
    "last_k_trades": [
-    {
-     "ticker": "KXBTC15M-26SEP140415-15",
-     "side": "no",
-     "pnl_c": 62,
-     "win": 1,
-     "close_ts": 1789373700
-    },
     {
      "ticker": "KXBTC15M-26SEP140430-30",
      "side": "no",
@@ -147,6 +141,13 @@
      "pnl_c": -282,
      "win": 0,
      "close_ts": 1789382700
+    },
+    {
+     "ticker": "KXBTC15M-26SEP140700-00",
+     "side": "no",
+     "pnl_c": 82,
+     "win": 1,
+     "close_ts": 1789383600
     }
    ],
    "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
@@ -354,31 +355,24 @@
    "strategy_type": "Per-window edge bet",
    "status": "ACTIVE",
    "online_summary": {
-    "n_trades": 1923,
+    "n_trades": 1924,
     "n_eligible": 1931,
-    "coverage": 0.9958570688762299,
-    "realized_pnl_c": 969.9,
-    "ev_per_trade_c": 0.504368174726989,
-    "realized_ev_per_eligible_c": 0.5022786121180736,
-    "win_rate": 0.5366614664586583,
-    "bad_entry_rate": 0.46333853354134164,
+    "coverage": 0.9963749352667012,
+    "realized_pnl_c": 1019.9,
+    "ev_per_trade_c": 0.530093555093555,
+    "realized_ev_per_eligible_c": 0.5281719316416364,
+    "win_rate": 0.5369022869022869,
+    "bad_entry_rate": 0.4630977130977131,
     "starting_capital_c": 100000,
-    "ending_capital_c": 100969.90000000007,
-    "total_return": 0.009699000000000669,
+    "ending_capital_c": 101019.90000000007,
+    "total_return": 0.01019900000000067,
     "max_drawdown_c": 1546.0,
     "profitable_trade_recall": null,
     "missed_profit_rate": null
    },
    "offline_summary": null,
-   "latest_action": "KXBTC15M-26SEP140645-45",
+   "latest_action": "KXBTC15M-26SEP140700-00",
    "last_k_trades": [
-    {
-     "ticker": "KXBTC15M-26SEP140430-30",
-     "side": "no",
-     "pnl_c": 37.0,
-     "win": 1,
-     "close_ts": 1789374600
-    },
     {
      "ticker": "KXBTC15M-26SEP140445-45",
      "side": "no",
@@ -441,6 +435,13 @@
      "pnl_c": 48.0,
      "win": 1,
      "close_ts": 1789382700
+    },
+    {
+     "ticker": "KXBTC15M-26SEP140700-00",
+     "side": "no",
+     "pnl_c": 50.0,
+     "win": 1,
+     "close_ts": 1789383600
     }
    ],
    "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"

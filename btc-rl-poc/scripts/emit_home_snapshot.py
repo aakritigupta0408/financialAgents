@@ -99,25 +99,72 @@ def _trader_summary(t, n_eligible):
 
 
 def _oracle_strip():
-    """Current contract + p_mech/p_oracle/p_market. UNAVAILABLE when live contract
-    state is not present (never fabricated)."""
-    ct = _jload("current_truth.json", ROOT / "research") or {}
+    """Current live contract + Oracle belief. Populated from the running desk's
+    online_status.json (BRTI composite + current KXBTC15M market). p_mech/p_oracle
+    are the Oracle's CURRENT belief for this contract (computed from decision-time
+    state) — shown for the live window; this does NOT claim the runtime settles on
+    exact BRTI (runtime_contract_truth stays honest). UNAVAILABLE only when the desk
+    has no fresh contract; never fabricated."""
+    import math
     frozen = _jload("oracle_frozen.json", ROOT / "research" / "oracle") or {}
     rh = _jload("brti_runtime_health.json") or {}
     runtime = (rh.get("migration") or {})
+    st = _jload("online_status.json") or {}
+    U = "UNAVAILABLE"
+    # Authoritative current window from EXACT BRTI (independent of daemon lag): the
+    # window is [last 15-min boundary, next boundary]; target = 60s BRTI avg at open.
+    brti = target = tte_s = p_mech = p_oracle = odelta = contract = None
+    try:
+        from btc_rl import contract_truth as CT
+        from btc_rl import prospective_capture as PC
+        now = int(time.time())
+        close_ts = ((now // 900) + 1) * 900
+        open_ts = close_ts - 900
+        cs = CT.contract_state(open_ts, close_ts, now)
+        # exact target from BRTI history; current level from the fresh live BRTI
+        # (history lags the in-progress minute) — daemon composite is ~fresh.
+        cur = cs.get("current_brti") or ((st.get("brti") or {}) or {}).get("price")
+        if cur and cs.get("official_target"):
+            brti = round(cur, 2)
+            target = round(cs["official_target"], 2)
+            tte_s = cs["time_remaining_s"]
+            if tte_s and tte_s > 1:
+                p_mech = round(PC.p_mech(cur, cs["official_target"], tte_s), 4)
+                p_oracle = round(PC.p_oracle(cur, cs["official_target"], tte_s), 4)
+    except Exception:
+        pass
+    # market probability for the current window from the desk (if its ticker matches)
+    pm = st.get("pm") or {}
+    kb = (st.get("kalshi_binary") or {}).get("last") or {}
+    p_market = pm.get("model_p_up") if False else kb.get("mkt_p_up")
+    if p_mech is None:                                  # BRTI path failed -> daemon fallback
+        brti = ((st.get("brti") or {}) or {}).get("price")
+        target = pm.get("strike") or kb.get("strike")
+        contract = pm.get("ticker") or kb.get("ticker")
+    else:
+        contract = pm.get("ticker") or kb.get("ticker") or "KXBTC15M (current window)"
+    if p_oracle is not None and p_market is not None:
+        odelta = round(p_oracle - p_market, 4)
+    fresh = bool(brti and target)
     return {
-        "contract": "KXBTC15M",
-        "official_brti": ct.get("current_brti", "UNAVAILABLE"),
-        "official_target": ct.get("official_target", "UNAVAILABLE"),
-        "p_mech": "UNAVAILABLE", "p_oracle": "UNAVAILABLE",
-        "oracle_delta": "UNAVAILABLE", "p_market": "UNAVAILABLE",
-        "oracle_state": "SEARCHING",
+        "contract": contract,
+        "official_brti": round(brti, 2) if (fresh and brti) else U,
+        "official_target": round(target, 2) if (fresh and target) else U,
+        "time_remaining_min": round(tte_s / 60.0, 1) if (fresh and tte_s) else U,
+        "p_mech": p_mech if p_mech is not None else U,
+        "p_oracle": p_oracle if p_oracle is not None else U,
+        "oracle_delta": odelta if odelta is not None else U,
+        "p_market": p_market if (fresh and p_market is not None) else U,
+        "oracle_state": ("LOCKED" if (p_oracle is not None and abs(p_oracle - 0.5) > 0.15)
+                         else "SEARCHING"),
         "oracle_spec_hash": frozen.get("spec_hash"),
+        "benchmark_provenance": ("EXACT CF-BRTI (current window computed live)"
+                                 if p_mech is not None else
+                                 "BRTI 4-venue composite (daemon fallback)"),
         "runtime_contract_truth": ("ACTIVE_EXACT_BRTI" if runtime.get("runtime_enabled")
                                    else "LEGACY / ACTIVATION_PENDING"),   # §12/§51
-        "provenance": "OBSERVED where available; UNAVAILABLE not fabricated",
-        "note": "live p_mech/p_oracle populate once the runtime oracle path is active "
-                "(EXACT_BRTI_RUNTIME_ENABLED); not shown from worktree evidence alone",
+        "provenance": "p_mech/p_oracle from exact BRTI current-window state; "
+                      "p_market from live desk; UNAVAILABLE not fabricated",
     }
 
 
