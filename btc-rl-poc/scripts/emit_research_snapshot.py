@@ -129,6 +129,7 @@ def research_snapshot(health):
         _lane("L10", "UI / Research Narrator", "RUNNING", "private live feed online", None),
     ]
 
+    jobs = (_j(R / "research_jobs.json") or {}).get("jobs", [])
     events = EV.recent(limit=40)
     disc = next((e for e in reversed(events) if e.get("event_type") == "DISCOVERY"), None)
     blockers = [l for l in lanes if l["blocked_reason"]]
@@ -186,6 +187,11 @@ def research_snapshot(health):
             "note": "INTERNAL adopted benchmark, NOT a course baseline — repo has no "
                     "official one. See research/true15m/INTERNAL_ADOPTED_BASELINE_V1.yaml"},
         "latest_discovery": {"title": disc.get("title"), "narrative": disc.get("narrative")} if disc else None,
+        "active_jobs": jobs,               # from the concurrent scheduler
+        "scheduler": {"jobs_total": len(jobs),
+                      "complete": sum(1 for x in jobs if x.get("status") == "COMPLETE"),
+                      "running": sum(1 for x in jobs if x.get("status") == "RUNNING"),
+                      "failed": sum(1 for x in jobs if x.get("status") in ("FAILED", "BLOCKED"))},
         "coverage_matrix": covmat.get("families") if covmat else None,
         "cohorts": covmat.get("cohorts") if covmat else None,
         "model_family_plan": covmat.get("model_family_plan") if covmat else None,
