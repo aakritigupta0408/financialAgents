@@ -359,10 +359,10 @@ function liveDeskStrip(){
         <span>Market <b>${cw.market_p_up!=null?Math.round(cw.market_p_up*100)+'%':'—'}</b></span></div>
       <div class="lwbet">${cw.side?`Desk in <span class="sd ${cw.side==='YES'?'yes':'no'}">${cw.side}</span> @ ${cw.entry_c}¢`:'Awaiting entry'}</div></div>`
     :`<div class="lwcur"><div class="lwk">Current window</div><div class="lwtk mut">Between windows…</div></div>`;
-  const trs=(L.recent_trades||[]).slice(0,5).map(r=>`<tr><td>${r.time}</td>
-     <td><span class="sd ${r.side==='YES'?'yes':'no'}">${r.side}</span></td>
-     <td>${r.entry_c}¢</td><td><span class="res ${r.result.toLowerCase()}">${r.result}</span></td>
-     <td class="pl ${r.pnl_c>=0?'pos':'neg'}">${r.pnl_c>=0?'+':'−'}$${Math.abs(r.pnl_c/100).toFixed(2)}</td></tr>`).join("");
+  const trs=(L.recent_trades||[]).filter(r=>r.status!=="Open"&&r.result).slice(0,5).map(r=>`<tr><td>${r.time}</td>
+     <td><span class="sd ${r.side==='YES'?'yes':'no'}">${r.side||'—'}</span></td>
+     <td>${r.entry_c!=null?r.entry_c+'¢':'—'}</td><td><span class="res ${r.result.toLowerCase()}">${r.result}</span></td>
+     <td class="pl ${r.pnl_c>=0?'pos':'neg'}">${r.pnl_c!=null?(r.pnl_c>=0?'+':'−')+'$'+Math.abs(r.pnl_c/100).toFixed(2):'—'}</td></tr>`).join("");
   return `<div class="panel livestrip">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <div class="lab">${dot} Live paper desk</div>
