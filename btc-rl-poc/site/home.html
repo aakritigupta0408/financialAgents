@@ -395,7 +395,11 @@ function paintFamily(){
 function render(d){
   SNAP=d;
   $("#app").innerHTML=hero(d.oracle_strip||{})+`<section id="family"></section>`;
-  paintFamily();
+  // Defense-in-depth: a single panel throwing on an unexpected data shape must
+  // not blank the whole page. Keep the hero; degrade the family section only.
+  try{ paintFamily(); }
+  catch(e){ $("#family").innerHTML=`<div class="panel"><div class="lab">The trader family</div>
+    <div class="emptychart">This section is refreshing — the live desk publishes a new snapshot each cycle.</div></div>`; }
   if(d.paper_banner){const p=d.paper_banner.split("—");$("#banner").innerHTML=`<b>${p[0].trim()}.</b> ${p.slice(1).join(" · ").replace(/\s+/g,' ').trim()}`;}
 }
 function waiting(){
