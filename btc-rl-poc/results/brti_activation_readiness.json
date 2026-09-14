@@ -1,0 +1,65 @@
+{
+ "mode": "preflight",
+ "checked_ts": 1789372236.171743,
+ "brti_health": {
+  "connected": true,
+  "rest_ok": true,
+  "history_ok": true,
+  "age_s": 1.3,
+  "observed_cadence_hz": 1.0,
+  "gaps": 0
+ },
+ "shadow_parity": {
+  "windows_checked": 10,
+  "agreements": 10,
+  "agree_rate": 1.0,
+  "sample": [
+   {
+    "ticker": "KXBTC15M-26SEP121830-30",
+    "exact": 0,
+    "official": 0,
+    "match": 1
+   },
+   {
+    "ticker": "KXBTC15M-26SEP121845-45",
+    "exact": 0,
+    "official": 0,
+    "match": 1
+   },
+   {
+    "ticker": "KXBTC15M-26SEP121900-00",
+    "exact": 1,
+    "official": 1,
+    "match": 1
+   },
+   {
+    "ticker": "KXBTC15M-26SEP121915-15",
+    "exact": 1,
+    "official": 1,
+    "match": 1
+   },
+   {
+    "ticker": "KXBTC15M-26SEP121930-30",
+    "exact": 0,
+    "official": 0,
+    "match": 1
+   }
+  ]
+ },
+ "flag_state": {
+  "EXACT_BRTI_RUNTIME_ENABLED": false,
+  "EXACT_BRTI_CAPTURE_ENABLED": false
+ },
+ "preflight_ready": true,
+ "activation_sequence": [
+  "1. merge/cherry-pick DT-01 commits into the main checkout",
+  "2. deploy with flag OFF; confirm daemon heartbeat (online_status.json alive_at fresh)",
+  "3. python3 scripts/emit_brti_health.py  -> results/brti_runtime_health.json healthy",
+  "4. export EXACT_BRTI_CAPTURE_ENABLED=1 ; restart daemon ; verify BRTI state populates",
+  "5. export EXACT_BRTI_RUNTIME_ENABLED=1 ; restart daemon",
+  "6. observe results/settlement_shadow.jsonl: exact_vs_official == 1 on first windows",
+  "7. python3 scripts/activate_exact_brti.py --verify-live",
+  "8. python3 scripts/architecture_checkpoint.py  -> RUNTIME_CONTRACT_TRUTH PASS"
+ ],
+ "note": "Worktree pre-flight only. RUNTIME_CONTRACT_TRUTH stays PASS_WITH_WATCH until --verify-live confirms the RUNNING daemon settles on exact BRTI."
+}

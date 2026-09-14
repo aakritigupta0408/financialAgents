@@ -1,0 +1,151 @@
+{
+ "schema_version": "experiments-1",
+ "generated_at": 1789372459.800627,
+ "metric_owner": "btc_rl/economics.paired_delta",
+ "unit_default": "market_window_id",
+ "primary_trader_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
+ "evidence_class": "ONLINE_PAPER_RETROSPECTIVE",
+ "settlement_provenance": "PROXY_LEGACY_COINBASE_CANDLE",
+ "caveats": [
+  "Paper ledgers settle on PROXY_LEGACY_COINBASE_CANDLE until DT-01 is activated in the live daemon; treat EV as provisional until exact-BRTI settlement.",
+  "SHADOW treatments (pt6) stake 0 \u2014 their 'wins' are counterfactual selective abstention (avoiding control losses), not realized cash.",
+  "Retrospective online-paper evidence, NOT prospective proof (\u00a727)."
+ ],
+ "note": "win rate is NOT a primary trader decision metric (\u00a77). Offline and online kept separate; this is ONLINE paper evidence.",
+ "experiments": [
+  {
+   "experiment_id": "trader-pt3-vs-pt",
+   "hypothesis": "A tighter conviction gate (0.77 vs 0.62) raises EV/eligible-window",
+   "control": "pt",
+   "treatment": "pt3",
+   "shadow": false,
+   "unit": "market_window_id",
+   "estimand": "paired_delta(realized_paper_ev_per_eligible_window_c)",
+   "primary_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
+   "sample_sizes": {
+    "raw_observations_control": 908,
+    "raw_observations_treatment": 845,
+    "windows_control": 908,
+    "windows_treatment": 845,
+    "paired_windows": 577,
+    "effective_n": 513
+   },
+   "effect": {
+    "paired_delta": -2.5147,
+    "ci95": [
+     -258.0173,
+     262.9081
+    ],
+    "n_pairs": 577,
+    "significant": false
+   },
+   "control_summary": {
+    "ev_per_eligible_c": -107.05616740088105,
+    "coverage": 0.998898678414097
+   },
+   "treatment_summary": {
+    "ev_per_eligible_c": -109.11479289940829,
+    "coverage": 1.0
+   },
+   "mechanism_decomposition": {
+    "registered_mechanism": "PT3_TAU 0.77",
+    "net_treatment_ev_per_eligible_c": -2.5147,
+    "gross_price_improvement": "UNAVAILABLE",
+    "missed_winner_cost": "UNAVAILABLE",
+    "fees_delta": "UNAVAILABLE",
+    "adverse_selection": "UNAVAILABLE",
+    "note": "component decomposition requires per-window counterfactual fills; UNAVAILABLE not fabricated (\u00a79)"
+   },
+   "integrity": {
+    "eligibility_overlap": 0.491,
+    "control_only_windows": 331,
+    "treatment_only_windows": 268,
+    "shadow_treatment": false,
+    "note": "unit=market_window_id; per-eligible-window pnl (untraded=0)"
+   },
+   "guardrails": {
+    "max_drawdown_c_treatment": 127736.0,
+    "bad_entry_rate_treatment": 0.2733727810650888
+   },
+   "sequential": {
+    "boundary": "CI95 excludes 0",
+    "state": "CONTINUE"
+   },
+   "verdict": "NO_SIGNIFICANT_DIFFERENCE",
+   "timeline": [
+    "REGISTERED",
+    "SMOKE",
+    "LIVE",
+    "CONTINUE"
+   ],
+   "slices_note": "any per-segment breakdown is EXPLORATORY unless pre-registered"
+  },
+  {
+   "experiment_id": "trader-pt6-vs-pt",
+   "hypothesis": "An MLE edge model with EV>=10c improves selective EV",
+   "control": "pt",
+   "treatment": "pt6",
+   "shadow": true,
+   "unit": "market_window_id",
+   "estimand": "paired_delta(realized_paper_ev_per_eligible_window_c)",
+   "primary_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
+   "sample_sizes": {
+    "raw_observations_control": 908,
+    "raw_observations_treatment": 806,
+    "windows_control": 908,
+    "windows_treatment": 806,
+    "paired_windows": 806,
+    "effective_n": 806
+   },
+   "effect": {
+    "paired_delta": 193.7742,
+    "ci95": [
+     25.9553,
+     382.8015
+    ],
+    "n_pairs": 806,
+    "significant": true
+   },
+   "control_summary": {
+    "ev_per_eligible_c": -107.05616740088105,
+    "coverage": 0.998898678414097
+   },
+   "treatment_summary": {
+    "ev_per_eligible_c": 50.135235732009924,
+    "coverage": 0.06823821339950373
+   },
+   "mechanism_decomposition": {
+    "registered_mechanism": "pt6-mle edge logit (shadow)",
+    "net_treatment_ev_per_eligible_c": 193.7742,
+    "gross_price_improvement": "UNAVAILABLE",
+    "missed_winner_cost": "UNAVAILABLE",
+    "fees_delta": "UNAVAILABLE",
+    "adverse_selection": "UNAVAILABLE",
+    "note": "component decomposition requires per-window counterfactual fills; UNAVAILABLE not fabricated (\u00a79)"
+   },
+   "integrity": {
+    "eligibility_overlap": 0.888,
+    "control_only_windows": 102,
+    "treatment_only_windows": 0,
+    "shadow_treatment": true,
+    "note": "unit=market_window_id; per-eligible-window pnl (untraded=0)"
+   },
+   "guardrails": {
+    "max_drawdown_c_treatment": 40036.0,
+    "bad_entry_rate_treatment": 0.18181818181818182
+   },
+   "sequential": {
+    "boundary": "CI95 excludes 0",
+    "state": "PROMOTE_CANDIDATE"
+   },
+   "verdict": "TREATMENT_WINS",
+   "timeline": [
+    "REGISTERED",
+    "SMOKE",
+    "SHADOW",
+    "PROMOTE_CANDIDATE"
+   ],
+   "slices_note": "any per-segment breakdown is EXPLORATORY unless pre-registered"
+  }
+ ]
+}

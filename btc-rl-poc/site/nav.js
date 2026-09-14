@@ -37,6 +37,7 @@
   ];
 
   var MORE = [
+    { label: "Experiments",  href: "experiments.html" },
     { label: "Architecture", href: "architecture.html" }
   ];
 

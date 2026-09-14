@@ -32,11 +32,12 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 # research-console pages (traders/tiers/features/health/perf) are ABSORBED into
 # HOME + ORACLE and no longer published; publish_dashboard prunes any site/*.html
 # not listed here.
-PAGES = ["home.html", "oracle.html", "architecture.html", "theme.css", "nav.js",
-         "header.js", "glossary.js", "glossary.json"]
+PAGES = ["home.html", "oracle.html", "experiments.html", "architecture.html",
+         "theme.css", "nav.js", "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("home_snapshot.json", None),      # DT-07 HOME (all numbers backend-computed)
     ("oracle_snapshot.json", None),    # DT-07 ORACLE six subtabs
+    ("experiments_snapshot.json", None),  # A/B platform (paired deltas, CI, ESS)
     ("architecture_dag.json", None),   # §37 developer DAG drill-down
     ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
     ("prediction_log.jsonl", 4000),

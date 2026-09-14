@@ -8,39 +8,39 @@
  },
  "runtime_online": {
   "settled_windows": {
-   "settled_windows": 19992,
+   "settled_windows": 19940,
    "kb_log_rows": 20000
   },
   "traders": {
    "pt": {
-    "n_resolved": 902,
+    "n_resolved": 907,
     "n_skipped": 0,
-    "total_pnl_c": -97313,
-    "realized_ev_per_1": -1.5589,
+    "total_pnl_c": -97207,
+    "realized_ev_per_1": -1.5482,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 2687,
-    "current_action": "RESOLVED",
-    "rows_total": 902
+    "bankroll_c": 2562,
+    "current_action": "OPEN",
+    "rows_total": 908
    },
    "pt3": {
-    "n_resolved": 844,
+    "n_resolved": 845,
     "n_skipped": 0,
-    "total_pnl_c": -92397,
-    "realized_ev_per_1": -1.489,
+    "total_pnl_c": -92202,
+    "realized_ev_per_1": -1.484,
     "quoted_ev_per_1": "UNKNOWN",
-    "bankroll_c": 7603,
+    "bankroll_c": 7798,
     "current_action": "RESOLVED",
-    "rows_total": 844
+    "rows_total": 845
    },
    "pt6": {
     "n_resolved": 55,
-    "n_skipped": 745,
+    "n_skipped": 751,
     "total_pnl_c": 40409,
     "realized_ev_per_1": 13.8631,
     "quoted_ev_per_1": "UNKNOWN",
     "bankroll_c": 140409,
     "current_action": "SKIPPED",
-    "rows_total": 800
+    "rows_total": 806
    },
    "pt2": {
     "n_resolved": 387,
@@ -94,26 +94,26 @@
    }
   },
   "service_health": {
-   "overall": "CRITICAL",
+   "overall": "HEALTHY",
    "feeds": {
     "daemon_heartbeat": {
-     "state": "CRITICAL",
-     "age_s": 7747,
+     "state": "HEALTHY",
+     "age_s": 52,
      "errors": null
     },
     "event_capture": {
      "state": "HEALTHY",
-     "age_s": 10,
+     "age_s": 5,
      "errors": 880
     },
     "kb_inference": {
-     "state": "CRITICAL",
-     "age_s": 9319,
+     "state": "HEALTHY",
+     "age_s": 92,
      "errors": null
     },
     "pit_snapshot": {
-     "state": "CRITICAL",
-     "age_s": 7774,
+     "state": "HEALTHY",
+     "age_s": 87,
      "errors": null
     }
    }

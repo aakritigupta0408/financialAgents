@@ -11,7 +11,8 @@ RES = ROOT / "results"
 
 
 def _regen():
-    for s in ("emit_home_snapshot.py", "emit_oracle_snapshot.py"):
+    for s in ("emit_home_snapshot.py", "emit_oracle_snapshot.py",
+              "emit_experiments_snapshot.py"):
         subprocess.run([sys.executable, f"scripts/{s}"], cwd=ROOT,
                        capture_output=True, timeout=120)
 
@@ -64,3 +65,30 @@ def test_runtime_truth_not_falsely_active():
     # §12/§51 — while the flag is off, HOME must not claim exact-BRTI runtime
     d = _load("home_snapshot.json")
     assert d["oracle_strip"]["runtime_contract_truth"].startswith("LEGACY")
+
+
+def test_experiments_platform_contract():
+    d = _load("experiments_snapshot.json")
+    # §6 unit must be market_window_id; §7 primary metric must not be win rate
+    assert d["unit_default"] == "market_window_id"
+    pm = d["primary_trader_metric"].upper()
+    assert "WIN RATE" not in pm and "WIN_RATE" not in pm and "BRIER" not in pm
+    assert "EV_PER_ELIGIBLE_WINDOW" in pm
+    for e in d["experiments"]:
+        s = e["sample_sizes"]
+        # raw observations and windows reported SEPARATELY (§6)
+        for k in ("raw_observations_control", "windows_control", "paired_windows",
+                  "effective_n"):
+            assert k in s
+        assert e["unit"] == "market_window_id"
+        assert "integrity" in e and "sequential" in e
+        # mechanism decomposition never fabricates components (§9)
+        md = e["mechanism_decomposition"]
+        assert md["gross_price_improvement"] == "UNAVAILABLE"
+
+
+def test_experiments_provenance_labeled():
+    # §27 — retrospective/proxy-settled evidence must be labeled, not sold as proof
+    d = _load("experiments_snapshot.json")
+    assert d["evidence_class"] == "ONLINE_PAPER_RETROSPECTIVE"
+    assert "settlement_provenance" in d and d["caveats"]
