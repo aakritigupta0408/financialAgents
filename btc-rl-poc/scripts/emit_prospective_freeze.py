@@ -28,6 +28,7 @@ def _jload(p):
 
 def main():
     replay = _jload(ROOT / "research" / "replay" / "replay_result.json") or {}
+    effect = _jload(ROOT / "research" / "replay" / "t1_effect_result.json") or {}
     frozen = _jload(ROOT / "research" / "oracle" / "oracle_frozen.json") or {}
     spec = {
         "contract_spec": "research/contract_specs/KXBTC15M_2026-09.json",
@@ -58,6 +59,15 @@ def main():
             "T0": (replay.get("final_holdout", {}) or {}).get("T0"),
             "T1": (replay.get("final_holdout", {}) or {}).get("T1"),
             "verdicts": replay.get("offline_verdicts")},
+        "formal_holdout_effect": {
+            "paired_delta_ev_per_eligible_c": (effect or {}).get("paired_delta_ev_per_eligible_c"),
+            "moving_block_95ci_c": (effect or {}).get("moving_block_bootstrap_95ci_c"),
+            "significant": (effect or {}).get("significant"),
+            "diffuse_or_concentrated": (effect or {}).get("diffuse_or_concentrated"),
+            "verdict": (effect or {}).get("verdict"),
+            "retrospective_status": "NOT_STATISTICALLY_ESTABLISHED (CI includes 0; "
+                                    "97% of advantage from ~5 windows; abstention net-negative)"},
+        "integrity_note": (effect or {}).get("mechanism_finding"),
         "prospective_state": "REGISTERED_PENDING_LIVE_CAPTURE",
         "blocked_on": "DT-01 live activation (EXACT_BRTI_RUNTIME_ENABLED=1) — prospective "
                       "windows accrue only once the live daemon settles on exact BRTI",

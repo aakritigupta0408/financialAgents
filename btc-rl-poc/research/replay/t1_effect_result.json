@@ -1,0 +1,45 @@
+{
+ "holdout_windows": 93,
+ "eligible_windows": 93,
+ "paired_completeness": 1.0,
+ "t0_ev_per_eligible_c": 3.8164,
+ "t1_ev_per_eligible_c": 11.453,
+ "paired_delta_ev_per_eligible_c": 7.6366,
+ "median_paired_delta_c": 0.0,
+ "moving_block_bootstrap_95ci_c": [
+  -3.5671,
+  18.844
+ ],
+ "significant": false,
+ "fraction_delta_gt_0": 0.2903,
+ "fraction_delta_zero": 0.5161,
+ "concentration": {
+  "top1_contribution": 0.222,
+  "top3_contribution": 0.633,
+  "top5_contribution": 0.971,
+  "top5pct_outlier_contribution": 0.807,
+  "reading": "share of the TOTAL paired advantage from the k largest per-window deltas"
+ },
+ "abstention_decomposition": {
+  "t0_losing_trades_avoided_by_t1": {
+   "n": 1,
+   "value_c": 56.73
+  },
+  "profitable_t0_trades_missed_by_t1": {
+   "n": 10.0,
+   "value_c": 353.99
+  },
+  "net_abstention_value_c": -297.26,
+  "both_trade_entry_delta_c": 1007.46
+ },
+ "identity": {
+  "total_delta_c": 710.2,
+  "abstention_net_c": -297.26,
+  "both_trade_delta_c": 1007.46,
+  "residual_c": 0.0
+ },
+ "diffuse_or_concentrated": "CONCENTRATED",
+ "verdict": "T1_ADVANTAGE_CONCENTRATED_NOT_ESTABLISHED",
+ "mechanism_finding": "The positive paired advantage does NOT come from the registered mechanism (selective abstention), which is net-NEGATIVE here (-297c: missed more profitable T0 trades than losses avoided). It comes from an INCIDENTAL second effect: T1 enters the first DISAGREEMENT-eligible row, which differs from T0's first-eligible row, shifting entry timing/price (+1007c, concentrated in ~5 windows). So frozen T1 differs from T0 in TWO ways (abstention AND entry-row selection) \u2014 an experiment-integrity note for PROSPECTIVE-T0-vs-T1 (\u00a710 treatment purity). NOT retuned per directive; flagged for the owner.",
+ "note": "estimand base = in-envelope eligible windows; T1 abstention -> P&L 0, window retained. Frozen policies; no retuning. OFFLINE holdout \u2014 prospective evidence still required to establish the effect."
+}

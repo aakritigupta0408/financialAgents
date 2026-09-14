@@ -184,6 +184,21 @@
    "recommended_action": "Add a checkpoint assertion that no oracle FEATS list contains a Kalshi token (extend FORBIDDEN_MARKET_TO_ORACLE).",
    "safe_to_remove": false,
    "detected_by": "market-info sweep"
+  },
+  {
+   "id": "DT-14",
+   "category": "EXPERIMENT_INTEGRITY",
+   "severity": "SEV-2",
+   "component": "T1 SELECTIVE EDGE \u2014 treatment differs from control in TWO mechanisms",
+   "reason": "Frozen T1 enters the first DISAGREEMENT-eligible row, which differs from T0's first-eligible row, so T1 vs T0 differs by (a) abstention AND (b) entry-row/timing selection \u2014 not one registered mechanism (\u00a710 treatment purity). The formal holdout paired analysis (scripts/replay_t1_effect.py) shows the +7.6c advantage is NOT statistically established (95% CI [-3.6,+18.8] includes 0), 97% concentrated in ~5 windows, and pure abstention is net-NEGATIVE (-297c); the positive number comes entirely from the incidental entry-row shift (+1007c, ~5 windows).",
+   "dependencies": [
+    "btc_rl/traders_v2.py",
+    "scripts/replay_backtest.py",
+    "research/replay/prospective_freeze.json"
+   ],
+   "recommended_action": "Owner decision: keep T1 frozen as registered (prospective A/B still valid \u2014 it tests the composite treatment) OR define a clean abstention-only T1 (same entry row as T0 when both trade) as a distinct SHADOW candidate. Do NOT retune tau. Retrospective advantage is NOT established \u2014 only prospective evidence can settle it.",
+   "safe_to_remove": false,
+   "detected_by": "formal T1-vs-T0 paired holdout effect (directive check 1)"
   }
  ]
 }

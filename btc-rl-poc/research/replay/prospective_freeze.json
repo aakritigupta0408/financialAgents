@@ -75,6 +75,18 @@
     "T3": "SHADOW_ONLY"
    }
   },
+  "formal_holdout_effect": {
+   "paired_delta_ev_per_eligible_c": 7.6366,
+   "moving_block_95ci_c": [
+    -3.5671,
+    18.844
+   ],
+   "significant": false,
+   "diffuse_or_concentrated": "CONCENTRATED",
+   "verdict": "T1_ADVANTAGE_CONCENTRATED_NOT_ESTABLISHED",
+   "retrospective_status": "NOT_STATISTICALLY_ESTABLISHED (CI includes 0; 97% of advantage from ~5 windows; abstention net-negative)"
+  },
+  "integrity_note": "The positive paired advantage does NOT come from the registered mechanism (selective abstention), which is net-NEGATIVE here (-297c: missed more profitable T0 trades than losses avoided). It comes from an INCIDENTAL second effect: T1 enters the first DISAGREEMENT-eligible row, which differs from T0's first-eligible row, shifting entry timing/price (+1007c, concentrated in ~5 windows). So frozen T1 differs from T0 in TWO ways (abstention AND entry-row selection) \u2014 an experiment-integrity note for PROSPECTIVE-T0-vs-T1 (\u00a710 treatment purity). NOT retuned per directive; flagged for the owner.",
   "prospective_state": "REGISTERED_PENDING_LIVE_CAPTURE",
   "blocked_on": "DT-01 live activation (EXACT_BRTI_RUNTIME_ENABLED=1) \u2014 prospective windows accrue only once the live daemon settles on exact BRTI",
   "promotion_rule": "No promotion from retrospective/backtest evidence; requires prospective paired-\u0394 CI excluding 0 on unseen live windows."

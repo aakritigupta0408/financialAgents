@@ -54,3 +54,33 @@ def test_prospective_experiment_registered_no_retro_promotion():
     assert e["control"] == "T0" and e["treatment"] == "T1"
     assert e["prospective_state"] == "REGISTERED_PENDING_LIVE_CAPTURE"
     assert "No promotion from retrospective" in e["promotion_rule"]
+
+
+EFFECT = ROOT / "research" / "replay" / "t1_effect_result.json"
+
+
+def test_t1_effect_identity_holds():
+    d = json.loads(EFFECT.read_text())
+    assert abs(d["identity"]["residual_c"]) < 1.0        # decomposition sums exactly
+
+
+def test_t1_effect_not_falsely_established():
+    d = json.loads(EFFECT.read_text())
+    # CI includes 0 -> must NOT be called established, and must record concentration
+    assert d["significant"] is False
+    assert d["verdict"] == "T1_ADVANTAGE_CONCENTRATED_NOT_ESTABLISHED"
+    assert d["concentration"]["top3_contribution"] >= 0.5
+
+
+def test_t1_abstention_mechanism_recorded():
+    d = json.loads(EFFECT.read_text())
+    ad = d["abstention_decomposition"]
+    # the honest finding: pure abstention is net-negative here
+    assert ad["net_abstention_value_c"] < 0
+    assert "mechanism_finding" in d
+
+
+def test_spec_hash_preserved():
+    d = json.loads(FREEZE.read_text())
+    assert d["first_experiment"]["spec_hash"] == "51b49617cbde"
+    assert d["frozen_versions"]["t1_edge_tau"] == 0.15
