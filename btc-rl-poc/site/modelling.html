@@ -1,0 +1,139 @@
+<!-- 03 — MODELLING (OPEN_ORACLE_15M). Renders results/modelling_snapshot.json
+     VERBATIM: dataset, model ladder, offline verdict, diagnostics, live A/B.
+     Presentation only — all science is precomputed by scripts/open_oracle_ladder.py.
+     Guarded by tests/test_no_frontend_science.py. -->
+<meta charset="utf-8">
+<link rel="stylesheet" href="theme.css">
+<style>
+  main{gap:26px}
+  .mhero{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 36px}
+  .mhero h1{font-size:1.9rem;line-height:1.12;max-width:24ch;margin:12px 0 0}
+  .mq{font-size:14px;color:var(--muted);max-width:70ch;margin-top:14px;line-height:1.55}
+  .horizon{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:22px;margin-top:24px}
+  .horizon .k{font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);font-weight:600}
+  .horizon .v{font-size:15px;font-weight:600;margin-top:5px}
+  .verdict{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:700;letter-spacing:.03em;
+    padding:8px 16px;border-radius:999px;border:1px solid var(--border)}
+  .verdict.nocand{color:var(--muted);background:var(--surface-2)}
+  .verdict.qual{color:var(--up);border-color:rgba(12,138,77,.4);background:rgba(12,138,77,.07)}
+  section.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 26px}
+  section.card .lab{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+  section.card h2{font:500 24px/1.1 var(--display);margin:5px 0 2px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:16px}
+  .flow .blk{border:1px solid var(--border);border-radius:10px;padding:9px 14px;font-size:12.5px;background:var(--surface-2)}
+  .flow .ar{color:var(--faint)}
+  table.lad{width:100%;border-collapse:collapse;font-size:13px;margin-top:14px;min-width:520px}
+  table.lad th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)}
+  table.lad th:first-child,table.lad td:first-child{text-align:left}
+  table.lad td{padding:9px 10px;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums;text-align:right}
+  table.lad tr.ctl td{color:var(--muted)}
+  table.lad tr.best td{font-weight:600}
+  .scroll{overflow-x:auto}
+  .diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:14px}
+  .diag .d{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .diag .dn{font-size:12px;font-weight:600} .diag .ds{font-size:11px;margin-top:3px}
+  .pass{color:var(--up)} .fail{color:var(--down)}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:12px}
+  .kpi3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+  .kpi3 .b{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .kpi3 .v{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+  .kpi3 .k{font-size:10px;color:var(--muted);margin-top:3px}
+  .waiting{text-align:center;padding:60px 20px;color:var(--muted)}
+</style>
+
+<main><div id="app"><section class="waiting">Loading modelling snapshot…</section></div></main>
+
+<script>
+const $=s=>document.querySelector(s);
+const f5=x=>x==null?"—":(+x).toFixed(5);
+const f2=x=>x==null?"—":(+x).toFixed(2);
+const pct=x=>x==null?"—":(x*100).toFixed(1)+"%";
+
+function ladderTable(ml){
+  const order=["M0_5050","M1_MECH_15M","M2_ridge_logistic","M4_hgb"];
+  const label={M0_5050:"M0 · 50/50",M1_MECH_15M:"M1 · MECH_FAIR_15M",
+    M2_ridge_logistic:"M2 · ridge logistic",M4_hgb:"M4 · grad-boost"};
+  // best (lowest holdout log loss) among learned challengers
+  let best=null,bll=1e9;
+  ["M2_ridge_logistic","M4_hgb"].forEach(k=>{const v=ml[k]&&ml[k].holdout;if(v&&v.log_loss<bll){bll=v.log_loss;best=k;}});
+  const rows=order.filter(k=>ml[k]).map(k=>{
+    const h=ml[k].holdout||{}, wf=(ml[k].walk_forward||{}).log_loss||{};
+    const cls=(k==="M0_5050"||k==="M1_MECH_15M")?"ctl":(k===best?"best":"");
+    return `<tr class="${cls}"><td>${label[k]}</td>
+      <td>${f5(h.log_loss)}</td><td>${f5(h.brier)}</td><td>${pct(h.accuracy)}</td>
+      <td>${f5(h.ece)}</td><td>${wf.median!=null?f5(wf.median):"—"}</td></tr>`;}).join("");
+  return `<div class="scroll"><table class="lad"><thead><tr>
+    <th>Model</th><th>Holdout log loss</th><th>Brier</th><th>Accuracy</th><th>ECE</th><th>WF median LL</th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function render(d){
+  const sm=d.selected_model||{}, oe=d.offline_evaluation||{}, di=d.diagnostics||{},
+        le=d.live_experiment||{}, ds=d.dataset||{}, ts=d.training_summary||{};
+  const qualified=(oe.verdict||"").startsWith("ONE_QUALIFIED");
+  const shuf=di.LABEL_SHUFFLE_PLACEBO||{};
+  const arch=(sm.architecture||[]).map((b,i)=>`${i?'<span class="ar">→</span>':''}<span class="blk">${b}</span>`).join(" ");
+  const diagRow=(name,status,sub)=>`<div class="d"><div class="dn">${name} · <span class="${status==='PASS'?'pass':(status==='FAIL'?'fail':'')}">${status}</span></div><div class="ds">${sub||''}</div></div>`;
+  $("#app").innerHTML=`
+  <section class="mhero">
+    <span class="eyebrow"><span class="live-dot"></span> 03 — Modelling · OPEN_ORACLE_15M</span>
+    <h1>Is there real information at contract open?</h1>
+    <p class="mq">${d.prediction_target}. The forecast is made once, at contract open, and <b>frozen until settlement</b> — no intra-window updates. The only question this program answers: does any pre-open information beat the mechanics control out of sample?</p>
+    <div class="horizon">
+      <div><div class="k">Forecast horizon</div><div class="v">${d.forecast_horizon}</div></div>
+      <div><div class="k">Prediction time</div><div class="v">${d.prediction_time}</div></div>
+      <div><div class="k">Update policy</div><div class="v">${d.update_policy}</div></div>
+      <div><div class="k">Verdict</div><div class="v"><span class="verdict ${qualified?'qual':'nocand'}">${oe.verdict||'—'}</span></div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="lab">Selected model · architecture</div>
+    <h2>${sm.id} <span style="font:400 15px/1 var(--sans);color:var(--muted)"> · ${sm.role}</span></h2>
+    <div class="flow">${arch}</div>
+    <p class="note">Primary loss: ${sm.primary_loss}. ${qualified?'A learned residual qualified and is serving as treatment.':'No learned residual survived out-of-sample testing, so the serving model is the driftless mechanics control (0.50 at the open) — shown honestly, not replaced by a fancier diagram.'}</p>
+  </section>
+
+  <section class="card">
+    <div class="lab">Model ladder · offline evaluation</div>
+    <h2>Nothing beats the coin flip</h2>
+    <p class="note">Chronological walk-forward on the dev slice + one untouched holdout (${ts.holdout_n} windows, base rate up ${pct(ts.holdout_base_rate_up)}). ${oe.scope||''}</p>
+    ${ladderTable(d.model_ladder||{})}
+    <p class="note"><b>Placebo:</b> a model trained on <i>shuffled</i> labels scores holdout log loss <b>${f5(shuf.log_loss)}</b> / Brier ${f5(shuf.brier)} — indistinguishable from the real learned models. When randomized labels match your best model, the apparent edge is noise. Classification: <b>${oe.classification}</b>.</p>
+  </section>
+
+  <section class="card">
+    <div class="lab">Dataset</div>
+    <h2>One window, one prediction</h2>
+    <div class="kpi3">
+      <div class="b"><div class="v">${(ds.market_window_n||0).toLocaleString()}</div><div class="k">market windows (independent N)</div></div>
+      <div class="b"><div class="v">${(ds.raw_observation_n||0).toLocaleString()}</div><div class="k">raw observations (no tick inflation)</div></div>
+      <div class="b"><div class="v">${pct(ds.class_balance_up)}</div><div class="k">base rate · settles up</div></div>
+    </div>
+    <p class="note">${ds.note} · dataset hash ${ds.content_sha256_16||'—'}</p>
+  </section>
+
+  <section class="card">
+    <div class="lab">Live A/B test</div>
+    <h2>Model experiment</h2>
+    <p class="note"><span class="verdict ${qualified?'qual':'nocand'}"><span class="live-dot ${qualified?'':'stale'}"></span> ${le.state||'NOT_STARTED'}</span> &nbsp; ${le.reason||''}</p>
+    <p class="note">A prospective model A/B registers only when a challenger qualifies offline (§32-34). It would isolate the model alone — same contract, same T0 snapshot, same exact-BRTI settlement — with Kalshi-at-open as a benchmark, never a model input.</p>
+  </section>
+
+  <section class="card">
+    <div class="lab">Diagnostics · falsification</div>
+    <h2>Integrity checks</h2>
+    <div class="diag">
+      ${diagRow('TRUE_15M_NO_POST_OPEN_INFORMATION',di.TRUE_15M_NO_POST_OPEN_INFORMATION,'every feature ≤ T0')}
+      ${diagRow('ONE_PREDICTION_PER_WINDOW',di.ONE_PREDICTION_PER_WINDOW,'window = independent unit')}
+      ${diagRow('LABEL_SHUFFLE_PLACEBO', shuf.log_loss!=null?'RUN':'NOT RUN', 'holdout LL '+f5(shuf.log_loss)+' ≈ chance')}
+    </div>
+  </section>
+
+  <div class="mini" style="text-align:center;color:var(--faint);font-size:12px">Generated ${new Date((d.generated_at||0)*1000).toISOString().slice(0,16).replace('T',' ')}Z · OPEN_ORACLE_15M · exact BRTI · paper research</div>`;
+}
+
+fetch("modelling_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null)
+  .then(d=>{ if(!d){$("#app").innerHTML='<section class="waiting">Modelling snapshot not available yet.</section>';return;} render(d); })
+  .catch(()=>{$("#app").innerHTML='<section class="waiting">Modelling snapshot not available yet.</section>';});
+</script>

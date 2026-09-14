@@ -37,6 +37,7 @@
   ];
 
   var MORE = [
+    { label: "Modelling",    href: "modelling.html" },
     { label: "Experiments",  href: "experiments.html" },
     { label: "Architecture", href: "architecture.html" }
   ];
@@ -48,7 +49,9 @@
     { title: "Oracle — input data, features, modelling, outputs, sevs, graveyard", href: "oracle.html",
       kw: "oracle, brti, contract truth, features, models, mech fair, sevs tickets, graveyard, calibration, bss" },
     { title: "Architecture — DAG drill-down", href: "architecture.html",
-      kw: "architecture, dag, lineage, drift, dangling threads, checkpoint" }
+      kw: "architecture, dag, lineage, drift, dangling threads, checkpoint" },
+    { title: "Modelling — OPEN_ORACLE_15M true 15-minute forecast", href: "modelling.html",
+      kw: "modelling, open oracle 15m, mech fair 15m, residual, ladder, walk forward, holdout, log loss, brier, calibration, no candidate, information limited, falsification" }
   ];
 
   /* ------------------------------------------------------------ util -- */

@@ -33,7 +33,8 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 # research-console pages (traders/tiers/features/health/perf) are ABSORBED into
 # HOME + ORACLE and no longer published; publish_dashboard prunes any site/*.html
 # not listed here.
-PAGES = ["home.html", "oracle.html", "experiments.html", "architecture.html",
+PAGES = ["home.html", "oracle.html", "experiments.html", "modelling.html",
+         "architecture.html",
          "theme.css", "nav.js", "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)
     ("home_snapshot.json", None),      # DT-07 HOME (all numbers backend-computed)
@@ -43,6 +44,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("live_desk.json", None),          # live paper desk: current window, live trades, running P&L
     ("architecture_dag.json", None),   # §37 developer DAG drill-down
     ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
+    ("modelling_snapshot.json", None),   # OPEN_ORACLE_15M modelling page (§57)
     ("prediction_log.jsonl", 4000),
     ("recent_prices.json", None),
     ("online_status.json", None),
@@ -269,6 +271,7 @@ SNAPSHOT_EMITTERS = [          # regenerate typed UI snapshots BEFORE every publ
     "emit_experiments_snapshot.py",
     "emit_trader_detail.py",
     "emit_live_desk.py",
+    "emit_modelling_snapshot.py",
 ]
 # The fast lane: only the LIVE snapshots (current window + live desk). These are
 # cheap to regenerate; the backtest-heavy emit_trader_detail (full replay) is
