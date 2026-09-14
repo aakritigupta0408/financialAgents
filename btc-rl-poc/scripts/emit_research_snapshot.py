@@ -97,6 +97,7 @@ def research_snapshot(health):
     ladder = _j(R / "open_oracle_15m_ladder.json")
     brtiC = _j(ROOT / "research" / "true15m" / "brti_state_coverage.json")
     covmat = _j(ROOT / "research" / "true15m" / "COVERAGE_MATRIX.json")
+    recon = _j(ROOT / "research" / "true15m" / "COARSE_COHORT_RECONCILIATION.json")
     total = inv.get("total_windows") or 0
     raw_cov = (inv.get("raw_60s_observation_coverage") or {}).get("n") or 0
     verdict = ladder.get("verdict", "—")
@@ -194,6 +195,8 @@ def research_snapshot(health):
                       "failed": sum(1 for x in jobs if x.get("status") in ("FAILED", "BLOCKED"))},
         "coverage_matrix": covmat.get("families") if covmat else None,
         "cohorts": covmat.get("cohorts") if covmat else None,
+        "coarse_cohorts": recon.get("cohorts") if recon else None,
+        "coarse_reconciliation": recon.get("set_difference", {}).get("explanation") if recon else None,
         "model_family_plan": covmat.get("model_family_plan") if covmat else None,
         "research_question": covmat.get("research_question") if covmat else None,
         "recent_events": events,           # bounded list; UI appends by seq cursor (§30)
