@@ -72,10 +72,18 @@ def build():
                                "walk_forward": m.get("walk_forward", {})}
                          for mid, m in models.items()},
         "offline_evaluation": {
-            "verdict": verdict,
-            "classification": L.get("classification"),
+            "f_contract_result": verdict,
+            "f_contract_classification": L.get("classification"),
+            "scope": "contract / pre-open price-path family only",
+            "global_true15m_conclusion": "NOT_YET_DETERMINED",
+            "global_note": "Richer feature families (AV market-state / microstructure / "
+                           "derivatives / options / news / macro / regimes) not yet built "
+                           "or tested — the global TRUE15M question is open.",
             "qualification": L.get("qualification"),
-            "scope": L.get("scope"),
+            "detail": L.get("scope"),
+            "internal_baseline": "INTERNAL_ADOPTED_BASELINE_V1 (no official course "
+                                 "baseline exists); primary metrics log_loss/Brier vs "
+                                 "empirical class-frequency; external benchmark Kalshi-at-open",
         },
         "live_experiment": {
             "state": "RUNNING" if qualified else "NOT_STARTED",

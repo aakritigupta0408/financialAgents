@@ -73,6 +73,24 @@ def _lane(id_, name, status, detail, progress=None, blocked=None):
             "progress": progress, "blocked_reason": blocked}
 
 
+def _av_lane(total):
+    """L2 status derived from the most advanced AV mini-gate result on disk."""
+    base = ROOT / "research" / "true15m"
+    minis = sorted(base.glob("av_backfill_mini*.json"))
+    if not minis:
+        return _lane("L2", "Alpha Vantage backfill", "QUEUED",
+                     "broad cross-asset/equity/news backbone", f"0/{total}",
+                     "not started")
+    d = _j(minis[-1])
+    cov = d.get("coverage_matrix", {})
+    covs = ", ".join(f"{s} {v['n']}/{d.get('cohort_windows')}" for s, v in cov.items())
+    return _lane("L2", "Alpha Vantage backfill",
+                 "PASS" if d.get("pit_pass") else "FAIL",
+                 f"MINI-{d.get('mini')} · {covs}", f"{d.get('cohort_windows')}/{total}",
+                 "cohort-only so far; full backfill pending (BTC dynamics come from BRTI, "
+                 "not AV crypto)")
+
+
 def research_snapshot(health):
     inv = _j(ROOT / "research" / "true15m" / "contract_inventory_report.json")
     dmeta = _j(R / "open_oracle_15m_dataset.meta.json")
@@ -88,9 +106,7 @@ def research_snapshot(health):
               None if health["status"] == "LIVE" else "daemon heartbeat stale"),
         _lane("L1", "Contract / BRTI inventory", "COMPLETE" if total else "QUEUED",
               f"{total} settled windows, labels 100%", f"{total}/{total}"),
-        _lane("L2", "Alpha Vantage backfill", "QUEUED",
-              "broad historical feature backbone", "0/%d" % total,
-              "not started — Phase-2 real backfill"),
+        _av_lane(total),
         _lane("L3", "Exchange market data", "PARTIAL",
               "cross-venue PIT layer exists for recent windows", f"{raw_cov}/{total}",
               "historical coverage limited to captured windows"),
@@ -129,21 +145,33 @@ def research_snapshot(health):
         "blockers": [{"lane": b["id"], "reason": b["blocked_reason"]} for b in blockers],
         "dataset_progress": {
             "historical_windows": total,
+            "official_label_coverage": "100%",
+            "raw_brti_reconstruction": f"{round(100*raw_cov/total,1) if total else 0}%",
+            "raw_brti_reconstruction_n": raw_cov,
             "verified_t0_dataset_windows": dmeta.get("market_window_n"),
-            "raw_60s_observation_coverage_n": raw_cov,
             "class_balance_up": dmeta.get("class_balance_up"),
+            "note": "Official outcomes/targets from Kalshi settled records cover all "
+                    f"{total} windows; exact 60s-BRTI PATHS reconstructed for {raw_cov} "
+                    "only. We do NOT claim path reconstruction for all windows.",
         },
-        "current_best_model": {"verdict": verdict, "classification": cls,
-                               "note": "on F-CONTRACT price-path family; independent "
-                                       "feature families not yet tested"},
+        "current_best_model": {
+            "f_contract_result": verdict,             # F-CONTRACT price-path family only
+            "f_contract_classification": cls,
+            "scope": "contract / pre-open price-path information only",
+            "global_true15m_conclusion": "NOT_YET_DETERMINED",
+            "note": "The richer feature universe (momentum/volume/volatility/RSI-MACD/"
+                    "cross-asset/microstructure/derivatives/options/news/macro/regimes) "
+                    "is not yet built or tested."},
         "baseline": {
-            "status": "RESOLVED — NO official course baseline exists"
-            if (ROOT / "research" / "true15m" / "CLASS_BASELINE_SPEC.yaml").exists()
-            else "PENDING_DISCOVERY",
-            "adopted": "beat empirical class-frequency (log-loss/Brier) OOS + "
-                       "BSS_vs_market>0 vs Kalshi-at-open (benchmark only)",
-            "note": "see research/true15m/CLASS_BASELINE_SPEC.yaml — repo has no "
-                    "course-mandated pass-mark; threshold adopted as a project decision"},
+            "OFFICIAL_COURSE_BASELINE": "NOT_FOUND",
+            "INTERNAL_RESEARCH_BASELINE": "RESOLVED",
+            "name": "INTERNAL_ADOPTED_BASELINE_V1",
+            "primary_comparison": "empirical class-frequency baseline",
+            "primary_metrics": ["log_loss", "brier"],
+            "external_benchmark": "Kalshi-at-open",
+            "market_relative_requirement": "BSS_vs_Kalshi_at_open > 0",
+            "note": "INTERNAL adopted benchmark, NOT a course baseline — repo has no "
+                    "official one. See research/true15m/INTERNAL_ADOPTED_BASELINE_V1.yaml"},
         "latest_discovery": {"title": disc.get("title"), "narrative": disc.get("narrative")} if disc else None,
         "recent_events": events,           # bounded list; UI appends by seq cursor (§30)
         "max_seq": max((e.get("seq", 0) for e in events), default=0),
@@ -158,7 +186,9 @@ def build():
     h = capture_health()
     s = research_snapshot(h)
     print(f"research_snapshot: capture={h['status']} lanes={len(s['lanes'])} "
-          f"events={len(s['recent_events'])} verdict={s['current_best_model']['verdict']}")
+          f"events={len(s['recent_events'])} "
+          f"f_contract={s['current_best_model']['f_contract_result']} "
+          f"global={s['current_best_model']['global_true15m_conclusion']}")
 
 
 if __name__ == "__main__":

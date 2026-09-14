@@ -2,8 +2,21 @@
 # Frozen qualification threshold for the OPEN_ORACLE_15M task.
 # Every field carries provenance; nothing is assumed.
 
-schema_version: true15m-class-baseline-1
+schema_version: internal-adopted-baseline-1
+name: INTERNAL_ADOPTED_BASELINE_V1
 frozen_at_utc: "2026-09-14"
+
+# ------------------------------------------------------------- display (§1)
+display:
+  OFFICIAL_COURSE_BASELINE: NOT_FOUND
+  INTERNAL_RESEARCH_BASELINE: RESOLVED
+  primary_comparison: empirical class-frequency baseline
+  primary_metrics: [log_loss, brier]
+  external_benchmark: Kalshi-at-open
+  market_relative_requirement: BSS_vs_Kalshi_at_open > 0
+  caveat: >
+    This is an INTERNAL adopted benchmark, NOT a course/class baseline. The
+    repository contains no official course baseline; do not call it one.
 task: >
   At KXBTC15M open T0, using only info <= T0, estimate
   P(final 60s-BRTI settlement avg >= opening 60s-BRTI avg) 15 min later.

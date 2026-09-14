@@ -92,10 +92,12 @@ function headHTML(d){
     </div>
     <div class="capbar">
       ${c("Current contract", cap.current_contract||"—")}
-      ${c("Historical windows", (dp.historical_windows||0).toLocaleString())}
-      ${c("Verified T0 dataset", (dp.verified_t0_dataset_windows||0).toLocaleString())}
-      ${c("Class baseline", bl.status||"—")}
-      ${c("Best model", (cb.verdict||"—")+" · "+(cb.classification||""))}
+      ${c("Official label coverage", dp.official_label_coverage||"—")}
+      ${c("Raw BRTI reconstruction", dp.raw_brti_reconstruction||"—")}
+      ${c("Official course baseline", bl.OFFICIAL_COURSE_BASELINE||"—")}
+      ${c("Internal research baseline", bl.INTERNAL_RESEARCH_BASELINE||"—")}
+      ${c("F-CONTRACT result", (cb.f_contract_result||"—")+" · "+(cb.f_contract_classification||""))}
+      ${c("Global TRUE15M", cb.global_true15m_conclusion||"—")}
       ${c("Heartbeat", cap.heartbeat_age_s!=null?cap.heartbeat_age_s+"s":"—")}
     </div>
   </div>`;

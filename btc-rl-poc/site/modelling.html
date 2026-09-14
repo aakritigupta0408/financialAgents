@@ -70,7 +70,8 @@ function ladderTable(ml){
 function render(d){
   const sm=d.selected_model||{}, oe=d.offline_evaluation||{}, di=d.diagnostics||{},
         le=d.live_experiment||{}, ds=d.dataset||{}, ts=d.training_summary||{};
-  const qualified=(oe.verdict||"").startsWith("ONE_QUALIFIED");
+  const fres=oe.f_contract_result||oe.verdict||"—";
+  const qualified=(fres||"").startsWith("ONE_QUALIFIED");
   const shuf=di.LABEL_SHUFFLE_PLACEBO||{};
   const arch=(sm.architecture||[]).map((b,i)=>`${i?'<span class="ar">→</span>':''}<span class="blk">${b}</span>`).join(" ");
   const diagRow=(name,status,sub)=>`<div class="d"><div class="dn">${name} · <span class="${status==='PASS'?'pass':(status==='FAIL'?'fail':'')}">${status}</span></div><div class="ds">${sub||''}</div></div>`;
@@ -83,7 +84,8 @@ function render(d){
       <div><div class="k">Forecast horizon</div><div class="v">${d.forecast_horizon}</div></div>
       <div><div class="k">Prediction time</div><div class="v">${d.prediction_time}</div></div>
       <div><div class="k">Update policy</div><div class="v">${d.update_policy}</div></div>
-      <div><div class="k">Verdict</div><div class="v"><span class="verdict ${qualified?'qual':'nocand'}">${oe.verdict||'—'}</span></div></div>
+      <div><div class="k">F-CONTRACT result</div><div class="v"><span class="verdict ${qualified?'qual':'nocand'}">${fres}</span></div></div>
+      <div><div class="k">Global TRUE15M</div><div class="v"><span class="verdict nocand">${oe.global_true15m_conclusion||'NOT_YET_DETERMINED'}</span></div></div>
     </div>
   </section>
 
@@ -99,7 +101,8 @@ function render(d){
     <h2>Nothing beats the coin flip</h2>
     <p class="note">Chronological walk-forward on the dev slice + one untouched holdout (${ts.holdout_n} windows, base rate up ${pct(ts.holdout_base_rate_up)}). ${oe.scope||''}</p>
     ${ladderTable(d.model_ladder||{})}
-    <p class="note"><b>Placebo:</b> a model trained on <i>shuffled</i> labels scores holdout log loss <b>${f5(shuf.log_loss)}</b> / Brier ${f5(shuf.brier)} — indistinguishable from the real learned models. When randomized labels match your best model, the apparent edge is noise. Classification: <b>${oe.classification}</b>.</p>
+    <p class="note"><b>Placebo:</b> a model trained on <i>shuffled</i> labels scores holdout log loss <b>${f5(shuf.log_loss)}</b> / Brier ${f5(shuf.brier)} — indistinguishable from the real learned models. When randomized labels match your best model, the apparent edge is noise. F-CONTRACT classification: <b>${oe.f_contract_classification||oe.classification||'—'}</b>.</p>
+    <p class="note"><b>Scope:</b> this ${fres} verdict applies to the contract / pre-open price-path family only. <b>Global TRUE15M conclusion: NOT YET DETERMINED</b> — ${oe.global_note||'the richer feature universe is not yet built or tested.'} Benchmark: ${oe.internal_baseline||'INTERNAL_ADOPTED_BASELINE_V1'}.</p>
   </section>
 
   <section class="card">
