@@ -98,6 +98,7 @@ def research_snapshot(health):
     brtiC = _j(ROOT / "research" / "true15m" / "brti_state_coverage.json")
     covmat = _j(ROOT / "research" / "true15m" / "COVERAGE_MATRIX.json")
     recon = _j(ROOT / "research" / "true15m" / "COARSE_COHORT_RECONCILIATION.json")
+    finem = _j(ROOT / "research" / "true15m" / "fine_features.meta.json")
     total = inv.get("total_windows") or 0
     raw_cov = (inv.get("raw_60s_observation_coverage") or {}).get("n") or 0
     verdict = ladder.get("verdict", "—")
@@ -146,6 +147,14 @@ def research_snapshot(health):
                if brtiC else "BRTI coverage audit running. ")
             + "Alpha Vantage cross-asset history and derivatives backfill in parallel. "
               "No model competes until feature coverage and the full leakage gate are frozen."),
+        "phase_headline": "I am finishing the information set before allowing models to "
+            "compete. The large coarse BTC backbone is frozen and reconciled (COARSE_ROW "
+            f"6,200 / 2H_CORE 6,189 / COMPLETE_20 6,149; Family-A default COMPLETE_20). "
+            f"Fine-resolution BTC ({finem.get('n_windows','?')} windows), Alpha Vantage "
+            "context, derivatives, options and news are being resolved in parallel. Every "
+            "source must prove historical availability before entering TRUE15M_DATASET_V1.",
+        "fine_cohort": {"n_windows": finem.get("n_windows"), "n_features": finem.get("n_features"),
+                        "role": "Family-B challenger (small N, not main universe)"} if finem else None,
         "why": "The genuine BTC-state core is only as large as the real pre-T0 BRTI lookback. "
                "We measure it before building features, so nothing assumes coverage it lacks.",
         "next": "Build COARSE_BTC_STATE features on the ~6,189 large core + FINE features on "

@@ -105,6 +105,11 @@ def build():
             "COARSE_2H_CORE": {"n": len(p11_ids), "hash": _hash_ids(p11_ids),
                                "def": "P1.1 frozen >=2h (8 marks strictly before T0)"},
         },
+        "default_cohort_family_A": "COARSE_COMPLETE_20",
+        "default_cohort_rationale": "Owner decision: the first formal coarse model family "
+            "uses COARSE_COMPLETE_20 (all 20 features valid) so predictive performance is "
+            "not confounded with missing-feature behavior. Later: test whether COARSE_2H_CORE "
+            "with honest missingness handling adds value.",
         "canonical_note": "Three named cohorts now coexist EXPLICITLY; every model must "
                           "declare which it used. No silent dual definition of COARSE_BTC_STATE.",
     }
