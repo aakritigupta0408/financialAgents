@@ -90,7 +90,7 @@ def _fine_features(ts, px, lo, hi):
     return {
         "brti_fine.ret_30s": ret(30), "brti_fine.ret_1m": ret(60),
         "brti_fine.ret_2m": ret(120), "brti_fine.ret_3m": ret(180),
-        "brti_fine.ret_5m": ret(300),
+        "brti_fine.ret_5m": round(math.log(last / P[0]), 6) if P[0] > 0 else None,
         "brti_fine.rvol_sample": rvol,
         "brti_fine.slope_per_s": slope,
         "brti_fine.accel_2nd_minus_1st": round(r_second - r_first, 6),
