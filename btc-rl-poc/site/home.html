@@ -126,15 +126,11 @@ function render(d){
   $("#paper").textContent="Paper Research";
   const app=$("#app");
   const fam=(d.trader_family||[]).map(famCard).join("");
-  const desk=(d.traders||[]).filter(t=>t.trader_id).map(trader).join("");
   app.innerHTML=hero(d.oracle_strip||{})
     +`<section><span class="eyebrow">The trader family</span>
        <h2>One Oracle brain, five policies</h2>
-       <p class="sub">Backtest and live evidence are shown separately and never blended. Learned traders run in shadow while T0/T1 are the frozen prospective experiment.</p>
-       <div class="fam">${fam}</div></section>`
-    +`<section><span class="eyebrow">Live paper desk</span>
-       <h2>Accounts</h2>
-       <div class="fam">${desk}</div></section>`;
+       <p class="sub">Backtest and live evidence are shown separately and never blended. Learned traders run in shadow while T0/T1 are the frozen prospective experiment; live results collect once the exact-BRTI runtime is activated.</p>
+       <div class="fam">${fam}</div></section>`;
   const wm=$("#banner"); if(d.paper_banner) wm.innerHTML=`<b>${d.paper_banner.split("—")[0]}</b> ${d.paper_banner.split("—").slice(1).join("—")}`;
 }
 function waiting(){
