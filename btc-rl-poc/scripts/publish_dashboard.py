@@ -254,7 +254,30 @@ def sync_main() -> None:
     STAMP.touch()
 
 
+SNAPSHOT_EMITTERS = [          # regenerate typed UI snapshots BEFORE every publish so
+    "emit_home_snapshot.py",   # the deployed pages never fetch a missing/stale file
+    "emit_oracle_snapshot.py",
+    "emit_experiments_snapshot.py",
+]
+
+
+def refresh_snapshots() -> None:
+    """Root-cause fix: the publisher must GENERATE the snapshots it ships, not just
+    copy whatever happens to be on disk. Each emitter is best-effort — a failure
+    logs and never blocks the publish (the page degrades to WAITING FOR LIVE DESK)."""
+    here = Path(__file__).resolve().parent
+    for script in SNAPSHOT_EMITTERS:
+        try:
+            r = subprocess.run(["python3", str(here / script)],
+                               capture_output=True, text=True, timeout=180)
+            if r.returncode != 0:
+                print(f"snapshot {script} failed:", (r.stderr or "")[-160:])
+        except Exception as e:
+            print(f"snapshot {script} error:", str(e)[:120])
+
+
 def main() -> None:
+    refresh_snapshots()
     publish_ghpages()
     try:
         sync_main()

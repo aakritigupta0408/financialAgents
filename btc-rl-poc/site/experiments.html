@@ -4,11 +4,9 @@
      science in the browser; enforced by tests/test_no_frontend_science.py. -->
 <link rel="stylesheet" href="theme.css">
 <style>
-  :root{--ink:#1f2328;--muted:#656d76;--line:#d0d7de;--card:#fff;--bg:#f6f8fa;
-        --good:#1a7f37;--bad:#cf222e;--warn:#9a6700;--accent:#0969da}
-  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-    --ink:#e6edf3;--muted:#8b949e;--line:#30363d;--card:#161b22;--bg:#0d1117;
-    --good:#3fb950;--bad:#f85149;--warn:#d29922;--accent:#58a6ff}}
+  /* inherit the shared site tokens (theme.css) — no foreign palette */
+  :root{--line:var(--border);--card:var(--surface);--bg:var(--page);
+        --good:var(--up);--bad:var(--down);--warn:var(--series-4);--accent:var(--series-2)}
   .x{max-width:960px;margin:0 auto;padding:16px;background:var(--bg);color:var(--ink);
      font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
   h1{font-size:20px;margin:0 0 2px} .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
@@ -73,7 +71,7 @@ function expCard(e){
   </div>`;
 }
 fetch("experiments_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-  if(!d){document.getElementById("prov").textContent="experiments_snapshot.json not found — run scripts/emit_experiments_snapshot.py";return;}
+  if(!d){document.getElementById("exps").innerHTML="<div class='exp flat' style='text-align:center;padding:40px'><h2>Waiting for the live desk</h2><div class='kv'>No current experiment snapshot is available yet.</div></div>";document.getElementById("prov").textContent="";return;}
   document.getElementById("caveat").innerHTML="⚠ "+(d.caveats||[]).join(" · ");
   document.getElementById("exps").innerHTML=d.experiments.map(expCard).join("");
   document.getElementById("prov").textContent=`schema ${d.schema_version} · metric owner ${d.metric_owner} · `

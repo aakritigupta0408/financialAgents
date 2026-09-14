@@ -1,121 +1,151 @@
-<!-- HOME (DT-07) — renders results/home_snapshot.json VERBATIM. No scientific or
-     economic formula runs here; only presentation math (cents->$, %). Every number
-     is computed by btc_rl/economics + btc_rl/metrics via scripts/emit_home_snapshot.py.
+<!-- HOME — renders results/home_snapshot.json VERBATIM using the shared site design
+     system (theme.css). No scientific/economic formula runs here; only presentation
+     (cents->$, %). Backend owners: btc_rl/economics.py + btc_rl/metrics.py.
      Enforced by tests/test_no_frontend_science.py. -->
 <link rel="stylesheet" href="theme.css">
 <style>
-  :root{--ink:#1f2328;--muted:#656d76;--line:#d0d7de;--card:#fff;--bg:#f6f8fa;
-        --good:#1a7f37;--bad:#cf222e;--warn:#9a6700;--accent:#0969da}
-  @media (prefers-color-scheme:dark){:root:not([data-theme=light]){
-    --ink:#e6edf3;--muted:#8b949e;--line:#30363d;--card:#161b22;--bg:#0d1117;
-    --good:#3fb950;--bad:#f85149;--warn:#d29922;--accent:#58a6ff}}
-  .h{max-width:1100px;margin:0 auto;padding:16px;background:var(--bg);color:var(--ink);
-     font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  .banner{background:var(--warn);color:#111;font-weight:600;font-size:12px;letter-spacing:.03em;
-     padding:6px 12px;border-radius:8px;text-align:center;margin-bottom:12px}
-  h1{font-size:20px;margin:2px 0 2px} .sub{color:var(--muted);margin:0 0 14px;font-size:13px}
-  .strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;
-     background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
-  .stat b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  .stat span{font-size:19px;font-variant-numeric:tabular-nums}
-  .pill{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line)}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
-  .tc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-  .tc.control{border-color:var(--accent)}
-  .tc h3{margin:0 0 2px;font-size:15px} .tc .role{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-  .tc .eq{font-size:22px;font-variant-numeric:tabular-nums;margin:8px 0 2px}
-  .row{display:flex;justify-content:space-between;font-size:12.5px;padding:2px 0;color:var(--muted)}
-  .row span:last-child{color:var(--ink);font-variant-numeric:tabular-nums}
-  .pos{color:var(--good)} .neg{color:var(--bad)}
-  .empty{opacity:.5;border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:120px;color:var(--muted)}
-  h2{font-size:14px;margin:20px 0 8px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  th,td{padding:7px 10px;text-align:right;font-size:12.5px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
-  th:first-child,td:first-child{text-align:left} th{color:var(--muted);font-size:11px;text-transform:uppercase}
-  .watch{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--warn);
-     border-radius:8px;padding:10px 14px;margin-top:14px;font-size:13px}
-  .prov{color:var(--muted);font-size:11px;margin-top:16px}
-  a.navlink{color:var(--accent);text-decoration:none;font-size:13px}
+  /* page-specific layer built ON the shared tokens — no foreign palette */
+  .hero{background:linear-gradient(180deg,var(--surface),var(--surface-2));
+    border:1px solid var(--border);border-radius:18px;padding:26px 28px;position:relative;overflow:hidden}
+  .hero .eyebrow{margin-bottom:10px}
+  .hero h1{font-size:2.1rem;line-height:1.05}
+  .contract{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));
+    gap:18px 26px;margin-top:22px}
+  .contract .stat .bignum{font-size:22px}
+  .probband{margin-top:22px;display:grid;gap:10px}
+  .prow{display:grid;grid-template-columns:120px 1fr 56px;align-items:center;gap:12px}
+  .prow .lab{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+  .track{height:9px;border-radius:999px;background:var(--surface-2);border:1px solid var(--border);overflow:hidden}
+  .fill{height:100%;border-radius:999px}
+  .prow .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:650;font-size:15px}
+  .fam{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:16px;margin-top:6px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px 18px 16px;
+    display:flex;flex-direction:column;gap:2px;transition:box-shadow .15s,transform .15s}
+  .card:hover{box-shadow:0 6px 22px rgba(22,32,44,.08);transform:translateY(-1px)}
+  .card .name{font:500 18px/1.2 var(--display);color:var(--ink);margin:6px 0 2px}
+  .card .idn{font-size:12px;color:var(--muted);line-height:1.45;min-height:34px}
+  .card .rows{margin-top:10px;display:grid;gap:4px}
+  .card .r{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2)}
+  .card .r b{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .box{border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--surface-2)}
+  .box .k{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .box .v{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .pos{color:var(--up)} .neg{color:var(--down)}
+  .cmp{overflow-x:auto}
+  .waiting{text-align:center;padding:46px 20px}
+  .waiting h2{font-family:var(--display);font-size:1.4rem;margin-bottom:6px}
+  .waiting p{color:var(--muted);max-width:44ch;margin:0 auto}
+  .foot{color:var(--faint);font-size:12px;margin-top:6px}
 </style>
-<div class="h">
-  <div class="banner" id="banner">PAPER / SIMULATION — REAL MONEY DISABLED</div>
-  <h1>BTC Oracle — Paper Desk</h1>
-  <p class="sub">Which paper trader would you trust? Every number below is computed by the
-     backend (btc_rl.economics / metrics). <a class="navlink" href="oracle.html">Open ORACLE →</a></p>
-
-  <div class="strip" id="oracle"></div>
-  <h2>Traders</h2>
-  <div class="cards" id="cards"></div>
-  <h2>Trader Family — Oracle (one brain) → policies</h2>
-  <div class="cards" id="family"></div>
-  <h2>Comparison</h2>
-  <table id="cmp"><thead><tr><th>Trader</th><th>Role</th><th>Equity</th><th>Realized P&L</th>
-    <th>Return</th><th>EV/trade</th><th>Coverage</th><th>Win rate</th><th>Bad-entry</th></tr></thead>
-    <tbody></tbody></table>
-  <div class="watch" id="watch"></div>
-  <div class="prov" id="prov">loading results/home_snapshot.json…</div>
+<div class="topnav">
+  <a class="brand" href="home.html">BTC Oracle</a>
+  <a class="nav here" href="home.html">Home</a>
+  <a class="nav" href="oracle.html">Oracle</a>
+  <a class="nav" href="experiments.html">Experiments</a>
+  <span class="spacer"></span>
+  <span class="tag" id="paper">Paper Research</span>
 </div>
+<div class="research-banner" id="banner"><b>Paper / simulation.</b> Real money disabled. Research, not advice.</div>
+<main id="app">
+  <section class="waiting"><h2>Loading the desk…</h2><p>Fetching the current paper snapshot.</p></section>
+</main>
 <script>
 const $=(s,e=document)=>e.querySelector(s);
-const c2d=c=>c==null?"—":"$"+(c/100).toLocaleString(undefined,{maximumFractionDigits:0});
+const c2d=c=>c==null?"—":(c<0?"−$":"$")+Math.abs(c/100).toLocaleString(undefined,{maximumFractionDigits:0});
 const pct=x=>x==null?"—":(100*x).toFixed(1)+"%";
 const cls=v=>v==null?"":v>=0?"pos":"neg";
-function oracleStrip(o){
-  const rows=[["Contract",o.contract],["Official BRTI",o.official_brti],["Target",o.official_target],
-    ["MECH P(UP)",o.p_mech],["Oracle delta",o.oracle_delta],["ORACLE P(UP)",o.p_oracle],
-    ["Kalshi ref",o.p_market],["Oracle",o.oracle_state]];
-  $("#oracle").innerHTML=rows.map(([k,v])=>`<div class="stat"><b>${k}</b><span>${v==null?"—":v}</span></div>`).join("")
-    +`<div class="stat"><b>Runtime truth</b><span class="pill">${o.runtime_contract_truth}</span></div>`;
+const ROLE={CONTROL:"var(--series-1)",FORMAL_TREATMENT:"var(--series-7)",SHADOW:"var(--series-4)",NOT_QUALIFIED:"var(--faint)"};
+
+function probRow(lab,v,color){
+  const p=(typeof v==="number")?Math.max(0,Math.min(1,v)):null;
+  return `<div class="prow"><div class="lab">${lab}</div>
+    <div class="track">${p!=null?`<div class="fill" style="width:${(p*100).toFixed(0)}%;background:${color}"></div>`:""}</div>
+    <div class="val">${p!=null?(p*100).toFixed(0)+"%":"—"}</div></div>`;
 }
-function card(t){
-  if(!t.trader_id) return `<div class="tc empty">EMPTY TREATMENT SLOT</div>`;
-  const o=t.online_summary;
-  return `<div class="tc ${t.role==='CONTROL'?'control':''}">
-    <div class="role">${t.role} · ${t.status}</div>
-    <h3>${t.name}</h3><div class="role">${t.strategy_type}</div>
-    <div class="eq ${cls(o.total_return)}">${c2d(o.ending_capital_c)}</div>
-    <div class="role">from ${c2d(o.starting_capital_c)} · ${pct(o.total_return)}</div>
-    <div class="row"><span>Realized P&L</span><span class="${cls(o.realized_pnl_c)}">${c2d(o.realized_pnl_c)}</span></div>
-    <div class="row"><span>EV / eligible</span><span>${o.realized_ev_per_eligible_c==null?"—":o.realized_ev_per_eligible_c.toFixed(1)+"c"}</span></div>
-    <div class="row"><span>Coverage</span><span>${pct(o.coverage)}</span></div>
-    <div class="row"><span>Win rate</span><span>${pct(o.win_rate)}</span></div>
-    <div class="row"><span>Bad-entry</span><span>${pct(o.bad_entry_rate)}</span></div>
-    <div class="row"><span>Max drawdown</span><span>${c2d(o.max_drawdown_c)}</span></div>
-  </div>`;
+function hero(o){
+  const num=v=>v==null||v==="UNAVAILABLE"?"—":(typeof v==="number"?v.toLocaleString(undefined,{maximumFractionDigits:0}):v);
+  const dollar=v=>v==null||v==="UNAVAILABLE"?"—":"$"+num(v);
+  const dist=(typeof o.official_brti==="number"&&typeof o.official_target==="number")
+    ?("$"+(o.official_brti-o.official_target).toFixed(0)):"—";
+  return `<section class="hero">
+    <span class="eyebrow"><span class="live-dot"></span> BTC Oracle · Independent Research Desk</span>
+    <h1>${o.contract||"BTC 15M"} — is the close above the open?</h1>
+    <div class="contract">
+      <div class="stat"><div class="k">Official BRTI</div><div class="bignum">${dollar(o.official_brti)}</div></div>
+      <div class="stat"><div class="k">Target</div><div class="bignum">${dollar(o.official_target)}</div></div>
+      <div class="stat"><div class="k">Distance</div><div class="bignum">${dist}</div></div>
+      <div class="stat"><div class="k">Oracle state</div><div class="bignum" style="font-size:18px">${o.oracle_state||"—"}</div></div>
+      <div class="stat"><div class="k">Runtime truth</div><div class="bignum" style="font-size:13px;color:var(--muted)">${(o.runtime_contract_truth||"").replace(/_/g," ")}</div></div>
+    </div>
+    <div class="probband">
+      ${probRow("MECH P(up)",o.p_mech,"var(--series-1)")}
+      ${probRow("Oracle P(up)",o.p_oracle,"var(--series-2)")}
+      ${probRow("Kalshi ref",o.p_market,"var(--series-6)")}
+    </div>
+    <div class="foot">Independent delta ${o.oracle_delta==null||o.oracle_delta==="UNAVAILABLE"?"—":o.oracle_delta}. Live p_mech/p_oracle populate once the runtime Oracle path is active.</div>
+  </section>`;
 }
-const ROLE_BADGE={CONTROL:"var(--accent)",FORMAL_TREATMENT:"var(--good)",SHADOW:"var(--warn)",NOT_QUALIFIED:"var(--muted)"};
-function familyCard(t){
+function famCard(t){
   const bt=t.backtest||{};
-  const btEv=bt.ev_per_eligible_c!=null?bt.ev_per_eligible_c.toFixed(1)+"c":
-             (bt.best_holdout_auc!=null?"AUC "+bt.best_holdout_auc:
-             (bt.t3_return_to_risk!=null?"RtR "+bt.t3_return_to_risk:"—"));
-  return `<div class="tc" style="border-top:3px solid ${ROLE_BADGE[t.role]||'var(--line)'}">
-    <div class="role">${t.role.replace(/_/g,' ')} · ${t.type}</div>
-    <h3>${t.id} — ${t.name}</h3>
-    <div class="role" style="margin:4px 0 8px">${t.identity}</div>
-    <div class="row"><span>BACKTEST</span><span>${btEv}</span></div>
-    <div class="row"><span>LIVE</span><span>${t.live?('n='+t.live.n+' · '+t.live.state.split(' ')[0]):'—'}</span></div>
-    <div class="row"><span>Verdict</span><span class="pill">${(t.verdict||'—').replace(/_/g,' ')}</span></div>
-    ${t.holdout_effect?`<div class="role" style="margin-top:6px">holdout Δ ${t.holdout_effect.paired_delta_c}c CI ${JSON.stringify(t.holdout_effect.ci95)} — ${(t.holdout_effect.status||'').replace(/_/g,' ')}</div>`:''}
+  const btLine=bt.ev_per_eligible_c!=null?bt.ev_per_eligible_c.toFixed(1)+"¢ / eligible"
+    :(bt.best_holdout_auc!=null?"holdout AUC "+bt.best_holdout_auc
+    :(bt.t3_return_to_risk!=null?"return-to-risk "+bt.t3_return_to_risk:"—"));
+  const live=t.live?(t.live.n>0?("n="+t.live.n):"COLLECTING"):"—";
+  return `<div class="card" style="border-top:3px solid ${ROLE[t.role]||"var(--border)"}">
+    <span class="arm-tag" style="align-self:flex-start;color:${ROLE[t.role]}">${t.id} · ${t.role.replace(/_/g," ")}</span>
+    <div class="name">${t.name}</div>
+    <div class="idn">${t.identity}</div>
+    <div class="split">
+      <div class="box"><div class="k">Backtest</div><div class="v">${btLine}</div></div>
+      <div class="box"><div class="k">Live</div><div class="v">${live}</div></div>
+    </div>
+    <div class="rows">
+      <div class="r"><span>Verdict</span><b>${(t.verdict||"—").replace(/_/g," ")}</b></div>
+      ${t.holdout_effect?`<div class="r"><span>Holdout Δ</span><b>${t.holdout_effect.paired_delta_c}¢</b></div>`:""}
+    </div>
   </div>`;
 }
-fetch("home_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-  if(!d){$("#prov").textContent="home_snapshot.json not found — run scripts/emit_home_snapshot.py";return;}
-  $("#banner").textContent=d.paper_banner;
-  if(d.trader_family)$("#family").innerHTML=d.trader_family.map(familyCard).join("");
-  oracleStrip(d.oracle_strip);
-  $("#cards").innerHTML=d.traders.map(card).join("");
-  $("#cmp tbody").innerHTML=d.traders.filter(t=>t.trader_id).map(t=>{const o=t.online_summary;
-    return `<tr><td>${t.name}</td><td>${t.role}</td><td>${c2d(o.ending_capital_c)}</td>
-      <td class="${cls(o.realized_pnl_c)}">${c2d(o.realized_pnl_c)}</td><td class="${cls(o.total_return)}">${pct(o.total_return)}</td>
-      <td>${o.ev_per_trade_c==null?"—":o.ev_per_trade_c.toFixed(1)+"c"}</td><td>${pct(o.coverage)}</td>
-      <td>${pct(o.win_rate)}</td><td>${pct(o.bad_entry_rate)}</td></tr>`;}).join("");
-  const w=d.incident_watch||{};
-  $("#watch").innerHTML=`<b>Watch:</b> DT-01 runtime contract truth — ${w.dt01_activation}. `
-    +`Open incidents: ${Array.isArray(w.open_incidents)?w.open_incidents.length:(w.open_incidents??"—")}. `
-    +`Bottleneck: ${(d.bottleneck||"").slice(0,90)}`;
-  $("#prov").textContent=`schema ${d.schema_version} · metrics ${d.metric_definition_version} · `
-    +`eligible windows ${d.eligible_windows_universe.value} · source: results/home_snapshot.json `
-    +`(backend-computed; no browser science)`;
-}).catch(e=>{$("#prov").textContent="load error: "+e;});
+function trader(t){
+  const o=t.online_summary||{};
+  return `<div class="card">
+    <span class="arm-tag control" style="align-self:flex-start">${t.role}</span>
+    <div class="name">${t.name}</div>
+    <div class="bignum ${cls(o.total_return)}" style="font-size:24px;margin:8px 0 0">${c2d(o.ending_capital_c)}</div>
+    <div class="idn">from ${c2d(o.starting_capital_c)} · ${pct(o.total_return)} · ${t.strategy_type}</div>
+    <div class="rows">
+      <div class="r"><span>Realized P&L</span><b class="${cls(o.realized_pnl_c)}">${c2d(o.realized_pnl_c)}</b></div>
+      <div class="r"><span>EV / eligible</span><b>${o.realized_ev_per_eligible_c==null?"—":o.realized_ev_per_eligible_c.toFixed(1)+"¢"}</b></div>
+      <div class="r"><span>Coverage</span><b>${pct(o.coverage)}</b></div>
+      <div class="r"><span>Win rate</span><b>${pct(o.win_rate)}</b></div>
+      <div class="r"><span>Max drawdown</span><b>${c2d(o.max_drawdown_c)}</b></div>
+    </div>
+  </div>`;
+}
+function render(d){
+  $("#paper").textContent="Paper Research";
+  const app=$("#app");
+  const fam=(d.trader_family||[]).map(famCard).join("");
+  const desk=(d.traders||[]).filter(t=>t.trader_id).map(trader).join("");
+  app.innerHTML=hero(d.oracle_strip||{})
+    +`<section><span class="eyebrow">The trader family</span>
+       <h2>One Oracle brain, five policies</h2>
+       <p class="sub">Backtest and live evidence are shown separately and never blended. Learned traders run in shadow while T0/T1 are the frozen prospective experiment.</p>
+       <div class="fam">${fam}</div></section>`
+    +`<section><span class="eyebrow">Live paper desk</span>
+       <h2>Accounts</h2>
+       <div class="fam">${desk}</div></section>`;
+  const wm=$("#banner"); if(d.paper_banner) wm.innerHTML=`<b>${d.paper_banner.split("—")[0]}</b> ${d.paper_banner.split("—").slice(1).join("—")}`;
+}
+function waiting(){
+  $("#app").innerHTML=`<section class="waiting">
+    <span class="eyebrow" style="justify-content:center"><span class="live-dot stale"></span> BTC Oracle</span>
+    <h2>Waiting for the live desk</h2>
+    <p>No current paper snapshot is available yet. The research desk publishes a fresh
+       snapshot each cycle — check back shortly.</p></section>`;
+}
+fetch("home_snapshot.json",{cache:"no-store"})
+  .then(r=>r.ok?r.json():null)
+  .then(d=>{ if(!d||!d.traders){waiting();return;} render(d); })
+  .catch(()=>waiting());
 </script>

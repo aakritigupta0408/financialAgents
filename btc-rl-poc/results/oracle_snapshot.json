@@ -1,7 +1,7 @@
 {
  "schema_version": "oracle-1",
  "metric_definition_version": "econ-1/prob-1",
- "generated_at": 1789364826.169718,
+ "generated_at": 1789383331.262733,
  "subtabs": {
   "input_data": {
    "brti": {
@@ -44,29 +44,29 @@
     }
    ],
    "data_health": {
-    "generated_ts": 1789364478,
-    "overall": "CRITICAL",
+    "generated_ts": 1789383055,
+    "overall": "HEALTHY",
     "feeds": {
      "daemon_heartbeat": {
-      "age_s": 7747,
-      "state": "CRITICAL"
+      "age_s": 81,
+      "state": "HEALTHY"
      },
      "event_capture": {
-      "age_s": 10,
+      "age_s": 8,
       "state": "HEALTHY",
-      "errors": 880
+      "errors": 903
      },
      "kb_inference": {
-      "age_s": 9319,
-      "state": "CRITICAL"
+      "age_s": 116,
+      "state": "HEALTHY"
      },
      "pit_snapshot": {
-      "age_s": 7774,
-      "state": "CRITICAL"
+      "age_s": 81,
+      "state": "HEALTHY"
      }
     },
     "pit_store": {
-     "snapshots": 27502,
+     "snapshots": 27880,
      "variants": [
       "kb2",
       "kb9"
@@ -81,8 +81,8 @@
      "state": "HEALTHY"
     },
     "missingness": {
-     "mkt_p_up_null_rate": 0.014,
-     "ask_c_null_rate": 0.93,
+     "mkt_p_up_null_rate": 0.0,
+     "ask_c_null_rate": 0.934,
      "state": "HEALTHY"
     },
     "schema": {
@@ -6429,56 +6429,56 @@
    "model_cards": [
     {
      "model_id": "kb",
-     "offline_mean_bss": 0.0008,
+     "offline_mean_bss": -0.0135,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb2",
-     "offline_mean_bss": 0.0027,
+     "offline_mean_bss": -0.003,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb3",
-     "offline_mean_bss": -0.0003,
+     "offline_mean_bss": -0.0108,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb4",
-     "offline_mean_bss": -0.0022,
+     "offline_mean_bss": -0.0041,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb5",
-     "offline_mean_bss": 0.008,
+     "offline_mean_bss": 0.004,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb7",
-     "offline_mean_bss": -0.0281,
+     "offline_mean_bss": -0.0358,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb8",
-     "offline_mean_bss": 0.0078,
+     "offline_mean_bss": 0.0039,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     },
     {
      "model_id": "kb9",
-     "offline_mean_bss": -0.0281,
+     "offline_mean_bss": -0.0361,
      "n_folds": 5,
      "provenance": "DERIVED (btc_rl.metrics owner; mean over folds)"
     }
    ],
    "registry_count": 16,
    "online": {
-    "generated_ts": 1789364466,
+    "generated_ts": 1789383050,
     "metric_contract": "config/METRICS.yaml v1.1.0",
     "windows_def": {
      "LAST_25": 25,
@@ -6495,56 +6495,56 @@
      "kb2": {
       "windows": {
        "LIFETIME": {
-        "n": 244,
-        "brier": 0.1995,
-        "log_loss": 0.5842,
-        "selective_acc_75": 0.8228,
-        "selective_coverage_75": 0.3238,
-        "selective_n_75": 79,
-        "market_brier": 0.2005,
-        "bss_vs_market": 0.0048,
-        "market_n": 244
+        "n": 251,
+        "brier": 0.198,
+        "log_loss": 0.5872,
+        "selective_acc_75": 0.8293,
+        "selective_coverage_75": 0.3267,
+        "selective_n_75": 82,
+        "market_brier": 0.1977,
+        "bss_vs_market": -0.0017,
+        "market_n": 251
        },
        "LAST_100": {
         "n": 100,
-        "brier": 0.1879,
-        "log_loss": 0.5557,
-        "selective_acc_75": 0.8409,
-        "selective_coverage_75": 0.44,
-        "selective_n_75": 44,
-        "market_brier": 0.1906,
-        "bss_vs_market": 0.0141,
+        "brier": 0.2097,
+        "log_loss": 0.6259,
+        "selective_acc_75": 0.7778,
+        "selective_coverage_75": 0.45,
+        "selective_n_75": 45,
+        "market_brier": 0.2034,
+        "bss_vs_market": -0.0309,
         "market_n": 100
        },
        "LAST_50": {
         "n": 50,
-        "brier": 0.1712,
-        "log_loss": 0.5069,
-        "selective_acc_75": 0.9,
-        "selective_coverage_75": 0.4,
-        "selective_n_75": 20,
-        "market_brier": 0.165,
-        "bss_vs_market": -0.0376,
+        "brier": 0.2041,
+        "log_loss": 0.6242,
+        "selective_acc_75": 0.7826,
+        "selective_coverage_75": 0.46,
+        "selective_n_75": 23,
+        "market_brier": 0.1917,
+        "bss_vs_market": -0.0647,
         "market_n": 50
        },
        "LAST_25": {
         "n": 25,
-        "brier": 0.173,
-        "log_loss": 0.5116,
-        "selective_acc_75": 0.8462,
-        "selective_coverage_75": 0.52,
-        "selective_n_75": 13,
-        "market_brier": 0.1666,
-        "bss_vs_market": -0.0387,
+        "brier": 0.2493,
+        "log_loss": 0.769,
+        "selective_acc_75": 0.7273,
+        "selective_coverage_75": 0.44,
+        "selective_n_75": 11,
+        "market_brier": 0.2276,
+        "bss_vs_market": -0.0953,
         "market_n": 25
        }
       },
       "trend": {
-       "state": "IMPROVING",
-       "brier_recent_25": 0.173,
-       "brier_prior_75": 0.1928,
-       "delta": -0.0198,
-       "why": "Brier last-25 0.173 vs prior-75 0.1928 (\u0394 -0.0198, band \u00b10.01)"
+       "state": "DEGRADING",
+       "brier_recent_25": 0.2493,
+       "brier_prior_75": 0.1965,
+       "delta": 0.0528,
+       "why": "Brier last-25 0.2493 vs prior-75 0.1965 (\u0394 +0.0528, band \u00b10.01)"
       },
       "role": "CONTROL (market-anchored)",
       "lifecycle": "CONTROL"
@@ -6552,56 +6552,56 @@
      "kb9": {
       "windows": {
        "LIFETIME": {
-        "n": 244,
-        "brier": 0.206,
-        "log_loss": 0.6124,
-        "selective_acc_75": 0.8161,
-        "selective_coverage_75": 0.3566,
-        "selective_n_75": 87,
-        "market_brier": 0.2005,
-        "bss_vs_market": -0.0278,
-        "market_n": 244
+        "n": 251,
+        "brier": 0.2048,
+        "log_loss": 0.6098,
+        "selective_acc_75": 0.814,
+        "selective_coverage_75": 0.3426,
+        "selective_n_75": 86,
+        "market_brier": 0.1979,
+        "bss_vs_market": -0.035,
+        "market_n": 251
        },
        "LAST_100": {
         "n": 100,
-        "brier": 0.1904,
-        "log_loss": 0.5735,
-        "selective_acc_75": 0.8333,
+        "brier": 0.2095,
+        "log_loss": 0.63,
+        "selective_acc_75": 0.75,
         "selective_coverage_75": 0.36,
         "selective_n_75": 36,
-        "market_brier": 0.1906,
-        "bss_vs_market": 0.0007,
+        "market_brier": 0.2034,
+        "bss_vs_market": -0.0299,
         "market_n": 100
        },
        "LAST_50": {
         "n": 50,
-        "brier": 0.168,
-        "log_loss": 0.5055,
-        "selective_acc_75": 0.8947,
-        "selective_coverage_75": 0.38,
-        "selective_n_75": 19,
-        "market_brier": 0.165,
-        "bss_vs_market": -0.0182,
+        "brier": 0.203,
+        "log_loss": 0.6105,
+        "selective_acc_75": 0.7059,
+        "selective_coverage_75": 0.34,
+        "selective_n_75": 17,
+        "market_brier": 0.1917,
+        "bss_vs_market": -0.0591,
         "market_n": 50
        },
        "LAST_25": {
         "n": 25,
-        "brier": 0.1727,
-        "log_loss": 0.5176,
-        "selective_acc_75": 0.8,
-        "selective_coverage_75": 0.4,
-        "selective_n_75": 10,
-        "market_brier": 0.1666,
-        "bss_vs_market": -0.0366,
+        "brier": 0.2581,
+        "log_loss": 0.7631,
+        "selective_acc_75": 0.4286,
+        "selective_coverage_75": 0.28,
+        "selective_n_75": 7,
+        "market_brier": 0.2276,
+        "bss_vs_market": -0.1343,
         "market_n": 25
        }
       },
       "trend": {
-       "state": "IMPROVING",
-       "brier_recent_25": 0.1727,
-       "brier_prior_75": 0.1963,
-       "delta": -0.0236,
-       "why": "Brier last-25 0.1727 vs prior-75 0.1963 (\u0394 -0.0236, band \u00b10.01)"
+       "state": "DEGRADING",
+       "brier_recent_25": 0.2581,
+       "brier_prior_75": 0.1933,
+       "delta": 0.0648,
+       "why": "Brier last-25 0.2581 vs prior-75 0.1933 (\u0394 +0.0648, band \u00b10.01)"
       },
       "role": "CHALLENGER (TimesFM fusion)",
       "lifecycle": "TREATMENT"
@@ -6643,78 +6643,6 @@
   },
   "sevs_and_tickets": {
    "incidents": [
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (508s) \u2014 M6-R1 auto-repair attempt 1",
-     "opened": "2026-09-12 22:10",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (6075s) \u2014 M6-R1 auto-repair attempt 1",
-     "opened": "2026-09-13 00:40",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed",
-     "opened": "2026-09-13 01:10",
-     "status": "open \u2014 needs human",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed",
-     "opened": "2026-09-13 01:15",
-     "status": "open \u2014 needs human",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (1107s) \u2014 M6-R1 auto-repair attempt 2",
-     "opened": "2026-09-13 01:20",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (503s) \u2014 M6-R1 auto-repair attempt 1",
-     "opened": "2026-09-13 02:10",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (523s) \u2014 M6-R1 auto-repair attempt 1",
-     "opened": "2026-09-13 03:10",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
-    {
-     "sev": 2,
-     "title": "daemon heartbeat stale (484s) \u2014 M6-R1 auto-repair attempt 1",
-     "opened": "2026-09-13 04:10",
-     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
-     "detected_by": "watchdog/M6-R1",
-     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
-     "root_cause": "UNKNOWN"
-    },
     {
      "sev": 2,
      "title": "daemon heartbeat stale (476s) \u2014 M6-R1 auto-repair attempt 1",
@@ -6867,6 +6795,78 @@
      "detected_by": "watchdog/M6-R1",
      "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
      "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed",
+     "opened": "2026-09-13 23:10",
+     "status": "open \u2014 needs human",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed",
+     "opened": "2026-09-13 23:15",
+     "status": "open \u2014 needs human",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed",
+     "opened": "2026-09-13 23:20",
+     "status": "open \u2014 needs human",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "daemon heartbeat stale (1376s) \u2014 M6-R1 auto-repair attempt 2",
+     "opened": "2026-09-13 23:25",
+     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "daemon heartbeat stale (477s) \u2014 M6-R1 auto-repair attempt 1",
+     "opened": "2026-09-14 00:10",
+     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "daemon heartbeat stale (517s) \u2014 M6-R1 auto-repair attempt 1",
+     "opened": "2026-09-14 01:10",
+     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "daemon heartbeat stale (493s) \u2014 M6-R1 auto-repair attempt 1",
+     "opened": "2026-09-14 02:10",
+     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
+    },
+    {
+     "sev": 2,
+     "title": "daemon heartbeat stale (531s) \u2014 M6-R1 auto-repair attempt 1",
+     "opened": "2026-09-14 03:10",
+     "status": "auto-repair attempted \u2014 verification pending (self_heal.jsonl)",
+     "detected_by": "watchdog/M6-R1",
+     "repair_id": "M6-R1_RESTART_DEAD_DAEMON",
+     "root_cause": "UNKNOWN"
     }
    ],
    "architecture_watch": [
@@ -6891,6 +6891,22 @@
     {
      "sev": 2,
      "title": "TARGET_DEFINITION_MISMATCH \u2014 labels/benchmark off vs official KXBTC15M BRTI rule"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
+    },
+    {
+     "sev": 2,
+     "title": "AUTO_REPAIR_EXHAUSTED: daemon restart budget spent, system failed closed"
     },
     {
      "sev": 2,
@@ -7081,6 +7097,36 @@
     "research_reachable": true
    },
    {
+    "node_id": "trader_family_t0_t1",
+    "type": "TRADER",
+    "role": "EXECUTION_INPUT",
+    "path": "btc_rl/traders_v2.py",
+    "status": "FROZEN (spec_hash 51b49617)",
+    "runtime_reachable": false,
+    "research_reachable": true,
+    "note": "T0 control + T1 selective-edge; frozen prospective experiment"
+   },
+   {
+    "node_id": "t2_meta_ml",
+    "type": "MODEL",
+    "role": "EXECUTION_INPUT",
+    "path": "scripts/t2_meta_ml.py",
+    "status": "SHADOW / INFORMATION_LIMITED",
+    "runtime_reachable": false,
+    "research_reachable": true,
+    "note": "meta-labeling TAKE/SKIP downstream of Oracle; market features ALLOWED here; does NOT alter Oracle probability"
+   },
+   {
+    "node_id": "t3_rl",
+    "type": "MODEL",
+    "role": "EXECUTION_INPUT",
+    "path": "scripts/t3_rl.py",
+    "status": "SHADOW / SHADOW_ONLY",
+    "runtime_reachable": false,
+    "research_reachable": true,
+    "note": "contextual-bandit size policy; Oracle side IMMUTABLE (RL_SIDE_IMMUTABILITY)"
+   },
+   {
     "node_id": "paper_accounts",
     "type": "PAPER_ACCOUNT",
     "role": "MONITORING_ONLY",
@@ -7245,6 +7291,36 @@
     "to": "runtime_settlement",
     "type": "RUNTIME_DEPENDENCY",
     "why": "DT-01 wired: contract_truth.resolve_outcome settles on exact BRTI when EXACT_BRTI_RUNTIME_ENABLED (proxy remains explicit fallback)"
+   },
+   {
+    "from": "oracle_frozen",
+    "to": "trader_family_t0_t1",
+    "type": "MODEL_DEPENDENCY",
+    "why": "T0/T1 consume the one Oracle; T1 side = Oracle argmax"
+   },
+   {
+    "from": "oracle_frozen",
+    "to": "t2_meta_ml",
+    "type": "MODEL_DEPENDENCY",
+    "why": "T2 meta-labels the Oracle's candidate trades; does NOT alter p_oracle"
+   },
+   {
+    "from": "oracle_frozen",
+    "to": "t3_rl",
+    "type": "MODEL_DEPENDENCY",
+    "why": "T3 sizes the Oracle's trade; side immutable"
+   },
+   {
+    "from": "kalshi_market",
+    "to": "trader_family_t0_t1",
+    "type": "DATA_FLOW",
+    "why": "ALLOWED: market price enters T1's disagreement gate + execution/valuation (downstream, not the Oracle)"
+   },
+   {
+    "from": "kalshi_market",
+    "to": "t2_meta_ml",
+    "type": "FEATURE_LINEAGE",
+    "why": "ALLOWED: market valuation features to the downstream meta-trader (not the Oracle)"
    }
   ],
   "drift_edges": [

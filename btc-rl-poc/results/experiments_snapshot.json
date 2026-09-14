@@ -1,6 +1,6 @@
 {
  "schema_version": "experiments-1",
- "generated_at": 1789372459.800627,
+ "generated_at": 1789383331.453565,
  "metric_owner": "btc_rl/economics.paired_delta",
  "unit_default": "market_window_id",
  "primary_trader_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
@@ -23,33 +23,33 @@
    "estimand": "paired_delta(realized_paper_ev_per_eligible_window_c)",
    "primary_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
    "sample_sizes": {
-    "raw_observations_control": 908,
-    "raw_observations_treatment": 845,
-    "windows_control": 908,
-    "windows_treatment": 845,
-    "paired_windows": 577,
-    "effective_n": 513
+    "raw_observations_control": 919,
+    "raw_observations_treatment": 851,
+    "windows_control": 919,
+    "windows_treatment": 851,
+    "paired_windows": 583,
+    "effective_n": 519
    },
    "effect": {
-    "paired_delta": -2.5147,
+    "paired_delta": -4.8096,
     "ci95": [
-     -258.0173,
-     262.9081
+     -266.5197,
+     248.6638
     ],
-    "n_pairs": 577,
+    "n_pairs": 583,
     "significant": false
    },
    "control_summary": {
-    "ev_per_eligible_c": -107.05616740088105,
-    "coverage": 0.998898678414097
+    "ev_per_eligible_c": -105.82807399347116,
+    "coverage": 0.998911860718172
    },
    "treatment_summary": {
-    "ev_per_eligible_c": -109.11479289940829,
+    "ev_per_eligible_c": -110.15276145710928,
     "coverage": 1.0
    },
    "mechanism_decomposition": {
     "registered_mechanism": "PT3_TAU 0.77",
-    "net_treatment_ev_per_eligible_c": -2.5147,
+    "net_treatment_ev_per_eligible_c": -4.8096,
     "gross_price_improvement": "UNAVAILABLE",
     "missed_winner_cost": "UNAVAILABLE",
     "fees_delta": "UNAVAILABLE",
@@ -58,14 +58,14 @@
    },
    "integrity": {
     "eligibility_overlap": 0.491,
-    "control_only_windows": 331,
+    "control_only_windows": 336,
     "treatment_only_windows": 268,
     "shadow_treatment": false,
     "note": "unit=market_window_id; per-eligible-window pnl (untraded=0)"
    },
    "guardrails": {
     "max_drawdown_c_treatment": 127736.0,
-    "bad_entry_rate_treatment": 0.2733727810650888
+    "bad_entry_rate_treatment": 0.27497062279670975
    },
    "sequential": {
     "boundary": "CI95 excludes 0",
@@ -90,33 +90,33 @@
    "estimand": "paired_delta(realized_paper_ev_per_eligible_window_c)",
    "primary_metric": "REALIZED_PAPER_EV_PER_ELIGIBLE_WINDOW (paired)",
    "sample_sizes": {
-    "raw_observations_control": 908,
-    "raw_observations_treatment": 806,
-    "windows_control": 908,
-    "windows_treatment": 806,
-    "paired_windows": 806,
-    "effective_n": 806
+    "raw_observations_control": 919,
+    "raw_observations_treatment": 817,
+    "windows_control": 919,
+    "windows_treatment": 817,
+    "paired_windows": 817,
+    "effective_n": 817
    },
    "effect": {
-    "paired_delta": 193.7742,
+    "paired_delta": 191.2252,
     "ci95": [
-     25.9553,
-     382.8015
+     27.8103,
+     373.8592
     ],
-    "n_pairs": 806,
+    "n_pairs": 817,
     "significant": true
    },
    "control_summary": {
-    "ev_per_eligible_c": -107.05616740088105,
-    "coverage": 0.998898678414097
+    "ev_per_eligible_c": -105.82807399347116,
+    "coverage": 0.998911860718172
    },
    "treatment_summary": {
-    "ev_per_eligible_c": 50.135235732009924,
-    "coverage": 0.06823821339950373
+    "ev_per_eligible_c": 49.460220318237454,
+    "coverage": 0.06731946144430845
    },
    "mechanism_decomposition": {
     "registered_mechanism": "pt6-mle edge logit (shadow)",
-    "net_treatment_ev_per_eligible_c": 193.7742,
+    "net_treatment_ev_per_eligible_c": 191.2252,
     "gross_price_improvement": "UNAVAILABLE",
     "missed_winner_cost": "UNAVAILABLE",
     "fees_delta": "UNAVAILABLE",
@@ -124,7 +124,7 @@
     "note": "component decomposition requires per-window counterfactual fills; UNAVAILABLE not fabricated (\u00a79)"
    },
    "integrity": {
-    "eligibility_overlap": 0.888,
+    "eligibility_overlap": 0.889,
     "control_only_windows": 102,
     "treatment_only_windows": 0,
     "shadow_treatment": true,
