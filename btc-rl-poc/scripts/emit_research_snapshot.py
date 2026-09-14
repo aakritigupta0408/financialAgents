@@ -220,6 +220,11 @@ def research_snapshot(health):
             "OPTIONS": "HISTORICALLY_UNAVAILABLE for 15m (daily EOD ETF proxy excluded)",
         },
         "news_incremental": _j(ROOT / "research" / "true15m" / "news_incremental_test.json") or None,
+        "feature_universe": (_j(ROOT / "research" / "true15m" / "FEATURE_UNIVERSE_V1.json") or {}).get("status"),
+        "model_stack_diagnostics": {
+            "stack_healthy": (_j(ROOT / "research" / "true15m" / "MODEL_FAILURE_DIAGNOSTICS_V1.json") or {}).get("stack_healthy"),
+            "summary": (_j(ROOT / "research" / "true15m" / "MODEL_FAILURE_DIAGNOSTICS_V1.json") or {}).get("summary")},
+        "distributional_family": (_j(ROOT / "research" / "true15m" / "distributional_models_result.json") or {}).get("family_verdict"),
         "research_intelligence_queue": (_j(ROOT / "research" / "true15m" /
             "RESEARCH_INTELLIGENCE_QUEUE.json") or {}).get("queue"),
         "coverage_matrix": covmat.get("families") if covmat else None,
