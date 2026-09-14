@@ -72,6 +72,17 @@ def _stats(trades):
     }
 
 
+def _session_stats(session, settled, label, basis):
+    """Today's stats, with a bankroll fallback so the running bankroll always shows
+    even before the first trade of the day settles."""
+    s = _stats(session)
+    if s.get("bankroll_c") is None and settled:
+        s["bankroll_c"] = settled[-1].get("bankroll_c")
+    s["label"] = label
+    s["basis"] = basis
+    return s
+
+
 def build():
     pt = _rows(PT)
     pt.sort(key=lambda r: r.get("close_ts") or r.get("made_ts") or 0)
@@ -129,8 +140,14 @@ def build():
                    key=lambda x: x["sort_ts"], reverse=True)[:14]
     recent = opens + setts
 
-    # equity curve: real running bankroll over the recent session (last 80 trades)
-    session = settled[-80:]
+    # session = today's trades, from 12:00 AM Pacific (the desk owner's local day;
+    # the card stamps times in PT). Replaces the old trailing-80-window session so the
+    # headline reads "today" rather than a rolling count.
+    now_pt = datetime.now(PACIFIC)
+    day_start_ts = now_pt.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
+    session = [t for t in settled if (t.get("close_ts") or t.get("made_ts") or 0) >= day_start_ts]
+    session_label = "today"
+    session_basis = f"since 12:00 AM PT ({now_pt.strftime('%b %d')})"
     curve = [{"i": i, "equity_c": r.get("bankroll_c")}
              for i, r in enumerate(session) if r.get("bankroll_c") is not None]
 
@@ -151,7 +168,7 @@ def build():
         "activation_ts": ACTIVATION_TS,
         "current_window": cur,
         "since_activation": _stats(since),
-        "session": _stats(session),
+        "session": _session_stats(session, settled, session_label, session_basis),
         "recent_trades": recent,
         "equity_curve": curve,
         "note": "Live paper desk — the Oracle's Follower policy (trader T0's lineage) "
