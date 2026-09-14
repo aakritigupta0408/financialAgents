@@ -114,6 +114,7 @@ def _oracle_strip():
     # Authoritative current window from EXACT BRTI (independent of daemon lag): the
     # window is [last 15-min boundary, next boundary]; target = 60s BRTI avg at open.
     brti = target = tte_s = p_mech = p_oracle = odelta = contract = None
+    _traj = []
     try:
         from btc_rl import contract_truth as CT
         from btc_rl import prospective_capture as PC
@@ -125,22 +126,42 @@ def _oracle_strip():
         # endpoint (rolling 1h of 1s samples, always fresh) — robust between windows;
         # falls back to contract_state / daemon composite only if the live call fails.
         cur = None
+        _payload = []
         try:
             import data.adapters.brti as _b
             pr = _b.probe()
-            payload = (pr.get("sample") or {}).get("data", {}).get("payload", [])
-            if payload:
-                cur = float(max(payload, key=lambda x: x["time"])["value"])
+            _payload = (pr.get("sample") or {}).get("data", {}).get("payload", [])
+            if _payload:
+                cur = float(max(_payload, key=lambda x: x["time"])["value"])
         except Exception:
             cur = None
         cur = cur or cs.get("current_brti") or ((st.get("brti") or {}) or {}).get("price")
-        if cur and cs.get("official_target"):
+        # target: exact 60s open-average; at rollover the reconstruction lags a few s,
+        # so fall back to the daemon's floor_strike (== the official target from Kalshi).
+        _pm = st.get("pm") or {}
+        _kb = (st.get("kalshi_binary") or {}).get("last") or {}
+        tgt = cs.get("official_target") or _pm.get("strike") or _kb.get("strike")
+        if tgt and cur and cs.get("time_remaining_s", 0) > 1:
             brti = round(cur, 2)
-            target = round(cs["official_target"], 2)
+            target = round(tgt, 2)
             tte_s = cs["time_remaining_s"]
-            if tte_s and tte_s > 1:
-                p_mech = round(PC.p_mech(cur, cs["official_target"], tte_s), 4)
-                p_oracle = round(PC.p_oracle(cur, cs["official_target"], tte_s), 4)
+            p_mech = round(PC.p_mech(cur, tgt, tte_s), 4)
+            p_oracle = round(PC.p_oracle(cur, tgt, tte_s), 4)
+        # real p_mech(t) trajectory for the elapsed part of THIS window (§6) — no fabrication
+        try:
+            if tgt and _payload:
+                pts = sorted(((float(x["value"]), x["time"] / 1000.0) for x in _payload
+                              if open_ts <= x["time"] / 1000.0 <= now),
+                             key=lambda p: p[1])          # chronological
+                if len(pts) > 4:
+                    step = max(1, len(pts) // 40)
+                    for v, t in pts[::step]:
+                        rem = close_ts - t
+                        if rem > 1:
+                            _traj.append({"t_left_min": round(rem / 60.0, 2),
+                                          "p_mech": round(PC.p_mech(v, tgt, rem), 4)})
+        except Exception:
+            pass
     except Exception:
         pass
     # market probability for the current window from the desk (if its ticker matches)
@@ -160,7 +181,9 @@ def _oracle_strip():
         "contract": contract,
         "official_brti": round(brti, 2) if (fresh and brti) else U,
         "official_target": round(target, 2) if (fresh and target) else U,
+        "distance": round(brti - target, 2) if (fresh and brti and target) else U,
         "time_remaining_min": round(tte_s / 60.0, 1) if (fresh and tte_s) else U,
+        "trajectory": _traj,
         "p_mech": p_mech if p_mech is not None else U,
         "p_oracle": p_oracle if p_oracle is not None else U,
         "oracle_delta": odelta if odelta is not None else U,
@@ -190,7 +213,10 @@ def _trader_family():
     def bt(name):
         h = hold.get(name) or {}
         return {"ev_per_eligible_c": h.get("ev_per_eligible_c"),
-                "coverage": h.get("coverage"), "max_drawdown_c": h.get("max_drawdown_c")}
+                "ev_per_trade_c": h.get("ev_per_trade_c"),
+                "coverage": h.get("coverage"), "accuracy": h.get("accuracy"),
+                "total_pnl_c": h.get("total_pnl_c"), "max_drawdown_c": h.get("max_drawdown_c"),
+                "label": "HISTORICAL UNSEEN HOLDOUT (93 windows)"}
     live = {"n": 0, "state": "COLLECTING (pending DT-01 live activation)"}
     return [
         {"id": "T0", "name": "Baseline Follower", "role": "CONTROL", "type": "Rule-based",

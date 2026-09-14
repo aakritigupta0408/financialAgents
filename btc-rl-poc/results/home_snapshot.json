@@ -1,7 +1,7 @@
 {
  "schema_version": "home-1",
  "metric_definition_version": "econ-1/prob-1",
- "generated_at": 1789384052.461931,
+ "generated_at": 1789384669.271084,
  "source_versions": {
   "git_sha": "623f188",
   "current_truth_utc": "2026-09-14 10:45:20 UTC",
@@ -35,22 +35,197 @@
   }
  },
  "oracle_strip": {
-  "contract": "KXBTC15M-26SEP140700-00",
-  "official_brti": 77698.57,
-  "official_target": 77879.12,
-  "time_remaining_min": 7.5,
-  "p_mech": 0.0336,
-  "p_oracle": 0.044,
-  "oracle_delta": -0.141,
-  "p_market": 0.185,
-  "oracle_state": "LOCKED",
+  "contract": "KXBTC15M-26SEP140730-30",
+  "official_brti": 77748.31,
+  "official_target": 77740.51,
+  "distance": 7.8,
+  "time_remaining_min": 12.2,
+  "trajectory": [
+   {
+    "t_left_min": 15.0,
+    "p_mech": 0.4817
+   },
+   {
+    "t_left_min": 14.93,
+    "p_mech": 0.4819
+   },
+   {
+    "t_left_min": 14.87,
+    "p_mech": 0.4976
+   },
+   {
+    "t_left_min": 14.8,
+    "p_mech": 0.4691
+   },
+   {
+    "t_left_min": 14.73,
+    "p_mech": 0.4769
+   },
+   {
+    "t_left_min": 14.67,
+    "p_mech": 0.4849
+   },
+   {
+    "t_left_min": 14.6,
+    "p_mech": 0.4845
+   },
+   {
+    "t_left_min": 14.53,
+    "p_mech": 0.4879
+   },
+   {
+    "t_left_min": 14.47,
+    "p_mech": 0.5002
+   },
+   {
+    "t_left_min": 14.4,
+    "p_mech": 0.4969
+   },
+   {
+    "t_left_min": 14.33,
+    "p_mech": 0.4872
+   },
+   {
+    "t_left_min": 14.27,
+    "p_mech": 0.4851
+   },
+   {
+    "t_left_min": 14.2,
+    "p_mech": 0.4589
+   },
+   {
+    "t_left_min": 14.13,
+    "p_mech": 0.4839
+   },
+   {
+    "t_left_min": 14.07,
+    "p_mech": 0.475
+   },
+   {
+    "t_left_min": 14.0,
+    "p_mech": 0.4781
+   },
+   {
+    "t_left_min": 13.93,
+    "p_mech": 0.4699
+   },
+   {
+    "t_left_min": 13.87,
+    "p_mech": 0.4895
+   },
+   {
+    "t_left_min": 13.8,
+    "p_mech": 0.4881
+   },
+   {
+    "t_left_min": 13.73,
+    "p_mech": 0.4861
+   },
+   {
+    "t_left_min": 13.67,
+    "p_mech": 0.4872
+   },
+   {
+    "t_left_min": 13.6,
+    "p_mech": 0.4912
+   },
+   {
+    "t_left_min": 13.53,
+    "p_mech": 0.5057
+   },
+   {
+    "t_left_min": 13.47,
+    "p_mech": 0.5004
+   },
+   {
+    "t_left_min": 13.4,
+    "p_mech": 0.5085
+   },
+   {
+    "t_left_min": 13.33,
+    "p_mech": 0.5149
+   },
+   {
+    "t_left_min": 13.27,
+    "p_mech": 0.5155
+   },
+   {
+    "t_left_min": 13.2,
+    "p_mech": 0.5195
+   },
+   {
+    "t_left_min": 13.13,
+    "p_mech": 0.5321
+   },
+   {
+    "t_left_min": 13.07,
+    "p_mech": 0.476
+   },
+   {
+    "t_left_min": 13.0,
+    "p_mech": 0.4766
+   },
+   {
+    "t_left_min": 12.93,
+    "p_mech": 0.4752
+   },
+   {
+    "t_left_min": 12.87,
+    "p_mech": 0.4789
+   },
+   {
+    "t_left_min": 12.8,
+    "p_mech": 0.4859
+   },
+   {
+    "t_left_min": 12.73,
+    "p_mech": 0.4857
+   },
+   {
+    "t_left_min": 12.67,
+    "p_mech": 0.5154
+   },
+   {
+    "t_left_min": 12.6,
+    "p_mech": 0.516
+   },
+   {
+    "t_left_min": 12.53,
+    "p_mech": 0.5128
+   },
+   {
+    "t_left_min": 12.47,
+    "p_mech": 0.5051
+   },
+   {
+    "t_left_min": 12.4,
+    "p_mech": 0.508
+   },
+   {
+    "t_left_min": 12.33,
+    "p_mech": 0.5087
+   },
+   {
+    "t_left_min": 12.27,
+    "p_mech": 0.5314
+   },
+   {
+    "t_left_min": 12.2,
+    "p_mech": 0.5289
+   }
+  ],
+  "p_mech": 0.5247,
+  "p_oracle": 0.5288,
+  "oracle_delta": -0.0062,
+  "p_market": 0.535,
+  "oracle_state": "SEARCHING",
   "oracle_spec_hash": "71c3bcffa964",
   "benchmark_provenance": "EXACT CF-BRTI (current window computed live)",
   "runtime_contract_truth": "LEGACY / ACTIVATION_PENDING",
   "provenance": "p_mech/p_oracle from exact BRTI current-window state; p_market from live desk; UNAVAILABLE not fabricated"
  },
  "eligible_windows_universe": {
-  "value": 1931,
+  "value": 1933,
   "provenance": "DERIVED"
  },
  "traders": [
@@ -62,11 +237,11 @@
    "status": "ACTIVE",
    "online_summary": {
     "n_trades": 919,
-    "n_eligible": 1931,
-    "coverage": 0.47591921284308647,
+    "n_eligible": 1933,
+    "coverage": 0.47542679772374546,
     "realized_pnl_c": -97174.0,
     "ev_per_trade_c": -105.73884657236127,
-    "realized_ev_per_eligible_c": -50.323148627654064,
+    "realized_ev_per_eligible_c": -50.27108122090016,
     "win_rate": 0.6822633297062024,
     "bad_entry_rate": 0.3177366702937976,
     "starting_capital_c": 100000,
@@ -160,11 +335,11 @@
    "status": "ACTIVE",
    "online_summary": {
     "n_trades": 851,
-    "n_eligible": 1931,
-    "coverage": 0.4407042982910409,
+    "n_eligible": 1933,
+    "coverage": 0.44024831867563374,
     "realized_pnl_c": -93740.0,
     "ev_per_trade_c": -110.15276145710928,
-    "realized_ev_per_eligible_c": -48.544795442775765,
+    "realized_ev_per_eligible_c": -48.49456802897051,
     "win_rate": 0.7250293772032902,
     "bad_entry_rate": 0.27497062279670975,
     "starting_capital_c": 100000,
@@ -258,11 +433,11 @@
    "status": "SHADOW",
    "online_summary": {
     "n_trades": 55,
-    "n_eligible": 1931,
-    "coverage": 0.02848265147591921,
+    "n_eligible": 1933,
+    "coverage": 0.028453181583031558,
     "realized_pnl_c": 40409.0,
     "ev_per_trade_c": 734.709090909091,
-    "realized_ev_per_eligible_c": 20.926462972553082,
+    "realized_ev_per_eligible_c": 20.904811174340402,
     "win_rate": 0.5454545454545454,
     "bad_entry_rate": 0.18181818181818182,
     "starting_capital_c": 100000,
@@ -355,31 +530,24 @@
    "strategy_type": "Per-window edge bet",
    "status": "ACTIVE",
    "online_summary": {
-    "n_trades": 1924,
-    "n_eligible": 1931,
-    "coverage": 0.9963749352667012,
-    "realized_pnl_c": 1019.9,
-    "ev_per_trade_c": 0.530093555093555,
-    "realized_ev_per_eligible_c": 0.5281719316416364,
-    "win_rate": 0.5369022869022869,
-    "bad_entry_rate": 0.4630977130977131,
+    "n_trades": 1925,
+    "n_eligible": 1933,
+    "coverage": 0.9958613554061045,
+    "realized_pnl_c": 1017.4,
+    "ev_per_trade_c": 0.5285194805194805,
+    "realized_ev_per_eligible_c": 0.5263321262286601,
+    "win_rate": 0.5366233766233767,
+    "bad_entry_rate": 0.4633766233766234,
     "starting_capital_c": 100000,
-    "ending_capital_c": 101019.90000000007,
-    "total_return": 0.01019900000000067,
+    "ending_capital_c": 101017.40000000007,
+    "total_return": 0.010174000000000669,
     "max_drawdown_c": 1546.0,
     "profitable_trade_recall": null,
     "missed_profit_rate": null
    },
    "offline_summary": null,
-   "latest_action": "KXBTC15M-26SEP140700-00",
+   "latest_action": "KXBTC15M-26SEP140715-15",
    "last_k_trades": [
-    {
-     "ticker": "KXBTC15M-26SEP140445-45",
-     "side": "no",
-     "pnl_c": 50.0,
-     "win": 1,
-     "close_ts": 1789375500
-    },
     {
      "ticker": "KXBTC15M-26SEP140500-00",
      "side": "no",
@@ -442,6 +610,13 @@
      "pnl_c": 50.0,
      "win": 1,
      "close_ts": 1789383600
+    },
+    {
+     "ticker": "KXBTC15M-26SEP140715-15",
+     "side": "yes",
+     "pnl_c": -2.5,
+     "win": 0,
+     "close_ts": 1789384500
     }
    ],
    "provenance": "OBSERVED (ledger) -> DERIVED (btc_rl.economics)"
@@ -454,11 +629,11 @@
    "status": "ACTIVE",
    "online_summary": {
     "n_trades": 1318,
-    "n_eligible": 1931,
-    "coverage": 0.6825479026411186,
+    "n_eligible": 1933,
+    "coverage": 0.6818416968442835,
     "realized_pnl_c": 2800.6,
     "ev_per_trade_c": 2.124886191198786,
-    "realized_ev_per_eligible_c": 1.4503366131538062,
+    "realized_ev_per_eligible_c": 1.4488360062079668,
     "win_rate": 0.5804248861911988,
     "bad_entry_rate": 0.4195751138088012,
     "starting_capital_c": 100000,
@@ -554,8 +729,12 @@
    "identity": "lock + executable EV >= min -> fixed stake",
    "backtest": {
     "ev_per_eligible_c": 3.8164376344086026,
+    "ev_per_trade_c": 4.609463636363637,
     "coverage": 0.8279569892473119,
-    "max_drawdown_c": 377.38599999999997
+    "accuracy": 0.5714,
+    "total_pnl_c": 354.92870000000005,
+    "max_drawdown_c": 377.38599999999997,
+    "label": "HISTORICAL UNSEEN HOLDOUT (93 windows)"
    },
    "live": {
     "n": 0,
@@ -571,8 +750,12 @@
    "identity": "T0 + require |p_oracle - p_market| >= 0.15 (FROZEN, spec_hash 51b49617)",
    "backtest": {
     "ev_per_eligible_c": 11.04069247311828,
+    "ev_per_trade_c": 20.535688,
     "coverage": 0.5376344086021505,
-    "max_drawdown_c": 178.69319999999982
+    "accuracy": 0.56,
+    "total_pnl_c": 1026.7844,
+    "max_drawdown_c": 178.69319999999982,
+    "label": "HISTORICAL UNSEEN HOLDOUT (93 windows)"
    },
    "live": {
     "n": 0,
