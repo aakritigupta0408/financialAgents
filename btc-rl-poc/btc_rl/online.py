@@ -4173,8 +4173,26 @@ def run(once: bool = False) -> None:
                                          for t in pt3_trades))
                 tmp3t.replace(RESULTS_DIR / PT3_LOG_NAME)
             # --- Confidence-Gated Follower settlement (cg5/cg10/cg33) ---
-            # hold-to-close payout, same as pt3; each arm guarded so a fault in one
-            # cannot stall the others or the rest of the settle pass.
+            # Settle on the OFFICIAL Kalshi outcome (CF-BRTI truth), NOT the Coinbase-
+            # candle proxy: the proxy mis-resolves thin windows (a NO bet on a ~$11
+            # up-close was wrongly booked as a win). DEFER (leave open) until the
+            # official result is available — never book a proxy guess. Fail-closed.
+            _official = {}
+            try:
+                _cop = RESULTS_DIR / "contract_outcomes.jsonl"
+                if _cop.exists():
+                    for _l in _cop.open():
+                        _l = _l.strip()
+                        if not _l:
+                            continue
+                        try:
+                            _o = json.loads(_l)
+                        except Exception:
+                            continue
+                        if _o.get("exact_yes") in (0, 1):
+                            _official[_o.get("ticker")] = _o["exact_yes"]
+            except Exception as _oe:
+                print("cg official-load error:", _oe, flush=True)
             for _nm, _log in (("cg5", CG5_LOG_NAME), ("cg10", CG10_LOG_NAME),
                               ("cg33", CG33_LOG_NAME)):
                 try:
@@ -4185,14 +4203,12 @@ def run(once: bool = False) -> None:
                     for t in _tr:
                         if t["actual"] is not None or now_ts < t["close_ts"]:
                             continue
-                        settle_bar = by_ts.get(t["close_ts"] - 60)
-                        if settle_bar is None or settle_bar.get("synth"):
-                            continue
-                        outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
-                            t.get("ticker"), t["close_ts"], t["strike"],
-                            int(settle_bar["close"] >= t["strike"]))
-                        t["actual"] = outcome
-                        t["win"] = int((t["side"] == "yes") == bool(outcome))
+                        off = _official.get(t.get("ticker"))
+                        if off is None:
+                            continue    # DEFER — official result not available yet
+                        t["actual"] = off
+                        t["contract_truth_quality"] = "OFFICIAL_KALSHI"
+                        t["win"] = int((t["side"] == "yes") == bool(off))
                         payout = t["contracts"] * 100 if t["win"] else 0
                         t["pnl_c"] = payout - t["stake_c"]
                         _bank += payout
