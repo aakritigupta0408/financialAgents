@@ -1,5 +1,32 @@
 # RESEARCH PROGRAM — living plan & memory
 
+## 0. PRIME DIRECTIVES (owner, standing — never forget; read every session)
+1. **The problem (fixed):** at WINDOW OPEN, predict the CLOSE direction, and buy the winning
+   contract while it is still cheap. The oracle's value is being right EARLY. **Entry time is
+   fixed at open.**
+2. **Target = 89% hit @ 90% coverage AT ENTRY (open).** It is a capstone with a professor's
+   baseline at 89%/90% → it IS achievable; if we get less we are MISSING features/data/method,
+   not hitting a wall. Meet it, then beat it.
+3. **Forbidden shortcuts (all = cheating, reject on sight):** moving the decision later (T-1min
+   etc.), any post-entry information, dropping coverage below 90% to inflate hit, leakage, and
+   fabricating/again "artificial numbers wins." A win only counts AT ENTRY, walk-forward,
+   canary-clean.
+4. **Do the hard analytical work.** Never conclude "unsolvable" to dodge effort; run the Bayes/
+   feature/first-principles analysis. But never fake a result either. Both are integrity.
+5. **Decision lens:** WWAKD (Karpathy recipe — become one with the data; overfit to prove
+   capacity; fix the eval) + Sheldon-grade logic/math/first-principles + engineering math,
+   physics of chaos/patterns, probability & statistics, backed by real cited sources.
+6. **Exhaust EVERY published method** — GitHub, Kaggle, papers-with-code, blogs, vlogs, forums,
+   open research. Reproduce each **EXACTLY as its source specifies** (its data prep, label,
+   features, model, params) — a targeted grid over real ideas, NOT a random sweep.
+7. **Make the whole system robust, tested, recreatable:** model, data, logging, UI/UX, website,
+   retraining, drift, latency, performance — all instrumented, shown in the UI, and reproducible.
+8. **Autonomy:** keep assigning myself the next task; do not pause for approval; stop only when
+   told, when performance is achieved, or when everything above is robust & tested.
+9. **This document is the memory.** Update it every meaningful step; it is authoritative.
+
+
+
 **Purpose.** Single source of truth for the alpha-research program: what's done, in
 progress, blocked, remaining, scheduled — with every task carried through the pipeline
 **Feasibility → Build → Evaluate → Online-test → Launch**, its dependencies, and its result.
@@ -112,6 +139,19 @@ must NEVER be moved later to inflate accuracy.**
   that gap honestly (orthogonal information + better modelling/labeling) is the whole task.
   Never again "solve" it by choosing a later clock, a confidence gate that drops coverage below
   90%, or any post-entry information.
+
+## 3c. ENTRY-TIME feature-power scan (R21b) — what unlocks 89% at OPEN?
+Become-one-with-the-data at the real entry (window open, ~876s left): price sits ON the strike
+(median |price−strike| **1.3 bps**; 63% within 2 bps) → contract opens ~50/50, base-rate 0.487.
+Standalone feature accuracy for the close (research/feature_power_scan.json):
+`brti_distance_to_target 0.61 · k_prob(market) 0.59 · spot/target/current_brti ~0.56 · rvol 0.54`.
+**No single feature > 0.61; full model over ALL logged features = 0.696 OOS.** Nothing near 0.89.
+- **Verdict:** with current features, entry-time ceiling ≈ 0.70 (matches §3 Bayes + field 52–56%).
+  0.89 AT OPEN predicting the close is not in our data. To reach it honestly requires: a
+  different **label** (touch-vs-close), a feature in the **capstone dataset** we don't log, or a
+  **leak**. Remaining untapped own-lever: **sub-bin L2 OFI** (R19) — field predicts ~0.55.
+- **Action if 89% is truly the target: obtain the capstone's exact label/feature spec + dataset**
+  — that is the actual blocker, not more modelling on our features.
 
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**

@@ -1,0 +1,127 @@
+{
+ "n_windows": 370,
+ "base_up": 0.4865,
+ "top_features": [
+  [
+   "brti_distance_to_target",
+   {
+    "n": 370,
+    "best_acc": 0.6081,
+    "auc": 0.6198
+   }
+  ],
+  [
+   "k_prob",
+   {
+    "n": 370,
+    "best_acc": 0.5919,
+    "auc": 0.5962
+   }
+  ],
+  [
+   "coinbase_spot",
+   {
+    "n": 370,
+    "best_acc": 0.5649,
+    "auc": 0.5494
+   }
+  ],
+  [
+   "official_target",
+   {
+    "n": 370,
+    "best_acc": 0.5649,
+    "auc": 0.5536
+   }
+  ],
+  [
+   "official_target_kalshi",
+   {
+    "n": 370,
+    "best_acc": 0.5649,
+    "auc": 0.5536
+   }
+  ],
+  [
+   "time_remaining_s",
+   {
+    "n": 370,
+    "best_acc": 0.5649,
+    "auc": 0.5479
+   }
+  ],
+  [
+   "current_brti",
+   {
+    "n": 370,
+    "best_acc": 0.5622,
+    "auc": 0.5484
+   }
+  ],
+  [
+   "official_expiration_kalshi",
+   {
+    "n": 370,
+    "best_acc": 0.5432,
+    "auc": 0.5275
+   }
+  ],
+  [
+   "official_expiration_value",
+   {
+    "n": 370,
+    "best_acc": 0.5432,
+    "auc": 0.5275
+   }
+  ],
+  [
+   "cb_rvol_30s",
+   {
+    "n": 370,
+    "best_acc": 0.5351,
+    "auc": 0.5163
+   }
+  ],
+  [
+   "brti_sample_ts",
+   {
+    "n": 370,
+    "best_acc": 0.527,
+    "auc": 0.5087
+   }
+  ],
+  [
+   "decision_time",
+   {
+    "n": 370,
+    "best_acc": 0.527,
+    "auc": 0.5087
+   }
+  ],
+  [
+   "cadence_hz",
+   {
+    "n": 370,
+    "best_acc": 0.5135,
+    "auc": 0.5025
+   }
+  ],
+  [
+   "fetch_ts",
+   {
+    "n": 370,
+    "best_acc": 0.5135,
+    "auc": 0.5025
+   }
+  ],
+  [
+   "settle_remaining",
+   {
+    "n": 370,
+    "best_acc": 0.5135,
+    "auc": 0.5025
+   }
+  ]
+ ],
+ "full_model_oos_acc": 0.6959
+}
