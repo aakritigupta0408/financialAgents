@@ -1,0 +1,73 @@
+{
+ "schema_version": "rl-tournament-backtest-1",
+ "n_windows": 218,
+ "base_rate_up": 0.6606,
+ "decision_point_mins_left": 12.0,
+ "costs": {
+  "half_spread": 0.02,
+  "fee": 0.013
+ },
+ "baselines": {
+  "always_skip": {
+   "n": 218,
+   "net_pnl": 0.0,
+   "mean_ret": 0.0,
+   "sharpe": 0.0
+  },
+  "T0_mimic_full": {
+   "n": 218,
+   "net_pnl": -25.77,
+   "mean_ret": -0.00039,
+   "sharpe": -0.076
+  },
+  "T0_mimic_oos": {
+   "n": 181,
+   "net_pnl": -208.56,
+   "mean_ret": -0.00384,
+   "sharpe": -0.695
+  }
+ },
+ "arms_oos": {
+  "RL-pnl": {
+   "n": 175,
+   "net_pnl": -810.43,
+   "mean_ret": -0.01544,
+   "sharpe": -1.757,
+   "coverage_vs_t0": 0.84,
+   "taken": 152,
+   "hit_rate_on_taken": 0.658
+  },
+  "RL-kelly": {
+   "n": 175,
+   "net_pnl": -805.24,
+   "mean_ret": -0.01534,
+   "sharpe": -2.375,
+   "coverage_vs_t0": 0.812,
+   "taken": 147,
+   "hit_rate_on_taken": 0.653
+  },
+  "RL-sharpe": {
+   "n": 175,
+   "net_pnl": -631.42,
+   "mean_ret": -0.01203,
+   "sharpe": -1.479,
+   "coverage_vs_t0": 0.84,
+   "taken": 152,
+   "hit_rate_on_taken": 0.658
+  }
+ },
+ "placebo_net_pnl": {
+  "RL-pnl": 835.99,
+  "RL-kelly": 889.03,
+  "RL-sharpe": 852.58
+ },
+ "best_arm": "RL-sharpe",
+ "beats_always_skip": false,
+ "beats_t0": false,
+ "always_skip_dominates": true,
+ "placebo_clean": false,
+ "placebo_caveat": "placebo shuffles only the final win/loss label; the early-exit channel reads the REAL intra-window price path, so residual non-causal structure survives a label-only shuffle. A non-zero placebo here = small-n overfitting + path structure, NOT a validated edge. A cleaner placebo would permute whole episodes.",
+ "verdict": "NO_OOS_EDGE_YET",
+ "data_caveat": "n=218 windows \u2014 far below the deflated-Sharpe / purged-CV threshold for a trustworthy verdict. Provisional pipeline read only; accrue via rl_treatment_dataset.py before trusting any edge.",
+ "honesty": "RL follows the Oracle's direction and only decides skip/size/exit; it cannot and does not predict direction. Coverage vs T0 is measured, never fitted toward a target."
+}

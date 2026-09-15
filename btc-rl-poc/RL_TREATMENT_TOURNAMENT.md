@@ -87,5 +87,23 @@ the bar above. The dormant T3 RL arm is the slot a winner would replace.
 ## Status
 
 - Phase 0: **DONE** (226 settled windows snapshotted; base rate 0.5088).
-- Phase 1: pending.
-- Data: **too thin for a trustworthy verdict yet** — accruing.
+- Phase 1: **DONE (v0, `scripts/rl_treatment_phase1.py` → `results/rl_tournament_backtest.json`).**
+  Offline harness runs end-to-end on 218 past windows. **Verdict: `NO_OOS_EDGE_YET`.**
+  - All three arms **lose OOS** (RL-PnL −$810, RL-Kelly −$805, RL-Sharpe −$631 additive),
+    **worse than always-skip ($0) and T0-mimic (−$209)** — `always_skip_dominates = True`.
+  - 66% hit yet net-negative = the favorite/longshot payoff asymmetry (same as the T0
+    overnight diagnosis): wins pay little, losses forfeit the stake.
+  - **Placebo does not clear** (~+$850): a label-only shuffle leaves the real intra-window
+    price-path structure the exit channel exploits, and n=218 overfits — a decisive
+    do-not-trust / do-not-promote signal, not a validated edge.
+- **Nothing is promoted.** On past data the RL treatments do NOT prevent bad trades; they
+  lose more. This is the accrue-then-decide gate working as designed.
+- Data: **too thin for a trustworthy verdict** — accrue via Phase 0, re-run Phase 1 as N grows.
+
+## Next (to earn a real verdict)
+
+1. Schedule Phase 0 accrual (needs a live-system scheduler — not the research engine).
+2. Stronger placebo: permute whole episodes (path + label) and add deflated-Sharpe over the
+   config/seed count.
+3. Lower policy capacity / stronger regularization until the placebo clears at the current N.
+4. Only once an arm beats always-skip AND T0 OOS with a clean placebo → shadow arms → SPRT promote.
