@@ -200,7 +200,10 @@ const SVG={
 function icon(name,color,sz){return `<svg viewBox="0 0 24 24" width="${sz||18}" height="${sz||18}" fill="none" stroke="${color||'currentColor'}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">${SVG[name]||''}</svg>`;}
 const TR={T0:["var(--series-2)","rgba(36,97,184,.09)","crown"],T1:["var(--series-7)","rgba(13,122,78,.09)","bolt"],
   T2:["var(--series-4)","rgba(143,96,0,.10)","brain"],T3:["var(--series-9)","rgba(95,80,199,.10)","chart"],
-  T4:["var(--series-3)","rgba(180,58,110,.09)","layers"]};
+  T4:["var(--series-3)","rgba(180,58,110,.09)","layers"],
+  cg5:["var(--series-7)","rgba(13,122,78,.09)","bolt"],
+  cg10:["var(--series-4)","rgba(143,96,0,.10)","bolt"],
+  cg33:["var(--series-3)","rgba(180,58,110,.09)","bolt"]};
 let SNAP=null, DETAIL=null, LIVE=null, SEL="T0", CHTAB="live";
 const byId=id=>(SNAP.trader_family||[]).find(t=>t.id===id)||{};
 

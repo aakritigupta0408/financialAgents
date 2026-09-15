@@ -210,6 +210,49 @@ def _oracle_strip():
     }
 
 
+def _cg_family_entries():
+    """The 3 live Confidence-Gated Follower treatments (cg5/cg10/cg33), with LIVE
+    stats read from their own ledgers (official-BRTI settled). Shown in the home
+    trader family so the deployment is visible."""
+    specs = [
+        ("cg5", "Gated · 5%", "Growth-optimal size.", "LIVE_CANDIDATE", "cg5_trades.jsonl",
+         "Follows the leader only when confidence >= 0.20 (skips coin-flips), 5% stake, hold to close."),
+        ("cg10", "Gated · 10%", "More aggressive.", "LIVE_CANDIDATE", "cg10_trades.jsonl",
+         "Same confidence-gated policy at 10% stake."),
+        ("cg33", "Gated · 33%", "Ruin-risk experiment.", "RUIN_RISK_EXPERIMENT", "cg33_trades.jsonl",
+         "Same policy at 33% stake — demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown)."),
+    ]
+    start = 30000
+    out = []
+    for cid, name, tag, verdict, log, blurb in specs:
+        p = RES / log
+        rows = []
+        if p.exists():
+            for ln in p.read_text().splitlines():
+                ln = ln.strip()
+                if ln:
+                    try:
+                        rows.append(json.loads(ln))
+                    except json.JSONDecodeError:
+                        pass
+        settled = [r for r in rows if r.get("actual") is not None]
+        wins = sum(1 for r in settled if r.get("win"))
+        pnl = sum(r.get("pnl_c") or 0 for r in settled)
+        open_stakes = sum(r.get("stake_c") or 0 for r in rows if r.get("actual") is None)
+        bank = start + pnl - open_stakes
+        live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
+                "hit_rate": round(wins / len(settled), 3) if settled else None,
+                "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
+        out.append({"id": cid, "name": name, "role": "TREATMENT",
+                    "type": "Rule-based (confidence-gated)",
+                    "tagline": f"{tag} · live ${bank/100:.2f}", "icon": "bolt", "blurb": blurb,
+                    "reason": "Live candidate accruing paired evidence vs T0 (offline n=218, small).",
+                    "backtest": {"coverage": 0.61,
+                                 "label": "OFFLINE CANDIDATE (n=218, vs always-take)"},
+                    "live": live, "verdict": verdict})
+    return out
+
+
 def _trader_family():
     """Track F/G — the current active trader family T0-T4 with model identity and
     BACKTEST vs LIVE separated (never blended). All numbers backend-computed."""
@@ -259,6 +302,7 @@ def _trader_family():
          "blurb": "Combines the best components — unlocked only after each qualifies on its own.",
          "reason": "Waiting on component qualification.",
          "backtest": None, "live": None, "verdict": "NOT_QUALIFIED"},
+        *_cg_family_entries(),
     ]
 
 
