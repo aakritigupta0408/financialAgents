@@ -24,6 +24,17 @@ TRADERS = [
      "Bids only when the source arm's confidence >= 0.77 (top-44% conviction tier); otherwise "
      "stands down. 10% sizing. Records the source arm and policy version.",
      "pt3_trades.jsonl - src, pv - PT3_TAU=0.77"),
+    ("cg5", "Gated ·5%", "confidence-gated follower", "thesis", True, "leader",
+     "Follows the leader's side ONLY when leader confidence >= 0.20 (skips the near-coin-flip "
+     "middle), one bid/window, hold to close. 5% stake — the growth-optimal size in backtest. "
+     "$300 paper.", "cg5_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.05"),
+    ("cg10", "Gated ·10%", "confidence-gated follower", "thesis", True, "leader",
+     "Same confidence-gated policy as cg5 at 10% stake — more aggressive, still survivable in "
+     "backtest. $300 paper.", "cg10_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.10"),
+    ("cg33", "Gated ·33%", "confidence-gated follower", "thesis", True, "leader",
+     "Same policy at 33% stake — a deliberate RUIN-RISK experiment (~1.6x Kelly): backtest shows "
+     "$300 -> ~$60 at 98% drawdown. Demonstrates over-betting, not a recommendation. $300 paper.",
+     "cg33_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.33"),
     ("pt6", "MLE", "the meta-learner (shadow)", "shadow", True, "leader",
      "A supervised meta-trader: learns P(a leader-side bet wins) online via a 7-dim logistic "
      "model, bets only when EV > 0 at the real ask, half-Kelly capped 10%, min edge 10c. "

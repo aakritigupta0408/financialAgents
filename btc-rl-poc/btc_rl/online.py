@@ -529,6 +529,24 @@ PT_MIN_REC = 5                         # min decisions to hold leadership
 # record but no trader follows its calls.
 PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
 
+# --- Confidence-Gated Follower treatments (2026-09-15, owner decision) ----------
+# Three live treatment arms, IDENTICAL policy, differing ONLY in stake fraction:
+# follow the leader's side but ONLY when leader confidence >= PTCG_TAU (skip the
+# near-coin-flip middle), one bid per window, hold to close. $300 paper each. These
+# take the treatment slots the dormant arms (pt2/pt4/pt5/pt7/pt8) vacated.
+# Offline evidence is a SMALL-N CANDIDATE (n=218, multiple-testing — see
+# RL_TREATMENT_TOURNAMENT.md), NOT a validated champion; they accrue paired evidence
+# vs the T0 Follower. cg33 is a deliberate RUIN-RISK arm (33% ~ 1.6x Kelly): the
+# offline sweep shows $300 -> ~$60 with a 98% drawdown — kept as an experiment to
+# demonstrate over-betting, never as a recommendation. PAPER / SIMULATION ONLY.
+PTCG_START_C = 30_000                  # $300 in cents
+PTCG_TAU = 0.20                        # confidence gate (below PT_TAU=0.62 by design)
+CG5_LOG_NAME = "cg5_trades.jsonl";  CG5_FRAC = 0.05
+CG10_LOG_NAME = "cg10_trades.jsonl"; CG10_FRAC = 0.10
+CG33_LOG_NAME = "cg33_trades.jsonl"; CG33_FRAC = 0.33
+CG_ARMS = (("cg5", CG5_LOG_NAME, CG5_FRAC), ("cg10", CG10_LOG_NAME, CG10_FRAC),
+           ("cg33", CG33_LOG_NAME, CG33_FRAC))
+
 
 _FC_CACHE = {"ts": 0.0, "state": "NORMAL", "why": ""}
 
@@ -2414,6 +2432,23 @@ def run(once: bool = False) -> None:
     pt3_bankroll_c = PT_START_BANKROLL_C \
         + sum(t["pnl_c"] for t in pt3_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt3_trades if t.get("actual") is None)
+    # Confidence-Gated Follower treatments (cg5/cg10/cg33) — $300 paper each,
+    # bankroll derived from the log alone (restart-safe), same as pt/pt3.
+    cg5_trades = _load_kb_bets(CG5_LOG_NAME)
+    cg5_tickers = {t["ticker"] for t in cg5_trades}
+    cg5_bankroll_c = PTCG_START_C \
+        + sum(t["pnl_c"] for t in cg5_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in cg5_trades if t.get("actual") is None)
+    cg10_trades = _load_kb_bets(CG10_LOG_NAME)
+    cg10_tickers = {t["ticker"] for t in cg10_trades}
+    cg10_bankroll_c = PTCG_START_C \
+        + sum(t["pnl_c"] for t in cg10_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in cg10_trades if t.get("actual") is None)
+    cg33_trades = _load_kb_bets(CG33_LOG_NAME)
+    cg33_tickers = {t["ticker"] for t in cg33_trades}
+    cg33_bankroll_c = PTCG_START_C \
+        + sum(t["pnl_c"] for t in cg33_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in cg33_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
     # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
@@ -3297,7 +3332,10 @@ def run(once: bool = False) -> None:
                             or pm_mkt["ticker"] not in pt5_tickers
                             or pm_mkt["ticker"] not in pt6_tickers
                             or pm_mkt["ticker"] not in pt7_tickers
-                            or pm_mkt["ticker"] not in pt8_tickers)
+                            or pm_mkt["ticker"] not in pt8_tickers
+                            or pm_mkt["ticker"] not in cg5_tickers
+                            or pm_mkt["ticker"] not in cg10_tickers
+                            or pm_mkt["ticker"] not in cg33_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -3676,6 +3714,85 @@ def run(once: bool = False) -> None:
                                         "bankroll_c": pt3_bankroll_c,
                                     })
                                     pt3_tickers.add(pm_mkt["ticker"])
+                    # --- Confidence-Gated Follower treatments (cg5/cg10/cg33) ---
+                    # Follow the leader's side, but ONLY when leader confidence
+                    # >= PTCG_TAU (0.20) — skip the near-coin-flip middle. One bid
+                    # per window, hold to close. Three arms, same policy, differing
+                    # ONLY in stake fraction. Wrapped so a fault here can never crash
+                    # the main loop or the T0 control.
+                    try:
+                        if (mins_left <= 12 and pm_mkt.get("yes_bid")
+                                and pm_mkt.get("yes_ask")):
+                            ledc = _pt_leader(kb)
+                            if ledc:
+                                cg_arm, cg_w, cg_n = ledc
+                                cgr = next(
+                                    (r for r in reversed(kb)
+                                     if r.get("variant") == cg_arm
+                                     and r["ticker"] == pm_mkt["ticker"]
+                                     and r["made_ts"] == slot1), None)
+                                if cgr and max(cgr["p_up"],
+                                               1 - cgr["p_up"]) >= PTCG_TAU:
+                                    syc = cgr["p_up"] >= 0.5
+                                    askc = (pm_mkt["yes_ask"] if syc
+                                            else 100 - pm_mkt["yes_bid"])
+                                    feec = 7 * (askc / 100) * (1 - askc / 100)
+                                    if 5 <= askc < 80:
+                                        dsc = (pm_mkt.get("depth_no") if syc
+                                               else pm_mkt.get("depth_yes"))
+                                        dcapc = (int(dsc * askc) if dsc
+                                                 else PT4_CAP_C)
+                                        cg_base = {
+                                            "ticker": pm_mkt["ticker"],
+                                            "made_ts": now_ts,
+                                            "depth_cap_c": dcapc,
+                                            "close_ts": k_close_ts,
+                                            "strike": pm_mkt["strike"],
+                                            "side": "yes" if syc else "no",
+                                            "ask_c": round(askc, 1),
+                                            "fee_c": feec,
+                                            "leader": cg_arm,
+                                            "rec10": f"{cg_w}/{cg_n}",
+                                            "p_arm": round(max(
+                                                cgr["p_up"],
+                                                1 - cgr["p_up"]), 4),
+                                            "mins_left": round(mins_left, 1),
+                                            "gate": "conf>=0.20",
+                                            "actual": None, "win": None,
+                                            "pnl_c": None,
+                                        }
+                                        if pm_mkt["ticker"] not in cg5_tickers:
+                                            n5 = int(min(CG5_FRAC * cg5_bankroll_c,
+                                                         dcapc) // (askc + feec))
+                                            if n5 >= 1:
+                                                s5 = int(n5 * askc) + _order_fee_c(n5, askc)
+                                                cg5_bankroll_c -= s5
+                                                cg5_trades.append({**cg_base,
+                                                    "contracts": n5, "stake_c": s5,
+                                                    "bankroll_c": cg5_bankroll_c})
+                                                cg5_tickers.add(pm_mkt["ticker"])
+                                        if pm_mkt["ticker"] not in cg10_tickers:
+                                            n10 = int(min(CG10_FRAC * cg10_bankroll_c,
+                                                          dcapc) // (askc + feec))
+                                            if n10 >= 1:
+                                                s10 = int(n10 * askc) + _order_fee_c(n10, askc)
+                                                cg10_bankroll_c -= s10
+                                                cg10_trades.append({**cg_base,
+                                                    "contracts": n10, "stake_c": s10,
+                                                    "bankroll_c": cg10_bankroll_c})
+                                                cg10_tickers.add(pm_mkt["ticker"])
+                                        if pm_mkt["ticker"] not in cg33_tickers:
+                                            n33 = int(min(CG33_FRAC * cg33_bankroll_c,
+                                                          dcapc) // (askc + feec))
+                                            if n33 >= 1:
+                                                s33 = int(n33 * askc) + _order_fee_c(n33, askc)
+                                                cg33_bankroll_c -= s33
+                                                cg33_trades.append({**cg_base,
+                                                    "contracts": n33, "stake_c": s33,
+                                                    "bankroll_c": cg33_bankroll_c})
+                                                cg33_tickers.add(pm_mkt["ticker"])
+                    except Exception as _cg_e:
+                        print("cg entry error:", _cg_e, flush=True)
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -4050,6 +4167,45 @@ def run(once: bool = False) -> None:
                 tmp3t.write_text("".join(json.dumps(t) + "\n"
                                          for t in pt3_trades))
                 tmp3t.replace(RESULTS_DIR / PT3_LOG_NAME)
+            # --- Confidence-Gated Follower settlement (cg5/cg10/cg33) ---
+            # hold-to-close payout, same as pt3; each arm guarded so a fault in one
+            # cannot stall the others or the rest of the settle pass.
+            for _nm, _log in (("cg5", CG5_LOG_NAME), ("cg10", CG10_LOG_NAME),
+                              ("cg33", CG33_LOG_NAME)):
+                try:
+                    _tr = {"cg5": cg5_trades, "cg10": cg10_trades, "cg33": cg33_trades}[_nm]
+                    _bank = {"cg5": cg5_bankroll_c, "cg10": cg10_bankroll_c,
+                             "cg33": cg33_bankroll_c}[_nm]
+                    _chg = False
+                    for t in _tr:
+                        if t["actual"] is not None or now_ts < t["close_ts"]:
+                            continue
+                        settle_bar = by_ts.get(t["close_ts"] - 60)
+                        if settle_bar is None or settle_bar.get("synth"):
+                            continue
+                        outcome, t["contract_truth_quality"] = contract_truth.resolve_outcome(
+                            t.get("ticker"), t["close_ts"], t["strike"],
+                            int(settle_bar["close"] >= t["strike"]))
+                        t["actual"] = outcome
+                        t["win"] = int((t["side"] == "yes") == bool(outcome))
+                        payout = t["contracts"] * 100 if t["win"] else 0
+                        t["pnl_c"] = payout - t["stake_c"]
+                        _bank += payout
+                        t["bankroll_c"] = _bank
+                        _chg = True
+                    if _nm == "cg5":
+                        cg5_bankroll_c = _bank
+                    elif _nm == "cg10":
+                        cg10_bankroll_c = _bank
+                    else:
+                        cg33_bankroll_c = _bank
+                    if _chg or (_tr and _tr[-1]["actual"] is None
+                                and _tr[-1]["made_ts"] >= now_ts - 90):
+                        _tmp = (RESULTS_DIR / _log).with_suffix(".tmpcg")
+                        _tmp.write_text("".join(json.dumps(t) + "\n" for t in _tr))
+                        _tmp.replace(RESULTS_DIR / _log)
+                except Exception as _cg_se:
+                    print(f"{_nm} settle error:", _cg_se, flush=True)
             pt4_changed = False
             for t in pt4_trades:
                 if t["actual"] is not None or now_ts < t["close_ts"]:

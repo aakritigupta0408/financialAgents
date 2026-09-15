@@ -29,3 +29,11 @@ research/t05_repricing/dataset.jsonl
 # RL treatment durable feature store (grows unbounded; data, not code)
 btc-rl-poc/results/rl_window_log.jsonl
 results/rl_window_log.jsonl
+
+# Confidence-Gated Follower live ledgers (grow unbounded; data)
+btc-rl-poc/results/cg5_trades.jsonl
+btc-rl-poc/results/cg10_trades.jsonl
+btc-rl-poc/results/cg33_trades.jsonl
+results/cg5_trades.jsonl
+results/cg10_trades.jsonl
+results/cg33_trades.jsonl

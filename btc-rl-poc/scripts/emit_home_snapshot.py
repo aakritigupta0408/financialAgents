@@ -25,14 +25,17 @@ METRIC_DEFS_VERSION = "econ-1/prob-1"
 ROSTER = [
     {"id": "pt", "name": "The $1K Desk", "role": "CONTROL", "log": "pt_trades.jsonl",
      "strategy": "Follower (leaderboard leader, PT_TAU 0.62)"},
-    {"id": "pt3", "name": "The Disciplined", "role": "TREATMENT", "log": "pt3_trades.jsonl",
-     "strategy": "High-conviction (PT3_TAU 0.77)"},
+    # Confidence-Gated Follower treatments (2026-09-15) — same policy (follow the
+    # leader only when confidence >= 0.20, skip coin-flips, hold to close), $300 each,
+    # differing ONLY in stake. Replaced the prior featured treatments (pt3/kb/pb).
+    {"id": "cg5", "name": "Gated ·5%", "role": "TREATMENT", "log": "cg5_trades.jsonl",
+     "strategy": "Confidence-Gated Follower, 5% stake (conf>=0.20)"},
+    {"id": "cg10", "name": "Gated ·10%", "role": "TREATMENT", "log": "cg10_trades.jsonl",
+     "strategy": "Confidence-Gated Follower, 10% stake (conf>=0.20)"},
+    {"id": "cg33", "name": "Gated ·33%", "role": "TREATMENT", "log": "cg33_trades.jsonl",
+     "strategy": "Confidence-Gated Follower, 33% stake (RUIN-RISK experiment)"},
     {"id": "pt6", "name": "The MLE", "role": "TREATMENT", "log": "pt6_trades.jsonl",
      "strategy": "MLE edge logit (shadow, EV>=10c)"},
-    {"id": "kb", "name": "KB One-Shot", "role": "TREATMENT", "log": "kb_bets.jsonl",
-     "strategy": "Per-window edge bet"},
-    {"id": "pb", "name": "Conviction Book", "role": "TREATMENT", "log": "pb_bets.jsonl",
-     "strategy": "kb5-gated entries"},
 ]
 
 
