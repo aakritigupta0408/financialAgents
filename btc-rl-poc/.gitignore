@@ -25,3 +25,7 @@ results/hist_bars_cache.jsonl
 av_cache/
 .alphavantage_key
 research/t05_repricing/dataset.jsonl
+
+# RL treatment durable feature store (grows unbounded; data, not code)
+btc-rl-poc/results/rl_window_log.jsonl
+results/rl_window_log.jsonl

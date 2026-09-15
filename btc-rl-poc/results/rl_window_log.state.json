@@ -1,0 +1,10 @@
+{
+ "schema_version": "rl-window-log-1",
+ "generated_at": 1789478443.189267,
+ "durable_rows": 20000,
+ "appended_this_run": 20000,
+ "distinct_windows": 227,
+ "settled_windows": 226,
+ "source": "results/kalshi_binary_log.jsonl (rolling 20k buffer, read-only tap)",
+ "note": "append-only; the RL treatment training set grows from here. Schedule this to run each cycle so no feature-rich window is lost to log rotation."
+}
