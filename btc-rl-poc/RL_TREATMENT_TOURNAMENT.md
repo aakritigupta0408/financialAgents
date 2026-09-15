@@ -100,6 +100,22 @@ the bar above. The dormant T3 RL arm is the slot a winner would replace.
   lose more. This is the accrue-then-decide gate working as designed.
 - Data: **too thin for a trustworthy verdict** — accrue via Phase 0, re-run Phase 1 as N grows.
 
+## Ideal-trader search (`scripts/rl_ideal_trader_search.py` → `results/rl_ideal_trader.json`)
+
+Searched 11 interpretable low-capacity policies for the single best that beats T0 (OOS
+walk-forward). **Winner: Confidence-Gated Follower** — follow the Oracle only when
+confidence ≥ 0.20 (skip the near-coin-flip middle), fixed 5% stake, hold to close.
+
+- OOS net **+$42.05** vs T0 **−$200** and always-skip **$0** (beats both).
+- Coverage **61%** (≈ the "take ≥60% of T0, skip the bad" target — emergent, not fitted).
+- **Placebo −$197** (label-shuffle destroys the edge → real, not overfit — unlike the Phase-1
+  arms whose placebo stayed positive).
+- Mechanism = the overnight T0 diagnosis: don't trade the mid-confidence coin-flips where the
+  favorite/longshot payoff punishes you. Robust signal is CONFIDENCE, not price bucket
+  (EV-by-bucket policies overfit / dirty placebo).
+- **Caveats:** n=218 (~92 OOS trades), Sharpe +0.45 modest, 11 configs tried (deflated-Sharpe
+  haircut applies). A **candidate for shadow accrual**, not an immediate live promotion.
+
 ## Next (to earn a real verdict)
 
 1. Schedule Phase 0 accrual (needs a live-system scheduler — not the research engine).

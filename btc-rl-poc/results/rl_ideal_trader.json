@@ -1,0 +1,116 @@
+{
+ "schema_version": "rl-ideal-trader-1",
+ "n_windows": 218,
+ "T0_net": -200.17,
+ "always_skip_net": 0.0,
+ "policies": {
+  "always_skip": {
+   "net_pnl": 0.0,
+   "n": 175,
+   "taken": 0,
+   "coverage": 0.0,
+   "hit_rate": null,
+   "sharpe": 0.0,
+   "placebo_net": 0.0
+  },
+  "T0_mimic": {
+   "net_pnl": -200.17,
+   "n": 175,
+   "taken": 175,
+   "coverage": 1.0,
+   "hit_rate": 0.651,
+   "sharpe": -0.678,
+   "placebo_net": 113.47
+  },
+  "ev_gated_m0.00": {
+   "net_pnl": -174.08,
+   "n": 175,
+   "taken": 133,
+   "coverage": 0.76,
+   "hit_rate": 0.624,
+   "sharpe": -1.358,
+   "placebo_net": 188.58
+  },
+  "ev_gated_m0.05": {
+   "net_pnl": 0.0,
+   "n": 175,
+   "taken": 0,
+   "coverage": 0.0,
+   "hit_rate": null,
+   "sharpe": 0.0,
+   "placebo_net": 0.0
+  },
+  "ev_gated_m0.10": {
+   "net_pnl": 0.0,
+   "n": 175,
+   "taken": 0,
+   "coverage": 0.0,
+   "hit_rate": null,
+   "sharpe": 0.0,
+   "placebo_net": 0.0
+  },
+  "ev_gated_m0.00_exit": {
+   "net_pnl": -191.27,
+   "n": 175,
+   "taken": 133,
+   "coverage": 0.76,
+   "hit_rate": 0.624,
+   "sharpe": -3.717,
+   "placebo_net": -78.91
+  },
+  "conf_gated_0.20": {
+   "net_pnl": 42.05,
+   "n": 175,
+   "taken": 106,
+   "coverage": 0.606,
+   "hit_rate": 0.755,
+   "sharpe": 0.446,
+   "placebo_net": -197.5
+  },
+  "conf_gated_0.40": {
+   "net_pnl": 8.1,
+   "n": 175,
+   "taken": 58,
+   "coverage": 0.331,
+   "hit_rate": 0.793,
+   "sharpe": 0.133,
+   "placebo_net": -164.29
+  },
+  "conf_gated_0.60": {
+   "net_pnl": -42.08,
+   "n": 175,
+   "taken": 23,
+   "coverage": 0.131,
+   "hit_rate": 0.739,
+   "sharpe": -1.064,
+   "placebo_net": -84.94
+  },
+  "ev_kelly_m0.00": {
+   "net_pnl": -20.41,
+   "n": 175,
+   "taken": 133,
+   "coverage": 0.76,
+   "hit_rate": 0.624,
+   "sharpe": -2.357,
+   "placebo_net": 37.73
+  },
+  "ev_kelly_m0.05": {
+   "net_pnl": 0.0,
+   "n": 175,
+   "taken": 0,
+   "coverage": 0.0,
+   "hit_rate": null,
+   "sharpe": 0.0,
+   "placebo_net": 0.0
+  }
+ },
+ "best_by_oos_net": "conf_gated_0.20",
+ "count_beating_T0": 10,
+ "genuinely_positive_and_placebo_clean": [
+  "conf_gated_0.20",
+  "conf_gated_0.40"
+ ],
+ "verdict": "CANDIDATE:conf_gated_0.20",
+ "interpretation": "T0 loses by over-trading a near-efficient market, so many policies beat it simply by trading less. The honest 'ideal trader that beats T0' is the most SELECTIVE one; whether any is truly PROFITABLE (beats always-skip with a clean placebo) is the real test. On this sample: candidates survive: ['conf_gated_0.20', 'conf_gated_0.40'] (still n-limited).",
+ "data_caveat": "n=218 windows \u2014 provisional; accrue before trusting magnitudes."
+}
