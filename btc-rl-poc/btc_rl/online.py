@@ -592,6 +592,19 @@ FM_TAU = 0.60                          # enter iff max(p_up, 1-p_up) >= 0.60
 FM_KELLY = 0.5                         # half-Kelly on the model edge
 FM_CAP = 0.10                          # size cap (fraction of bankroll)
 
+# --- open+6min BARRIER treatment (ob) — the honest ~0.74@0.90 model (2026-09-15 owner) ---
+# Decide at OPEN+6min (~9 min left) using the first 6 minutes of price action: analytic
+# first-passage P(close>=strike) from the minute candles (z=(price-strike)/(sigma*sqrt(t)) ).
+# Trades EVERY qualifying window (100% coverage) and logs its confidence |z| (conf_z) so the
+# snapshot can slice live hit-rate / P&L at 90/80/70/60/50% coverage (top-X% by confidence) —
+# testing the coverage/hit tradeoff in real time against the T0 control. $300 paper, 10%
+# depth-capped, OFFICIAL Kalshi settlement. PAPER / SIMULATION ONLY.
+OB_LOG_NAME = "ob_trades.jsonl"
+OB_START_C = 30_000
+OB_FRAC = 0.10
+OB_MIN_ML = 8.5                        # enter once when 8.5 <= mins_left <= 9.5 (= open+6min)
+OB_MAX_ML = 9.5
+
 # --- DESK-WIDE OFFICIAL SETTLEMENT (2026-09-15) --------------------------------
 # EVERY paper arm settles on the OFFICIAL Kalshi outcome (CF-BRTI truth), NEVER the
 # Coinbase-candle proxy. The proxy mis-resolved thin windows (a NO bet on a +$11
@@ -2589,6 +2602,12 @@ def run(once: bool = False) -> None:
     fm_bankroll_c = FM_START_C \
         + sum(t["pnl_c"] for t in fm_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in fm_trades if t.get("actual") is None)
+    # open+6min barrier arm (ob) — restart-safe bankroll from its own log alone
+    ob_trades = _load_kb_bets(OB_LOG_NAME)
+    ob_tickers = {t["ticker"] for t in ob_trades}
+    ob_bankroll_c = OB_START_C \
+        + sum(t["pnl_c"] for t in ob_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in ob_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
     # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
@@ -3477,7 +3496,8 @@ def run(once: bool = False) -> None:
                             or pm_mkt["ticker"] not in cg10_tickers
                             or pm_mkt["ticker"] not in cg33_tickers
                             or pm_mkt["ticker"] not in tv_tickers
-                            or pm_mkt["ticker"] not in fm_tickers)
+                            or pm_mkt["ticker"] not in fm_tickers
+                            or pm_mkt["ticker"] not in ob_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -4029,6 +4049,47 @@ def run(once: bool = False) -> None:
                                             fm_tickers.add(pm_mkt["ticker"])
                     except Exception as _fm_e:
                         print("fm entry error:", _fm_e, flush=True)
+                    # --- open+6min barrier arm (ob) ---
+                    # Decide at open+6min (~9 min left) from the minute-candle path: analytic
+                    # first-passage P(close>=strike). Trade the predicted side EVERY qualifying
+                    # window (100% coverage); log confidence |z| so the snapshot slices live
+                    # hit/P&L at 90/80/70/60/50% coverage. Guarded so a fault can't crash the loop.
+                    try:
+                        if ("ob" not in RETIRED_TRADERS
+                                and pm_mkt["ticker"] not in ob_tickers
+                                and OB_MIN_ML <= mins_left <= OB_MAX_ML
+                                and pm_mkt.get("yes_bid") and pm_mkt.get("yes_ask")):
+                            _cs = [b["close"] for b in kbars if b.get("close")]
+                            if len(_cs) >= 3:
+                                _cur = _cs[-1]; _strike = pm_mkt["strike"]
+                                _rets = [math.log(_cs[i] / _cs[i - 1]) for i in range(1, len(_cs))
+                                         if _cs[i - 1] > 0]
+                                _vol = statistics.pstdev(_rets) if len(_rets) > 1 else 1e-4
+                                _sigT = max(_cur * _vol * math.sqrt(max(1.0, mins_left)), 1e-6)
+                                _z = (_cur - _strike) / _sigT
+                                _pup = min(0.99, max(0.01, 0.5 * (1 + math.erf(_z / math.sqrt(2)))))
+                                syo = _pup >= 0.5
+                                asko = (pm_mkt["yes_ask"] if syo else 100 - pm_mkt["yes_bid"])
+                                feeo = 7 * (asko / 100) * (1 - asko / 100)
+                                if 5 <= asko < 95:
+                                    dso = (pm_mkt.get("depth_no") if syo else pm_mkt.get("depth_yes"))
+                                    dcapo = int(dso * asko) if dso else PT4_CAP_C
+                                    nco = int(min(OB_FRAC * ob_bankroll_c, dcapo) // (asko + feeo))
+                                    if nco >= 1:
+                                        sto = int(nco * asko) + _order_fee_c(nco, asko)
+                                        ob_bankroll_c -= sto
+                                        ob_trades.append({
+                                            "ticker": pm_mkt["ticker"], "made_ts": now_ts,
+                                            "close_ts": k_close_ts, "strike": _strike,
+                                            "side": "yes" if syo else "no", "ask_c": round(asko, 1),
+                                            "fee_c": feeo, "contracts": nco, "stake_c": sto,
+                                            "model": "barrier-open6", "p_up": round(_pup, 4),
+                                            "conf_z": round(abs(_z), 4), "mins_left": round(mins_left, 1),
+                                            "actual": None, "win": None, "pnl_c": None,
+                                            "bankroll_c": ob_bankroll_c})
+                                        ob_tickers.add(pm_mkt["ticker"])
+                    except Exception as _ob_e:
+                        print("ob entry error:", _ob_e, flush=True)
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -4435,13 +4496,13 @@ def run(once: bool = False) -> None:
             # take no new trades). All official-only, deferring until the result lands.
             for _nm, _log in (("cg5", CG5_LOG_NAME), ("cg10", CG10_LOG_NAME),
                               ("cg33", CG33_LOG_NAME), ("tv", TV_LOG_NAME),
-                              ("fm", FM_LOG_NAME)):
+                              ("fm", FM_LOG_NAME), ("ob", OB_LOG_NAME)):
                 try:
                     _tr = {"cg5": cg5_trades, "cg10": cg10_trades, "cg33": cg33_trades,
-                           "tv": tv_trades, "fm": fm_trades}[_nm]
+                           "tv": tv_trades, "fm": fm_trades, "ob": ob_trades}[_nm]
                     _bank = {"cg5": cg5_bankroll_c, "cg10": cg10_bankroll_c,
                              "cg33": cg33_bankroll_c, "tv": tv_bankroll_c,
-                             "fm": fm_bankroll_c}[_nm]
+                             "fm": fm_bankroll_c, "ob": ob_bankroll_c}[_nm]
                     _chg = False
                     for t in _tr:
                         if t["actual"] is not None or now_ts < t["close_ts"]:
@@ -4465,8 +4526,10 @@ def run(once: bool = False) -> None:
                         cg33_bankroll_c = _bank
                     elif _nm == "tv":
                         tv_bankroll_c = _bank
-                    else:
+                    elif _nm == "fm":
                         fm_bankroll_c = _bank
+                    else:
+                        ob_bankroll_c = _bank
                     if _chg or (_tr and _tr[-1]["actual"] is None
                                 and _tr[-1]["made_ts"] >= now_ts - 90):
                         _tmp = (RESULTS_DIR / _log).with_suffix(".tmpcg")

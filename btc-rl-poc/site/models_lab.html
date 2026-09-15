@@ -21,7 +21,10 @@
 <h1>Models Lab</h1>
 <p class="sub">Every modelling technique we've evaluated for the 15-min BTC oracle — features, offline metrics (industry-standard + problem-specific), and verdict. Updated each cycle. <span id="ts"></span></p>
 <div id="banner" class="banner">Loading…</div>
-<div id="grid" class="grid"></div>
+<h2 style="font-size:16px;margin:22px 0 6px">Live coverage A/B — open+6min barrier (ob) vs T0 control</h2>
+<p class="sub" style="margin:0 0 10px">The ob arm trades every window at open+6min and logs confidence |z|; each row is its top-X% most-confident settled trades. "Filter the bads out" in real time.</p>
+<div id="covwrap" style="overflow-x:auto"><table id="covtab"></table></div>
+<div id="grid" class="grid" style="margin-top:22px"></div>
 <div id="legend" class="legend"></div>
 <script>
 function n(x,d){return (x==null)?'—':(typeof x==='number'?(+x).toFixed(d==null?4:d):x);}
@@ -48,4 +51,16 @@ fetch('modelling_techniques.json',{cache:'no-store'}).then(r=>r.json()).then(d=>
     `<b>Metrics.</b> industry-standard: ${(lg.industry||[]).join(', ')} · problem-specific: ${(lg.problem_specific||[]).join(', ')}. `+
     `Every OOS number is walk-forward with a label-shuffle leakage canary (must be ~0.50). n_techniques=${d.n_techniques}.`;
 }).catch(e=>{document.getElementById('banner').textContent='No modelling_techniques.json yet — run scripts/emit_modelling_techniques.py';});
+
+fetch('coverage_ab.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{
+  const c=d.control_T0_pt||{}, ob=d.treatment_ob||{};
+  let h='<tr><td class="k">coverage</td><td class="k">n</td><td class="k">hit</td><td class="k">EV/trade</td><td class="k">net $</td><td class="k">min |z|</td></tr>';
+  h+=`<tr><td>T0 control (all)</td><td class="v">${c.settled??'—'}</td><td class="v">${c.hit_rate??'—'}</td><td class="v">${c.ev_per_trade_usd??'—'}</td><td class="v">${c.net_usd??'—'}</td><td class="v">—</td></tr>`;
+  (d.ob_by_coverage||[]).forEach(r=>{
+    h+=`<tr><td>ob @ ${(r.coverage*100).toFixed(0)}%</td><td class="v">${r.n}</td><td class="v">${r.hit_rate??'—'}</td><td class="v">${r.ev_per_trade_usd??'—'}</td><td class="v">${r.net_usd??'—'}</td><td class="v">${r.min_conf_z??'—'}</td></tr>`;
+  });
+  const t=document.getElementById('covtab'); t.innerHTML=h;
+  t.querySelectorAll('td').forEach(td=>{td.style.padding='3px 12px 3px 0';td.style.fontSize='13px';});
+  if((ob.settled||0)===0){document.getElementById('covwrap').insertAdjacentHTML('afterbegin','<p class="note">ob arm is collecting — no settled trades yet. Rows fill as windows settle.</p>');}
+}).catch(e=>{document.getElementById('covtab').innerHTML='<tr><td>coverage_ab.json not available yet</td></tr>';});
 </script>

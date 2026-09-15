@@ -47,6 +47,7 @@ DATA = [  # (filename, max jsonl lines or None for full copy)
     ("brti_runtime_health.json", None),  # DT-01 runtime BRTI health + migration state
     ("modelling_snapshot.json", None),   # OPEN_ORACLE_15M modelling page (§57)
     ("modelling_techniques.json", None), # Models Lab: per-technique metrics board
+    ("coverage_ab.json", None),          # T0 control vs open+6min barrier arm, by coverage
     ("research_live_snapshot.json", None),  # private Research Narrator feed
     ("live_capture_health.json", None),     # always-live collector heartbeat
     ("research_events.jsonl", 400),         # recent research event ledger (capped)
