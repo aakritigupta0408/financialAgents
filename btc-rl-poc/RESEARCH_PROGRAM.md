@@ -241,6 +241,12 @@ hit@cov≥0.90 AND net EV. No shortcuts (fixed open+6min entry, no post-entry da
   consistency auditor, clean/lean refactor. GATE: all green + reproducible.
 - **D7 — Deploy + report.** best model → shadow arm (T3, canary-clean OOS); final report;
   Models Lab updated. GATE: live, documented, reproducible.
+  - ✅ **DONE (2026-09-15): open+6min barrier arm `ob` deployed LIVE.** Trades every window at
+    open+6min (analytic first-passage barrier from minute candles), logs conf_z=|z|; T0 = control.
+    Coverage A/B (results/coverage_ab.json, Models Lab): ob sliced at 90/80/70/60/50 coverage by
+    confidence. Offline: cov90~0.74 hit, cov20~0.87. online.py ob arm + emit_coverage_ab.py; wired
+    to cron+publish; daemon pid 77858. Fills as trades settle. This is the "filter the bads out"
+    live A/B the owner asked for.
 
 ## 3g. ★★ AV+CLAUDE (professor's method) TESTED HONESTLY — 0.89 NOT reproducible (D3, definitive)
 Reproduced the owner-stated method (Alpha Vantage + Claude) at open+6min, walk-forward, canary
