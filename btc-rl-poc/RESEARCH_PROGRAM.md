@@ -40,6 +40,11 @@ maximizing real edge — not in-sample fit.
   neighbour label consistency, conditional entropy, model-vs-ceiling headroom) before deciding
   a lever is exhausted. Never fabricate a win; a >~0.56 true-15-min OOS number is a leak until
   proven otherwise (field ceiling, see §3).
+- **FIXED ENTRY TIME (anti-shortcut invariant).** The decision/entry is made ONCE, early, when
+  the contract still has value (cheap winning side). NEVER move the decision later to raise
+  accuracy — a late call (e.g. T-1min) is near-certain but worthless (contract ~99¢). Any
+  accuracy that depends on a later clock, on post-entry data, or on dropping coverage below the
+  target is CHEATING and must be rejected. The benchmark is hit@coverage AT ENTRY.
 
 ## 3. Scientific anchor — established findings (with numbers; don't re-derive)
 - **Capacity is NOT the limit.** High-capacity models reconstruct the labels **100%
@@ -92,20 +97,21 @@ maximizing real edge — not in-sample fit.
   triple-barrier, purged CV, Deflated Sharpe), Presto funding-rate study (T+1 R²≈0).
 - Canary hygiene held throughout (0.500 mid / 0.513 open) — the numbers above are honest.
 
-## 3b. ★ BASELINE MET — 89%@90% is a LATE-DECISION problem (R13, decisive)
-The capstone baseline (89% hit @ 90% coverage) IS achievable — it lives at a **late decision
-time**, not the 11-min desk entry. Barrier first-passage physics (parameter-free, no training,
-no leakage — a fixed formula on all 370 windows), hit-rate @ coverage≥0.90:
-`T-12min 67.8% · T-8 75.6% · T-4 80.1% · T-2 83.8% · T-1min 91.6% @ 99.7% cov · T-0.5 96.0%`.
-**At T-1min the barrier alone = 91.4% hit @ 100% coverage → baseline MET (>89%, >90% cov).**
-Reconciles with §3: our 0.66 ceiling was the 11-min entry; accuracy rises monotonically as the
-window fills because z=(price-strike)/(σ√t) blows up as t→0. This is honest near-settlement
-determinism (price rarely crosses back over the strike in the last minute). Artifact:
-research/value_of_waiting.json; scripts/value_of_waiting.py.
-- **Consequence:** the capstone is a PREDICTION benchmark at a late clock → MET. The DESK
-  tension is separate: at T-1min the contract is priced ~0/100¢ so payoff is tiny (trading EV,
-  not accuracy). To BEAT the baseline / achieve 89%@90% EARLIER (more tradeable), a model must
-  beat the barrier at T-2/T-3min (barrier there = 83.8% / ~82%). That is the next build.
+## 3b. ★ RETRACTED SHORTCUT + the REAL target (89%@90% AT ENTRY)
+**RETRACTED (2026-09-15): "baseline met at T-1min" was a CHEAT.** Moving the decision to T-1min
+makes the barrier hit 91% — but the contract is priced ~99¢ with 1 min left, so entering has
+**zero trading value** (pay 99¢ to win 1¢). Accuracy that only appears by delaying the decision
+is a fake win. **The entry time is FIXED by where the contract has value (early / cheap), and
+must NEVER be moved later to inflate accuracy.**
+- The value-of-waiting curve (research/value_of_waiting.json) is kept only as a DIAGNOSTIC of
+  the barrier physics (accuracy ∝ 1/√t), NOT as a solution.
+- **THE REAL TARGET: 89% hit @ 90% coverage at the ENTRY time** (early in the window, ~11-12
+  min left / at open, when the winning contract is cheap and there is edge to capture).
+- At that entry, current-feature ceiling is ~0.66 (§3, learnability). The capstone professor's
+  baseline reaches 89% AT ENTRY → **we are missing features/data/method, not time.** Closing
+  that gap honestly (orthogonal information + better modelling/labeling) is the whole task.
+  Never again "solve" it by choosing a later clock, a confidence gate that drops coverage below
+  90%, or any post-entry information.
 
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**
