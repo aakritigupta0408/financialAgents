@@ -153,6 +153,17 @@ Standalone feature accuracy for the close (research/feature_power_scan.json):
 - **Action if 89% is truly the target: obtain the capstone's exact label/feature spec + dataset**
   — that is the actual blocker, not more modelling on our features.
 
+## 3d. PURE CANDLE-HISTORY test (R21c) — the clean core question, DEFINITIVE
+"Given all past 15-min candles + the known open, predict this candle's close?" On the FULL
+6,337-candle series (contract_outcomes; leak-free, only past candles + current open),
+walk-forward, canary 0.500: **GBM OOS 0.497 (in-sample 0.751), logistic 0.519.** Coin flip.
+→ 15-min close-to-open direction is a near-**martingale**; candle history carries ~0 directional
+info. **89% at open is NOT in candle history** (definitive). It could only come from: a
+different LABEL (touch-vs-close), INTRA-WINDOW/microstructure data (later effective entry), the
+capstone's specific dataset, or a LEAK. Artifact: research/candle_history_model.json;
+scripts/candle_history_model.py. (Reassurance on latency-leak concern: coinbase_spot alone
+predicts only 0.56 — we are NOT living off Coinbase→BRTI latency.)
+
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**
   (chronos-bolt-base directional, conf≥0.60, half-Kelly). Daemon `btc_rl.online` pid live.

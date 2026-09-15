@@ -1,0 +1,23 @@
+{
+ "n_candles": 6339,
+ "n_samples": 6307,
+ "base_up": 0.5009,
+ "gbm": {
+  "oos_acc": 0.4974,
+  "in_sample_acc": 0.7511,
+  "best_hit@cov>=.90": [
+   0.0,
+   0.4974,
+   1.0
+  ]
+ },
+ "logistic": {
+  "oos_acc": 0.5192,
+  "best_hit@cov>=.90": [
+   0.0,
+   0.5192,
+   1.0
+  ]
+ },
+ "leakage_canary_oos": 0.5002
+}
