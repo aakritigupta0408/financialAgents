@@ -1,0 +1,47 @@
+{
+ "n_labeled": 6337,
+ "tests": {
+  "time_only_ALL": {
+   "n": 6337,
+   "n_test": 2535,
+   "base_up": 0.5012,
+   "logistic_oos_acc": 0.5061,
+   "gbm_oos_acc": 0.5227,
+   "gbm_in_sample_acc": 0.6394
+  },
+  "_flow_subset": {
+   "n": 1400,
+   "n_test": 560,
+   "base_up": 0.4971
+  },
+  "exo_only": {
+   "logistic_oos_acc": 0.6268,
+   "gbm_oos_acc": 0.6232,
+   "gbm_in_sample_acc": 0.8345
+  },
+  "barrier_only": {
+   "logistic_oos_acc": 0.6607,
+   "gbm_oos_acc": 0.6464,
+   "gbm_in_sample_acc": 0.7583
+  },
+  "time_only": {
+   "logistic_oos_acc": 0.4964,
+   "gbm_oos_acc": 0.5143,
+   "gbm_in_sample_acc": 0.6845
+  },
+  "barrier+exo": {
+   "logistic_oos_acc": 0.6679,
+   "gbm_oos_acc": 0.6536,
+   "gbm_in_sample_acc": 0.8643
+  },
+  "barrier+exo+time": {
+   "logistic_oos_acc": 0.625,
+   "gbm_oos_acc": 0.6304,
+   "gbm_in_sample_acc": 0.8988
+  }
+ },
+ "leakage_canary_oos": {
+  "gbm_oos_acc": 0.5071,
+  "gbm_in_sample_acc": 0.9083
+ }
+}
