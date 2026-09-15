@@ -171,6 +171,34 @@ capstone's specific dataset, or a LEAK. Artifact: research/candle_history_model.
 scripts/candle_history_model.py. (Reassurance on latency-leak concern: coinbase_spot alone
 predicts only 0.56 — we are NOT living off Coinbase→BRTI latency.)
 
+## 3e. ★★ THE 89%@90% MYSTERY — SOLVED & REPRODUCED (R22, definitive)
+Exhaustive published-methods scan (GitHub/Kaggle/papers/blogs/forums, cited in
+research/... methods catalog) + our own reproduction settle it:
+- **89%@90% is the STRIKE-LADDER / distance-to-strike task, NOT at-the-money-at-open direction.**
+  Reproduced on our data (strike_ladder_test.py, 6,340 windows, synthetic ladder from real
+  open+settlement): moneyness predictor `sign(open−K)` with ZERO forecasting →
+  **coverage 1.0 hit 0.924 · coverage 0.90 hit 0.955 · 0.80 → 0.972 · 0.50 → 0.990.**
+  Most ladder strikes are far ITM/OTM so their outcome is near-certain. This is a property of
+  the strike distribution, not skill. (Our capture keeps only the 1 at-the-money contract/window
+  — base 0.5011 — so the ladder wasn't visible before.)
+- **Our real problem (T0 desk): the AT-THE-MONEY contract, decided at OPEN.** base 0.50; ceiling
+  ~0.66–0.70 with intra-window features, ~0.52–0.58 at true open. This is the hard, EV-bearing
+  task and we are at its ceiling.
+- **Field corroboration (all cited):** McNally 52.78% (daily LSTM); Arain&Snudden hourly can't
+  beat RW; G-Research live 15-min winning corr ~0.01–0.02; the two honest Kalshi-BTC-15m repos
+  (oribarlevco top-confidence bucket caps ~82% on OUR label; SiddhaBasu Brier-only, no accuracy);
+  gyusu easier touch-label LSTM only 0.55; selective-classification tops ~63% at low coverage;
+  meta-labeling adds ~2–6pp precision by CUTTING coverage. Coinbase LOB-TCN 71% is 2-SECOND
+  horizon, doesn't transfer. Every 90%+ paper = leak (shuffled split / full-sample scaling /
+  same-bar or settlement-price feature / forward-smoothed label / MAPE-as-accuracy).
+- **EV consequence:** ladder 95% accuracy has NO edge (pay ~95¢ for a 95% contract). EV lives
+  ONLY in the at-the-money contract where the market is uncertain → the desk (T0/T1/T2) is
+  correctly designed. "Beating 89%" for PROFIT ≠ the accuracy benchmark.
+- **Reproduce-exactly TODO (targeted, not random):** oribarlevco walk-forward calibration table
+  (confirm our top bucket caps ~82%); SiddhaBasu 22-feature + Platt harness (Brier near open);
+  Marc-Seger leak as a NEGATIVE control; gyusu touch-label upper bound; selective risk-coverage
+  curve on our own model.
+
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**
   (chronos-bolt-base directional, conf≥0.60, half-Kelly). Daemon `btc_rl.online` pid live.

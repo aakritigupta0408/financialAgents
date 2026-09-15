@@ -1,0 +1,90 @@
+{
+ "n_windows": 6340,
+ "sigma_15m_bps": 17.7,
+ "at_the_money": {
+  "base_up": 0.5011,
+  "moneyness_predictor_acc": 0.5
+ },
+ "ladder": {
+  "overall_hit_all_strikes": 0.9239,
+  "hit_at_coverage": [
+   {
+    "coverage": 1.0,
+    "conf_thr_sigma": 0.05,
+    "hit": 0.9239
+   },
+   {
+    "coverage": 0.95,
+    "conf_thr_sigma": 0.248,
+    "hit": 0.9421
+   },
+   {
+    "coverage": 0.9,
+    "conf_thr_sigma": 0.445,
+    "hit": 0.9553
+   },
+   {
+    "coverage": 0.8,
+    "conf_thr_sigma": 0.84,
+    "hit": 0.9721
+   },
+   {
+    "coverage": 0.7,
+    "conf_thr_sigma": 1.235,
+    "hit": 0.9815
+   },
+   {
+    "coverage": 0.5,
+    "conf_thr_sigma": 2.025,
+    "hit": 0.9904
+   }
+  ],
+  "headline_at_~90pct_coverage": {
+   "coverage": 0.9,
+   "conf_thr_sigma": 0.445,
+   "hit": 0.9553
+  },
+  "per_strike_acc_sample": [
+   [
+    -4.0,
+    0.9973
+   ],
+   [
+    -3.18974358974359,
+    0.9943
+   ],
+   [
+    -2.3794871794871795,
+    0.9838
+   ],
+   [
+    -1.569230769230769,
+    0.9617
+   ],
+   [
+    -0.7589743589743589,
+    0.867
+   ],
+   [
+    0.05,
+    0.5413
+   ],
+   [
+    0.8602564102564103,
+    0.8828
+   ],
+   [
+    1.6705128205128206,
+    0.9625
+   ],
+   [
+    2.480769230769231,
+    0.986
+   ],
+   [
+    3.291025641025641,
+    0.9929
+   ]
+  ]
+ }
+}
