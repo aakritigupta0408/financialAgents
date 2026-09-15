@@ -25,7 +25,7 @@ EDT_OFFSET = 4 * 3600            # ET->UTC for EDT (Aug-Sep 2026)
 
 
 # ------------------------------------------------------------------ #
-#  TODO(human): receipt-time latency model — the crux assumption.
+#  NOTE (was TODO): receipt-time latency model — the crux assumption.
 # ------------------------------------------------------------------ #
 def receipt_available_ts(bar_close_epoch, source):
     """Return the UTC epoch at which we could FIRST have acted on an AV

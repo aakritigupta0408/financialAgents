@@ -1,0 +1,104 @@
+{
+ "n": 368,
+ "n_test": 148,
+ "base_up": 0.4864,
+ "median_mins_left": 11.13,
+ "teachers": {
+  "barrier": {
+   "acc": 0.6622,
+   "f1": 0.6575,
+   "prec": 0.6154,
+   "rec": 0.7059
+  },
+  "chronos_base": {
+   "acc": 0.6959,
+   "f1": 0.6617,
+   "prec": 0.6769,
+   "rec": 0.6471
+  },
+  "chronos_small": {
+   "acc": 0.6959,
+   "f1": 0.6667,
+   "prec": 0.6716,
+   "rec": 0.6618
+  },
+  "timesfm": {
+   "acc": 0.6689,
+   "f1": 0.6573,
+   "prec": 0.6267,
+   "rec": 0.6912
+  },
+  "retrieval_knn": {
+   "acc": 0.6554,
+   "f1": 0.6752,
+   "prec": 0.5955,
+   "rec": 0.7794
+  },
+  "gbm": {
+   "acc": 0.6622,
+   "f1": 0.6753,
+   "prec": 0.6047,
+   "rec": 0.7647
+  }
+ },
+ "students": {
+  "A_stacker_logistic": {
+   "in_sample": {
+    "acc": 1.0,
+    "f1": 1.0,
+    "prec": 1.0,
+    "rec": 1.0
+   },
+   "oos": {
+    "acc": 0.6554,
+    "f1": 0.671,
+    "prec": 0.5977,
+    "rec": 0.7647
+   },
+   "inputs": [
+    "barrier",
+    "chronos_base",
+    "chronos_small",
+    "timesfm",
+    "retrieval",
+    "gbm"
+   ]
+  },
+  "B_logistic_poly2": {
+   "in_sample": {
+    "acc": 1.0,
+    "f1": 1.0,
+    "prec": 1.0,
+    "rec": 1.0
+   },
+   "oos": {
+    "acc": 0.5676,
+    "f1": 0.5224,
+    "prec": 0.5303,
+    "rec": 0.5147
+   },
+   "n_features": 299
+  },
+  "C_gbm_fused": {
+   "in_sample": {
+    "acc": 1.0,
+    "f1": 1.0,
+    "prec": 1.0,
+    "rec": 1.0
+   },
+   "oos": {
+    "acc": 0.6554,
+    "f1": 0.6792,
+    "prec": 0.5934,
+    "rec": 0.7941
+   },
+   "n_inputs": 29
+  }
+ },
+ "leakage_canary_oos": {
+  "acc": 0.5,
+  "f1": 0.5132,
+  "prec": 0.4643,
+  "rec": 0.5735
+ }
+}
