@@ -234,18 +234,19 @@ function equitySVG(curve){
 function traderPanel(){
   const t=byId(SEL), d=(DETAIL&&DETAIL.traders[SEL])||{}, bt=t.backtest||{};
   const [c,bg]=TR[SEL]||["var(--faint)","var(--surface-2)"];
-  const liveOK=SEL==="T0" && LIVE && LIVE.session && LIVE.session.n>0;
+  const LV=(SEL==="T0")?LIVE:(t.livedesk||null);
+  const liveOK=LV && LV.session && LV.session.n>0;
   const mode=CHTAB==="live"?"live":"backtest";
   let kpi, stats, chart, badge;
   if(mode==="live" && liveOK){
-    const s=LIVE.session, sa=LIVE.since_activation||{n:0};
+    const s=LV.session, sa=LV.since_activation||{n:0};
     kpi=`<div class="kpi"><div class="big ${s.pnl_c>=0?'pos':'neg'}">${s.pnl_c>=0?'+':'−'}$${Math.abs(s.pnl_c/100).toFixed(2)}</div><div class="cap">P&L · ${s.label||'today'}<br>(${s.n} live window${s.n===1?'':'s'})</div></div>
        <div class="kpi"><div class="big">$${(s.bankroll_c/100).toFixed(2)}</div><div class="cap">Paper bankroll<br>(running)</div></div>`;
     stats=`<div class="kpi3">
       <div class="b"><div class="v">${pctN(s.hit_rate,1)}</div><div class="k">Hit rate</div></div>
       <div class="b"><div class="v ${s.ev_per_trade_c>=0?'pos':'neg'}">${s.ev_per_trade_c!=null?(s.ev_per_trade_c>=0?'+':'−')+Math.abs(s.ev_per_trade_c).toFixed(1)+'¢':'—'}</div><div class="k">EV / trade</div></div>
       <div class="b"><div class="v">${usd(s.max_drawdown_c)}</div><div class="k">Max DD</div></div></div>`;
-    chart=equitySVG(LIVE.equity_curve);
+    chart=equitySVG(LV.equity_curve);
     badge=`<span class="notstarted"><span class="live-dot"></span> Live · settles on official BRTI</span>`;
   } else if(mode==="live"){
     kpi=`<div class="kpi"><div class="big mut">—</div><div class="cap">Live results collecting</div></div>`;
@@ -265,7 +266,7 @@ function traderPanel(){
     chart=equitySVG(d.equity_curve);
     badge=`<span class="chartbadge">Backtest only</span>`;
   }
-  const canLive=SEL==="T0";
+  const canLive=(SEL==="T0")||!!(t.livedesk&&t.livedesk.session&&t.livedesk.session.n>0);
   return `<div class="panel">
     <div class="lab">Selected trader</div>
     <h3>${SEL} · ${t.name}</h3>
@@ -301,9 +302,10 @@ function policyPanel(){
     <div class="lab" style="margin-top:20px">Offline (backtest) performance</div>${off}</div>`;
 }
 function tradesPanel(){
-  const liveMode=SEL==="T0" && CHTAB==="live" && LIVE && (LIVE.recent_trades||[]).length;
+  const LV=(SEL==="T0")?LIVE:(byId(SEL).livedesk||null);
+  const liveMode=CHTAB==="live" && LV && (LV.recent_trades||[]).length;
   if(liveMode){
-    const rows=LIVE.recent_trades;
+    const rows=LV.recent_trades;
     const body=rows.map(r=>`<tr class="${r.status==='Open'?'openrow':''}"><td>${r.time}</td>
       <td>$${(r.brti||0).toLocaleString()} / $${(r.target||0).toLocaleString()}</td>
       <td><span class="sd ${r.side==='YES'?'yes':'no'}">${r.side||'—'}</span></td>
@@ -383,7 +385,7 @@ function liveDeskStrip(){
     </div>
     <div class="mini" style="margin-top:10px">${sa.n} window${sa.n===1?'':'s'} settled since exact-BRTI activation · the Oracle's Follower policy (trader T0 lineage). The formal T0-vs-T1 paired A/B accrues separately.</div></div>`;
 }
-window.selectTrader=id=>{SEL=id;CHTAB=(id==="T0")?"live":"backtest";paintFamily();};
+window.selectTrader=id=>{SEL=id;CHTAB=(id==="T0"||id.indexOf("cg")===0)?"live":"backtest";paintFamily();};
 window.setTab=t=>{CHTAB=t;paintFamily();};
 function paintFamily(){
   $("#family").innerHTML=`<div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">

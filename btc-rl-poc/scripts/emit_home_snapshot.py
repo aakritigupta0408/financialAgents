@@ -235,11 +235,41 @@ def _cg_family_entries():
                         rows.append(json.loads(ln))
                     except json.JSONDecodeError:
                         pass
-        settled = [r for r in rows if r.get("actual") is not None]
+        settled = sorted([r for r in rows if r.get("actual") is not None],
+                         key=lambda r: r.get("close_ts") or 0)
+        opens = [r for r in rows if r.get("actual") is None]
         wins = sum(1 for r in settled if r.get("win"))
-        pnl = sum(r.get("pnl_c") or 0 for r in settled)
-        open_stakes = sum(r.get("stake_c") or 0 for r in rows if r.get("actual") is None)
+        pnls = [r.get("pnl_c") or 0 for r in settled]
+        pnl = sum(pnls)
+        open_stakes = sum(r.get("stake_c") or 0 for r in opens)
         bank = start + pnl - open_stakes
+
+        def _pt(ts):
+            try:
+                from datetime import datetime
+                from zoneinfo import ZoneInfo
+                return datetime.fromtimestamp(ts, ZoneInfo("America/Los_Angeles")).strftime("%b %d, %H:%M") if ts else None
+            except Exception:
+                return None
+
+        def _trow(r, status):
+            return {"time": _pt(r.get("close_ts") or r.get("made_ts")), "brti": None,
+                    "target": round(r["strike"]) if r.get("strike") else None,
+                    "side": (r.get("side") or "").upper(), "entry_c": r.get("ask_c"),
+                    "result": None if status == "Open" else ("WIN" if r.get("win") else "LOSS"),
+                    "pnl_c": r.get("pnl_c"), "status": status}
+
+        recent = [_trow(r, "Open") for r in opens[-1:]] + \
+                 [_trow(r, "Settled") for r in reversed(settled[-12:])]
+        eq = [{"i": i, "equity_c": r.get("bankroll_c")} for i, r in enumerate(settled)
+              if r.get("bankroll_c") is not None]
+        sess = {"n": len(settled), "pnl_c": pnl, "bankroll_c": bank,
+                "hit_rate": round(wins / len(settled), 4) if settled else None,
+                "ev_per_trade_c": round(pnl / len(pnls), 2) if pnls else None,
+                "max_drawdown_c": None, "label": "since launch"}
+        livedesk = {"session": sess, "since_activation": sess, "recent_trades": recent,
+                    "equity_curve": eq, "daemon_alive_age_s": 0, "current_window": None,
+                    "settlement": "OFFICIAL_EXACT_BRTI"}
         live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 3) if settled else None,
                 "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
@@ -249,7 +279,7 @@ def _cg_family_entries():
                     "reason": "Live candidate accruing paired evidence vs T0 (offline n=218, small).",
                     "backtest": {"coverage": 0.61,
                                  "label": "OFFLINE CANDIDATE (n=218, vs always-take)"},
-                    "live": live, "verdict": verdict})
+                    "live": live, "livedesk": livedesk, "verdict": verdict})
     return out
 
 
