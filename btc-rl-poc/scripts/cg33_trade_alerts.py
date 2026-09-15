@@ -29,6 +29,7 @@ ROOT = Path(__file__).resolve().parent.parent
 LEDGER = ROOT / "results" / "cg33_trades.jsonl"
 STATE = ROOT / "results" / ".cg33_alert_state.json"
 TO = os.environ.get("CG_ALERT_TO", "ag.1486c@gmail.com")
+IMESSAGE_TO = os.environ.get("CG_ALERT_IMESSAGE")   # phone # / Apple ID -> texts via Messages.app
 POLL_S = 45
 
 
@@ -77,6 +78,30 @@ def _send(subject, body):
     return f"local-mail(rc={p.returncode})"
 
 
+def _send_imessage(text):
+    """Send via Messages.app (iMessage) using the account already signed in — no
+    credentials. Requires a one-time macOS Automation grant for the controlling process."""
+    to = (IMESSAGE_TO or "").replace('"', "").replace("\\", "")
+    text = text.replace('"', "'").replace("\\", "")
+    script = ('tell application "Messages"\n'
+              '  set svc to 1st service whose service type = iMessage\n'
+              f'  set bud to buddy "{to}" of svc\n'
+              f'  send "{text}" to bud\n'
+              'end tell')
+    p = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError((p.stderr or "osascript failed").strip()[:200])
+    return "imessage"
+
+
+def _sms(r):
+    c = lambda v: f"{v}c" if v is not None else "?"          # noqa: E731
+    return (f"cg33 ENTERED {(r.get('side') or '').upper()} "
+            f"{(r.get('ticker') or '').replace('KXBTC15M-', '')} @ {c(r.get('ask_c'))} · "
+            f"stake ${(r.get('stake_c') or 0)/100:.0f} · bank "
+            f"${(r.get('bankroll_c') or 0)/100:.2f} (paper)")
+
+
 def _fmt(r):
     c = lambda v: f"{v}¢" if v is not None else "—"      # noqa: E731
     d = lambda v: f"${v/100:,.2f}" if v is not None else "—"  # noqa: E731
@@ -112,11 +137,15 @@ def one_pass(seen):
         key = f"{r.get('ticker')}|{r.get('made_ts')}"
         if key in seen:
             continue
-        subj, body = _fmt(r)
-        how = _send(subj, body)
+        if IMESSAGE_TO:
+            label = _sms(r)
+            how = _send_imessage(label)
+        else:
+            subj, body = _fmt(r)
+            how = _send(subj, body); label = subj
         seen.add(key)
         sent += 1
-        print(f"alert sent [{how}]: {subj}")
+        print(f"alert sent [{how}]: {label}")
     if sent:
         _save(seen)
     return sent
@@ -124,11 +153,16 @@ def one_pass(seen):
 
 def main():
     if "--test" in sys.argv:
-        how = _send("Gated·33% alerts — test",
-                    "This confirms the cg33 entry-alert channel is wired. "
-                    "You will get one email each time Gated·33% enters a trade. "
-                    "PAPER / simulation only.")
-        print(f"test email sent to {TO} via {how}")
+        if IMESSAGE_TO:
+            how = _send_imessage("cg33 alerts test — iMessage wired. You'll get a text each "
+                                 "time Gated-33% enters a trade. (paper/simulation)")
+            print(f"test iMessage sent to {IMESSAGE_TO} via {how}")
+        else:
+            how = _send("Gated·33% alerts — test",
+                        "This confirms the cg33 entry-alert channel is wired. "
+                        "You will get one email each time Gated·33% enters a trade. "
+                        "PAPER / simulation only.")
+            print(f"test email sent to {TO} via {how}")
         return
     seen = _state()
     if "--loop" in sys.argv:
