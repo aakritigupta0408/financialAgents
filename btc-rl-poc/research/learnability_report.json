@@ -1,0 +1,118 @@
+{
+ "mid_window": {
+  "n": 368,
+  "base_up": 0.4864,
+  "bayes_rich": {
+   "k5": {
+    "bayes_ceiling_acc": 0.7541,
+    "knn_acc": 0.6284,
+    "frac_determined_>.8": 0.5743,
+    "frac_coinflip_.4-.6": 0.0,
+    "cond_entropy_bits": 0.6865
+   },
+   "k15": {
+    "bayes_ceiling_acc": 0.6689,
+    "knn_acc": 0.6419,
+    "frac_determined_>.8": 0.223,
+    "frac_coinflip_.4-.6": 0.1959,
+    "cond_entropy_bits": 0.8745
+   },
+   "k30": {
+    "bayes_ceiling_acc": 0.6448,
+    "knn_acc": 0.6351,
+    "frac_determined_>.8": 0.1351,
+    "frac_coinflip_.4-.6": 0.3311,
+    "cond_entropy_bits": 0.9087
+   },
+   "k50": {
+    "bayes_ceiling_acc": 0.628,
+    "knn_acc": 0.6486,
+    "frac_determined_>.8": 0.0135,
+    "frac_coinflip_.4-.6": 0.3919,
+    "cond_entropy_bits": 0.9324
+   }
+  },
+  "bayes_barrier": {
+   "k15": {
+    "bayes_ceiling_acc": 0.6694,
+    "knn_acc": 0.7027,
+    "frac_determined_>.8": 0.2432,
+    "frac_coinflip_.4-.6": 0.2297,
+    "cond_entropy_bits": 0.8752
+   },
+   "k30": {
+    "bayes_ceiling_acc": 0.6642,
+    "knn_acc": 0.6419,
+    "frac_determined_>.8": 0.0946,
+    "frac_coinflip_.4-.6": 0.2432,
+    "cond_entropy_bits": 0.893
+   }
+  },
+  "near_dup_rich": {
+   "n_pairs": 19,
+   "label_agreement": 0.5263,
+   "median_dist_all": 1.851,
+   "dist_thr": 1.04
+  },
+  "model_acc_rich": 0.6622,
+  "model_acc_barrier": 0.6351
+ },
+ "open": {
+  "n": 1368,
+  "base_up": 0.4963,
+  "bayes_rich": {
+   "k5": {
+    "bayes_ceiling_acc": 0.7062,
+    "knn_acc": 0.531,
+    "frac_determined_>.8": 0.4288,
+    "frac_coinflip_.4-.6": 0.0,
+    "cond_entropy_bits": 0.7904
+   },
+   "k15": {
+    "bayes_ceiling_acc": 0.6241,
+    "knn_acc": 0.5128,
+    "frac_determined_>.8": 0.073,
+    "frac_coinflip_.4-.6": 0.3321,
+    "cond_entropy_bits": 0.9282
+   },
+   "k30": {
+    "bayes_ceiling_acc": 0.5865,
+    "knn_acc": 0.5347,
+    "frac_determined_>.8": 0.0237,
+    "frac_coinflip_.4-.6": 0.573,
+    "cond_entropy_bits": 0.9617
+   },
+   "k50": {
+    "bayes_ceiling_acc": 0.5663,
+    "knn_acc": 0.5474,
+    "frac_determined_>.8": 0.0109,
+    "frac_coinflip_.4-.6": 0.7555,
+    "cond_entropy_bits": 0.9779
+   }
+  },
+  "bayes_barrier": {
+   "k15": {
+    "bayes_ceiling_acc": 0.6255,
+    "knn_acc": 0.5292,
+    "frac_determined_>.8": 0.1004,
+    "frac_coinflip_.4-.6": 0.3522,
+    "cond_entropy_bits": 0.9207
+   },
+   "k30": {
+    "bayes_ceiling_acc": 0.5964,
+    "knn_acc": 0.573,
+    "frac_determined_>.8": 0.0292,
+    "frac_coinflip_.4-.6": 0.5201,
+    "cond_entropy_bits": 0.9519
+   }
+  },
+  "near_dup_rich": {
+   "n_pairs": 20,
+   "label_agreement": 0.4,
+   "median_dist_all": 1.267,
+   "dist_thr": 0.607
+  },
+  "model_acc_rich": 0.5401,
+  "model_acc_barrier": 0.5748
+ }
+}

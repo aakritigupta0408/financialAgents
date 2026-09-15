@@ -82,6 +82,16 @@ def _trader_summary(t, n_eligible):
         realized = sum(r[pnl_key] for r in settled)
         starting = (ending_bankroll - realized) if ending_bankroll is not None else 100000
     econ = E.summarize_trades(rows, starting or 100000, n_eligible)
+    # RESERVE open-position stakes so this path's bankroll matches the ledger's own
+    # bankroll_c and the trader_family/traders-snapshot convention (else home_snapshot.json
+    # publishes two different bankrolls for the same arm — data-integrity audit finding #1,
+    # 2026-09-15). ending_capital_c = start + realized - open_reserved.
+    open_reserved = sum(r.get("stake_c") or 0 for r in rows if r.get("actual") is None)
+    if open_reserved and econ.get("ending_capital_c") is not None:
+        econ["ending_capital_c"] = econ["ending_capital_c"] - open_reserved
+        econ["open_reserved_c"] = open_reserved
+        sc = econ.get("starting_capital_c")
+        econ["total_return"] = E.total_return(sc, econ["ending_capital_c"]) if sc else None
     last_k = [{"ticker": r.get("ticker"), "side": r.get("side"), "pnl_c": r.get("pnl_c"),
                "win": r.get("win"), "close_ts": r.get("close_ts")}
               for r in settled[-10:]]
