@@ -1,0 +1,32 @@
+{
+ "n": 369,
+ "n_test": 148,
+ "decide_min_left": 9.0,
+ "base_up": 0.4878,
+ "barrier": {
+  "oos_acc": 0.723,
+  "hit@cov>=.90": {
+   "conf_thr": 0.609,
+   "hit": 0.7407,
+   "coverage": 0.9122
+  }
+ },
+ "gbm": {
+  "oos_acc": 0.6081,
+  "in_sample": 1.0,
+  "hit@cov>=.90": {
+   "conf_thr": 0.049,
+   "hit": 0.6286,
+   "coverage": 0.9459
+  }
+ },
+ "logistic": {
+  "oos_acc": 0.7095,
+  "hit@cov>=.90": {
+   "conf_thr": 0.049,
+   "hit": 0.7266,
+   "coverage": 0.9392
+  }
+ },
+ "leakage_canary_oos": 0.5135
+}

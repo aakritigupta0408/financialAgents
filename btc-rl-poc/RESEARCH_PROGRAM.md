@@ -206,6 +206,42 @@ research/... methods catalog) + our own reproduction settle it:
   Marc-Seger leak as a NEGATIVE control; gyusu touch-label upper bound; selective risk-coverage
   curve on our own model.
 
+## 3f. THE PROBLEM, FINAL & EXACT (owner-confirmed 2026-09-15)
+- **Decision = open+6min (~9 min left), using the first 6 minutes of price action.** Fixed,
+  tradeable (contract still ~9 min of value). NOT the true open, NOT a late cheat.
+- **Contract (verified via live Kalshi API):** 1 at-the-money market/window, strike = prior
+  window's settlement (floor_strike[N] = expiration_value[N−1]); no ladder, no round strikes.
+- **Target:** 89% hit @ 90% coverage. **Exhaustively-measured honest ceiling = ~0.74@0.90**
+  (barrier physics, 370 clean windows, canary 0.50). Gap 15pp. Owner has no professor specifics
+  → we maximize the honest number + convert to EV + reproduce public repos.
+- **Why 0.74 not 0.89:** at 9 min left `z=(price−strike)/(σ√t)` gives ~0.74; closing to 0.89
+  needs 9-min drift-sign forecasting at 0.89, ruled out by ALL evidence (ours + field 0.52-0.58;
+  best public Kalshi-15m repos cap ~0.82 at top bucket; every 90%+ = leak).
+
+## 6.5 ★ 7-DAY EXECUTION PLAN (metric-gated; pass→advance, fail→record-truth→next)
+Gate everywhere: walk-forward + purged/embargoed CV + label-shuffle canary≈0.50; report
+hit@cov≥0.90 AND net EV. No shortcuts (fixed open+6min entry, no post-entry data, coverage≥0.90).
+- **D1 — Canonical dataset + eval harness.** Lock the clean open+6min PIT dataset (largest
+  reliable set w/ true time_remaining) + harness (walk-forward, purged CV, canary, calibration,
+  hit@cov + EV). GATE: reproduces barrier 0.74 & canary 0.50.
+- **D2 — Maximize the model.** Tuned GBM/logistic + probability calibration (Platt/isotonic) +
+  Chronos + ensemble. GATE: beat barrier 0.74 by a real margin (aim ≥0.76), canary clean.
+- **D3 — ★ ALPHA VANTAGE + CLAUDE (the professor's method, owner-confirmed).** AV cross-asset
+  (COIN/IBIT/SPY/DXY intraday), AV NEWS_SENTIMENT, AV macro + Claude-as-signal (LLM directional
+  read of the 6-min path + cross-asset context). Build @ open+6min with PIT **receipt-latency**
+  (av_features.py) AND a NO-latency LEAK-CONTROL to quantify look-ahead — the likely source of a
+  reported 0.89. GATE: honest (latency-correct) OOS lift over D2 AND leak-control shows the gap
+  is/ isn't look-ahead. If AV bars without latency give ~0.89 but with latency ~0.75, the 0.89
+  is a latency leak — report it. Plus order-flow, funding/options as secondary.
+- **D4 — EV conversion (the useful goal).** calibrated prob → Kelly sizing on edge-vs-price +
+  value-gate + selective; backtest net P&L on OFFICIAL settlement. GATE: positive EV OOS.
+- **D5 — Reproduce public repos exactly.** oribarlevco (calibration), SiddhaBasu (22 feats);
+  Marc-Seger leak as NEGATIVE control. GATE: match their calibration; leak-control≈0.50.
+- **D6 — Robustness.** perf/latency panel, drift monitor (ADWIN/KSWIN), recreatable tests,
+  consistency auditor, clean/lean refactor. GATE: all green + reproducible.
+- **D7 — Deploy + report.** best model → shadow arm (T3, canary-clean OOS); final report;
+  Models Lab updated. GATE: live, documented, reproducible.
+
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**
   (chronos-bolt-base directional, conf≥0.60, half-Kelly). Daemon `btc_rl.online` pid live.
