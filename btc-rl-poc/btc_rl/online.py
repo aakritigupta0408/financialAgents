@@ -520,6 +520,11 @@ def _pt6_features(conf: float, ask_c: float, k_pup: float | None,
 
 
 PT_START_BANKROLL_C = 100_000          # $1,000 in cents
+PT0_START_BANKROLL_C = 10_000_000_000  # $100,000,000 — T0 (control) starts huge so a
+#                                        losing official P&L can never drive it to a
+#                                        negative bankroll / stop it trading (never reset
+#                                        again). Stakes stay depth-capped (~$500/window),
+#                                        so the giant bankroll never meaningfully depletes.
 PT_FRAC = 0.10                         # max fraction of funds per bid
 PT_TAU = 0.62                          # entry gate (= decision-ledger tau)
 PT_LAST_N = 10                         # leadership window (decisions)
@@ -2462,7 +2467,7 @@ def run(once: bool = False) -> None:
     pt_tickers = {t["ticker"] for t in pt_trades}
     # bankroll is derived from the log alone (single source of truth):
     # start + settled pnl - stakes still locked in open positions
-    pt_bankroll_c = PT_START_BANKROLL_C \
+    pt_bankroll_c = PT0_START_BANKROLL_C \
         + sum(t["pnl_c"] for t in pt_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in pt_trades if t.get("actual") is None)
     pt2_trades = _load_kb_bets(PT2_LOG_NAME)
