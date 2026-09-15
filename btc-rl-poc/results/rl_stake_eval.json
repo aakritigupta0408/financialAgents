@@ -1,0 +1,63 @@
+{
+ "schema_version": "rl-stake-eval-1",
+ "policy": "conf_gate>=0.2",
+ "n_windows": 218,
+ "bankroll0": 300.0,
+ "ruin_floor": 60.0,
+ "by_stake": {
+  "5%": {
+   "additive_net": 42.05,
+   "compounded_end_bankroll": 328.21,
+   "min_bankroll": 254.06,
+   "max_drawdown_pct": 37.6,
+   "worst_window_ret_pct": -5.1,
+   "ruined_below_20pct": false,
+   "n": 175,
+   "taken": 106,
+   "hit_rate": 0.755,
+   "sharpe": 0.446,
+   "placebo_additive": -229.42
+  },
+  "10%": {
+   "additive_net": 84.09,
+   "compounded_end_bankroll": 323.33,
+   "min_bankroll": 202.59,
+   "max_drawdown_pct": 62.5,
+   "worst_window_ret_pct": -10.2,
+   "ruined_below_20pct": false,
+   "n": 175,
+   "taken": 106,
+   "hit_rate": 0.755,
+   "sharpe": 0.446,
+   "placebo_additive": -458.84
+  },
+  "20%": {
+   "additive_net": 168.19,
+   "compounded_end_bankroll": 222.0,
+   "min_bankroll": 105.38,
+   "max_drawdown_pct": 88.1,
+   "worst_window_ret_pct": -20.4,
+   "ruined_below_20pct": false,
+   "n": 175,
+   "taken": 106,
+   "hit_rate": 0.755,
+   "sharpe": 0.446,
+   "placebo_additive": -917.68
+  },
+  "33%": {
+   "additive_net": 277.51,
+   "compounded_end_bankroll": 60.24,
+   "min_bankroll": 27.9,
+   "max_drawdown_pct": 98.1,
+   "worst_window_ret_pct": -33.7,
+   "ruined_below_20pct": true,
+   "n": 175,
+   "taken": 106,
+   "hit_rate": 0.755,
+   "sharpe": 0.446,
+   "placebo_additive": -1514.17
+  }
+ },
+ "note": "Additive net scales ~linearly with stake; the honest cost of stake is in compounded_end_bankroll, max_drawdown, min_bankroll and ruin. n is small.",
+ "data_caveat": "n=218 windows \u2014 provisional; magnitudes not yet trustworthy."
+}
