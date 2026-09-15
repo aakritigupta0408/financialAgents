@@ -47,9 +47,14 @@ maximizing real edge — not in-sample fit.
     current features (information-limited).
   - **Concept drift is real**: a frozen model loses ~5.9pp over time; rolling-last-400 ≈
     expanding-all > frozen → retrain periodically, ~400 fresh windows suffice.
-- **Implication / the only lever:** add **orthogonal information** the price path lacks —
-  order-flow, cross-asset (COIN/IBIT/SPY/DXY), funding/basis, options skew, news/sentiment,
-  and an LLM reasoning signal. That is the whole forward program.
+- **Order-flow (R7):** carries real leakage-free signal ALONE (~0.63 OOS) but adds only
+  **+0.7pp over the barrier** — because aggressive flow drives price, so the barrier already
+  reflects it. Lesson: signal *derived from BTC's own price/flow* is largely redundant with
+  the barrier. The orthogonality that can actually move OOS must come from data that is NOT a
+  function of BTC's price: **cross-asset (COIN/IBIT/SPY/DXY), funding/basis, options skew,
+  news/sentiment, LLM reasoning.** That is the forward program (R9/R11/R14).
+- **Implication / the only lever:** add **orthogonal, non-price information** + smarter entry
+  timing (R13). Fusion/complexity without new information does not help (proven R3/R7).
 - Canary hygiene held throughout (0.500 mid / 0.513 open) — the numbers above are honest.
 
 ## 4. Live system state
@@ -75,11 +80,11 @@ Columns: ID · task · stage reached · status · depends-on · finding/next.
 | R4 | In-sample reconstruction (all models) | Ev ✅ | 100% in-sample, OOS 0.54–0.70; capacity not the limit |
 | R5 | Chronos fine-tune on all history | Ev ✅ | overfits; OOS 0.601 < base 0.683 |
 | R6 | Data-size + retraining-cadence study | Ev ✅ | data plateaus ~0.55; drift ~6pp; retrain rolling-400 |
+| R7 | Order-flow exo features (CB OFI, L1 imb, Binance xvenue) | Ev ✅ | order-flow ALONE OOS ~0.63 (real, canary 0.507); +barrier only +0.7pp (redundant w/ barrier — flow drives price); time-of-day dilutes. results/exo_features.jsonl (1400) |
 
 ### In progress 🔄
 | ID | Task | Stage | Depends | Next |
 |---|---|---|---|---|
-| R7 | Order-flow exo features (CB OFI, L1 imb, Binance xvenue) | Bu 🔄 | tapes | extraction streaming 7GB → results/exo_features.jsonl; then exo_eval OOS+canary |
 | R8 | Web scout: what pro traders/funds/bots/curricula use + data gaps | Fe 🔄 | — | agent running; feeds R9/R11 priorities |
 
 ### Scheduled ⏳ (ordered; deps noted)
@@ -121,4 +126,4 @@ Columns: ID · task · stage reached · status · depends-on · finding/next.
 4. Keep §3 authoritative — it's what stops me re-running settled questions.
 5. Commit this file with every meaningful change.
 
-*Last updated: 2026-09-15, after R6. Commits this session: dcee375, 83dbf71, 8f91646, 95673ae.*
+*Last updated: 2026-09-15, after R7 (order-flow). Commits: dcee375, 83dbf71, 8f91646, 95673ae, 64fc508.*
