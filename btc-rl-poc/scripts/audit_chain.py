@@ -55,6 +55,12 @@ STEPS = [
     "scripts/decision_frontier.py",
     "scripts/emit_freeze_convergence.py",
     "scripts/emit_readiness.py",
+    # 2026-09-15: previously-unscheduled writers (UI audit found them stale 1-3 days) +
+    # the consistency/staleness verifier, so every surface stays LATEST every 10 min.
+    "scripts/architecture_checkpoint.py",   # architecture_dag.json (was ~35h stale)
+    "scripts/emit_brti_health.py",          # brti_runtime_health.json (was ~2.6d stale)
+    "scripts/emit_current_truth.py",        # current_truth.json -> system_health (was ~35h stale)
+    "scripts/consistency_audit.py",         # consistency_audit.json: staleness + roster drift
 ]
 
 print(f"=== audit chain {time.strftime('%Y-%m-%d %H:%M:%S')} ===",
