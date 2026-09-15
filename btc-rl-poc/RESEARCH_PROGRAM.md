@@ -96,6 +96,13 @@ maximizing real edge — not in-sample fit.
     current features (information-limited).
   - **Concept drift is real**: a frozen model loses ~5.9pp over time; rolling-last-400 ≈
     expanding-all > frozen → retrain periodically, ~400 fresh windows suffice.
+- **Sub-bin L2 OFI at the fixed OPEN entry (R19, decisive):** built from 20M L2 messages
+  (book reconstruction verified, zero crossed spreads), 1s/5s/30s/60s OFI + queue imbalance +
+  Stoikov micro-price over [open, open+180s]. OOS ≈ **0.51** (canary 0.497) — coin flip. Window
+  outcomes are serially independent (lag-1 autocorr 0.0065); even the actual 180s micro-drift
+  has AUC 0.515. → **At the TRUE open even full microstructure carries ~0 signal.** The ~0.70
+  seen elsewhere comes from a slightly LATER regime (price has drifted off the strike →
+  distance-to-strike/barrier), NOT from microstructure at the open. results/l2_ofi_eval.json.
 - **Order-flow (R7):** carries real leakage-free signal ALONE (~0.63 OOS) but adds only
   **+0.7pp over the barrier** — because aggressive flow drives price, so the barrier already
   reflects it. Lesson: signal *derived from BTC's own price/flow* is largely redundant with

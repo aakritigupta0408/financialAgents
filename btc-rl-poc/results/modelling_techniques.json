@@ -1,0 +1,236 @@
+{
+ "schema": "modelling-techniques-1",
+ "summary": {
+  "capstone_89at90_is": "strike-ladder moneyness task (reproduced 95.5%@90%, zero skill)",
+  "our_real_problem": "at-the-money contract decided at OPEN (base 0.50)",
+  "entry_ceiling_oos": 0.6959,
+  "bayes_ceiling_mid": 0.6448,
+  "field_realistic_direction": "0.52-0.58 (McNally 0.528, G-Research live corr ~0.01)",
+  "retrain": {
+   "drift_pp": 0.0588,
+   "policy": "rolling ~400 windows / periodic refit"
+  }
+ },
+ "n_techniques": 11,
+ "techniques": [
+  {
+   "technique": "Chronos-Bolt base",
+   "family": "foundation-model",
+   "entry": "~11min left (mid-window)",
+   "features": [
+    "intra-window BRTI path"
+   ],
+   "metrics": {
+    "accuracy": 0.7297,
+    "precision": 0.7414,
+    "recall": 0.6324,
+    "f1": 0.6825,
+    "FP": 15,
+    "threshold": "0.6",
+    "infer_ms": 37.4
+   },
+   "verdict": "T2 LIVE",
+   "note": "best runnable FM"
+  },
+  {
+   "technique": "Chronos-Bolt small",
+   "family": "foundation-model",
+   "entry": "~11min left (mid-window)",
+   "features": [
+    "intra-window BRTI path"
+   ],
+   "metrics": {
+    "accuracy": 0.7162,
+    "precision": 0.7097,
+    "recall": 0.6471,
+    "f1": 0.6769,
+    "FP": 18,
+    "threshold": "0.6",
+    "infer_ms": 12.7
+   },
+   "verdict": "evaluated",
+   "note": ""
+  },
+  {
+   "technique": "TimesFM 2.5",
+   "family": "foundation-model",
+   "entry": "~11min left (mid-window)",
+   "features": [
+    "intra-window BRTI path"
+   ],
+   "metrics": {
+    "accuracy": 0.6622,
+    "precision": 0.6125,
+    "recall": 0.7206,
+    "f1": 0.6622,
+    "FP": 31,
+    "threshold": "0.45",
+    "infer_ms": 79.5
+   },
+   "verdict": "evaluated",
+   "note": ""
+  },
+  {
+   "technique": "Barrier (first-passage)",
+   "family": "baseline",
+   "entry": "~11min left (mid-window)",
+   "features": [
+    "barrier z / market prob"
+   ],
+   "metrics": {
+    "accuracy": 0.7162,
+    "precision": 0.697,
+    "recall": 0.6765,
+    "f1": 0.6866,
+    "FP": 20,
+    "threshold": "0.55",
+    "infer_ms": 0.0
+   },
+   "verdict": "evaluated",
+   "note": ""
+  },
+  {
+   "technique": "Market k_prob",
+   "family": "baseline",
+   "entry": "~11min left (mid-window)",
+   "features": [
+    "barrier z / market prob"
+   ],
+   "metrics": {
+    "accuracy": 0.6622,
+    "precision": 0.6125,
+    "recall": 0.7206,
+    "f1": 0.6622,
+    "FP": 31,
+    "threshold": "0.5",
+    "infer_ms": 0.0
+   },
+   "verdict": "evaluated",
+   "note": ""
+  },
+  {
+   "technique": "Combined student (stack+retrieval+GBM)",
+   "family": "ensemble",
+   "entry": "~11min left",
+   "features": [
+    "teachers (Chronos/TimesFM/barrier)",
+    "retrieval kNN",
+    "GBM",
+    "rich TA features"
+   ],
+   "metrics": {
+    "in_sample_acc": 1.0,
+    "oos_acc": 0.6554,
+    "oos_f1": 0.6792,
+    "leakage_canary": 0.5
+   },
+   "verdict": "did NOT beat single Chronos",
+   "note": "fusion adds variance not signal"
+  },
+  {
+   "technique": "Candle-history GBM",
+   "family": "sequence",
+   "entry": "window open",
+   "features": [
+    "past 15-min candle returns/momentum/vol/RSI + known open"
+   ],
+   "metrics": {
+    "in_sample_acc": 0.7511,
+    "oos_acc": 0.4974,
+    "logistic_oos": 0.5192,
+    "leakage_canary": 0.5002,
+    "base_up": 0.5009
+   },
+   "verdict": "coin-flip (martingale)",
+   "note": "candle history carries ~0 directional info"
+  },
+  {
+   "technique": "Full feature model @ entry",
+   "family": "GBM",
+   "entry": "window open",
+   "features": [
+    "brti_distance_to_target",
+    "k_prob",
+    "coinbase_spot",
+    "official_target",
+    "official_target_kalshi",
+    "time_remaining_s"
+   ],
+   "metrics": {
+    "oos_acc": 0.6959,
+    "best_single_feature_acc": 0.6081,
+    "base_up": 0.4865
+   },
+   "verdict": "ceiling ~0.70 at entry",
+   "note": "no single feature > 0.61"
+  },
+  {
+   "technique": "Order-flow (OFI/book/xvenue)",
+   "family": "microstructure",
+   "entry": "~11min left",
+   "features": [
+    "Coinbase trade OFI",
+    "L1 book imbalance",
+    "Binance cross-venue OFI",
+    "basis"
+   ],
+   "metrics": {
+    "exo_only_oos": 0.6268,
+    "barrier+exo_oos": 0.6679,
+    "leakage_canary": 0.5071
+   },
+   "verdict": "real but +0.7pp over barrier",
+   "note": "flow ~redundant with barrier (flow drives price)"
+  },
+  {
+   "technique": "Sub-bin L2 OFI @ open",
+   "family": "microstructure",
+   "entry": "window open (first 180s)",
+   "features": [
+    "1s/5s/30s/60s OFI",
+    "queue imbalance",
+    "Stoikov micro-price",
+    "spread/intensity"
+   ],
+   "metrics": {
+    "oos_acc": "~0.51",
+    "hit_at_cov>=.90": "~0.50",
+    "leakage_canary": "~0.497",
+    "note_metric": "20M L2 msgs, book reconstruction verified"
+   },
+   "verdict": "coin-flip at open",
+   "note": "even full L2 microstructure carries ~0 signal at the true open"
+  },
+  {
+   "technique": "Strike-ladder moneyness (distance-to-strike)",
+   "family": "reference",
+   "entry": "window open (ANY strike)",
+   "features": [
+    "sign(open \u2212 strike K)"
+   ],
+   "metrics": {
+    "hit_at_90pct_coverage": 0.9553,
+    "coverage": 0.9,
+    "forecasting_skill": "NONE (moneyness only)"
+   },
+   "verdict": "REPRODUCES the 89%@90% baseline (95.5%@90%)",
+   "note": "directionally empty; no EV \u2014 the 89% baseline is THIS task, not at-the-money direction"
+  }
+ ],
+ "metrics_legend": {
+  "industry": [
+   "accuracy",
+   "precision",
+   "recall",
+   "f1",
+   "auc",
+   "brier"
+  ],
+  "problem_specific": [
+   "hit@coverage(capstone)",
+   "in_sample-vs-oos(overfit)",
+   "leakage_canary(~0.50)",
+   "bayes_ceiling_headroom"
+  ]
+ }
+}

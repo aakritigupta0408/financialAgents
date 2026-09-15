@@ -34,6 +34,7 @@ STAMP = ROOT / "results" / ".publish_main_stamp"
 # HOME + ORACLE and no longer published; publish_dashboard prunes any site/*.html
 # not listed here.
 PAGES = ["home.html", "oracle.html", "experiments.html", "modelling.html",
+         "models_lab.html",   # per-technique modelling board (modelling_techniques.json)
          "architecture.html", "research.html",   # research.html = private (not in nav)
          "theme.css", "nav.js", "header.js", "glossary.js", "glossary.json"]
 DATA = [  # (filename, max jsonl lines or None for full copy)

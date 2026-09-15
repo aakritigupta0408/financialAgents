@@ -61,6 +61,7 @@ STEPS = [
     "scripts/emit_brti_health.py",          # brti_runtime_health.json (was ~2.6d stale)
     "scripts/emit_current_truth.py",        # current_truth.json -> system_health (was ~35h stale)
     "scripts/consistency_audit.py",         # consistency_audit.json: staleness + roster drift
+    "scripts/emit_modelling_techniques.py", # modelling_techniques.json: per-technique metrics board
 ]
 
 print(f"=== audit chain {time.strftime('%Y-%m-%d %H:%M:%S')} ===",

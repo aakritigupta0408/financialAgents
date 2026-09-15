@@ -1,0 +1,51 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Models Lab</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  :root{--ink:#e8eef7;--muted:#8b98ad;--card:#141a24;--line:#232c3a;--good:#2ecC71;--bad:#e5534b;--warn:#d9a441;--accent:#4d8bf0}
+  body{background:#0b0f16;color:var(--ink);font:14px/1.5 -apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:24px;max-width:1200px;margin:0 auto}
+  h1{font-size:22px;margin:0 0 4px} .sub{color:var(--muted);margin:0 0 18px}
+  .banner{background:linear-gradient(135deg,#16202e,#101722);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:20px}
+  .banner b{color:var(--accent)} .banner .k{color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .card h3{margin:0 0 2px;font-size:15px} .fam{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  .verdict{display:inline-block;margin:8px 0;padding:3px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .v-live{background:rgba(46,204,113,.15);color:var(--good)} .v-eval{background:rgba(139,152,173,.15);color:var(--muted)}
+  .v-flag{background:rgba(217,164,65,.15);color:var(--warn)}
+  table{width:100%;border-collapse:collapse;margin-top:6px} td{padding:2px 0;font-size:13px} td.k{color:var(--muted)} td.v{text-align:right;font-variant-numeric:tabular-nums}
+  .feats{color:var(--muted);font-size:12px;margin-top:8px} .note{color:var(--muted);font-size:12px;margin-top:8px;font-style:italic}
+  .legend{color:var(--muted);font-size:12px;margin-top:22px;border-top:1px solid var(--line);padding-top:12px}
+</style>
+<h1>Models Lab</h1>
+<p class="sub">Every modelling technique we've evaluated for the 15-min BTC oracle — features, offline metrics (industry-standard + problem-specific), and verdict. Updated each cycle. <span id="ts"></span></p>
+<div id="banner" class="banner">Loading…</div>
+<div id="grid" class="grid"></div>
+<div id="legend" class="legend"></div>
+<script>
+function n(x,d){return (x==null)?'—':(typeof x==='number'?(+x).toFixed(d==null?4:d):x);}
+function vclass(v){v=(v||'').toLowerCase();if(v.includes('live'))return 'v-live';if(v.includes('reproduc')||v.includes('coin')||v.includes('not'))return 'v-flag';return 'v-eval';}
+fetch('modelling_techniques.json',{cache:'no-store'}).then(r=>r.json()).then(d=>{
+  const s=d.summary||{};
+  document.getElementById('banner').innerHTML =
+    `<div style="font-size:15px;margin-bottom:6px"><b>Capstone reconciliation.</b> The 89%@90% baseline = <b>${s.capstone_89at90_is||''}</b>.</div>`+
+    `<div class="k">Our real problem: ${s.our_real_problem||''} · entry-ceiling OOS <b>${n(s.entry_ceiling_oos)}</b> · Bayes-ceiling ${n(s.bayes_ceiling_mid)} · field-realistic ${s.field_realistic_direction||''}</div>`+
+    `<div class="k">Retrain: drift ${n((s.retrain||{}).drift_pp)} → ${(s.retrain||{}).policy||''}</div>`;
+  const g=document.getElementById('grid');
+  (d.techniques||[]).forEach(t=>{
+    const m=t.metrics||{};
+    const rows=Object.entries(m).map(([k,v])=>`<tr><td class="k">${k}</td><td class="v">${(typeof v==='number')?n(v):(v==null?'—':v)}</td></tr>`).join('');
+    g.insertAdjacentHTML('beforeend',
+      `<div class="card"><div class="fam">${t.family} · ${t.entry}</div><h3>${t.technique}</h3>`+
+      `<span class="verdict ${vclass(t.verdict)}">${t.verdict}</span>`+
+      `<table>${rows}</table>`+
+      `<div class="feats">features: ${(t.features||[]).join(', ')}</div>`+
+      (t.note?`<div class="note">${t.note}</div>`:'')+`</div>`);
+  });
+  const lg=d.metrics_legend||{};
+  document.getElementById('legend').innerHTML =
+    `<b>Metrics.</b> industry-standard: ${(lg.industry||[]).join(', ')} · problem-specific: ${(lg.problem_specific||[]).join(', ')}. `+
+    `Every OOS number is walk-forward with a label-shuffle leakage canary (must be ~0.50). n_techniques=${d.n_techniques}.`;
+}).catch(e=>{document.getElementById('banner').textContent='No modelling_techniques.json yet — run scripts/emit_modelling_techniques.py';});
+</script>
