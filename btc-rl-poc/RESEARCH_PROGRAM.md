@@ -242,6 +242,22 @@ hit@cov≥0.90 AND net EV. No shortcuts (fixed open+6min entry, no post-entry da
 - **D7 — Deploy + report.** best model → shadow arm (T3, canary-clean OOS); final report;
   Models Lab updated. GATE: live, documented, reproducible.
 
+## 3g. ★★ AV+CLAUDE (professor's method) TESTED HONESTLY — 0.89 NOT reproducible (D3, definitive)
+Reproduced the owner-stated method (Alpha Vantage + Claude) at open+6min, walk-forward, canary
+~0.50, WITH receipt-latency (honest) AND a no-latency leak-control (research/av_claude_open6_eval.json):
+- barrier only **0.744** hit@90 · +AV(honest) **0.715** (BELOW barrier — AV hurts) · +AV(no-latency
+  leak-control) **0.709** (leak_magnitude −0.6pp → NOT a latency leak) · +AV+news **0.666** (worse).
+- **Claude-as-signal ties the barrier exactly (0.70=0.70, 60-win sample):** a disciplined LLM read
+  re-derives the barrier, adds nothing. Agent's own words: "I am effectively re-deriving the barrier."
+- Why AV fails: only ~30% of BTC 15-min windows coincide with a live US-equity session; the rest get
+  stale bars. News sparse/noisy at 15-min.
+- **VERDICT: 89%@90% at open+6min on the ATM contract is NOT reproducible with any legitimate method,
+  including AV+Claude. Honest ceiling = barrier ~0.74. A reported 0.89 is a leak in the professor's
+  EVAL (in-sample / overlapping-window label overlap / different label or coverage) — consistent with
+  the published record (every 90%+ audits to a leak).** ~12 experiments now converge.
+- **Pivot (D4): the useful goal is EV.** 0.74 hit is real & tradeable; convert to positive P&L via
+  calibrated sizing + selectivity, NOT chase an unreproducible 0.89.
+
 ## 4. Live system state
 - Roster: **T0 `pt`** (control, $100M) · **T1 `cg33`** (gated 33% follower) · **T2 `fm`**
   (chronos-bolt-base directional, conf≥0.60, half-Kelly). Daemon `btc_rl.online` pid live.

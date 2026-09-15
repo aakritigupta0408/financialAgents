@@ -1,0 +1,175 @@
+{
+  "dataset": {
+    "n_total": 1355,
+    "n_train": 813,
+    "n_test": 542,
+    "split": "walk-forward 60/40 (past->future)",
+    "base_up": 0.4945,
+    "barrier_signal": "logit(theo) fixed offset; baseline = theo-direct @0.5",
+    "barrier_raw_cols": [
+      "z",
+      "z_drift",
+      "theo",
+      "theo_drift",
+      "dist_bps",
+      "sigmaT_bps",
+      "mom6_bps",
+      "rsi",
+      "ma_dist_bps",
+      "range_bps"
+    ],
+    "av_features": [
+      "coin_present",
+      "coin_ret_15m",
+      "coin_ret_60m",
+      "coin_rvol_30m",
+      "coin_session_open",
+      "coin_staleness_min",
+      "fed_funds_level",
+      "ibit_present",
+      "ibit_ret_15m",
+      "ibit_ret_60m",
+      "ibit_rvol_30m",
+      "ibit_session_open",
+      "ibit_staleness_min",
+      "mstr_present",
+      "mstr_ret_15m",
+      "mstr_ret_60m",
+      "mstr_rvol_30m",
+      "mstr_session_open",
+      "mstr_staleness_min",
+      "qqq_present",
+      "qqq_ret_15m",
+      "qqq_ret_60m",
+      "qqq_rvol_30m",
+      "qqq_session_open",
+      "qqq_staleness_min",
+      "spy_present",
+      "spy_ret_15m",
+      "spy_ret_60m",
+      "spy_rvol_30m",
+      "spy_session_open",
+      "spy_staleness_min",
+      "yield_10y_chg_1d",
+      "yield_10y_level"
+    ],
+    "news_features": [
+      "cnt_1h",
+      "cnt_24h",
+      "cnt_4h",
+      "has_news_4h",
+      "last_sent",
+      "secs_since_last",
+      "sent_decayed_4h",
+      "sent_mean_1h",
+      "sent_mean_24h",
+      "sent_mean_4h"
+    ]
+  },
+  "model": "P(up)=sigmoid(logit(theo)+w.std(features)); L2 lambda by time-ordered inner-validation; large lambda -> exact barrier baseline",
+  "feature_sets": {
+    "1_barrier_only": {
+      "label": "barrier-only [baseline]",
+      "n_added_features": 0,
+      "lambda_selected": null,
+      "w_norm": 0.0,
+      "n_train": 813,
+      "n_test": 542,
+      "oos_acc": 0.7306,
+      "hit_at_90cov": 0.7439,
+      "coverage": 0.9004,
+      "conf_thr": 0.0053,
+      "canary_oos": 0.4961
+    },
+    "2_barrier_av_latency": {
+      "label": "barrier + AV_latency  [HONEST]",
+      "n_added_features": 33,
+      "lambda_selected": 3000.0,
+      "w_norm": 0.034,
+      "n_train": 813,
+      "n_test": 542,
+      "oos_acc": 0.6956,
+      "hit_at_90cov": 0.7152,
+      "coverage": 0.9004,
+      "conf_thr": 0.0054,
+      "canary_oos": 0.4937
+    },
+    "3_barrier_av_nolatency": {
+      "label": "barrier + AV_nolatency [LEAK-CONTROL]",
+      "n_added_features": 33,
+      "lambda_selected": 3000.0,
+      "w_norm": 0.0504,
+      "n_train": 813,
+      "n_test": 542,
+      "oos_acc": 0.6919,
+      "hit_at_90cov": 0.709,
+      "coverage": 0.9004,
+      "conf_thr": 0.0063,
+      "canary_oos": 0.5006
+    },
+    "4_barrier_av_latency_news": {
+      "label": "barrier + AV_latency + news",
+      "n_added_features": 43,
+      "lambda_selected": 1000.0,
+      "w_norm": 0.0805,
+      "n_train": 813,
+      "n_test": 542,
+      "oos_acc": 0.6476,
+      "hit_at_90cov": 0.666,
+      "coverage": 0.9004,
+      "conf_thr": 0.0072,
+      "canary_oos": 0.4982
+    }
+  },
+  "leak": {
+    "hit_at_90cov_barrier_baseline": 0.7439,
+    "hit_at_90cov_latency_correct": 0.7152,
+    "hit_at_90cov_no_latency": 0.709,
+    "leak_magnitude_pp": -0.62,
+    "honest_reaches_0.89@0.90": false,
+    "nolatency_reaches_~0.89@0.90": false,
+    "fresh_record_leak_probe": {
+      "coin_ret_15m": {
+        "n_fresh": 447,
+        "latency_sign_acc": 0.5257,
+        "nolatency_sign_acc": 0.6622
+      },
+      "ibit_ret_15m": {
+        "n_fresh": 447,
+        "latency_sign_acc": 0.651,
+        "nolatency_sign_acc": 0.7427
+      },
+      "mstr_ret_15m": {
+        "n_fresh": 447,
+        "latency_sign_acc": 0.5749,
+        "nolatency_sign_acc": 0.6689
+      }
+    },
+    "fresh_record_stats": {
+      "n_fresh_total": 447,
+      "n_fresh_train": 322,
+      "n_fresh_test": 125,
+      "nolatency_coin_staleness_min_median": 1.0,
+      "latency_coin_staleness_min_median": 6.0
+    },
+    "avg_fresh_signacc_leak_pp": 10.74,
+    "fresh_slice_reproduction": {
+      "n_fresh": 447,
+      "n_train": 268,
+      "n_test": 179,
+      "barrier_only_hit90": 0.7654,
+      "theo+AV_latency_hit90": 0.6111,
+      "theo+AV_latency_oos": 0.6089,
+      "theo+AV_nolatency_hit90": 0.6728,
+      "theo+AV_nolatency_oos": 0.676
+    }
+  },
+  "claude_signal": {
+    "n_sample": 60,
+    "claude_acc": 0.7,
+    "barrier_theo_acc_same_tickers": 0.7,
+    "beats_barrier": false,
+    "note": "60-window sample only; directional evidence, not decisive."
+  },
+  "verdict": "NEITHER AV model reaches 0.89@0.90 on the full walk-forward: HONEST latency-correct hit@90=0.7152, no-latency hit@90=0.7090, barrier baseline=0.7439. The latency-correct AV model does NOT beat the ~0.74 barrier -> AV adds no honest edge. A receipt-latency leak IS present in the data but is diluted at full-dataset scale (it touches only 125/542 test rows): on the 447 fresh rows the no-latency return-sign predicts the forward label ~10.74pp better than the latency-correct one (e.g. coin 0.662 vs 0.526). A 0.89 headline is only reachable by measuring on a fresh-quote-dominated slice -> it is a RECEIPT-LATENCY LEAK, not a real edge."
+}
