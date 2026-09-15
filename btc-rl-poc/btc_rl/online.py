@@ -540,7 +540,9 @@ PT_ARMS = ("kb2", "kb3", "kb4", "kb7", "kb8", "kb9")
 # offline sweep shows $300 -> ~$60 with a 98% drawdown — kept as an experiment to
 # demonstrate over-betting, never as a recommendation. PAPER / SIMULATION ONLY.
 PTCG_START_C = 30_000                  # $300 in cents
-PTCG_TAU = 0.20                        # confidence gate (below PT_TAU=0.62 by design)
+PTCG_TAU = 0.20                        # gate on conf = 2*|p_up-0.5| (0..1); 0.20 here
+                                       # == max(p_up,1-p_up) >= 0.60, i.e. skip windows
+                                       # where the leader is within 10pp of a coin flip
 CG5_LOG_NAME = "cg5_trades.jsonl";  CG5_FRAC = 0.05
 CG10_LOG_NAME = "cg10_trades.jsonl"; CG10_FRAC = 0.10
 CG33_LOG_NAME = "cg33_trades.jsonl"; CG33_FRAC = 0.33
@@ -3731,8 +3733,11 @@ def run(once: bool = False) -> None:
                                      if r.get("variant") == cg_arm
                                      and r["ticker"] == pm_mkt["ticker"]
                                      and r["made_ts"] == slot1), None)
-                                if cgr and max(cgr["p_up"],
-                                               1 - cgr["p_up"]) >= PTCG_TAU:
+                                # confidence == 2*|p_up-0.5| (0..1), gated >= PTCG_TAU
+                                # (0.20). NOTE: must NOT be max(p_up,1-p_up) — that is
+                                # always >= 0.5 so the gate would never skip (the whole
+                                # point is declining the near-coin-flip windows).
+                                if cgr and 2 * abs(cgr["p_up"] - 0.5) >= PTCG_TAU:
                                     syc = cgr["p_up"] >= 0.5
                                     askc = (pm_mkt["yes_ask"] if syc
                                             else 100 - pm_mkt["yes_bid"])
