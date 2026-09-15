@@ -1,0 +1,1939 @@
+{
+ "generated_at": 1789509494.95546,
+ "n_surfaces": 173,
+ "n_stale": 1,
+ "n_inconsistent": 30,
+ "stale": [
+  {
+   "file": "results/trader_detail.json",
+   "kind": "snapshot",
+   "age_min": 281.0,
+   "gen_age_min": 281.0,
+   "STALE": true,
+   "references_retired_arm": []
+  }
+ ],
+ "inconsistent_roster": [
+  {
+   "file": "results/leakage_canaries.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/experiments_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt3",
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/pm_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/reconciliation.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/model_internals.json",
+   "kind": "json",
+   "age_min": 38.2,
+   "gen_age_min": 38.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/loss_reviews.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/site_manifest.json",
+   "kind": "json",
+   "age_min": 8.2,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "cg5",
+    "cg10",
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/audit_report.json",
+   "kind": "json",
+   "age_min": 8.2,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/program.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/board.json",
+   "kind": "json",
+   "age_min": 25247.6,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/build_manifest.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.9,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/model_registry.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/architecture_dag.json",
+   "kind": "json",
+   "age_min": 2101.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/oracle_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/invariants.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "cg10",
+    "pt3"
+   ]
+  },
+  {
+   "file": "results/chaos_drills.json",
+   "kind": "json",
+   "age_min": 24369.1,
+   "gen_age_min": 24369.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/diagnosis.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/execution_ledger.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/feature_monitor.json",
+   "kind": "json",
+   "age_min": 5926.3,
+   "gen_age_min": 5928.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/ab_dashboard.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/archive.html",
+   "kind": "page",
+   "age_min": 25070.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/home_classic.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/instrument.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/ledgers.html",
+   "kind": "page",
+   "age_min": 23938.9,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/live_online.html",
+   "kind": "page",
+   "age_min": 25138.4,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt5"
+   ]
+  },
+  {
+   "file": "site/metrics_lab.html",
+   "kind": "page",
+   "age_min": 25074.4,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/museum.html",
+   "kind": "page",
+   "age_min": 7436.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/paper.html",
+   "kind": "page",
+   "age_min": 25071.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt6",
+    "pt7"
+   ]
+  },
+  {
+   "file": "site/play.html",
+   "kind": "page",
+   "age_min": 24032.5,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/sev0.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  }
+ ],
+ "all": [
+  {
+   "file": "results/metrics.json",
+   "kind": "json",
+   "age_min": 37379.8,
+   "gen_age_min": 37379.8,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/rl_window_log.state.json",
+   "kind": "json",
+   "age_min": 517.5,
+   "gen_age_min": 517.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/exec_sensitivity.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/trader_detail.json",
+   "kind": "snapshot",
+   "age_min": 281.0,
+   "gen_age_min": 281.0,
+   "STALE": true,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/failure_store.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/.cg33_alert_state.json",
+   "kind": "json",
+   "age_min": 9.6,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/rl_tournament_backtest.json",
+   "kind": "json",
+   "age_min": 508.3,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/t1_dataset_manifest.json",
+   "kind": "json",
+   "age_min": 15403.7,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/f1_sufficiency_audit.json",
+   "kind": "json",
+   "age_min": 6070.2,
+   "gen_age_min": 6070.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/freeze_convergence.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/treatments.json",
+   "kind": "json",
+   "age_min": 342.6,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/leakage_canaries.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/t1_1_result_dryrun.json",
+   "kind": "json",
+   "age_min": 16001.0,
+   "gen_age_min": 16001.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/experiments_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt3",
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/a3_v21_final.json",
+   "kind": "json",
+   "age_min": 10336.1,
+   "gen_age_min": 10338.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/home_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/t1_dataset_manifest_dryrun.json",
+   "kind": "json",
+   "age_min": 16001.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t6-h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t7-h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/learning_charts.json",
+   "kind": "json",
+   "age_min": 5989.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linear_q.json",
+   "kind": "json",
+   "age_min": 37379.7,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/decision_board.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/av_features_manifest.json",
+   "kind": "json",
+   "age_min": 5967.5,
+   "gen_age_min": 5967.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/pm_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/linucb_t2-h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/modelling_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/q_table.json",
+   "kind": "json",
+   "age_min": 37379.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/reconciliation.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/model_internals.json",
+   "kind": "json",
+   "age_min": 38.2,
+   "gen_age_min": 38.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/loss_reviews.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/brti_activation_readiness.json",
+   "kind": "json",
+   "age_min": 497.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/site_manifest.json",
+   "kind": "json",
+   "age_min": 8.2,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "cg5",
+    "cg10",
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/research_state.json",
+   "kind": "json",
+   "age_min": 3708.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/event_capture.json",
+   "kind": "json",
+   "age_min": 0.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb6_logit.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/information_timing.json",
+   "kind": "json",
+   "age_min": 7.3,
+   "gen_age_min": 7.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/headline_scores.json",
+   "kind": "json",
+   "age_min": 30.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/f1_missingness_audit.json",
+   "kind": "json",
+   "age_min": 15406.5,
+   "gen_age_min": 15406.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/parity.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/experiment_analysis.json",
+   "kind": "json",
+   "age_min": 10277.9,
+   "gen_age_min": 10277.9,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/audit_report.json",
+   "kind": "json",
+   "age_min": 8.2,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/oracle_calls.json",
+   "kind": "json",
+   "age_min": 7.9,
+   "gen_age_min": 7.9,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/program.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/repair_dependency_state.json",
+   "kind": "json",
+   "age_min": 3.2,
+   "gen_age_min": 3.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/q_table_online_h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t7-h5.json",
+   "kind": "json",
+   "age_min": 36901.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t2-h30.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/board.json",
+   "kind": "json",
+   "age_min": 25247.6,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/linucb_t11-h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/m5_soak.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/build_manifest.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.9,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/a3_v2_final.json",
+   "kind": "json",
+   "age_min": 13036.1,
+   "gen_age_min": 13038.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/model_registry.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/architecture_dag.json",
+   "kind": "json",
+   "age_min": 2101.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/online_status.json",
+   "kind": "json",
+   "age_min": 0.5,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t10-h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/f_av1_screen.json",
+   "kind": "json",
+   "age_min": 5966.7,
+   "gen_age_min": 5967.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t11-h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t10-h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/oracle_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/q_table_online_h30.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/invariants.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "cg10",
+    "pt3"
+   ]
+  },
+  {
+   "file": "results/a3_v1_decision.json",
+   "kind": "json",
+   "age_min": 22668.2,
+   "gen_age_min": 22668.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/chaos_drills.json",
+   "kind": "json",
+   "age_min": 24369.1,
+   "gen_age_min": 24369.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/_ledger_highwater.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb4_logit.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/model_offline.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/brti_runtime_health.json",
+   "kind": "json",
+   "age_min": 3713.3,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/brti_activation_verify.json",
+   "kind": "json",
+   "age_min": 495.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t6-h5.json",
+   "kind": "json",
+   "age_min": 36901.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/open_oracle_15m_dataset.meta.json",
+   "kind": "json",
+   "age_min": 1858.8,
+   "gen_age_min": 1858.8,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_v2_closure.json",
+   "kind": "json",
+   "age_min": 13036.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/trajectory_board.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb_sel_policy.json",
+   "kind": "json",
+   "age_min": 1197.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_v21_closure.json",
+   "kind": "json",
+   "age_min": 10336.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/model_qualification.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/brti_health.json",
+   "kind": "json",
+   "age_min": 4114.7,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/hindsight_entries.json",
+   "kind": "json",
+   "age_min": 35818.7,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/research_queue.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/metric_fixtures.json",
+   "kind": "json",
+   "age_min": 25406.5,
+   "gen_age_min": 25406.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/eod_exec_selection.json",
+   "kind": "json",
+   "age_min": 6823.5,
+   "gen_age_min": 6823.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/eod_exec_selection_baseline.json",
+   "kind": "json",
+   "age_min": 6759.3,
+   "gen_age_min": 6823.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_v21_decision_final.json",
+   "kind": "json",
+   "age_min": 10336.1,
+   "gen_age_min": 10337.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/readiness.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/deriv_health.json",
+   "kind": "json",
+   "age_min": 4246.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/m6_soak.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/execution_research.json",
+   "kind": "json",
+   "age_min": 10277.9,
+   "gen_age_min": 10277.9,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t6-h30.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/monitor_health.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/recent_prices.json",
+   "kind": "json",
+   "age_min": 0.5,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t7-h30.json",
+   "kind": "json",
+   "age_min": 36901.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/demo_account.json",
+   "kind": "json",
+   "age_min": 0.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/decision_frontier.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/brti_decision_dataset.meta.json",
+   "kind": "json",
+   "age_min": 4072.4,
+   "gen_age_min": 4075.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/live_status.json",
+   "kind": "json",
+   "age_min": 37379.8,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/research_live_snapshot.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/f1_capture_qualification.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 7.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t2-h5.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/fill_curve.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb_calib.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_v1_final.json",
+   "kind": "json",
+   "age_min": 22668.2,
+   "gen_age_min": 22668.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/rl_ideal_trader.json",
+   "kind": "json",
+   "age_min": 504.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_decision.json",
+   "kind": "json",
+   "age_min": 10337.3,
+   "gen_age_min": 10337.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/xvenue_capture.json",
+   "kind": "json",
+   "age_min": 0.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/micro_capture.json",
+   "kind": "json",
+   "age_min": 0.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_v2_decision_final.json",
+   "kind": "json",
+   "age_min": 13036.1,
+   "gen_age_min": 13037.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb8_logit.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb_logit.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/rl_stake_eval.json",
+   "kind": "json",
+   "age_min": 500.3,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/world.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/data_health.json",
+   "kind": "json",
+   "age_min": 7.3,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/model_lifecycle.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/model_online.json",
+   "kind": "json",
+   "age_min": 7.4,
+   "gen_age_min": 7.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t11-h5.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/meta_monitors.json",
+   "kind": "json",
+   "age_min": 3.2,
+   "gen_age_min": 3.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t7-h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/q_table_online_h5.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/q_table_online_h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/kb5_logit.json",
+   "kind": "json",
+   "age_min": 8.9,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t11-h30.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t10-h30.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/news_health.json",
+   "kind": "json",
+   "age_min": 4244.0,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/open_oracle_15m_ladder.json",
+   "kind": "json",
+   "age_min": 1854.3,
+   "gen_age_min": 1854.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linear_q_report.json",
+   "kind": "json",
+   "age_min": 37379.7,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/agent_performance.json",
+   "kind": "json",
+   "age_min": 4.1,
+   "gen_age_min": 4.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/t1_1_result.json",
+   "kind": "json",
+   "age_min": 15403.6,
+   "gen_age_min": 15403.6,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/offline_gate.json",
+   "kind": "json",
+   "age_min": 38138.0,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t6-h1.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/diagnosis.json",
+   "kind": "json",
+   "age_min": 8.1,
+   "gen_age_min": 8.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt6"
+   ]
+  },
+  {
+   "file": "results/execution_ledger.json",
+   "kind": "json",
+   "age_min": 8.0,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "results/model_research.json",
+   "kind": "json",
+   "age_min": 7.3,
+   "gen_age_min": 7.3,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/a3_live.json",
+   "kind": "json",
+   "age_min": 10337.3,
+   "gen_age_min": 10338.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t2-h15.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/live_desk.json",
+   "kind": "snapshot",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/pt6_logit.json",
+   "kind": "json",
+   "age_min": 343.1,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/legacy_mine.json",
+   "kind": "json",
+   "age_min": 24055.5,
+   "gen_age_min": 24236.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/research_jobs.json",
+   "kind": "json",
+   "age_min": 1622.0,
+   "gen_age_min": 1622.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/live_capture_health.json",
+   "kind": "json",
+   "age_min": 0.2,
+   "gen_age_min": 0.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/treatments_board.json",
+   "kind": "json",
+   "age_min": 8.2,
+   "gen_age_min": 8.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/linucb_t10-h5.json",
+   "kind": "json",
+   "age_min": 2.2,
+   "gen_age_min": null,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "results/feature_monitor.json",
+   "kind": "json",
+   "age_min": 5926.3,
+   "gen_age_min": 5928.0,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/ab_dashboard.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/agents.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/analyst.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/architecture.html",
+   "kind": "page",
+   "age_min": 2044.9,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/archive.html",
+   "kind": "page",
+   "age_min": 25070.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/backend.html",
+   "kind": "page",
+   "age_min": 22665.8,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/board.html",
+   "kind": "page",
+   "age_min": 22665.8,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/clock.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/diagnosis.html",
+   "kind": "page",
+   "age_min": 25084.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/experiment_review.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/experiments.html",
+   "kind": "page",
+   "age_min": 2045.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/home.html",
+   "kind": "page",
+   "age_min": 209.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/home_classic.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/index.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/instrument.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/ledgers.html",
+   "kind": "page",
+   "age_min": 23938.9,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/live_online.html",
+   "kind": "page",
+   "age_min": 25138.4,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt5"
+   ]
+  },
+  {
+   "file": "site/live_training.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/metrics_lab.html",
+   "kind": "page",
+   "age_min": 25074.4,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/modelling.html",
+   "kind": "page",
+   "age_min": 1805.5,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/models.html",
+   "kind": "page",
+   "age_min": 11203.2,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/museum.html",
+   "kind": "page",
+   "age_min": 7436.2,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/oracle.html",
+   "kind": "page",
+   "age_min": 2045.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/paper.html",
+   "kind": "page",
+   "age_min": 25071.1,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt4",
+    "pt6",
+    "pt7"
+   ]
+  },
+  {
+   "file": "site/play.html",
+   "kind": "page",
+   "age_min": 24032.5,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/research.html",
+   "kind": "page",
+   "age_min": 1807.0,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/sev0.html",
+   "kind": "page",
+   "age_min": 25251.7,
+   "STALE": false,
+   "references_retired_arm": [
+    "pt2",
+    "pt3",
+    "pt4",
+    "pt5",
+    "pt6",
+    "pt7",
+    "pt8"
+   ]
+  },
+  {
+   "file": "site/universe.html",
+   "kind": "page",
+   "age_min": 11200.1,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "site/watchtower.html",
+   "kind": "page",
+   "age_min": 11200.7,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "RESEARCH_PROGRAM.md",
+   "kind": "doc",
+   "age_min": 1.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "SYSTEM_AUDIT_2026-09-15.md",
+   "kind": "doc",
+   "age_min": 157.4,
+   "STALE": false,
+   "references_retired_arm": []
+  },
+  {
+   "file": "research/COMBINED_STUDENT_FINDINGS.md",
+   "kind": "doc",
+   "age_min": 67.8,
+   "STALE": false,
+   "references_retired_arm": []
+  }
+ ]
+}

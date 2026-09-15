@@ -24,6 +24,13 @@
 8. **Autonomy:** keep assigning myself the next task; do not pause for approval; stop only when
    told, when performance is achieved, or when everything above is robust & tested.
 9. **This document is the memory.** Update it every meaningful step; it is authoritative.
+10. **Directives are ADDITIVE, never replaced** — every instruction across the whole
+    conversation stays live. On direct CONFLICT, the MOST RECENT instruction wins.
+11. **Consistency across ALL surfaces.** Every doc / UI page / snapshot / code / website / exec
+    summary / Claude memory must stay consistent with the current roster (T0 pt / T1 cg33 /
+    T2 fm; retired: cg5 cg10 tv pt2-8) and directives, and be constantly verified for staleness.
+    Tool: scripts/consistency_audit.py (R31) — run on cron; distinguish LIVE surfaces (must be
+    consistent) from HISTORICAL records (may reference retired arms).
 
 
 
