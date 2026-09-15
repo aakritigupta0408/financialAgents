@@ -221,6 +221,10 @@ def _cg_family_entries():
          "Same confidence-gated policy at 10% stake."),
         ("cg33", "Gated · 33%", "Ruin-risk experiment.", "RUIN_RISK_EXPERIMENT", "cg33_trades.jsonl",
          "Same policy at 33% stake — demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown)."),
+        ("tv", "T0-Value", "Only value bets.", "LIVE_CANDIDATE", "tv_trades.jsonl",
+         "Follows the leader ONLY when its confidence beats the price paid by >=8pp (value gate) "
+         "and the leader is strong (rec10>=0.7); half-Kelly sizing. Backtest: the value gate flips "
+         "T0 from -$1,535 to positive by declining overpriced favorites. Settles on official Kalshi."),
     ]
     start = 30000
     out = []

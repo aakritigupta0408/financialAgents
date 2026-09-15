@@ -203,7 +203,8 @@ const TR={T0:["var(--series-2)","rgba(36,97,184,.09)","crown"],T1:["var(--series
   T4:["var(--series-3)","rgba(180,58,110,.09)","layers"],
   cg5:["var(--series-7)","rgba(13,122,78,.09)","bolt"],
   cg10:["var(--series-4)","rgba(143,96,0,.10)","bolt"],
-  cg33:["var(--series-3)","rgba(180,58,110,.09)","bolt"]};
+  cg33:["var(--series-3)","rgba(180,58,110,.09)","bolt"],
+  tv:["var(--series-2)","rgba(36,97,184,.09)","target"]};
 let SNAP=null, DETAIL=null, LIVE=null, SEL="T0", CHTAB="live";
 const byId=id=>(SNAP.trader_family||[]).find(t=>t.id===id)||{};
 
@@ -385,7 +386,7 @@ function liveDeskStrip(){
     </div>
     <div class="mini" style="margin-top:10px">${sa.n} window${sa.n===1?'':'s'} settled since exact-BRTI activation · the Oracle's Follower policy (trader T0 lineage). The formal T0-vs-T1 paired A/B accrues separately.</div></div>`;
 }
-window.selectTrader=id=>{SEL=id;CHTAB=(id==="T0"||id.indexOf("cg")===0)?"live":"backtest";paintFamily();};
+window.selectTrader=id=>{SEL=id;CHTAB=(id==="T0"||id.indexOf("cg")===0||id==="tv")?"live":"backtest";paintFamily();};
 window.setTab=t=>{CHTAB=t;paintFamily();};
 function paintFamily(){
   $("#family").innerHTML=`<div class="sec-head" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px">

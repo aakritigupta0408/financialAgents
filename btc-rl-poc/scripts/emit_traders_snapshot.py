@@ -35,6 +35,11 @@ TRADERS = [
      "Same policy at 33% stake — a deliberate RUIN-RISK experiment (~1.6x Kelly): backtest shows "
      "$300 -> ~$60 at 98% drawdown. Demonstrates over-betting, not a recommendation. $300 paper.",
      "cg33_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.33"),
+    ("tv", "T0-Value", "value-gated follower", "thesis", True, "leader",
+     "Follows the leader ONLY on value bets: leader confidence beats the price paid by >=8pp AND "
+     "leader is strong (rec10>=0.7); half-Kelly sizing (cap 10%). Backtest: the value gate flips "
+     "T0's -$1,535 to positive by declining overpriced favorites. Settles on official Kalshi. $300 paper.",
+     "tv_trades.jsonl - leader, gate edge>=0.08 & rec>=0.7, half-Kelly"),
     ("pt6", "MLE", "the meta-learner (shadow)", "shadow", True, "leader",
      "A supervised meta-trader: learns P(a leader-side bet wins) online via a 7-dim logistic "
      "model, bets only when EV > 0 at the real ask, half-Kelly capped 10%, min edge 10c. "

@@ -549,6 +549,20 @@ CG33_LOG_NAME = "cg33_trades.jsonl"; CG33_FRAC = 0.33
 CG_ARMS = (("cg5", CG5_LOG_NAME, CG5_FRAC), ("cg10", CG10_LOG_NAME, CG10_FRAC),
            ("cg33", CG33_LOG_NAME, CG33_FRAC))
 
+# --- T0-Value shadow arm (2026-09-15, backtest research/t0_improvement_backtest.json) --
+# Follows the leader's side ONLY when it's a VALUE bet: leader confidence beats the price
+# paid by >= TV_EDGE (p_arm - ask/100 >= 0.08) AND the leader is strong (rec10 >= TV_REC).
+# Sizes with half-Kelly on that edge, capped at TV_CAP. Backtest (T0's own trades
+# re-settled on official Kalshi): the value gate flips T0 from -$1535 to positive by
+# declining overpriced favorites. $300 paper; settles on OFFICIAL Kalshi (never proxy).
+# A NEW arm accruing paired evidence vs T0 — T0 (the control) is NOT modified.
+TV_LOG_NAME = "tv_trades.jsonl"
+TV_START_C = 30_000                    # $300 paper
+TV_EDGE = 0.08                         # min value edge: p_arm - ask/100
+TV_REC = 0.7                           # min leader strength (rec10)
+TV_KELLY = 0.5                         # half-Kelly
+TV_CAP = 0.10                          # size cap (fraction of bankroll)
+
 
 _FC_CACHE = {"ts": 0.0, "state": "NORMAL", "why": ""}
 
@@ -2451,6 +2465,12 @@ def run(once: bool = False) -> None:
     cg33_bankroll_c = PTCG_START_C \
         + sum(t["pnl_c"] for t in cg33_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in cg33_trades if t.get("actual") is None)
+    # T0-Value shadow arm — $300 paper, restart-safe bankroll from its log alone.
+    tv_trades = _load_kb_bets(TV_LOG_NAME)
+    tv_tickers = {t["ticker"] for t in tv_trades}
+    tv_bankroll_c = TV_START_C \
+        + sum(t["pnl_c"] for t in tv_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in tv_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
     # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
@@ -3337,7 +3357,8 @@ def run(once: bool = False) -> None:
                             or pm_mkt["ticker"] not in pt8_tickers
                             or pm_mkt["ticker"] not in cg5_tickers
                             or pm_mkt["ticker"] not in cg10_tickers
-                            or pm_mkt["ticker"] not in cg33_tickers)
+                            or pm_mkt["ticker"] not in cg33_tickers
+                            or pm_mkt["ticker"] not in tv_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -3798,6 +3819,58 @@ def run(once: bool = False) -> None:
                                                 cg33_tickers.add(pm_mkt["ticker"])
                     except Exception as _cg_e:
                         print("cg entry error:", _cg_e, flush=True)
+                    # --- T0-Value shadow arm (tv) ---
+                    # Follow the leader only on VALUE bets: p_arm - ask/100 >= TV_EDGE and
+                    # rec10 >= TV_REC. Half-Kelly sizing on the edge, capped. Guarded so a
+                    # fault here can never crash the loop or T0.
+                    try:
+                        if (pm_mkt["ticker"] not in tv_tickers and mins_left <= 12
+                                and pm_mkt.get("yes_bid") and pm_mkt.get("yes_ask")):
+                            ledv = _pt_leader(kb)
+                            if ledv:
+                                tv_arm, tv_w, tv_n = ledv
+                                tvr = next(
+                                    (r for r in reversed(kb)
+                                     if r.get("variant") == tv_arm
+                                     and r["ticker"] == pm_mkt["ticker"]
+                                     and r["made_ts"] == slot1), None)
+                                tv_rec = (tv_w / tv_n) if tv_n else 0.0
+                                if tvr and tv_rec >= TV_REC:
+                                    pconf = max(tvr["p_up"], 1 - tvr["p_up"])
+                                    syv = tvr["p_up"] >= 0.5
+                                    askv = (pm_mkt["yes_ask"] if syv
+                                            else 100 - pm_mkt["yes_bid"])
+                                    feev = 7 * (askv / 100) * (1 - askv / 100)
+                                    edge = pconf - askv / 100.0
+                                    if 5 <= askv < 95 and edge >= TV_EDGE:
+                                        price = askv / 100.0
+                                        b = (1 - price) / price if price > 0 else 0
+                                        kf = ((pconf * b - (1 - pconf)) / b) if b > 0 else 0
+                                        phiv = max(0.0, min(TV_CAP, TV_KELLY * kf))
+                                        dsv = (pm_mkt.get("depth_no") if syv
+                                               else pm_mkt.get("depth_yes"))
+                                        dcapv = (int(dsv * askv) if dsv else PT4_CAP_C)
+                                        ncv = int(min(phiv * tv_bankroll_c, dcapv)
+                                                  // (askv + feev))
+                                        if phiv > 0 and ncv >= 1:
+                                            stv = int(ncv * askv) + _order_fee_c(ncv, askv)
+                                            tv_bankroll_c -= stv
+                                            tv_trades.append({
+                                                "ticker": pm_mkt["ticker"],
+                                                "made_ts": now_ts, "close_ts": k_close_ts,
+                                                "strike": pm_mkt["strike"],
+                                                "side": "yes" if syv else "no",
+                                                "ask_c": round(askv, 1), "fee_c": feev,
+                                                "contracts": ncv, "stake_c": stv,
+                                                "leader": tv_arm, "rec10": f"{tv_w}/{tv_n}",
+                                                "p_arm": round(pconf, 4),
+                                                "edge": round(edge, 4), "kelly_frac": round(phiv, 4),
+                                                "mins_left": round(mins_left, 1),
+                                                "actual": None, "win": None, "pnl_c": None,
+                                                "bankroll_c": tv_bankroll_c})
+                                            tv_tickers.add(pm_mkt["ticker"])
+                    except Exception as _tv_e:
+                        print("tv entry error:", _tv_e, flush=True)
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -4194,11 +4267,12 @@ def run(once: bool = False) -> None:
             except Exception as _oe:
                 print("cg official-load error:", _oe, flush=True)
             for _nm, _log in (("cg5", CG5_LOG_NAME), ("cg10", CG10_LOG_NAME),
-                              ("cg33", CG33_LOG_NAME)):
+                              ("cg33", CG33_LOG_NAME), ("tv", TV_LOG_NAME)):
                 try:
-                    _tr = {"cg5": cg5_trades, "cg10": cg10_trades, "cg33": cg33_trades}[_nm]
+                    _tr = {"cg5": cg5_trades, "cg10": cg10_trades, "cg33": cg33_trades,
+                           "tv": tv_trades}[_nm]
                     _bank = {"cg5": cg5_bankroll_c, "cg10": cg10_bankroll_c,
-                             "cg33": cg33_bankroll_c}[_nm]
+                             "cg33": cg33_bankroll_c, "tv": tv_bankroll_c}[_nm]
                     _chg = False
                     for t in _tr:
                         if t["actual"] is not None or now_ts < t["close_ts"]:
@@ -4218,8 +4292,10 @@ def run(once: bool = False) -> None:
                         cg5_bankroll_c = _bank
                     elif _nm == "cg10":
                         cg10_bankroll_c = _bank
-                    else:
+                    elif _nm == "cg33":
                         cg33_bankroll_c = _bank
+                    else:
+                        tv_bankroll_c = _bank
                     if _chg or (_tr and _tr[-1]["actual"] is None
                                 and _tr[-1]["made_ts"] >= now_ts - 90):
                         _tmp = (RESULTS_DIR / _log).with_suffix(".tmpcg")

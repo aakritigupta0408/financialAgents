@@ -37,3 +37,5 @@ btc-rl-poc/results/cg33_trades.jsonl
 results/cg5_trades.jsonl
 results/cg10_trades.jsonl
 results/cg33_trades.jsonl
+btc-rl-poc/results/tv_trades.jsonl
+results/tv_trades.jsonl
