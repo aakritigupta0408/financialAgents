@@ -14,6 +14,7 @@ RES = ROOT / "results"
 # desk is T0 (pt) + T1 (cg33) + T2 (fm); the retired arms' ledgers are still checked
 # so a stray proxy row can never reappear even in frozen history.
 ACTIVE_ARMS = ["pt_trades.jsonl", "cg33_trades.jsonl", "fm_trades.jsonl",
+               "ob_trades.jsonl",
                "pt3_trades.jsonl", "cg5_trades.jsonl", "cg10_trades.jsonl",
                "tv_trades.jsonl"]
 
