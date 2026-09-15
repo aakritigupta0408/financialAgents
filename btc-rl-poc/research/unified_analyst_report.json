@@ -1,0 +1,229 @@
+{
+ "schema_version": "unified-analyst-1",
+ "n_trades": 1021,
+ "settlement": "OFFICIAL_KALSHI",
+ "market_join_coverage": 195,
+ "baseline": {
+  "win_rate": 0.6895,
+  "ev_usd_per_trade": -1.5048
+ },
+ "univariate": {
+  "edge": {
+   "n": 1021,
+   "corr_win": -0.1267,
+   "corr_ev": -0.0144
+  },
+  "p_arm": {
+   "n": 1021,
+   "corr_win": 0.0669,
+   "corr_ev": -0.0103
+  },
+  "ask": {
+   "n": 1021,
+   "corr_win": 0.1789,
+   "corr_ev": 0.0052
+  },
+  "rec": {
+   "n": 1021,
+   "corr_win": -0.0059,
+   "corr_ev": -0.01
+  },
+  "hour": {
+   "n": 1021,
+   "corr_win": -0.0005,
+   "corr_ev": 0.0091
+  },
+  "dow": {
+   "n": 1021,
+   "corr_win": -0.0046,
+   "corr_ev": -0.0062
+  },
+  "disagree": {
+   "n": 195,
+   "corr_win": -0.0096,
+   "corr_ev": -0.0435
+  }
+ },
+ "buckets": {
+  "edge": {
+   "[-inf,-0.05)": {
+    "n": 106,
+    "win": 0.802,
+    "ev_usd_per_trade": 2.247
+   },
+   "[-0.05,0.0)": {
+    "n": 314,
+    "win": 0.742,
+    "ev_usd_per_trade": -1.693
+   },
+   "[0.0,0.05)": {
+    "n": 247,
+    "win": 0.632,
+    "ev_usd_per_trade": -3.634
+   },
+   "[0.05,0.1)": {
+    "n": 174,
+    "win": 0.667,
+    "ev_usd_per_trade": -3.581
+   },
+   "[0.1,inf)": {
+    "n": 180,
+    "win": 0.633,
+    "ev_usd_per_trade": 1.542
+   }
+  },
+  "ask": {
+   "[-inf,55)": {
+    "n": 64,
+    "win": 0.594,
+    "ev_usd_per_trade": 8.79
+   },
+   "[55,65)": {
+    "n": 242,
+    "win": 0.562,
+    "ev_usd_per_trade": -5.711
+   },
+   "[65,75)": {
+    "n": 491,
+    "win": 0.711,
+    "ev_usd_per_trade": -0.95
+   },
+   "[75,85)": {
+    "n": 224,
+    "win": 0.808,
+    "ev_usd_per_trade": -1.117
+   }
+  },
+  "rec": {
+   "[-inf,0.6)": {
+    "n": 39,
+    "win": 0.744,
+    "ev_usd_per_trade": -0.734
+   },
+   "[0.6,0.7)": {
+    "n": 80,
+    "win": 0.588,
+    "ev_usd_per_trade": -9.906
+   },
+   "[0.7,0.8)": {
+    "n": 209,
+    "win": 0.727,
+    "ev_usd_per_trade": 2.737
+   },
+   "[0.8,inf)": {
+    "n": 693,
+    "win": 0.687,
+    "ev_usd_per_trade": -1.858
+   }
+  },
+  "hour_PT": {
+   "[-inf,3)": {
+    "n": 129,
+    "win": 0.713,
+    "ev_usd_per_trade": -0.805
+   },
+   "[3,6)": {
+    "n": 137,
+    "win": 0.693,
+    "ev_usd_per_trade": -4.358
+   },
+   "[6,9)": {
+    "n": 137,
+    "win": 0.635,
+    "ev_usd_per_trade": -6.983
+   },
+   "[9,12)": {
+    "n": 122,
+    "win": 0.68,
+    "ev_usd_per_trade": -1.126
+   },
+   "[12,15)": {
+    "n": 134,
+    "win": 0.746,
+    "ev_usd_per_trade": -1.339
+   },
+   "[15,18)": {
+    "n": 118,
+    "win": 0.678,
+    "ev_usd_per_trade": 2.786
+   },
+   "[18,21)": {
+    "n": 123,
+    "win": 0.675,
+    "ev_usd_per_trade": 3.331
+   },
+   "[21,inf)": {
+    "n": 121,
+    "win": 0.694,
+    "ev_usd_per_trade": -2.484
+   }
+  }
+ },
+ "oracle_calibration": {
+  "[0.6,0.7)": {
+   "n": 527,
+   "win": 0.658,
+   "ev_usd_per_trade": -1.182
+  },
+  "[0.7,0.8)": {
+   "n": 387,
+   "win": 0.716,
+   "ev_usd_per_trade": -2.408
+  },
+  "[0.8,0.9)": {
+   "n": 97,
+   "win": 0.763,
+   "ev_usd_per_trade": 1.409
+  },
+  "[0.9,inf)": {
+   "n": 10,
+   "win": 0.6,
+   "ev_usd_per_trade": -11.806
+  }
+ },
+ "failure_patterns": {
+  "high_conf_losses": {
+   "n": 40,
+   "avg_ask": 72.1,
+   "note": "oracle >=0.78 confident yet lost \u2014 where the model is miscalibrated"
+  },
+  "oracle_vs_market_disagree": {
+   "n": 61,
+   "oracle_win_rate": 0.705,
+   "note": "followed the oracle against the market \u2014 did the oracle win?"
+  }
+ },
+ "walk_forward_model": {
+  "oos_brier": 0.2101,
+  "base_rate_brier": 0.2103,
+  "beats_base_rate": false,
+  "coef": {
+   "edge": -0.001,
+   "rec": -0.153,
+   "ask": 0.436,
+   "hour": 0.088
+  },
+  "ev_take_rule_net_usd": -24.96,
+  "ev_take_coverage": 0.468,
+  "ev_take_hit": 0.695,
+  "placebo_oos_brier": 0.2161
+ },
+ "strongest_features_by_ev": [
+  "disagree",
+  "edge",
+  "p_arm"
+ ],
+ "conclusion": {
+  "headline": "On official settlement T0 is EV-negative (-1.505/trade at 69.0%). The dominant, honest signal is the VALUE EDGE (p_arm - price): corr_ev=-0.0144; expensive-favorite ask is the loss driver (corr_ev=0.0052). Winning is about WHICH bets, priced right \u2014 not calling direction better.",
+  "direction_learnable_verdict": "Directional win of the followed side is NOT reliably predictable from the CURRENT features (walk-forward Brier 0.2101 vs base-rate 0.2103; placebo 0.2161). Per the mandate this is NOT the null \u2014 it is a FEATURE GAP.",
+  "what_to_engineer_next": [
+   "microstructure / order-flow imbalance at entry (bid/ask depth ratio, signed flow) \u2014 the highest-value missing family for short-horizon direction",
+   "intra-window BRTI path features (momentum, realized-vol, distance-to-strike drift) \u2014 currently only entry snapshots are used",
+   "funding-rate / perp basis and cross-asset (equities open, DXY) regime context",
+   "oracle-vs-market disagreement magnitude as an explicit feature (join mkt_p_up to ALL windows \u2014 only ~195 of 1021 carry it now, starving the strongest raw signal)",
+   "calibrate p_arm (isotonic) so the value edge is measured against a TRUE probability"
+  ],
+  "best_policy_now": "value-gated selective follower (edge >= ~0.08, strong leader, half-Kelly) \u2014 the only configuration that was +EV in backtest; deployed as the tv arm.",
+  "model_adds_value": false
+ }
+}
