@@ -10,9 +10,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ONLINE = ROOT / "btc_rl" / "online.py"
 RES = ROOT / "results"
-# arms whose settlement must be official (control + active/new treatments + bet logs)
-ACTIVE_ARMS = ["pt_trades.jsonl", "pt3_trades.jsonl",
-               "cg5_trades.jsonl", "cg10_trades.jsonl", "cg33_trades.jsonl",
+# arms whose settlement must be official. After the 2026-09-15 roster cut the live
+# desk is T0 (pt) + T1 (cg33) + T2 (fm); the retired arms' ledgers are still checked
+# so a stray proxy row can never reappear even in frozen history.
+ACTIVE_ARMS = ["pt_trades.jsonl", "cg33_trades.jsonl", "fm_trades.jsonl",
+               "pt3_trades.jsonl", "cg5_trades.jsonl", "cg10_trades.jsonl",
                "tv_trades.jsonl"]
 
 

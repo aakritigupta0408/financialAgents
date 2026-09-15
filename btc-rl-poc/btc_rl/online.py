@@ -445,7 +445,14 @@ PT6_MIN_EDGE_C = 10           # bet only if pw*100 - (ask+fee) >= 10c
 # until independently justified — would-bet rows carry would_* fields
 # so its hypothetical economics stay measurable.
 ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
-RETIRED_TRADERS = frozenset({"pt2", "pt4", "pt5", "pt7", "pt8"})
+# 2026-09-15 owner directive — GREAT ROSTER CUT: keep only T0 (pt, frozen
+# control), T1 (cg33), T2 (fm = Chronos-Bolt base). Every other TREATMENT
+# retires: it stops taking new trades (entry gated below), disappears from
+# the snapshots/UI, and its ledger is preserved as frozen historical
+# evidence. The kb* MODEL layer stays — it produces the leader p_up that
+# the T0 control and cg33 follow, so it is infrastructure, not a treatment.
+RETIRED_TRADERS = frozenset({"pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8",
+                             "cg5", "cg10", "tv"})
 PT6_SHADOW = True
 # One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
 # t_exec_reg (M10+M8); t_regime kept as the legacy-control component
@@ -567,6 +574,23 @@ TV_EDGE = 0.08                         # min value edge: p_arm - ask/100
 TV_REC = 0.7                           # min leader strength (rec10)
 TV_KELLY = 0.5                         # half-Kelly
 TV_CAP = 0.10                          # size cap (fraction of bankroll)
+
+# --- T2: Chronos-Bolt (base) foundation-model trader (fm) --------------------------
+# 2026-09-15 owner directive. A DIRECTIONAL MODEL trader (not a follower): at entry it
+# reads chronos-bolt-BASE's P(close >= strike) directly from the window's price path
+# (daemon-native close series, same decile readout kb7 uses, upgraded to the base model
+# — the benchmark winner, research/fm_benchmark_report.json). Takes the model's own side
+# when it is confident (max(p, 1-p) >= FM_TAU = 0.60, the benchmark F1-max threshold),
+# one bid per window, hold to close, OFFICIAL Kalshi settlement. Half-Kelly stake on the
+# model edge, depth-capped. $300 paper. This is TREATMENT T2 (T0=pt control, T1=cg33).
+# The offline benchmark used a finer sub-minute path; the live arm reads minute-candle
+# closes, so it accrues its OWN honest live record rather than inheriting the offline
+# 0.74-precision figure. PAPER / SIMULATION ONLY.
+FM_LOG_NAME = "fm_trades.jsonl"
+FM_START_C = 30_000                    # $300 paper (parity with T1 cg33 for the A/B)
+FM_TAU = 0.60                          # enter iff max(p_up, 1-p_up) >= 0.60
+FM_KELLY = 0.5                         # half-Kelly on the model edge
+FM_CAP = 0.10                          # size cap (fraction of bankroll)
 
 # --- DESK-WIDE OFFICIAL SETTLEMENT (2026-09-15) --------------------------------
 # EVERY paper arm settles on the OFFICIAL Kalshi outcome (CF-BRTI truth), NEVER the
@@ -1288,6 +1312,51 @@ def _chronos_p_up(closes: list[float], strike: float,
         ctx = torch.tensor(closes[-512:], dtype=torch.float32).unsqueeze(0)
         qs = [i / 10 for i in range(1, 10)]
         q, _ = _CHRONOS.predict_quantiles(
+            ctx, prediction_length=max(1, horizon), quantile_levels=qs)
+        vals = [float(x) for x in q[0, -1]]
+        if strike <= vals[0]:
+            pr = 0.95
+        elif strike >= vals[-1]:
+            pr = 0.05
+        else:
+            pr = 0.5
+            for i in range(len(vals) - 1):
+                if vals[i] <= strike <= vals[i + 1]:
+                    frac = ((strike - vals[i]) / (vals[i + 1] - vals[i])
+                            if vals[i + 1] > vals[i] else 0.5)
+                    pr = 1.0 - (qs[i] + frac * (qs[i + 1] - qs[i]))
+                    break
+        return (round(min(.95, max(.05, pr)), 4),
+                round(vals[-1] - vals[0], 1),
+                round(vals[0], 1), round(vals[-1], 1))
+    except Exception:
+        return None
+
+
+_CHRONOS_BASE = None   # T2 (fm) singleton — chronos-bolt-BASE (benchmark winner)
+
+
+def _chronos_base_p_up(closes: list[float], strike: float,
+                       horizon: int):
+    """T2 (fm) trader signal: zero-shot P(close >= strike at horizon) from
+    chronos-bolt-BASE — the benchmark-winning foundation model
+    (research/fm_benchmark_report.json: base F1 0.683 / precision 0.74 /
+    15 FP @ tau 0.60, beating small, local-ft, TimesFM 2.5, market k_prob).
+    IDENTICAL decile readout to kb7 (_chronos_p_up), only the model size
+    differs: kb7 stays frozen on 'small' for its record; T2 uses 'base'.
+    Decision-time inputs only. Returns (p_up, q80_w, lo, hi) or None."""
+    global _CHRONOS_BASE
+    try:
+        if _CHRONOS_BASE is None:
+            import torch
+            from chronos import BaseChronosPipeline
+            _CHRONOS_BASE = BaseChronosPipeline.from_pretrained(
+                "amazon/chronos-bolt-base", device_map="cpu",
+                torch_dtype=torch.float32)
+        import torch
+        ctx = torch.tensor(closes[-512:], dtype=torch.float32).unsqueeze(0)
+        qs = [i / 10 for i in range(1, 10)]
+        q, _ = _CHRONOS_BASE.predict_quantiles(
             ctx, prediction_length=max(1, horizon), quantile_levels=qs)
         vals = [float(x) for x in q[0, -1]]
         if strike <= vals[0]:
@@ -2513,6 +2582,13 @@ def run(once: bool = False) -> None:
     tv_bankroll_c = TV_START_C \
         + sum(t["pnl_c"] for t in tv_trades if t.get("actual") is not None) \
         - sum(t["stake_c"] for t in tv_trades if t.get("actual") is None)
+    # T2 — Chronos-Bolt (base) foundation-model trader (fm). $300 paper,
+    # restart-safe bankroll from its own log alone (single source of truth).
+    fm_trades = _load_kb_bets(FM_LOG_NAME)
+    fm_tickers = {t["ticker"] for t in fm_trades}
+    fm_bankroll_c = FM_START_C \
+        + sum(t["pnl_c"] for t in fm_trades if t.get("actual") is not None) \
+        - sum(t["stake_c"] for t in fm_trades if t.get("actual") is None)
     pt4_trades = _load_kb_bets(PT4_LOG_NAME)
     pt4_tickers = {t["ticker"] for t in pt4_trades}
     # v3 bankroll: $10k reset at the v3 cutover — only v3-era trades
@@ -3400,7 +3476,8 @@ def run(once: bool = False) -> None:
                             or pm_mkt["ticker"] not in cg5_tickers
                             or pm_mkt["ticker"] not in cg10_tickers
                             or pm_mkt["ticker"] not in cg33_tickers
-                            or pm_mkt["ticker"] not in tv_tickers)
+                            or pm_mkt["ticker"] not in tv_tickers
+                            or pm_mkt["ticker"] not in fm_tickers)
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         led = _pt_leader(kb)
@@ -3488,7 +3565,8 @@ def run(once: bool = False) -> None:
                                     # disciplined policy v2: the same
                                     # leader entry, but only at his own
                                     # higher 0.77 confidence bar
-                                    if (pm_mkt["ticker"] not in pt3_tickers
+                                    if ("pt3" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"] not in pt3_tickers
                                             and base_row["p_arm"]
                                             >= PT3_TAU):
                                         nc3 = int(min(PT_FRAC
@@ -3575,7 +3653,8 @@ def run(once: bool = False) -> None:
                                     # supervised P(win) on the shared
                                     # signal; bet iff EV>0, half-Kelly
                                     # size (capped 10%). Learns on settle.
-                                    if pm_mkt["ticker"] not in pt6_tickers:
+                                    if ("pt6" not in RETIRED_TRADERS
+                                            and pm_mkt["ticker"] not in pt6_tickers):
                                         b6x = _pt6_features(
                                             base_row["p_arm"], askp, k_pup,
                                             syp, pf, mins_left)
@@ -3724,7 +3803,8 @@ def run(once: bool = False) -> None:
                     # Trader 3, the DISCIPLINED — kb7 confidence >= 0.77
                     # only (frozen pre-registration above), 10% of funds,
                     # real ask + fee, one bid per window
-                    if (pm_mkt["ticker"] not in pt3_tickers
+                    if ("pt3" not in RETIRED_TRADERS
+                            and pm_mkt["ticker"] not in pt3_tickers
                             and mins_left <= 12 and pm_mkt.get("yes_bid")
                             and pm_mkt.get("yes_ask")):
                         k7r = next(
@@ -3829,26 +3909,9 @@ def run(once: bool = False) -> None:
                                             "actual": None, "win": None,
                                             "pnl_c": None,
                                         }
-                                        if pm_mkt["ticker"] not in cg5_tickers:
-                                            n5 = int(min(CG5_FRAC * cg5_bankroll_c,
-                                                         dcapc) // (askc + feec))
-                                            if n5 >= 1:
-                                                s5 = int(n5 * askc) + _order_fee_c(n5, askc)
-                                                cg5_bankroll_c -= s5
-                                                cg5_trades.append({**cg_base,
-                                                    "contracts": n5, "stake_c": s5,
-                                                    "bankroll_c": cg5_bankroll_c})
-                                                cg5_tickers.add(pm_mkt["ticker"])
-                                        if pm_mkt["ticker"] not in cg10_tickers:
-                                            n10 = int(min(CG10_FRAC * cg10_bankroll_c,
-                                                          dcapc) // (askc + feec))
-                                            if n10 >= 1:
-                                                s10 = int(n10 * askc) + _order_fee_c(n10, askc)
-                                                cg10_bankroll_c -= s10
-                                                cg10_trades.append({**cg_base,
-                                                    "contracts": n10, "stake_c": s10,
-                                                    "bankroll_c": cg10_bankroll_c})
-                                                cg10_tickers.add(pm_mkt["ticker"])
+                                        # cg5 / cg10 RETIRED 2026-09-15 (owner roster cut):
+                                        # only cg33 (T1) survives from the CG family. Their
+                                        # ledgers stay as frozen historical evidence.
                                         if pm_mkt["ticker"] not in cg33_tickers:
                                             n33 = int(min(CG33_FRAC * cg33_bankroll_c,
                                                           dcapc) // (askc + feec))
@@ -3866,7 +3929,8 @@ def run(once: bool = False) -> None:
                     # rec10 >= TV_REC. Half-Kelly sizing on the edge, capped. Guarded so a
                     # fault here can never crash the loop or T0.
                     try:
-                        if (pm_mkt["ticker"] not in tv_tickers and mins_left <= 12
+                        if ("tv" not in RETIRED_TRADERS
+                                and pm_mkt["ticker"] not in tv_tickers and mins_left <= 12
                                 and pm_mkt.get("yes_bid") and pm_mkt.get("yes_ask")):
                             ledv = _pt_leader(kb)
                             if ledv:
@@ -3913,6 +3977,58 @@ def run(once: bool = False) -> None:
                                             tv_tickers.add(pm_mkt["ticker"])
                     except Exception as _tv_e:
                         print("tv entry error:", _tv_e, flush=True)
+                    # --- T2: Chronos-Bolt (base) foundation-model trader (fm) ---
+                    # A DIRECTIONAL MODEL arm: chronos-bolt-BASE reads P(close>=strike)
+                    # from the window price path; take the model's own side when confident
+                    # (max(p,1-p) >= FM_TAU), one bid/window, hold to close, OFFICIAL
+                    # settlement. Half-Kelly on the model edge, depth-capped. Guarded so a
+                    # fault (incl. the model failing to load) can never crash the loop or T0.
+                    try:
+                        if ("fm" not in RETIRED_TRADERS
+                                and pm_mkt["ticker"] not in fm_tickers and mins_left <= 12
+                                and pm_mkt.get("yes_bid") and pm_mkt.get("yes_ask")):
+                            fmres = _chronos_base_p_up(
+                                [b["close"] for b in kbars], pm_mkt["strike"],
+                                int(max(1, round(mins_left))))
+                            if fmres:
+                                p_fm, w80f, qlof, qhif = fmres
+                                pconf = max(p_fm, 1 - p_fm)
+                                if pconf >= FM_TAU:
+                                    syf = p_fm >= 0.5
+                                    askf = (pm_mkt["yes_ask"] if syf
+                                            else 100 - pm_mkt["yes_bid"])
+                                    feef = 7 * (askf / 100) * (1 - askf / 100)
+                                    if 5 <= askf < 95:
+                                        price = askf / 100.0
+                                        b = (1 - price) / price if price > 0 else 0
+                                        kf = ((pconf * b - (1 - pconf)) / b) if b > 0 else 0
+                                        phif = max(0.0, min(FM_CAP, FM_KELLY * kf))
+                                        dsf = (pm_mkt.get("depth_no") if syf
+                                               else pm_mkt.get("depth_yes"))
+                                        dcapf = (int(dsf * askf) if dsf else PT4_CAP_C)
+                                        ncf = int(min(phif * fm_bankroll_c, dcapf)
+                                                  // (askf + feef))
+                                        if phif > 0 and ncf >= 1:
+                                            stf = int(ncf * askf) + _order_fee_c(ncf, askf)
+                                            fm_bankroll_c -= stf
+                                            fm_trades.append({
+                                                "ticker": pm_mkt["ticker"],
+                                                "made_ts": now_ts, "close_ts": k_close_ts,
+                                                "strike": pm_mkt["strike"],
+                                                "side": "yes" if syf else "no",
+                                                "ask_c": round(askf, 1), "fee_c": feef,
+                                                "contracts": ncf, "stake_c": stf,
+                                                "model": "chronos-bolt-base",
+                                                "p_up": p_fm, "p_arm": round(pconf, 4),
+                                                "q80_w": w80f, "q80_lo": qlof, "q80_hi": qhif,
+                                                "kelly_frac": round(phif, 4),
+                                                "gate": f"conf>={FM_TAU}",
+                                                "mins_left": round(mins_left, 1),
+                                                "actual": None, "win": None, "pnl_c": None,
+                                                "bankroll_c": fm_bankroll_c})
+                                            fm_tickers.add(pm_mkt["ticker"])
+                    except Exception as _fm_e:
+                        print("fm entry error:", _fm_e, flush=True)
                     # kbf — THE deliverable: one definitive call per window
                     # at T-3 min (every window called; no abstention), the
                     # operating point where per-class precision/recall
@@ -4314,13 +4430,18 @@ def run(once: bool = False) -> None:
                             _official[_o.get("ticker")] = _o["exact_yes"]
             except Exception as _oe:
                 print("cg official-load error:", _oe, flush=True)
+            # cg33 (T1) + fm (T2) settle live here; cg5/cg10/tv are RETIRED but stay
+            # in the loop to DRAIN any still-open positions on official truth (they
+            # take no new trades). All official-only, deferring until the result lands.
             for _nm, _log in (("cg5", CG5_LOG_NAME), ("cg10", CG10_LOG_NAME),
-                              ("cg33", CG33_LOG_NAME), ("tv", TV_LOG_NAME)):
+                              ("cg33", CG33_LOG_NAME), ("tv", TV_LOG_NAME),
+                              ("fm", FM_LOG_NAME)):
                 try:
                     _tr = {"cg5": cg5_trades, "cg10": cg10_trades, "cg33": cg33_trades,
-                           "tv": tv_trades}[_nm]
+                           "tv": tv_trades, "fm": fm_trades}[_nm]
                     _bank = {"cg5": cg5_bankroll_c, "cg10": cg10_bankroll_c,
-                             "cg33": cg33_bankroll_c, "tv": tv_bankroll_c}[_nm]
+                             "cg33": cg33_bankroll_c, "tv": tv_bankroll_c,
+                             "fm": fm_bankroll_c}[_nm]
                     _chg = False
                     for t in _tr:
                         if t["actual"] is not None or now_ts < t["close_ts"]:
@@ -4342,8 +4463,10 @@ def run(once: bool = False) -> None:
                         cg10_bankroll_c = _bank
                     elif _nm == "cg33":
                         cg33_bankroll_c = _bank
-                    else:
+                    elif _nm == "tv":
                         tv_bankroll_c = _bank
+                    else:
+                        fm_bankroll_c = _bank
                     if _chg or (_tr and _tr[-1]["actual"] is None
                                 and _tr[-1]["made_ts"] >= now_ts - 90):
                         _tmp = (RESULTS_DIR / _log).with_suffix(".tmpcg")

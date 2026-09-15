@@ -15,36 +15,40 @@ RES = ROOT / "results"
 ET = ZoneInfo("America/New_York")
 
 TRADERS = [
+    # 2026-09-15 GREAT ROSTER CUT (owner directive): only T0 (pt), T1 (cg33) and
+    # T2 (fm = Chronos-Bolt base) stay active. Every other treatment is retired
+    # (active=False) — its ledger is frozen history, off the live board.
     ("pt", "Follower", "the control", "control", True, "leader",
-     "Follows the current best-bidding arm — the prediction arm leading over its last 10 "
-     "settled, gate-clearing decisions. Enters that side at confidence >= 0.62, sizes at 10% "
-     "of bankroll, one bid per window at the real ask + fee.",
+     "T0 CONTROL — follows the current best-bidding arm (the prediction arm leading over its "
+     "last 10 settled, gate-clearing decisions). Enters that side at confidence >= 0.62, sizes "
+     "at 10% of bankroll, one bid per window at the real ask + fee. Frozen — never modified.",
      "online.py / pt_trades.jsonl - leader, rec10, p_arm"),
-    ("pt3", "Disciplined", "the thesis trader", "thesis", True, "src",
-     "Bids only when the source arm's confidence >= 0.77 (top-44% conviction tier); otherwise "
-     "stands down. 10% sizing. Records the source arm and policy version.",
-     "pt3_trades.jsonl - src, pv - PT3_TAU=0.77"),
-    ("cg5", "Gated ·5%", "confidence-gated follower", "thesis", True, "leader",
-     "Follows the leader's side ONLY when leader confidence >= 0.20 (skips the near-coin-flip "
-     "middle), one bid/window, hold to close. 5% stake — the growth-optimal size in backtest. "
-     "$300 paper.", "cg5_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.05"),
-    ("cg10", "Gated ·10%", "confidence-gated follower", "thesis", True, "leader",
-     "Same confidence-gated policy as cg5 at 10% stake — more aggressive, still survivable in "
-     "backtest. $300 paper.", "cg10_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.10"),
     ("cg33", "Gated ·33%", "confidence-gated follower", "thesis", True, "leader",
-     "Same policy at 33% stake — a deliberate RUIN-RISK experiment (~1.6x Kelly): backtest shows "
+     "T1 — follows the leader's side only when leader confidence >= 0.20 (skips the near-coin-"
+     "flip middle) at 33% stake: a deliberate RUIN-RISK experiment (~1.6x Kelly): backtest shows "
      "$300 -> ~$60 at 98% drawdown. Demonstrates over-betting, not a recommendation. $300 paper.",
      "cg33_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.33"),
-    ("tv", "T0-Value", "value-gated follower", "thesis", True, "leader",
-     "Follows the leader ONLY on value bets: leader confidence beats the price paid by >=8pp AND "
-     "leader is strong (rec10>=0.7); half-Kelly sizing (cap 10%). Backtest: the value gate flips "
-     "T0's -$1,535 to positive by declining overpriced favorites. Settles on official Kalshi. $300 paper.",
-     "tv_trades.jsonl - leader, gate edge>=0.08 & rec>=0.7, half-Kelly"),
-    ("pt6", "MLE", "the meta-learner (shadow)", "shadow", True, "leader",
-     "A supervised meta-trader: learns P(a leader-side bet wins) online via a 7-dim logistic "
-     "model, bets only when EV > 0 at the real ask, half-Kelly capped 10%, min edge 10c. "
-     "SHADOW: stakes nothing, logs the would-be trade so it can be scored without risk.",
-     "pt6_trades.jsonl / pt6_logit.json (7-dim) - p_win, trained, would_*"),
+    ("fm", "Chronos-Bolt", "foundation-model trader", "model", True, "model",
+     "T2 — a directional foundation-model arm: chronos-bolt-base reads P(close>=strike) from the "
+     "window price path and takes its OWN side when confident (max(p,1-p)>=0.60), half-Kelly "
+     "sizing (cap 10%), one bid/window, hold to close. Benchmark winner over TimesFM 2.5 and the "
+     "market (F1 0.68, precision 0.74, fewest false positives). Official Kalshi settle. $300 paper.",
+     "fm_trades.jsonl - chronos-bolt-base, p_up, q80_w, gate conf>=0.60, half-Kelly"),
+    ("pt3", "Disciplined", "the thesis trader", "retired", False, "src",
+     "Bid only when the source arm's confidence >= 0.77 (top-44% conviction tier). 10% sizing. "
+     "RETIRED 2026-09-15.", "pt3_trades.jsonl - src, pv - PT3_TAU=0.77"),
+    ("cg5", "Gated ·5%", "confidence-gated follower", "retired", False, "leader",
+     "Confidence-gated follower at 5% stake. RETIRED 2026-09-15.",
+     "cg5_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.05"),
+    ("cg10", "Gated ·10%", "confidence-gated follower", "retired", False, "leader",
+     "Confidence-gated follower at 10% stake. RETIRED 2026-09-15.",
+     "cg10_trades.jsonl - leader, gate conf>=0.20, PTCG_FRAC=0.10"),
+    ("tv", "T0-Value", "value-gated follower", "retired", False, "leader",
+     "Followed the leader only on value bets (edge>=8pp & rec10>=0.7), half-Kelly. RETIRED "
+     "2026-09-15.", "tv_trades.jsonl - leader, gate edge>=0.08 & rec>=0.7, half-Kelly"),
+    ("pt6", "MLE", "the meta-learner (shadow)", "retired", False, "leader",
+     "Supervised meta-trader (7-dim logistic P(win), EV>0, half-Kelly). Shadow. RETIRED "
+     "2026-09-15.", "pt6_trades.jsonl / pt6_logit.json (7-dim) - p_win, trained, would_*"),
     ("pt2", "Ladder", "profit-banking", "retired", False, "leader",
      "Follower entries plus a profit-banking ladder (withdraw one level at 11x). Retired.",
      "pt2_trades.jsonl"),

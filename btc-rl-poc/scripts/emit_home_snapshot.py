@@ -22,20 +22,16 @@ SCHEMA_VERSION = "home-1"
 METRIC_DEFS_VERSION = "econ-1/prob-1"
 
 # roster: 1 control + up to 4 treatments (§11)
+# 2026-09-15 GREAT ROSTER CUT (owner directive): T0 control + exactly two live
+# treatments. Every prior treatment (cg5/cg10/tv/pt3/pt6/pt2/pt4/pt5/pt7/pt8)
+# retired — ledgers kept as frozen evidence, off the board.
 ROSTER = [
     {"id": "pt", "name": "The $1K Desk", "role": "CONTROL", "log": "pt_trades.jsonl",
-     "strategy": "Follower (leaderboard leader, PT_TAU 0.62)"},
-    # Confidence-Gated Follower treatments (2026-09-15) — same policy (follow the
-    # leader only when confidence >= 0.20, skip coin-flips, hold to close), $300 each,
-    # differing ONLY in stake. Replaced the prior featured treatments (pt3/kb/pb).
-    {"id": "cg5", "name": "Gated ·5%", "role": "TREATMENT", "log": "cg5_trades.jsonl",
-     "strategy": "Confidence-Gated Follower, 5% stake (conf>=0.20)"},
-    {"id": "cg10", "name": "Gated ·10%", "role": "TREATMENT", "log": "cg10_trades.jsonl",
-     "strategy": "Confidence-Gated Follower, 10% stake (conf>=0.20)"},
+     "strategy": "T0 — Follower (leaderboard leader, PT_TAU 0.62)"},
     {"id": "cg33", "name": "Gated ·33%", "role": "TREATMENT", "log": "cg33_trades.jsonl",
-     "strategy": "Confidence-Gated Follower, 33% stake (RUIN-RISK experiment)"},
-    {"id": "pt6", "name": "The MLE", "role": "TREATMENT", "log": "pt6_trades.jsonl",
-     "strategy": "MLE edge logit (shadow, EV>=10c)"},
+     "strategy": "T1 — Confidence-Gated Follower, 33% stake (RUIN-RISK experiment)"},
+    {"id": "fm", "name": "Chronos-Bolt", "role": "TREATMENT", "log": "fm_trades.jsonl",
+     "strategy": "T2 — Chronos-Bolt base foundation model, directional (conf>=0.60)"},
 ]
 
 
@@ -211,20 +207,18 @@ def _oracle_strip():
 
 
 def _cg_family_entries():
-    """The 3 live Confidence-Gated Follower treatments (cg5/cg10/cg33), with LIVE
-    stats read from their own ledgers (official-BRTI settled). Shown in the home
-    trader family so the deployment is visible."""
+    """The two live treatments after the 2026-09-15 roster cut: T1 (cg33) and T2 (fm =
+    Chronos-Bolt base), with LIVE stats read from their own ledgers (official-BRTI
+    settled). Shown in the home trader family so the live deployment is visible. The
+    retired arms (cg5/cg10/tv/pt3/pt6/…) are intentionally absent."""
     specs = [
-        ("cg5", "Gated · 5%", "Growth-optimal size.", "LIVE_CANDIDATE", "cg5_trades.jsonl",
-         "Follows the leader only when confidence >= 0.20 (skips coin-flips), 5% stake, hold to close."),
-        ("cg10", "Gated · 10%", "More aggressive.", "LIVE_CANDIDATE", "cg10_trades.jsonl",
-         "Same confidence-gated policy at 10% stake."),
         ("cg33", "Gated · 33%", "Ruin-risk experiment.", "RUIN_RISK_EXPERIMENT", "cg33_trades.jsonl",
-         "Same policy at 33% stake — demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown)."),
-        ("tv", "T0-Value", "Only value bets.", "LIVE_CANDIDATE", "tv_trades.jsonl",
-         "Follows the leader ONLY when its confidence beats the price paid by >=8pp (value gate) "
-         "and the leader is strong (rec10>=0.7); half-Kelly sizing. Backtest: the value gate flips "
-         "T0 from -$1,535 to positive by declining overpriced favorites. Settles on official Kalshi."),
+         "T1 — follows the leader only when confidence >= 0.20 (skips coin-flips), 33% stake, hold to "
+         "close. Demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown). Official Kalshi settle."),
+        ("fm", "Chronos-Bolt", "Foundation model.", "LIVE_CANDIDATE", "fm_trades.jsonl",
+         "T2 — chronos-bolt-base reads P(close>=strike) from the window price path and takes its own "
+         "side when confident (>=0.60), half-Kelly sizing, one bid/window, hold to close. Benchmark "
+         "winner (F1 0.68, precision 0.74, fewest false positives). Official Kalshi settlement."),
     ]
     start = 30000
     out = []
@@ -277,12 +271,19 @@ def _cg_family_entries():
         live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 3) if settled else None,
                 "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
+        is_fm = cid == "fm"
         out.append({"id": cid, "name": name, "role": "TREATMENT",
-                    "type": "Rule-based (confidence-gated)",
+                    "type": ("Foundation model (Chronos-Bolt base)" if is_fm
+                             else "Rule-based (confidence-gated)"),
                     "tagline": f"{tag} · live ${bank/100:.2f}", "icon": "bolt", "blurb": blurb,
-                    "reason": "Live candidate accruing paired evidence vs T0 (offline n=218, small).",
-                    "backtest": {"coverage": 0.61,
-                                 "label": "OFFLINE CANDIDATE (n=218, vs always-take)"},
+                    "reason": ("Directional foundation-model trader; benchmark winner among "
+                               "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
+                               else "Live candidate accruing paired evidence vs T0 (offline n=218, small)."),
+                    "backtest": ({"coverage": 0.39,
+                                  "label": "OFFLINE BENCHMARK (148-win OOS, chronos-bolt-base @0.60)"}
+                                 if is_fm else
+                                 {"coverage": 0.61,
+                                  "label": "OFFLINE CANDIDATE (n=218, vs always-take)"}),
                     "live": live, "livedesk": livedesk, "verdict": verdict})
     return out
 
