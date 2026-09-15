@@ -291,7 +291,10 @@ def refresh_snapshots(only: list[str] | None = None) -> None:
     here = Path(__file__).resolve().parent
     for script in (only or SNAPSHOT_EMITTERS):
         try:
-            r = subprocess.run(["python3", str(here / script)],
+            # sys.executable (the anaconda python running this) — NOT bare "python3", which in
+            # cron's minimal PATH resolves to the system python without numpy, silently failing
+            # every numpy-using emitter (e.g. emit_trader_detail -> replay_backtest). 2026-09-15.
+            r = subprocess.run([sys.executable, str(here / script)],
                                capture_output=True, text=True, timeout=180)
             if r.returncode != 0:
                 print(f"snapshot {script} failed:", (r.stderr or "")[-160:])
