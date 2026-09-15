@@ -1,0 +1,344 @@
+{
+ "schema_version": "t0-improvement-backtest-1",
+ "note": "PLAN/BACKTEST ONLY \u2014 nothing changed live. T0's own trades re-settled on OFFICIAL Kalshi outcomes.",
+ "n_trades": 1018,
+ "baseline_T0_official": {
+  "n": 1018,
+  "net_c": -153464,
+  "net_usd": -1534.64,
+  "hit": 0.69,
+  "sharpe": -0.24
+ },
+ "levers": {
+  "G_conf>=": {
+   "desc": "keep only leader confidence >= tau",
+   "in_sample": {
+    "0.62": {
+     "n": 1018,
+     "net_c": -153464,
+     "net_usd": -1534.64,
+     "hit": 0.69,
+     "sharpe": -0.24
+    },
+    "0.66": {
+     "n": 725,
+     "net_c": -140875,
+     "net_usd": -1408.75,
+     "hit": 0.708,
+     "sharpe": -0.45
+    },
+    "0.7": {
+     "n": 492,
+     "net_c": -90857,
+     "net_usd": -908.57,
+     "hit": 0.724,
+     "sharpe": -0.1
+    },
+    "0.74": {
+     "n": 286,
+     "net_c": -89886,
+     "net_usd": -898.86,
+     "hit": 0.745,
+     "sharpe": 0.22
+    },
+    "0.78": {
+     "n": 154,
+     "net_c": -3353,
+     "net_usd": -33.53,
+     "hit": 0.74,
+     "sharpe": -0.07
+    }
+   },
+   "walk_forward": {
+    "chosen_param": 0.78,
+    "oos": {
+     "n": 82,
+     "net_c": -4609,
+     "net_usd": -46.09,
+     "hit": 0.707,
+     "sharpe": -0.77
+    },
+    "oos_baseline": {
+     "n": 509,
+     "net_c": -5668,
+     "net_usd": -56.68,
+     "hit": 0.701,
+     "sharpe": 0.5
+    },
+    "oos_delta_usd": 10.59,
+    "placebo_oos_delta_usd": 0.0
+   }
+  },
+  "P_ask<=": {
+   "desc": "skip expensive favorites: keep ask <= cap",
+   "in_sample": {
+    "90": {
+     "n": 1018,
+     "net_c": -153464,
+     "net_usd": -1534.64,
+     "hit": 0.69,
+     "sharpe": -0.24
+    },
+    "80": {
+     "n": 1018,
+     "net_c": -153464,
+     "net_usd": -1534.64,
+     "hit": 0.69,
+     "sharpe": -0.24
+    },
+    "75": {
+     "n": 848,
+     "net_c": -121249,
+     "net_usd": -1212.49,
+     "hit": 0.665,
+     "sharpe": -0.49
+    },
+    "70": {
+     "n": 617,
+     "net_c": -96441,
+     "net_usd": -964.41,
+     "hit": 0.622,
+     "sharpe": -1.07
+    },
+    "65": {
+     "n": 371,
+     "net_c": -59999,
+     "net_usd": -599.99,
+     "hit": 0.593,
+     "sharpe": -0.58
+    }
+   },
+   "walk_forward": {
+    "chosen_param": 65,
+    "oos": {
+     "n": 194,
+     "net_c": -7868,
+     "net_usd": -78.68,
+     "hit": 0.619,
+     "sharpe": 0.2
+    },
+    "oos_baseline": {
+     "n": 509,
+     "net_c": -5668,
+     "net_usd": -56.68,
+     "hit": 0.701,
+     "sharpe": 0.5
+    },
+    "oos_delta_usd": -22.0,
+    "placebo_oos_delta_usd": 69.89
+   }
+  },
+  "P_skipmid": {
+   "desc": "skip mid-price band [lo,70)",
+   "in_sample": {
+    "55": {
+     "n": 530,
+     "net_c": -32369,
+     "net_usd": -323.69,
+     "hit": 0.743,
+     "sharpe": 0.96
+    },
+    "60": {
+     "n": 613,
+     "net_c": -84222,
+     "net_usd": -842.22,
+     "hit": 0.716,
+     "sharpe": 0.43
+    },
+    "65": {
+     "n": 772,
+     "net_c": -170583,
+     "net_usd": -1705.83,
+     "hit": 0.687,
+     "sharpe": -0.53
+    }
+   },
+   "walk_forward": {
+    "chosen_param": 55,
+    "oos": {
+     "n": 256,
+     "net_c": -3548,
+     "net_usd": -35.48,
+     "hit": 0.746,
+     "sharpe": 0.74
+    },
+    "oos_baseline": {
+     "n": 509,
+     "net_c": -5668,
+     "net_usd": -56.68,
+     "hit": 0.701,
+     "sharpe": 0.5
+    },
+    "oos_delta_usd": 21.2,
+    "placebo_oos_delta_usd": -3.78
+   }
+  },
+  "L_rec>=": {
+   "desc": "keep only strong leader: rec10 >= k",
+   "in_sample": {
+    "0.6": {
+     "n": 979,
+     "net_c": -150602,
+     "net_usd": -1506.02,
+     "hit": 0.687,
+     "sharpe": -0.42
+    },
+    "0.7": {
+     "n": 899,
+     "net_c": -71352,
+     "net_usd": -713.52,
+     "hit": 0.696,
+     "sharpe": 0.17
+    },
+    "0.8": {
+     "n": 690,
+     "net_c": -128564,
+     "net_usd": -1285.64,
+     "hit": 0.687,
+     "sharpe": -0.4
+    },
+    "0.9": {
+     "n": 345,
+     "net_c": -89024,
+     "net_usd": -890.24,
+     "hit": 0.675,
+     "sharpe": -0.8
+    }
+   },
+   "walk_forward": {
+    "chosen_param": 0.7,
+    "oos": {
+     "n": 441,
+     "net_c": -4409,
+     "net_usd": -44.09,
+     "hit": 0.71,
+     "sharpe": 0.76
+    },
+    "oos_baseline": {
+     "n": 509,
+     "net_c": -5668,
+     "net_usd": -56.68,
+     "hit": 0.701,
+     "sharpe": 0.5
+    },
+    "oos_delta_usd": 12.59,
+    "placebo_oos_delta_usd": -2.5
+   }
+  },
+  "E_edge>=": {
+   "desc": "value gate: keep only p_arm - ask/100 >= margin (model beats price)",
+   "in_sample": {
+    "0.0": {
+     "n": 599,
+     "net_c": -123843,
+     "net_usd": -1238.43,
+     "hit": 0.643,
+     "sharpe": -1.01
+    },
+    "0.03": {
+     "n": 447,
+     "net_c": -120552,
+     "net_usd": -1205.52,
+     "hit": 0.638,
+     "sharpe": -0.53
+    },
+    "0.05": {
+     "n": 354,
+     "net_c": -34556,
+     "net_usd": -345.56,
+     "hit": 0.65,
+     "sharpe": 0.4
+    },
+    "0.08": {
+     "n": 233,
+     "net_c": -10802,
+     "net_usd": -108.02,
+     "hit": 0.631,
+     "sharpe": 0.32
+    },
+    "0.12": {
+     "n": 130,
+     "net_c": 13964,
+     "net_usd": 139.64,
+     "hit": 0.592,
+     "sharpe": 0.21
+    }
+   },
+   "walk_forward": {
+    "chosen_param": 0.12,
+    "oos": {
+     "n": 60,
+     "net_c": -2449,
+     "net_usd": -24.49,
+     "hit": 0.583,
+     "sharpe": -0.03
+    },
+    "oos_baseline": {
+     "n": 509,
+     "net_c": -5668,
+     "net_usd": -56.68,
+     "hit": 0.701,
+     "sharpe": 0.5
+    },
+    "oos_delta_usd": 32.19,
+    "placebo_oos_delta_usd": -3.82
+   }
+  }
+ },
+ "sizing_on_baseline": {
+  "flat_5%": {
+   "end_bankroll": 125.72,
+   "max_dd_pct": 87.9
+  },
+  "flat_10%": {
+   "end_bankroll": 15.04,
+   "max_dd_pct": 99.4
+  },
+  "flat_20%": {
+   "end_bankroll": 0.0,
+   "max_dd_pct": 100.0
+  },
+  "half_kelly_cap10%": {
+   "end_bankroll": 56.11,
+   "max_dd_pct": 96.4
+  }
+ },
+ "ranking_by_oos_delta": [
+  {
+   "lever": "E_edge>=",
+   "chosen_param": 0.12,
+   "oos_delta_usd": 32.19,
+   "placebo_oos_delta_usd": -3.82,
+   "survives_placebo": true
+  },
+  {
+   "lever": "P_skipmid",
+   "chosen_param": 55,
+   "oos_delta_usd": 21.2,
+   "placebo_oos_delta_usd": -3.78,
+   "survives_placebo": true
+  },
+  {
+   "lever": "L_rec>=",
+   "chosen_param": 0.7,
+   "oos_delta_usd": 12.59,
+   "placebo_oos_delta_usd": -2.5,
+   "survives_placebo": true
+  },
+  {
+   "lever": "G_conf>=",
+   "chosen_param": 0.78,
+   "oos_delta_usd": 10.59,
+   "placebo_oos_delta_usd": 0.0,
+   "survives_placebo": true
+  },
+  {
+   "lever": "P_ask<=",
+   "chosen_param": 65,
+   "oos_delta_usd": -22.0,
+   "placebo_oos_delta_usd": 69.89,
+   "survives_placebo": false
+  }
+ ],
+ "caveats": "single paper desk, ~1000 windows, 4 levers x grids tried (multiple testing); OOS = one chronological split. Directional evidence, not proof. T0 has no directional alpha (base rate ~0.5) so gains come only from declining -EV windows and controlling risk/size."
+}
