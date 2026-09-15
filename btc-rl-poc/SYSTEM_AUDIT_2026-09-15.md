@@ -16,8 +16,8 @@
   directional). Every other treatment (`pt2 pt3 pt4 pt5 pt6 pt7 pt8 cg5 cg10 tv`) is retired —
   gated off in the daemon, removed from the UI, ledgers kept as frozen evidence.
 - **Model decision (benchmark):** chronos-bolt-**base** wins on precision (0.74) and false
-  positives (15, fewest) with F1 tied for top (0.683). **TimesFM 2.5 does not beat it** → no T3
-  from TimesFM. **Kronos** still under evaluation (offline, ~1 h run in progress).
+  positives (15, fewest) with F1 tied for top (0.683). **TimesFM 2.5, Kronos-base, and Tauric all
+  fail to beat it → there is NO T3/T4.** Final roster = T0/T1/T2.
 - **Two health problems predate this work and need attention:** (1) **20 GB disk**, almost all
   in never-rotated event tapes (~2 GB/day); (2) the site publisher has **two silent-failure
   loops** (missing numpy → trader-detail snapshot never regenerates; hourly main-repo git push
@@ -42,10 +42,11 @@
 
 ## 2. What is pending / hung / not done
 
-- **Kronos (T3 candidate):** offline benchmark still running (~1 h; the model is a candlestick FM
-  needing synthetic OHLC from our single BRTI path). If it beats base (F1 0.683 / precision 0.74 /
-  15 FP) it becomes **T3**; otherwise no T3/T4. **Tauric** = LLM trading agents, unsuitable for
-  15-minute intraday (established earlier) → not a candidate.
+- **Kronos (T3 candidate): RESOLVED — does NOT beat base.** Kronos-base (148-win OOS, 30 sampled
+  paths/window, `research/kronos_bench_report.json`): F1 0.681, precision 0.658, FP 25, acc 0.696
+  — vs base F1 0.683 / precision 0.741 / FP 15. Fails "beat on F1 AND precision/FP" → **no T3.**
+  **Tauric** = LLM trading agents, unsuitable for 15-minute intraday → not a candidate. **Final:
+  no T3/T4; roster stands at T0/T1/T2.**
 - **T2 live vs offline parity (by design, not a bug):** the offline benchmark used a fine
   sub-minute BRTI path + Asian tail-average; the live arm reads minute-candle closes + final step
   (kb7-parity). So the live arm accrues its **own** honest record rather than inheriting the 0.74
@@ -236,5 +237,5 @@ The system already has strong supervision (`watchdog`, `capture_watchdog`, `meta
 7. **Stale UI contract tests** after roster/schema changes. *Pre-deploy snapshot-schema check.*
 
 ---
-*Generated during the Great Roster Cut. Commits `dcee375`, `83dbf71` on `worktree-btc-rl-poc`.
-Kronos benchmark still running — T3/T4 to be decided on its result.*
+*Generated during the Great Roster Cut on `worktree-btc-rl-poc`. Benchmark closed: no model beat
+Chronos-Bolt base → final roster T0 `pt` / T1 `cg33` / T2 `fm`, no T3/T4.*
