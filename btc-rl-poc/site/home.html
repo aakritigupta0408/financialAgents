@@ -337,24 +337,29 @@ function tradesPanel(){
     <div class="mini">Showing ${rows.length} of ${d.n_trades} trades · unseen historical holdout</div></div>`;
 }
 function abPanel(){
-  const ab=(DETAIL&&DETAIL.ab_experiment)||{};
-  const sa=(LIVE&&LIVE.since_activation)||{n:0};
   const active=LIVE&&LIVE.daemon_alive_age_s!=null&&LIVE.daemon_alive_age_s<180;
   const badge=active?`<span class="notstarted"><span class="live-dot"></span> Collecting</span>`
     :`<span class="notstarted"><span class="live-dot stale"></span> Not started</span>`;
+  // EV north-star: Control T0 (live desk) vs the tv Value Gate treatment. Live, not window-matched.
+  const c=(LIVE&&LIVE.session)||{}, tv=(byId('tv').live)||{};
+  const cN=c.n||0, tN=tv.n||0;
+  const cEV=(cN&&c.pnl_c!=null)?c.pnl_c/cN:null, tEV=(tN&&tv.pnl_c!=null)?tv.pnl_c/tN:null;
+  const dEV=(cEV!=null&&tEV!=null)?(tEV-cEV):null;
+  const money=v=>v==null?'—':(v<0?'-$':'+$')+Math.abs(v/100).toFixed(2);
+  const cents=v=>v==null?'—':(v>=0?'+':'')+v.toFixed(0)+'c';
   return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center">
-      <div class="lab">Live A/B test</div>${badge}</div>
-    <p class="pdesc" style="margin-top:4px">Exact-BRTI runtime is <b>${active?'active':'inactive'}</b> — the frozen T0-vs-T1 paired experiment now accrues one settled window at a time.</p>
+      <div class="lab">Live A/B test · EV north-star</div>${badge}</div>
+    <p class="pdesc" style="margin-top:4px">Runtime is <b>${active?'active':'inactive'}</b>. Metric = <b>EV per trade</b> (net $ / trade), not hit-rate — a 69% hit still loses money buying favorites. Live comparison, accruing one settled window at a time (not window-matched).</p>
     <div class="abrow">
-      <div class="abside"><span class="ic" style="color:var(--series-2)">${icon('crown','var(--series-2)',20)}</span><div><div class="t">Control · T0</div><div class="s">Baseline Follower</div></div></div>
+      <div class="abside"><span class="ic" style="color:var(--series-2)">${icon('crown','var(--series-2)',20)}</span><div><div class="t">Control · T0</div><div class="s">Baseline Follower · takes every window</div></div></div>
       <span class="muted" style="font-weight:600">vs</span>
-      <div class="abside"><span class="ic" style="color:var(--series-7)">${icon('bolt','var(--series-7)',20)}</span><div><div class="t">Treatment · T1</div><div class="s">Selective Edge</div></div></div></div>
+      <div class="abside"><span class="ic" style="color:var(--series-7)">${icon('target','var(--series-7)',20)}</span><div><div class="t">Treatment · Value Gate</div><div class="s">bets only +EV windows (edge≥0.05)</div></div></div></div>
     <div class="abmetrics">
-      <div class="b"><div class="v">—</div><div class="k">Paired Δ EV / window<br>(collecting)</div></div>
-      <div class="b"><div class="v">${sa.n}</div><div class="k">Windows since<br>activation</div></div>
-      <div class="b"><div class="v">—</div><div class="k">95% CI (collecting)</div></div>
-      <div class="b"><div class="v">—</div><div class="k">Sequential test</div></div></div>
-    <div class="mini" style="margin-top:14px"><span class="live-dot ${active?'':'stale'}"></span> Paired capture needs many windows to reach significance; the live desk above shows current activity. · spec ${ab.spec_hash||''}</div></div>`;
+      <div class="b"><div class="v">${cents(dEV)}</div><div class="k">Δ EV / trade<br>(tv − T0)</div></div>
+      <div class="b"><div class="v">${cents(tEV)}</div><div class="k">tv EV/trade<br>net ${money(tv.pnl_c)} · n ${tN}</div></div>
+      <div class="b"><div class="v">${cents(cEV)}</div><div class="k">T0 EV/trade<br>net ${money(c.pnl_c)} · n ${cN}</div></div>
+      <div class="b"><div class="v">${tN<20?'—':(dEV>0?'tv ahead':'T0 ahead')}</div><div class="k">Verdict<br>(needs ~20+ tv trades)</div></div></div>
+    <div class="mini" style="margin-top:14px"><span class="live-dot ${active?'':'stale'}"></span> Offline: the value gate flips T0 from −$48 to +$22 (edge≥2c, 31% coverage). tv funded at $1,000. Full coverage-vs-EV curve on Models Lab.</div></div>`;
 }
 function liveDeskStrip(){
   const L=LIVE; if(!L||!L.session) return "";
