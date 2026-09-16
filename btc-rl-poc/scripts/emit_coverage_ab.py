@@ -63,7 +63,7 @@ def run():
         })
     doc = {"schema": "coverage-ab-1", "entry": "open+6min (~9 min left), analytic barrier",
            "control_T0_pt": _arm_summary(pt, 10_000_000_000),
-           "treatment_ob": _arm_summary(ob, 30_000),
+           "treatment_ob": _arm_summary(ob, 1_000_000),  # $10k paper (2026-09-15)
            "ob_by_coverage": cov_rows,
            "note": ("ob trades EVERY window at open+6min (100% coverage) and logs conf_z=|z|; "
                     "each coverage row = its top-X% most-confident settled trades. As settled "

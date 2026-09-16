@@ -623,8 +623,10 @@ FM_CAP = 0.10                          # size cap (fraction of bankroll)
 # testing the coverage/hit tradeoff in real time against the T0 control. $300 paper, 10%
 # depth-capped, OFFICIAL Kalshi settlement. PAPER / SIMULATION ONLY.
 OB_LOG_NAME = "ob_trades.jsonl"
-OB_START_C = 30_000
-OB_FRAC = 0.10
+OB_START_C = 1_000_000                 # $10,000 paper (owner directive 2026-09-15;
+                                       # was $300). ob is the standout barrier arm —
+                                       # funded up to let its +EV accrue at scale.
+OB_FRAC = 0.10                         # 10% of bankroll per bid (half-Kelly-ish)
 OB_MIN_ML = 8.5                        # enter once when 8.5 <= mins_left <= 9.5 (= open+6min)
 OB_MAX_ML = 9.5
 
