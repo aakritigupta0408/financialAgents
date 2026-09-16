@@ -26,8 +26,12 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-LEDGER = ROOT / "results" / "cg33_trades.jsonl"
-STATE = ROOT / "results" / ".cg33_alert_state.json"
+# Which arm to alert on. Default = ob (Open+6 Barrier); set ALERT_ARM to switch (cg33/tv/fm/...).
+ARM = os.environ.get("ALERT_ARM", "ob")
+ARM_LABEL = {"ob": "Open+6 Barrier", "cg33": "Gated·33%", "tv": "Value Gate",
+             "fm": "Chronos-Bolt", "pt": "T0 Follower"}.get(ARM, ARM)
+LEDGER = ROOT / "results" / f"{ARM}_trades.jsonl"
+STATE = ROOT / "results" / f".{ARM}_alert_state.json"
 TO = os.environ.get("CG_ALERT_TO", "ag.1486c@gmail.com")
 IMESSAGE_TO = os.environ.get("CG_ALERT_IMESSAGE")   # phone # / Apple ID -> texts via Messages.app
 POLL_S = 45
@@ -96,7 +100,7 @@ def _send_imessage(text):
 
 def _sms(r):
     c = lambda v: f"{v}c" if v is not None else "?"          # noqa: E731
-    return (f"cg33 ENTERED {(r.get('side') or '').upper()} "
+    return (f"{ARM_LABEL} ENTERED {(r.get('side') or '').upper()} "
             f"{(r.get('ticker') or '').replace('KXBTC15M-', '')} @ {c(r.get('ask_c'))} · "
             f"stake ${(r.get('stake_c') or 0)/100:.0f} · bank "
             f"${(r.get('bankroll_c') or 0)/100:.2f} (paper)")
@@ -105,25 +109,25 @@ def _sms(r):
 def _fmt(r):
     c = lambda v: f"{v}¢" if v is not None else "—"      # noqa: E731
     d = lambda v: f"${v/100:,.2f}" if v is not None else "—"  # noqa: E731
-    conf = r.get("p_arm")
-    subject = (f"Gated·33% ENTERED {(r.get('side') or '').upper()} "
+    conf = r.get("p_up") if r.get("p_up") is not None else r.get("p_arm")
+    signal = r.get("model") or r.get("leader") or ""
+    subject = (f"{ARM_LABEL} ENTERED {(r.get('side') or '').upper()} "
                f"{(r.get('ticker') or '').replace('KXBTC15M-', '')} @ {c(r.get('ask_c'))}")
-    body = f"""Gated · 33% treatment just ENTERED a trade  (PAPER / simulation only)
+    body = f"""{ARM_LABEL} treatment just ENTERED a trade  (PAPER / simulation only)
 
 Window     {r.get('ticker')}
 Side       {(r.get('side') or '').upper()}
 Entry      {c(r.get('ask_c'))}   (fee {r.get('fee_c')})
 Contracts  {r.get('contracts')}
-Stake      {d(r.get('stake_c'))}   (33% of bankroll)
+Stake      {d(r.get('stake_c'))}
 Bankroll   {d(r.get('bankroll_c'))}  after entry
 Strike     {r.get('strike')}
-Leader     {r.get('leader')}  (rec {r.get('rec10')})
-Oracle conf {conf}   (gate: 2*|p-0.5| >= 0.20)
+Signal     {signal}   p_up {conf}  (conf_z {r.get('conf_z')})
 Mins left  {r.get('mins_left')}
 Entered    {time.strftime('%Y-%m-%d %H:%M:%S %Z', time.localtime(r.get('made_ts')))}
 
 Settles on official BRTI at window close. This is a simulated paper bet — no real
-order is placed. cg33 is a deliberate ruin-risk experiment (33% ~ 1.6x Kelly).
+order is placed. {ARM_LABEL} decides at open+6min via the first-passage barrier.
 — BTC Oracle desk
 """
     return subject, body
@@ -154,19 +158,19 @@ def one_pass(seen):
 def main():
     if "--test" in sys.argv:
         if IMESSAGE_TO:
-            how = _send_imessage("cg33 alerts test — iMessage wired. You'll get a text each "
-                                 "time Gated-33% enters a trade. (paper/simulation)")
+            how = _send_imessage(f"{ARM_LABEL} alerts test — iMessage wired. You'll get a text each "
+                                 f"time {ARM_LABEL} enters a trade. (paper/simulation)")
             print(f"test iMessage sent to {IMESSAGE_TO} via {how}")
         else:
-            how = _send("Gated·33% alerts — test",
-                        "This confirms the cg33 entry-alert channel is wired. "
-                        "You will get one email each time Gated·33% enters a trade. "
+            how = _send(f"{ARM_LABEL} alerts — test",
+                        f"This confirms the {ARM_LABEL} entry-alert channel is wired. "
+                        f"You will get one email each time {ARM_LABEL} enters a trade. "
                         "PAPER / simulation only.")
             print(f"test email sent to {TO} via {how}")
         return
     seen = _state()
     if "--loop" in sys.argv:
-        print(f"cg33 alert watcher: polling every {POLL_S}s -> {TO}")
+        print(f"{ARM_LABEL} ({ARM}) alert watcher: polling {LEDGER.name} every {POLL_S}s -> {TO}")
         while True:
             try:
                 one_pass(seen)
