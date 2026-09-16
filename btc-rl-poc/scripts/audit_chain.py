@@ -30,6 +30,11 @@ STEPS = [
     "scripts/emit_program.py",
     "scripts/emit_execution_ledger.py",
     "scripts/emit_exec_sensitivity.py",
+    # keep treatments.jsonl champion_real synced to OFFICIAL pt settlement BEFORE
+    # reconcile checks it — the 2026-09-15 candle->official switch flipped 46
+    # windows and the stale derived value tripped treatments-ev-parity, freezing
+    # T0. Write-on-drift only (no-op once synced).
+    "scripts/backfill_treatments_champion_real.py",
     "scripts/reconcile.py",
     "tests/leakage_canaries.py",
     "scripts/emit_oracle_calls.py",

@@ -33,7 +33,14 @@ def main():
     cursor = None
     pages = 0
     while pages < 60:
-        p = {"series_ticker": "KXBTC15M", "status": "settled", "limit": 1000}
+        # NO status filter: a KXBTC15M market ages settled -> finalized on
+        # Kalshi, and querying only status=settled DROPPED finalized windows on
+        # the whole-file rewrite -> _official_outcome returned None -> the
+        # official-only settle path deferred those positions FOREVER (the
+        # 2026-09-15 zombie freeze that halted T0). Open markets lack
+        # floor_strike/expiration_value and are skipped below, so fetching all
+        # statuses is safe and captures both settled AND finalized outcomes.
+        p = {"series_ticker": "KXBTC15M", "limit": 1000}
         if cursor:
             p["cursor"] = cursor
         d = _get(p)

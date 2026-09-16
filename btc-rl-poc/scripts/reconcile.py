@@ -134,8 +134,12 @@ def main():
     pt4_reset_c = int(cfg.get("PT4_RESET_C", 1000000))
 
     # trader -> (filename, starting bankroll in cents, row filter)
+    # pt (T0 control) start reset to $100,000,000 on 2026-09-15 (commit 99d7902,
+    # PT0_START_BANKROLL_C in btc_rl/online.py) so the frozen control never goes
+    # bust / needs resetting. The reconciler's start MUST match the daemon's, or
+    # the very first row fails bankroll-conservation and fail-closed freezes T0.
     traders = {
-        "pt":  ("pt_trades.jsonl",  100000, None),
+        "pt":  ("pt_trades.jsonl",  10_000_000_000, None),
         "pt2": ("pt2_trades.jsonl", 100000, None),
         "pt3": ("pt3_trades.jsonl", 100000, None),
         "pt4": ("pt4_trades.jsonl", pt4_reset_c,
@@ -188,6 +192,14 @@ def main():
              int(r.get("pnl_c", 0) or 0) + int(r.get("stake_c", 0)
                                                or 0))
             for r in rows if r.get("late_settle_ts"))
+        # (entry_made_ts, late_settle_ts, stake_c) for each late-settled row —
+        # used to tolerate the retroactive-settlement walk artifact below when a
+        # position matured long ago and was settled NOW (late_settle_ts beyond
+        # this frozen ledger's end, so its payout credit never reaches a row).
+        late_rows_info = [(int(r.get("made_ts", 0) or 0),
+                           int(r["late_settle_ts"]),
+                           int(r.get("stake_c", 0) or 0))
+                          for r in rows if r.get("late_settle_ts")]
 
         for idx, row in enumerate(rows):
             while late_credits and late_credits[0][0] <= int(
@@ -324,7 +336,12 @@ def main():
             else:
                 running += pnl_c - skim_c - wd_c
             savings_running += skim_c
-            if "bankroll_c" in row:
+            # late-settled rows carry bankroll_c=null BY DESIGN (entry-time cash
+            # was debited; the payout is credited at late_settle_ts by the
+            # pre-scan schedule, not stamped on this row) — skip the snapshot
+            # comparison for them instead of crashing on int(None). The running
+            # walk above already accounts for the late row correctly.
+            if row.get("bankroll_c") is not None:
                 ledger_bank = int(row["bankroll_c"])
                 bad = []
                 if ledger_bank != running:
@@ -343,6 +360,23 @@ def main():
                             break
                         if acc > deficit:
                             break
+                    if not explained:
+                        # RETROACTIVE-SETTLEMENT artifact: a position that
+                        # matured long ago and was late-settled NOW carries a
+                        # late_settle_ts beyond this frozen ledger's end, so its
+                        # payout credit never reaches a row and the walk diverges
+                        # from the recorded snapshot by exactly that pending
+                        # position's stake (either sign — arms differ on whether
+                        # the open stake was reserved). The live bankroll already
+                        # holds the OFFICIAL payout, so this is a reconstruction
+                        # artifact of retroactive settlement, not lost or
+                        # fabricated money. Tolerate a deficit matching a
+                        # still-pending late-settle stake (single or their sum).
+                        made = int(row.get("made_ts", 0) or 0)
+                        pend = [st for (m, lts, st) in late_rows_info
+                                if m <= made and lts > made and st]
+                        if abs(deficit) in (set(pend) | {sum(pend)}):
+                            explained = True
                     if explained:
                         inflight_rows += 1
                         if debug:

@@ -13,13 +13,20 @@ foundation models cannot see:
   basis_bps      (last Binance px - last Coinbase px)/cb * 1e4  (lead-lag / basis)
   cb_mid_entry, cb_mid_open, floor_strike  -> for an on-path barrier baseline in the eval
 
-Streams results/events/*.jsonl (Coinbase trade+l1) and results/events_xvenue/*.jsonl
-(Binance trades) ONCE, writing results/exo_features.jsonl (ticker -> features + label).
+Streams results/events/*.jsonl (Coinbase trade+l1) ONCE and pulls the cross-venue
+Binance trade flow through xvenue_sync (the sole sanctioned shard reader/aligner),
+writing results/exo_features.jsonl (ticker -> features + label).
 PAPER / SIMULATION research; read-only w.r.t. the live desk.
 """
-import glob, json, os
+import glob, json, os, sys
 from datetime import datetime, timezone
 from collections import defaultdict
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import xvenue_sync  # the ONE sanctioned reader/aligner of the raw
+# cross-venue shards (no-private-time-alignment law); we route the
+# Binance flow read through it rather than globbing the shards here.
 
 ROOT_RES = "results"
 OUT = "results/exo_features.jsonl"
@@ -132,40 +139,20 @@ def run():
                         if a["cb_first"] is None:
                             a["cb_first"] = a["cb_last"]
 
-    # ---- Binance cross-venue tape (events_xvenue/): trades ----
-    for f in sorted(glob.glob(f"{ROOT_RES}/events_xvenue/*.jsonl")):
-        b = os.path.basename(f).replace("xvenue-", "").replace(".jsonl", "")
-        try:
-            hbase = int(datetime.strptime(b, "%Y%m%d-%H").replace(tzinfo=timezone.utc).timestamp() // 3600)
-        except Exception:
-            continue
-        cand = set(by_hour.get(hbase, [])) | set(by_hour.get(hbase + 1, []))
-        if not cand:
-            continue
-        for l in open(f):
-            l = l.strip()
-            if not l:
-                continue
-            try:
-                r = json.loads(l)
-            except Exception:
-                continue
-            ts = r.get("ts_recv")
-            if ts is None:
-                continue
-            for tk in cand:
-                if not active(tk, ts):
-                    continue
-                a = acc[tk]
-                try:
-                    q = float(r.get("qty") or 0); px = float(r.get("px") or 0)
-                except Exception:
-                    continue
-                a["bn_n"] += 1; a["bn_last"] = px
-                if r.get("side") == "buy":
-                    a["bn_buy"] += q
-                else:
-                    a["bn_sell"] += q
+    # ---- Binance cross-venue tape: trades, via the sanctioned aligner ----
+    # xvenue_sync is the ONE layer allowed to read + time-align the raw
+    # cross-venue shards (no-private-time-alignment law). Hand it our PIT
+    # flow windows [open, entry) and let it accumulate the trade flow.
+    # venue is left unset so EVERY shard row is counted, exactly as this
+    # pass did when it globbed the shards directly (no src filter).
+    xwins = {tk: (w["open"], w["entry"]) for tk, w in W.items()}
+    for tk, fl in xvenue_sync.trade_flow_in_windows(xwins).items():
+        a = acc[tk]
+        a["bn_n"] += fl["n"]
+        a["bn_buy"] += fl["buy"]
+        a["bn_sell"] += fl["sell"]
+        if fl["last"] is not None:
+            a["bn_last"] = fl["last"]
 
     n_out = 0
     with open(OUT, "w") as out:

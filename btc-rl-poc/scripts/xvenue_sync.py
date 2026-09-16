@@ -89,6 +89,75 @@ def load_second_series():
     return {v: (sorted(d), d) for v, d in series.items()}
 
 
+def trade_flow_in_windows(windows, venue=None):
+    """Sanctioned per-window read of the raw cross-venue shards.
+
+    This module is the ONE layer permitted to read + time-align the
+    raw shards (no-private-time-alignment law). Feature scripts that
+    need per-window trade flow hand their PIT windows here instead of
+    globbing the shard directory and aligning events themselves.
+
+    windows: mapping {key: (open_ts, entry_ts)}. Each value is a PIT
+        flow phase [open_ts, entry_ts) — half-open, entry EXCLUSIVE.
+        This function owns the event -> window alignment; the caller
+        supplies only the bounds.
+    venue:  None (default) accumulates every shard row regardless of
+        src, matching the historical exo_features consumer; pass a
+        src string ("binance"/"okx"/"kraken") to restrict.
+
+    Returns {key: {"n": int, "buy": float, "sell": float,
+                   "last": float|None}}, accumulated over trades whose
+    receive time ts_recv lies in [open_ts, entry_ts):
+        n     trade count in the window
+        buy   sum of qty for side == "buy"
+        sell  sum of qty for side != "buy"
+        last  px of the LAST such trade in shard-name then file-line
+              (chronological) order, or None if the window saw none.
+
+    One pass over ALL shards in sorted-name (chronological) then line
+    order, so `last` is deterministic and the read is PIT-safe (never
+    consults an event at or after entry_ts)."""
+    acc = {k: {"n": 0, "buy": 0.0, "sell": 0.0, "last": None}
+           for k in windows}
+    # index each window by every UTC hour its [open, entry) touches,
+    # so a shard event is only tested against windows it can fall in
+    by_hour = {}
+    for k, (ot, et) in windows.items():
+        for h in range(int(ot // 3600), int(et // 3600) + 1):
+            by_hour.setdefault(h, []).append(k)
+    for sh in sorted(glob.glob(str(XDIR / "*.jsonl"))):
+        for l in open(sh):
+            l = l.strip()
+            if not l:
+                continue
+            try:
+                r = json.loads(l)
+            except Exception:
+                continue
+            ts = r.get("ts_recv")
+            if ts is None:
+                continue
+            if venue is not None and r.get("src") != venue:
+                continue
+            for k in by_hour.get(int(ts // 3600), ()):
+                ot, et = windows[k]
+                if not (ot <= ts < et):
+                    continue
+                try:
+                    q = float(r.get("qty") or 0)
+                    px = float(r.get("px") or 0)
+                except Exception:
+                    continue
+                a = acc[k]
+                a["n"] += 1
+                a["last"] = px
+                if r.get("side") == "buy":
+                    a["buy"] += q
+                else:
+                    a["sell"] += q
+    return acc
+
+
 def _px_at(keys_map, v, ts):
     """Latest px at-or-before second ts (never future)."""
     import bisect

@@ -175,8 +175,14 @@ def _roster_frozen():
     max-5-slot roster law, machine-checked."""
     bad = []
     for n in sorted(O.RETIRED_TRADERS):
+        # each arm freezes at its OWN retirement instant, not one global ts:
+        # cg5/cg10 were born (09-15 07:01) AFTER pt2-8's 08-30 freeze and
+        # retired 09-15 11:32, so their legitimate 09-15 history must not be
+        # judged against pt's earlier cutoff. Still catches any real trade
+        # after each arm's own retirement.
+        cutoff = getattr(O, "RETIREMENT_TS", {}).get(n, O.ROSTER_FREEZE_TS)
         for t in rows(n + "_trades.jsonl"):
-            if t.get("made_ts", 0) > O.ROSTER_FREEZE_TS \
+            if t.get("made_ts", 0) > cutoff \
                     and not t.get("skipped"):
                 bad.append(f"{n}:{t.get('ticker')} opened post-freeze")
     if O.PT6_SHADOW:

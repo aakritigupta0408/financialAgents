@@ -456,6 +456,24 @@ ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
 # EV is the north-star metric. tv is the directly-validated value-gated follower.
 RETIRED_TRADERS = frozenset({"pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8",
                              "cg5", "cg10"})
+# Per-trader retirement instants (the honest freeze cutoff). pt2-pt8 froze at
+# ROSTER_FREEZE_TS (08-29 Great Simplification). cg5/cg10 did NOT EXIST then —
+# they launched 2026-09-15 07:01 PT (commit 8a502e8) and retired 2026-09-15
+# 11:32 PT (commit dcee375, the Great Roster Cut). Applying pt's 08-30 cutoff to
+# them wrongly flagged their legitimate 09-15 history as "post-freeze". The
+# roster-frozen invariant uses this map so it still catches any REAL trade after
+# each arm's OWN retirement, without false-flagging pre-retirement history.
+ROSTER_CUT_TS = 1_789_497_125      # 2026-09-15 18:32 UTC — Great Roster Cut (dcee375)
+# Two retirement WAVES, verified from the ledgers:
+#   Wave 1 — 08-29 Great Simplification (ROSTER_FREEZE_TS): pt2,pt4,pt5,pt7,pt8.
+#            All have ZERO rows after 08-30 — they truly stopped at the freeze.
+#   Wave 2 — 09-15 Great Roster Cut / dcee375 (ROSTER_CUT_TS): pt3,pt6,cg5,cg10.
+#            pt3 traded to 26SEP151215 (today's 09:05 freeze) and pt6 shadowed
+#            through Sept; they were only added to RETIRED_TRADERS at the Roster
+#            Cut, so 08-30 is the WRONG cutoff for them. Their last rows precede
+#            ROSTER_CUT_TS, so this still catches any real post-retirement trade.
+RETIREMENT_TS = {t: ROSTER_FREEZE_TS for t in ("pt2", "pt4", "pt5", "pt7", "pt8")}
+RETIREMENT_TS.update({t: ROSTER_CUT_TS for t in ("pt3", "pt6", "cg5", "cg10")})
 PT6_SHADOW = True
 # One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
 # t_exec_reg (M10+M8); t_regime kept as the legacy-control component
