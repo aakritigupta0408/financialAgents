@@ -28,6 +28,8 @@ METRIC_DEFS_VERSION = "econ-1/prob-1"
 ROSTER = [
     {"id": "pt", "name": "The $1K Desk", "role": "CONTROL", "log": "pt_trades.jsonl",
      "strategy": "T0 — Follower (leaderboard leader, PT_TAU 0.62)"},
+    {"id": "ob", "name": "Open+6 Barrier", "role": "TREATMENT", "log": "ob_trades.jsonl",
+     "strategy": "T3 — open+6min first-passage barrier; the honest ~0.74@0.90 model, coverage-sliced"},
     {"id": "cg33", "name": "Gated ·33%", "role": "TREATMENT", "log": "cg33_trades.jsonl",
      "strategy": "T1 — Confidence-Gated Follower, 33% stake (RUIN-RISK experiment)"},
     {"id": "fm", "name": "Chronos-Bolt", "role": "TREATMENT", "log": "fm_trades.jsonl",
@@ -222,6 +224,11 @@ def _cg_family_entries():
     settled). Shown in the home trader family so the live deployment is visible. The
     retired arms (cg5/cg10/tv/pt3/pt6/…) are intentionally absent."""
     specs = [
+        ("ob", "Open+6 Barrier", "The honest model.", "LIVE_CANDIDATE", "ob_trades.jsonl",
+         "T3 — decides at open+6min (~9 min left) from the first 6 minutes of price action via the "
+         "analytic first-passage barrier P(close>=strike). Trades every window and logs confidence "
+         "|z| so performance is coverage-sliced (offline: 0.74 hit @90% coverage, ~0.87 @20%). The "
+         "exhaustively-verified honest ceiling; see the coverage A/B on Models Lab. Official settle."),
         ("cg33", "Gated · 33%", "Ruin-risk experiment.", "RUIN_RISK_EXPERIMENT", "cg33_trades.jsonl",
          "T1 — follows the leader only when confidence >= 0.20 (skips coin-flips), 33% stake, hold to "
          "close. Demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown). Official Kalshi settle."),
@@ -281,19 +288,23 @@ def _cg_family_entries():
         live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 3) if settled else None,
                 "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
-        is_fm = cid == "fm"
-        out.append({"id": cid, "name": name, "role": "TREATMENT",
-                    "type": ("Foundation model (Chronos-Bolt base)" if is_fm
-                             else "Rule-based (confidence-gated)"),
+        is_fm = cid == "fm"; is_ob = cid == "ob"
+        _type = ("First-passage barrier @ open+6min" if is_ob
+                 else "Foundation model (Chronos-Bolt base)" if is_fm
+                 else "Rule-based (confidence-gated)")
+        _reason = ("Analytic barrier on the first 6 minutes; the exhaustively-verified honest "
+                   "ceiling (~0.74 hit @90% coverage). Coverage A/B on Models Lab." if is_ob
+                   else "Directional foundation-model trader; benchmark winner among "
+                        "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
+                        else "Live candidate accruing paired evidence vs T0 (offline n=218, small).")
+        _bt = ({"coverage": 0.90, "label": "OFFLINE (open+6min barrier: 0.74 hit @90% cov, 0.87 @20%)"}
+               if is_ob
+               else {"coverage": 0.39, "label": "OFFLINE BENCHMARK (148-win OOS, chronos-bolt-base @0.60)"}
+               if is_fm
+               else {"coverage": 0.61, "label": "OFFLINE CANDIDATE (n=218, vs always-take)"})
+        out.append({"id": cid, "name": name, "role": "TREATMENT", "type": _type,
                     "tagline": f"{tag} · live ${bank/100:.2f}", "icon": "bolt", "blurb": blurb,
-                    "reason": ("Directional foundation-model trader; benchmark winner among "
-                               "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
-                               else "Live candidate accruing paired evidence vs T0 (offline n=218, small)."),
-                    "backtest": ({"coverage": 0.39,
-                                  "label": "OFFLINE BENCHMARK (148-win OOS, chronos-bolt-base @0.60)"}
-                                 if is_fm else
-                                 {"coverage": 0.61,
-                                  "label": "OFFLINE CANDIDATE (n=218, vs always-take)"}),
+                    "reason": _reason, "backtest": _bt,
                     "live": live, "livedesk": livedesk, "verdict": verdict})
     return out
 
@@ -315,38 +326,16 @@ def _trader_family():
                 "total_pnl_c": h.get("total_pnl_c"), "max_drawdown_c": h.get("max_drawdown_c"),
                 "label": "HISTORICAL UNSEEN HOLDOUT (93 windows)"}
     live = {"n": 0, "state": "COLLECTING (pending DT-01 live activation)"}
+    # 2026-09-15: the board = T0 CONTROL + the REAL live treatments (ob/cg33/fm) only.
+    # The old generic T1-T4 backtest placeholder cards (Selective Edge/Meta-ML/RL Policy/
+    # Composite) are retired from the home board — they were reference stubs, not the
+    # deployed roster, and confused the live picture.
     return [
         {"id": "T0", "name": "Baseline Follower", "role": "CONTROL", "type": "Rule-based",
          "tagline": "Simple. Consistent. Reference.", "icon": "crown",
          "blurb": "Takes every eligible Oracle trade at a fixed stake — the reference policy.",
          "reason": "Positive on unseen windows.",
          "backtest": bt("T0"), "live": live, "verdict": (rep.get("offline_verdicts") or {}).get("T0")},
-        {"id": "T1", "name": "Selective Edge", "role": "FORMAL_TREATMENT", "type": "Rule-based",
-         "tagline": "Quality over quantity.", "icon": "bolt",
-         "blurb": "Trades only when the Oracle disagrees strongly with the market (≥15pp).",
-         "reason": "Higher EV per trade, lower drawdown than the baseline.",
-         "backtest": bt("T1"), "live": live,
-         "verdict": (rep.get("offline_verdicts") or {}).get("T1"),
-         "holdout_effect": {"paired_delta_c": eff.get("paired_delta_ev_per_eligible_c"),
-                            "ci95": eff.get("moving_block_bootstrap_95ci_c"),
-                            "status": eff.get("verdict")}},
-        {"id": "T2", "name": "Meta-ML", "role": "SHADOW", "type": "Machine-learned",
-         "tagline": "Learn to take, not just predict.", "icon": "brain",
-         "blurb": "Learns whether a given Oracle trade is worth taking, and skips the rest.",
-         "reason": "No learnable signal beyond the Oracle on this data.",
-         "backtest": {"best_holdout_auc": t2.get("best_holdout_auc")},
-         "live": live, "verdict": t2.get("verdict")},
-        {"id": "T3", "name": "RL Policy", "role": "SHADOW", "type": "Reinforcement learning",
-         "tagline": "Sequential decisions.", "icon": "chart",
-         "blurb": "Learns how much capital to size on the Oracle's trade (the side is fixed).",
-         "reason": "Only learned to bet big — no real sizing skill vs baselines.",
-         "backtest": (t3.get("risk_adjusted") or {}),
-         "live": live, "verdict": t3.get("verdict")},
-        {"id": "T4", "name": "Composite", "role": "NOT_QUALIFIED", "type": "Combination",
-         "tagline": "Stronger together.", "icon": "layers",
-         "blurb": "Combines the best components — unlocked only after each qualifies on its own.",
-         "reason": "Waiting on component qualification.",
-         "backtest": None, "live": None, "verdict": "NOT_QUALIFIED"},
         *_cg_family_entries(),
     ]
 

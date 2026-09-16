@@ -91,17 +91,16 @@ def test_trader_family_backtest_live_separated():
     d = _load("home_snapshot.json")
     fam = d["trader_family"]
     ids = [t["id"] for t in fam]
-    # The T0-T4 backtest reference family is the PREFIX; the live treatment arms
-    # (2026-09-15 roster cut: cg33, fm) are spliced in after it and rendered under
-    # the live tab. Retired arms (cg5/cg10/tv/pt6) must NOT appear.
-    assert ids[:5] == ["T0", "T1", "T2", "T3", "T4"]
-    assert "cg33" in ids and "fm" in ids
-    assert not ({"cg5", "cg10", "tv", "pt6"} & set(ids))
+    # 2026-09-15: the home board = T0 CONTROL first, then the REAL live treatments
+    # (ob, cg33, fm). The old generic T1-T4 backtest placeholder cards are retired from
+    # the board; retired arms (cg5/cg10/tv/pt6) must NOT appear either.
+    assert ids[0] == "T0"
+    assert "ob" in ids and "cg33" in ids and "fm" in ids
+    assert not ({"T1", "T2", "T3", "T4", "cg5", "cg10", "tv", "pt6"} & set(ids))
     roles = {t["id"]: t["role"] for t in fam}
-    assert roles["T0"] == "CONTROL" and roles["T1"] == "FORMAL_TREATMENT"
-    assert roles["T2"] == "SHADOW" and roles["T3"] == "SHADOW"
-    assert roles["T4"] == "NOT_QUALIFIED"
-    for t in fam[:4]:
+    assert roles["T0"] == "CONTROL"
+    assert all(roles[a] == "TREATMENT" for a in ("ob", "cg33", "fm"))
+    for t in fam:
         # backtest and live are SEPARATE objects, never blended (integrity invariant)
         assert "backtest" in t and "live" in t
 
