@@ -243,9 +243,10 @@ def _cg_family_entries():
          "side when confident (>=0.60), half-Kelly sizing, one bid/window, hold to close. Benchmark "
          "winner (F1 0.68, precision 0.74, fewest false positives). Official Kalshi settlement."),
     ]
-    start = 30000
+    START_C = {"tv": 100000}   # tv (EV arm) starts at $1,000; others $300
     out = []
     for cid, name, tag, verdict, log, blurb in specs:
+        start = START_C.get(cid, 30000)
         p = RES / log
         rows = []
         if p.exists():

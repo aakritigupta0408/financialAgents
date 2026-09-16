@@ -572,7 +572,7 @@ CG_ARMS = (("cg5", CG5_LOG_NAME, CG5_FRAC), ("cg10", CG10_LOG_NAME, CG10_FRAC),
 # declining overpriced favorites. $300 paper; settles on OFFICIAL Kalshi (never proxy).
 # A NEW arm accruing paired evidence vs T0 — T0 (the control) is NOT modified.
 TV_LOG_NAME = "tv_trades.jsonl"
-TV_START_C = 30_000                    # $300 paper
+TV_START_C = 100_000                   # $1,000 paper (owner 2026-09-15 — the EV north-star arm)
 TV_EDGE = 0.05                         # min value edge: p_arm - ask/100 (tuned 2026-09-15 to the
 #                                        robust EV operating point ~calibrated-edge>=2c: +$22 @
 #                                        31% coverage in ev_optimize.json; 0.08 was too tight)
