@@ -1,0 +1,116 @@
+{
+ "n": 1021,
+ "n_test": 409,
+ "calibration": {
+  "train_hit": 0.683,
+  "mean_p_arm": 0.7073,
+  "mean_calibrated_p_win": 0.683
+ },
+ "always_trade_test": {
+  "n": 409,
+  "hit": 0.6993,
+  "net_usd": -48.43,
+  "ev_per_trade_c": -11.8
+ },
+ "gate_sweep": [
+  {
+   "edge_thr_c": -20,
+   "coverage": 1.0,
+   "n": 409,
+   "hit": 0.6993,
+   "net_usd": -48.43,
+   "ev_per_trade_c": -11.8,
+   "trade_sharpe": 0.018
+  },
+  {
+   "edge_thr_c": -10,
+   "coverage": 0.912,
+   "n": 373,
+   "hit": 0.6917,
+   "net_usd": -78.51,
+   "ev_per_trade_c": -21.0,
+   "trade_sharpe": 0.018
+  },
+  {
+   "edge_thr_c": -5,
+   "coverage": 0.748,
+   "n": 306,
+   "hit": 0.6765,
+   "net_usd": -75.43,
+   "ev_per_trade_c": -24.7,
+   "trade_sharpe": 0.009
+  },
+  {
+   "edge_thr_c": 0,
+   "coverage": 0.386,
+   "n": 158,
+   "hit": 0.6329,
+   "net_usd": -27.09,
+   "ev_per_trade_c": -17.1,
+   "trade_sharpe": -0.029
+  },
+  {
+   "edge_thr_c": 2,
+   "coverage": 0.313,
+   "n": 128,
+   "hit": 0.6406,
+   "net_usd": 22.01,
+   "ev_per_trade_c": 17.2,
+   "trade_sharpe": 0.012
+  },
+  {
+   "edge_thr_c": 5,
+   "coverage": 0.169,
+   "n": 69,
+   "hit": 0.6232,
+   "net_usd": 11.81,
+   "ev_per_trade_c": 17.1,
+   "trade_sharpe": 0.043
+  },
+  {
+   "edge_thr_c": 8,
+   "coverage": 0.108,
+   "n": 44,
+   "hit": 0.6136,
+   "net_usd": 10.49,
+   "ev_per_trade_c": 23.8,
+   "trade_sharpe": 0.082
+  },
+  {
+   "edge_thr_c": 12,
+   "coverage": 0.051,
+   "n": 21,
+   "hit": 0.7143,
+   "net_usd": 44.17,
+   "ev_per_trade_c": 210.3,
+   "trade_sharpe": 0.447
+  },
+  {
+   "edge_thr_c": 16,
+   "coverage": 0.027,
+   "n": 11,
+   "hit": 0.5455,
+   "net_usd": 2.6,
+   "ev_per_trade_c": 23.6,
+   "trade_sharpe": 0.124
+  },
+  {
+   "edge_thr_c": 20,
+   "coverage": 0.012,
+   "n": 5,
+   "hit": 0.6,
+   "net_usd": 11.62,
+   "ev_per_trade_c": 232.4,
+   "trade_sharpe": 0.338
+  }
+ ],
+ "ev_optimal_gate": {
+  "edge_thr_c": 12,
+  "coverage": 0.051,
+  "n": 21,
+  "hit": 0.7143,
+  "net_usd": 44.17,
+  "ev_per_trade_c": 210.3,
+  "trade_sharpe": 0.447
+ }
+}

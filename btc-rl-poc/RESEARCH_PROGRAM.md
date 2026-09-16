@@ -4,9 +4,12 @@
 1. **The problem (fixed):** at WINDOW OPEN, predict the CLOSE direction, and buy the winning
    contract while it is still cheap. The oracle's value is being right EARLY. **Entry time is
    fixed at open.**
-2. **Target = 89% hit @ 90% coverage AT ENTRY (open).** It is a capstone with a professor's
-   baseline at 89%/90% → it IS achievable; if we get less we are MISSING features/data/method,
-   not hitting a wall. Meet it, then beat it.
+2. **★ NORTH-STAR = POSITIVE EV (2026-09-15, owner, supersedes the accuracy target).** Optimize
+   net $/window, Sharpe, drawdown — NOT hit-rate. Proven why: T0 hits 69% but is −$1,536 / −150¢
+   per trade because it buys FAVORITES at ~68¢ (break-even ~70-71% incl fees) — avg loss −$38 vs
+   avg win +$15. Accuracy is a TRAP metric here. The lever is a VALUE GATE: bet only when the
+   calibrated win-prob beats price+fee. (The 89%@90% target is retired to reference: it was the
+   strike-ladder moneyness task; at-the-money direction caps ~0.74 at open+6min — see §3g.)
 3. **Forbidden shortcuts (all = cheating, reject on sight):** moving the decision later (T-1min
    etc.), any post-entry information, dropping coverage below 90% to inflate hit, leakage, and
    fabricating/again "artificial numbers wins." A win only counts AT ENTRY, walk-forward,
