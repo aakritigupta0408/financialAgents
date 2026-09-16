@@ -451,8 +451,11 @@ ROSTER_FREEZE_TS = 1_788_073_000   # 2026-08-29 — manifest TX-B live
 # the snapshots/UI, and its ledger is preserved as frozen historical
 # evidence. The kb* MODEL layer stays — it produces the leader p_up that
 # the T0 control and cg33 follow, so it is infrastructure, not a treatment.
+# tv (T0-Value) RE-ACTIVATED 2026-09-15 as the EV treatment: the value gate — bet only when
+# the calibrated edge beats price+fee — flips T0 from -$48 to positive (research/ev_optimize.json).
+# EV is the north-star metric. tv is the directly-validated value-gated follower.
 RETIRED_TRADERS = frozenset({"pt2", "pt3", "pt4", "pt5", "pt6", "pt7", "pt8",
-                             "cg5", "cg10", "tv"})
+                             "cg5", "cg10"})
 PT6_SHADOW = True
 # One legacy experiment remains: CONTROL t_exec (M10) vs TREATMENT
 # t_exec_reg (M10+M8); t_regime kept as the legacy-control component
@@ -570,7 +573,9 @@ CG_ARMS = (("cg5", CG5_LOG_NAME, CG5_FRAC), ("cg10", CG10_LOG_NAME, CG10_FRAC),
 # A NEW arm accruing paired evidence vs T0 — T0 (the control) is NOT modified.
 TV_LOG_NAME = "tv_trades.jsonl"
 TV_START_C = 30_000                    # $300 paper
-TV_EDGE = 0.08                         # min value edge: p_arm - ask/100
+TV_EDGE = 0.05                         # min value edge: p_arm - ask/100 (tuned 2026-09-15 to the
+#                                        robust EV operating point ~calibrated-edge>=2c: +$22 @
+#                                        31% coverage in ev_optimize.json; 0.08 was too tight)
 TV_REC = 0.7                           # min leader strength (rec10)
 TV_KELLY = 0.5                         # half-Kelly
 TV_CAP = 0.10                          # size cap (fraction of bankroll)

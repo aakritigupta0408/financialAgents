@@ -28,6 +28,8 @@ METRIC_DEFS_VERSION = "econ-1/prob-1"
 ROSTER = [
     {"id": "pt", "name": "The $1K Desk", "role": "CONTROL", "log": "pt_trades.jsonl",
      "strategy": "T0 — Follower (leaderboard leader, PT_TAU 0.62)"},
+    {"id": "tv", "name": "Value Gate", "role": "TREATMENT", "log": "tv_trades.jsonl",
+     "strategy": "EV — value-gated follower (edge>=0.05 over price+fee, half-Kelly); the EV north-star arm"},
     {"id": "ob", "name": "Open+6 Barrier", "role": "TREATMENT", "log": "ob_trades.jsonl",
      "strategy": "T3 — open+6min first-passage barrier; the honest ~0.74@0.90 model, coverage-sliced"},
     {"id": "cg33", "name": "Gated ·33%", "role": "TREATMENT", "log": "cg33_trades.jsonl",
@@ -224,6 +226,10 @@ def _cg_family_entries():
     settled). Shown in the home trader family so the live deployment is visible. The
     retired arms (cg5/cg10/tv/pt3/pt6/…) are intentionally absent."""
     specs = [
+        ("tv", "Value Gate", "EV north-star.", "LIVE_CANDIDATE", "tv_trades.jsonl",
+         "EV — follows the leader ONLY when the edge beats the price+fee (p_arm − ask/100 >= 0.05) "
+         "and the leader is strong (rec10>=0.7); half-Kelly sizing. The value gate that flips T0 "
+         "from -$48 to positive (ev_optimize.json). North-star = EV, not hit-rate. Official settle."),
         ("ob", "Open+6 Barrier", "The honest model.", "LIVE_CANDIDATE", "ob_trades.jsonl",
          "T3 — decides at open+6min (~9 min left) from the first 6 minutes of price action via the "
          "analytic first-passage barrier P(close>=strike). Trades every window and logs confidence "
@@ -288,16 +294,21 @@ def _cg_family_entries():
         live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 3) if settled else None,
                 "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
-        is_fm = cid == "fm"; is_ob = cid == "ob"
-        _type = ("First-passage barrier @ open+6min" if is_ob
+        is_fm = cid == "fm"; is_ob = cid == "ob"; is_tv = cid == "tv"
+        _type = ("Value gate (EV, half-Kelly)" if is_tv
+                 else "First-passage barrier @ open+6min" if is_ob
                  else "Foundation model (Chronos-Bolt base)" if is_fm
                  else "Rule-based (confidence-gated)")
-        _reason = ("Analytic barrier on the first 6 minutes; the exhaustively-verified honest "
-                   "ceiling (~0.74 hit @90% coverage). Coverage A/B on Models Lab." if is_ob
-                   else "Directional foundation-model trader; benchmark winner among "
-                        "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
-                        else "Live candidate accruing paired evidence vs T0 (offline n=218, small).")
-        _bt = ({"coverage": 0.90, "label": "OFFLINE (open+6min barrier: 0.74 hit @90% cov, 0.87 @20%)"}
+        _reason = ("Bets only +EV windows (edge>=0.05 over price+fee); the value gate flips T0 "
+                   "from -$48 to positive (EV north-star)." if is_tv
+                   else "Analytic barrier on the first 6 minutes; the exhaustively-verified honest "
+                        "ceiling (~0.74 hit @90% coverage). Coverage A/B on Models Lab." if is_ob
+                        else "Directional foundation-model trader; benchmark winner among "
+                             "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
+                             else "Live candidate accruing paired evidence vs T0 (offline n=218, small).")
+        _bt = ({"coverage": 0.31, "label": "OFFLINE (value gate on T0: +$22 @31% cov, EV +17c/trade)"}
+               if is_tv
+               else {"coverage": 0.90, "label": "OFFLINE (open+6min barrier: 0.74 hit @90% cov, 0.87 @20%)"}
                if is_ob
                else {"coverage": 0.39, "label": "OFFLINE BENCHMARK (148-win OOS, chronos-bolt-base @0.60)"}
                if is_fm

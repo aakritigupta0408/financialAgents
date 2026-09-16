@@ -95,11 +95,11 @@ def test_trader_family_backtest_live_separated():
     # (ob, cg33, fm). The old generic T1-T4 backtest placeholder cards are retired from
     # the board; retired arms (cg5/cg10/tv/pt6) must NOT appear either.
     assert ids[0] == "T0"
-    assert "ob" in ids and "cg33" in ids and "fm" in ids
-    assert not ({"T1", "T2", "T3", "T4", "cg5", "cg10", "tv", "pt6"} & set(ids))
+    assert {"tv", "ob", "cg33", "fm"} <= set(ids)   # active treatments (tv=EV re-activated)
+    assert not ({"T1", "T2", "T3", "T4", "cg5", "cg10", "pt6"} & set(ids))
     roles = {t["id"]: t["role"] for t in fam}
     assert roles["T0"] == "CONTROL"
-    assert all(roles[a] == "TREATMENT" for a in ("ob", "cg33", "fm"))
+    assert all(roles[a] == "TREATMENT" for a in ("tv", "ob", "cg33", "fm"))
     for t in fam:
         # backtest and live are SEPARATE objects, never blended (integrity invariant)
         assert "backtest" in t and "live" in t
