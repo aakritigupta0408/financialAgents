@@ -1,0 +1,92 @@
+{
+ "schema": "ab-table-1",
+ "metric": "EV per trade (per-contract net, cents)",
+ "note": "Paired vs T0 on matched windows (per-contract-normalized). \u0394 EV/trade > 0 means the treatment beats the control on the same windows. 95% CI = bootstrap; p = paired t-test. Small n -> wide CI / 'collecting'.",
+ "rows": [
+  {
+   "arm": "pt",
+   "name": "T0 Baseline Follower",
+   "role": "CONTROL",
+   "n": 1021,
+   "hit_rate": 0.6895,
+   "net_usd": -1536.42,
+   "ev_per_trade_c": -150.5,
+   "matched_n": null,
+   "delta_ev_c": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_value": null,
+   "sig": "reference"
+  },
+  {
+   "arm": "tv",
+   "name": "Value Gate",
+   "role": "TREATMENT",
+   "n": 3,
+   "hit_rate": 0.6667,
+   "net_usd": -39.23,
+   "ev_per_trade_c": -1307.7,
+   "matched_n": 0,
+   "delta_ev_c": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_value": null,
+   "sig": "collecting (need ~20+ paired)"
+  },
+  {
+   "arm": "ob",
+   "name": "Open+6 Barrier",
+   "role": "TREATMENT",
+   "n": 7,
+   "hit_rate": 0.8571,
+   "net_usd": 35.81,
+   "ev_per_trade_c": 511.6,
+   "matched_n": 0,
+   "delta_ev_c": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_value": null,
+   "sig": "collecting (need ~20+ paired)"
+  },
+  {
+   "arm": "cg33",
+   "name": "Gated\u00b733%",
+   "role": "TREATMENT",
+   "n": 43,
+   "hit_rate": 0.7209,
+   "net_usd": -96.66,
+   "ev_per_trade_c": -224.8,
+   "matched_n": 8,
+   "delta_ev_c": 0.4,
+   "ci95": [
+    -33.9,
+    33.9
+   ],
+   "p_value": 0.981,
+   "sig": "collecting (need ~20+ paired)"
+  },
+  {
+   "arm": "fm",
+   "name": "Chronos-Bolt",
+   "role": "TREATMENT",
+   "n": 27,
+   "hit_rate": 0.5926,
+   "net_usd": -77.39,
+   "ev_per_trade_c": -286.6,
+   "matched_n": 0,
+   "delta_ev_c": null,
+   "ci95": [
+    null,
+    null
+   ],
+   "p_value": null,
+   "sig": "collecting (need ~20+ paired)"
+  }
+ ]
+}

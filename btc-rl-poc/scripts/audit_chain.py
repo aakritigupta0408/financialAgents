@@ -63,6 +63,7 @@ STEPS = [
     "scripts/consistency_audit.py",         # consistency_audit.json: staleness + roster drift
     "scripts/emit_modelling_techniques.py", # modelling_techniques.json: per-technique metrics board
     "scripts/emit_coverage_ab.py",          # coverage_ab.json: T0 control vs ob arm by coverage
+    "scripts/emit_ab_table.py",             # ab_table.json: all treatments vs control + significance
 ]
 
 print(f"=== audit chain {time.strftime('%Y-%m-%d %H:%M:%S')} ===",
