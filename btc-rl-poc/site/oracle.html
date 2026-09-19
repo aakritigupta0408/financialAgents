@@ -1,104 +1,369 @@
-<!-- ORACLE (DT-07 §17) — six subtabs rendering results/oracle_snapshot.json VERBATIM.
-     No scientific/economic formula in the browser (aggregates like mean-BSS are
-     precomputed by scripts/emit_oracle_snapshot.py). Enforced by
-     tests/test_no_frontend_science.py. -->
+<!-- ORACLE (DT-07 §17) — the live Oracle forecast + track record, then six
+     introspection subtabs rendering results/oracle_snapshot.json + oracle_calls.json
+     VERBATIM. The browser only FORMATS precomputed values: no Brier/EV/BSS/CI/
+     accuracy/paired math runs here (aggregates are computed by
+     scripts/emit_oracle_snapshot.py). Enforced by tests/test_no_frontend_science.py. -->
 <meta charset="utf-8">
+<title>Oracle · BTC Oracle</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-  /* inherit the shared site tokens (theme.css) — no foreign palette */
+  /* inherit the shared site tokens (theme.css) — single light theme, no foreign palette */
   :root{--line:var(--border);--card:var(--surface);--bg:var(--page);
         --good:var(--up);--bad:var(--down);--warn:var(--series-4);--accent:var(--series-2)}
-  .o{max-width:1080px;margin:0 auto;padding:16px;background:var(--bg);color:var(--ink);
-     font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  h1{font-size:20px;margin:0 0 2px} .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
-  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-  .tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);
-    padding:5px 13px;border-radius:999px;cursor:pointer;font-size:13px}
-  .tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  .panel{display:none} .panel.on{display:block}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
-  .cell{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+  main{gap:22px}
+  .empty{padding:44px 20px;text-align:center;color:var(--muted)}
+  .empty h2{font-family:var(--display);font-size:1.4rem;margin-bottom:6px;color:var(--ink)}
+
+  /* ---- live oracle hero ---- */
+  .hero-head{display:flex;align-items:baseline;justify-content:space-between;
+    flex-wrap:wrap;gap:8px 18px;margin-bottom:6px}
+  .hero-head h2{margin:0}
+  .promise{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .promise b{color:var(--ink-2);font-weight:600}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 1.25fr;gap:16px;margin-top:12px}
+  @media(max-width:760px){.hero-grid{grid-template-columns:1fr}}
+  .window-card{border:2px solid var(--accent);border-radius:14px;padding:16px 18px;background:var(--surface-2)}
+  .window-card .tk{font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);word-break:break-all;margin-top:3px}
+  .call-row{display:flex;align-items:center;gap:12px;margin:14px 0 12px}
+  .callbig{font-family:var(--display);font-size:22px;font-weight:600;color:var(--ink)}
+  .statrow{display:flex;gap:24px;flex-wrap:wrap}
+  .stat .v{font-size:19px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink);margin-top:3px}
+  .stat .v.good{color:var(--good)} .stat .v.bad{color:var(--bad)} .stat .v.mut{color:var(--muted)}
+  .abstain{font-size:12px;color:var(--ink-2);margin-top:12px;line-height:1.5}
+  .callers{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.callers{grid-template-columns:1fr}}
+  .caller{border:1px solid var(--line);border-radius:12px;padding:14px}
+  .caller .top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .caller .nm{font-weight:650;font-size:14px;color:var(--ink)}
+  .acc{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+  .acc .big{font-size:26px;font-weight:650;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .acc .ci{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .mini-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:9px;font-size:12px;color:var(--muted)}
+  .mini-stats b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+  .hero-note{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.55}
+
+  /* ---- subtabs ---- */
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px}
+  .tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+    padding:6px 14px;border-radius:999px;cursor:pointer;font:600 13px ui-sans-serif,system-ui}
+  .tabs button:hover{color:var(--ink)}
+  .tabs button.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+  .tabs button:focus-visible{outline:2px solid var(--series-2);outline-offset:2px}
+  .panel{display:none}.panel.on{display:block;animation:fade .3s ease both}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.panel.on{animation:none}}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+  .grid.wide{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .cell{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
   .cell.truth{border-color:var(--accent);border-width:2px}
-  .cell h4{margin:0 0 6px;font-size:14px}
-  .kv{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);padding:1px 0}
-  .kv span:last-child{color:var(--ink);font-variant-numeric:tabular-nums}
-  .role{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
-  .badge{font-size:11px;padding:1px 8px;border-radius:999px;border:1px solid var(--line)}
-  .good{color:var(--good)} .bad{color:var(--bad)} .warn{color:var(--warn)}
-  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  th,td{padding:6px 9px;text-align:left;font-size:12.5px;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-size:11px;text-transform:uppercase}
-  .prov{color:var(--muted);font-size:11px;margin-top:14px}
+  .cell.watch{border-left:3px solid var(--warn)}
+  .cell h4{margin:0 0 8px;font-size:13.5px;font-family:var(--display);font-weight:600;color:var(--ink)}
+  .kv{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--muted);padding:2px 0}
+  .kv span:last-child{color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+  .role{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+  .cap{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.55}
+  .cap.b{margin-top:14px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .stale-chip{font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--muted);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+  .sec-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  details{margin-top:10px} details table{margin-top:8px}
+  .prov{color:var(--faint);font-size:12px;line-height:1.7;font-variant-numeric:tabular-nums}
+  .prov b{color:var(--muted);font-weight:600}
+  .prov .live-dot{display:inline-block;vertical-align:middle;margin-right:5px}
+  .brknote{font-size:11.5px;color:var(--muted);margin-top:6px}
 </style>
-<div class="o">
-  <h1>ORACLE</h1>
-  <p class="sub">Why the system believes what it believes, and is every layer healthy?
-     <a href="home.html" style="color:var(--accent);text-decoration:none">← HOME</a></p>
-  <div class="tabs" id="tabs"></div>
-  <div id="panels"></div>
-  <div class="prov" id="prov">loading results/oracle_snapshot.json…</div>
+
+<div class="topnav">
+  <a class="brand" href="home.html">BTC Oracle</a>
+  <a class="nav" href="home.html">Home</a>
+  <a class="nav here" href="oracle.html">Oracle</a>
+  <a class="nav" href="experiments.html">Experiments</a>
+  <span class="spacer"></span>
+  <span class="tag">Paper Research</span>
 </div>
+<div class="research-banner"><b>Paper / simulation.</b> Real money disabled. Research, not advice — every number below is precomputed on the backend and rendered verbatim.</div>
+
+<main id="app">
+  <section id="hero"><div class="empty"><h2>Loading the live Oracle…</h2><div class="role">results/oracle_calls.json</div></div></section>
+  <section id="introspect">
+    <div class="eyebrow">System introspection · six layers</div>
+    <h2 style="margin-top:6px">Why the system believes what it believes</h2>
+    <p class="sub small">Each layer of the pipeline — inputs, features, models, outputs, incidents, graveyard — with its health computed server-side. The browser formats; it never scores.</p>
+    <div class="tabs" id="tabs"></div>
+    <div id="panels"><div class="empty">Loading results/oracle_snapshot.json…</div></div>
+  </section>
+  <footer class="prov" id="prov">loading provenance…</footer>
+</main>
+
 <script>
 const TABS=[["input_data","Input Data"],["feature_processing","Feature Processing"],
   ["modelling","Modelling"],["output_processing","Output Processing"],
   ["sevs_and_tickets","Sevs & Tickets"],["graveyard","Graveyard"]];
-const esc=s=>String(s==null?"—":s);
-function kv(k,v){return `<div class="kv"><span>${k}</span><span>${esc(v)}</span></div>`;}
-function render(snap){
-  const S=snap.subtabs, P={};
-  // Input Data — BRTI prominent
-  const b=S.input_data.brti;
-  P.input_data=`<div class="grid">
-    <div class="cell truth"><div class="role">Contract truth</div><h4>BRTI</h4>
-      ${kv("Connected",b.connected)}${kv("REST",b.rest_ok)}${kv("History",b.history_ok)}
-      ${kv("Age (s)",b.age_s)}${kv("Cadence Hz",b.observed_cadence_hz+" / "+b.expected_cadence_hz)}
-      ${kv("Gaps",b.gaps)}<div class="kv"><span>Runtime activation</span><span class="badge">${esc(b.runtime_activation)}</span></div></div>
-    ${S.input_data.sources.map(s=>`<div class="cell"><div class="role">${s.role}</div><h4>${s.id}</h4></div>`).join("")}
-  </div>`;
-  // Feature Processing
-  const fm=S.feature_processing.feature_monitor||{};
-  P.feature_processing=`<div class="cell"><h4>Feature health (precomputed)</h4>
-    ${kv("Features tracked",(fm.features||fm.rows||[]).length||Object.keys(fm).length)}
-    <div class="role" style="margin-top:6px">distributions · calibration · drift computed server-side (feature_monitor.json)</div></div>`;
-  // Modelling — model cards with server-computed mean BSS
-  P.modelling=`<div class="grid">${(S.modelling.model_cards||[]).map(m=>`<div class="cell">
-    <h4>${m.model_id}</h4>${kv("Offline mean BSS",m.offline_mean_bss)}${kv("Folds",m.n_folds)}
-    <div class="role">${m.provenance}</div></div>`).join("")}</div>
-    <div class="role" style="margin-top:8px">Registry models: ${S.modelling.registry_count} · loss functions visible: ${S.modelling.loss_functions_visible}</div>`;
-  // Output Processing
-  P.output_processing=`<table><thead><tr><th>Output</th><th>Source model</th></tr></thead><tbody>
-    ${S.output_processing.outputs.map(o=>`<tr><td>${o.id}</td><td>${o.source}</td></tr>`).join("")}</tbody></table>
-    <div class="role" style="margin-top:6px">oracle spec ${esc(S.output_processing.spec_hash)}</div>`;
-  // Sevs & Tickets — DT-01 visible
-  const aw=S.sevs_and_tickets.architecture_watch||[];
-  P.sevs_and_tickets=`<div class="grid">${aw.map(i=>`<div class="cell" style="border-left:3px solid var(--warn)">
-    <div class="role">${i.category} · ${i.severity}</div><h4>${i.id} — ${i.status}</h4>
-    <div style="font-size:12.5px">${i.summary}</div><div class="role" style="margin-top:6px">${i.checkpoint}</div></div>`).join("")}
-    ${(S.sevs_and_tickets.incidents||[]).slice(-8).map(i=>`<div class="cell"><div class="role">SEV-${esc(i.sev)}</div><div style="font-size:12.5px">${esc(i.title)}</div></div>`).join("")}</div>`;
-  // Graveyard
-  const g=S.graveyard;
-  P.graveyard=`<div class="grid">
-    <div class="cell"><h4>Retired models</h4><div style="font-size:12.5px">${(g.retired_models||[]).join(", ")||"—"}</div></div>
-    <div class="cell"><h4>Retired traders</h4><div style="font-size:12.5px">${(g.retired_traders||[]).join(", ")||"—"}</div></div>
-    <div class="cell"><h4>Retired treatments</h4><div style="font-size:12.5px">${(g.retired_treatments||[]).join(", ")||"—"}</div></div>
-    <div class="cell"><h4>wait-for-dip</h4><div style="font-size:12.5px">${esc(g.wait_for_dip)}</div></div></div>`;
 
-  const tabsEl=document.getElementById("tabs"),panelsEl=document.getElementById("panels");
-  TABS.forEach(([k,label],i)=>{
-    const btn=document.createElement("button");btn.textContent=label;if(i===0)btn.classList.add("on");
-    btn.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
-      document.querySelectorAll(".panel").forEach(x=>x.classList.remove("on"));
-      btn.classList.add("on");document.getElementById("panel-"+k).classList.add("on");};
-    tabsEl.appendChild(btn);
-    const div=document.createElement("div");div.className="panel"+(i===0?" on":"");div.id="panel-"+k;
-    div.innerHTML=P[k]||"<div class='cell'>—</div>";panelsEl.appendChild(div);
-  });
-  document.getElementById("prov").textContent=`schema ${snap.schema_version} · `
-    +`${snap.dag.nodes.length} DAG nodes · ${snap.dag.drift_edges.length} drift edges · `
-    +`source: results/oracle_snapshot.json (backend-computed)`;
+// ---- formatting helpers only (no computation of any statistic) ----
+const esc=s=>String(s==null?"—":s);
+const pct1=x=>x==null?"—":(100*x).toFixed(1)+"%";          // display a precomputed rate as %
+const pct2=x=>x==null?"—":(100*x).toFixed(2)+"%";
+const fx=(x,d=3)=>x==null?"—":Number(x).toFixed(d);
+const intf=x=>x==null?"—":Number(x).toLocaleString();
+const ci=a=>Array.isArray(a)?"CI "+(100*a[0]).toFixed(1)+"–"+(100*a[1]).toFixed(1)+"%":"—"; // formats precomputed bounds
+function ago(ts){ if(ts==null) return "—"; let s=Math.max(0,Math.round(Date.now()/1000-ts));
+  if(s<60) return s+"s"; if(s<3600) return Math.floor(s/60)+"m "+(s%60)+"s";
+  if(s<86400) return Math.floor(s/3600)+"h "+Math.floor((s%3600)/60)+"m"; return Math.floor(s/86400)+"d "+Math.floor((s%86400)/3600)+"h"; }
+function isStale(ts,limit){ return ts==null || (Date.now()/1000-ts)>limit; }
+function human(ts){ if(ts==null) return "—"; try{ return new Date(ts*1000).toLocaleString(undefined,{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}); }catch(e){ return String(ts); } }
+function kv(k,v){ return `<div class="kv"><span>${k}</span><span>${esc(v)}</span></div>`; }
+function statePill(s){ const u=String(s||"").toUpperCase();
+  const cls=(u==="HEALTHY"||u==="PASS"||u==="OK")?"ok":(u.includes("WARN")||u.includes("DEGRAD"))?"pending":(u==="MUTED"||u==="NO_SKILL"||u==="STALE")?"miss":"bad";
+  return `<span class="pill ${cls}">${esc(s)}</span>`; }
+function metPill(b){ return b?'<span class="pill ok">promise met</span>':'<span class="pill bad">below promise</span>'; }
+function signCls(v){ return v==null?"":(v>0?"good":(v<0?"bad":"mut")); }
+
+// =====================================================================
+// LIVE ORACLE HERO — results/oracle_calls.json (format only)
+// =====================================================================
+function callPill(c){
+  if(c==null) return '<span class="pill pending">—</span>';
+  const u=String(c).toUpperCase();
+  if(u==="NO CALL"||u==="ABSTAIN"||u==="SKIP") return '<span class="pill miss">NO CALL</span>';
+  if(u.includes("UP")||u==="YES") return `<span class="pill yes">${esc(c)}</span>`;
+  if(u.includes("DOWN")||u==="NO") return `<span class="pill no">${esc(c)}</span>`;
+  return `<span class="pill pending">${esc(c)}</span>`;
 }
-fetch("oracle_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-  if(!d){document.getElementById("panels").innerHTML="<div class='cell' style='text-align:center;padding:40px'><h4>Waiting for the live desk</h4><div class='role'>No current Oracle snapshot is available yet.</div></div>";document.getElementById("prov").textContent="";return;}
-  render(d);
-}).catch(e=>{document.getElementById("prov").textContent="load error: "+e;});
+function callerCard(id,role,c){
+  if(!c) return `<div class="caller"><div class="top"><span class="nm">${esc(id)}</span><span class="arm-tag">${role}</span></div><div class="role">no data</div></div>`;
+  return `<div class="caller">
+    <div class="top"><span class="nm">${esc(id)} <span class="arm-tag">${role}</span></span>${metPill(c.promise_met)}</div>
+    <div class="role">Selective accuracy</div>
+    <div class="acc"><span class="big">${pct1(c.selective_accuracy)}</span><span class="ci">${ci(c.wilson_ci95)}</span></div>
+    <div class="mini-stats">
+      <span><b>${intf(c.hits)}</b>/<b>${intf(c.calls)}</b> hits</span>
+      <span>coverage <b>${pct1(c.coverage)}</b></span>
+      <span><b>${intf(c.settled)}</b> settled</span>
+      <span><b>${intf(c.no_calls)}</b> abstains</span>
+    </div>
+  </div>`;
+}
+function renderHero(calls){
+  const el=document.getElementById("hero");
+  if(!calls){ el.innerHTML=`<div class="empty"><h2>Waiting for the live Oracle</h2><div class="role">No current call snapshot (results/oracle_calls.json) is available yet.</div></div>`; return; }
+  const cfg=calls.config||{}, live=calls.live||{};
+  const stale=isStale(calls.generated_ts,900);
+  const env=Array.isArray(cfg.envelope_mins_left)?cfg.envelope_mins_left.join("–")+" min":"—";
+  const primaryId=cfg.primary_caller, shadowId=cfg.shadow_caller;
+  const abstain = live.call && String(live.call).toUpperCase()==="NO CALL";
+  el.innerHTML=`
+    <div class="hero-head">
+      <div><span class="eyebrow"><span class="live-dot ${stale?'stale':''}"></span> Live Oracle</span>
+        <h2 style="margin-top:6px">The Oracle's current call</h2></div>
+      <div class="promise">Promise: <b>${esc(cfg.promise)}</b> · call threshold <b>${cfg.conf_threshold!=null?pct1(cfg.conf_threshold):'—'}</b> · window <b>${esc(env)}</b> left</div>
+    </div>
+    <div class="hero-grid">
+      <div class="window-card">
+        <div class="role">Current window</div>
+        <div class="tk">${esc(live.ticker)}</div>
+        <div class="call-row"><span class="callbig">Call</span>${callPill(live.call)}</div>
+        <div class="statrow">
+          <div class="stat"><div class="k">Claimed confidence</div>
+            <div class="v ${live.claimed_conf!=null && cfg.conf_threshold!=null && live.claimed_conf>=cfg.conf_threshold?'good':'mut'}">${live.claimed_conf!=null?pct1(live.claimed_conf):'—'}</div></div>
+          <div class="stat"><div class="k">Threshold</div><div class="v mut">${cfg.conf_threshold!=null?pct1(cfg.conf_threshold):'—'}</div></div>
+          <div class="stat"><div class="k">Read at</div><div class="v">${live.mins_left_at_read!=null?fx(live.mins_left_at_read,1)+"m":'—'}</div></div>
+        </div>
+        ${abstain?`<div class="abstain">Abstains this window — claimed confidence ${live.claimed_conf!=null?pct1(live.claimed_conf):'—'} is below the ${cfg.conf_threshold!=null?pct1(cfg.conf_threshold):'—'} call threshold. Abstention is the design: the Oracle only speaks when it clears the bar.</div>`:''}
+      </div>
+      <div>
+        <div class="role" style="margin-bottom:8px">Track record — selective (low-coverage) accuracy</div>
+        <div class="callers">
+          ${callerCard(primaryId,"primary",calls[primaryId])}
+          ${callerCard(shadowId,"shadow",calls[shadowId])}
+        </div>
+        <div class="hero-note">Selective accuracy counts only windows the caller chose to call (see coverage); it is not overall hit-rate. Each figure carries its Wilson 95% interval and the call count n it rests on — at ${primaryId?pct1((calls[primaryId]||{}).coverage):'low'} coverage the primary's n is small, so read the interval, not the point. All values precomputed backend-side.</div>
+      </div>
+    </div>`;
+}
+
+// =====================================================================
+// SUBTABS — results/oracle_snapshot.json (format only)
+// =====================================================================
+function panelInput(S){
+  const D=S.input_data, b=D.brti, dh=D.data_health||{};
+  const feeds=dh.feeds||{};
+  const ps=dh.pit_store||{};
+  const feedRows=Object.keys(feeds).map(k=>{ const f=feeds[k];
+    return `<tr><td>${k}</td><td class="num">${f.age_s!=null?f.age_s+"s":"—"}</td>
+      <td>${statePill(f.state)}</td><td class="num">${f.errors!=null?intf(f.errors):"—"}</td></tr>`; }).join("");
+  const runtimeCls = String(b.runtime_activation||"").toUpperCase().includes("OFF")?"pending":"ok";
+  return `<div class="grid wide">
+    <div class="cell truth">
+      <div class="role">Contract truth · ${esc(b.role)}</div><h4>BRTI</h4>
+      ${kv("Connected", b.connected?"yes":"no")}${kv("REST", b.rest_ok?"ok":"down")}${kv("History", b.history_ok?"ok":"missing")}
+      ${kv("Age", b.age_s!=null?b.age_s+"s":"—")}${kv("Cadence (obs / exp)", b.observed_cadence_hz+" / "+b.expected_cadence_hz+" Hz")}${kv("Gaps", b.gaps)}
+      <div class="kv"><span>Runtime activation</span><span><span class="pill ${runtimeCls}">${esc(b.runtime_activation)}</span></span></div>
+      <div class="cap">The single settlement authority. Every label, benchmark and payout is defined against BRTI; nothing downstream may override it.</div>
+    </div>
+    <div class="cell">
+      <div class="role">Input sources · role</div><h4>Feeds</h4>
+      ${(D.sources||[]).map(s=>`<div class="kv"><span>${esc(s.id)}</span><span style="color:var(--muted);font-variant-numeric:normal;font-size:11px">${esc(s.role)}</span></div>`).join("")}
+    </div>
+    <div class="cell">
+      <div class="sec-head"><h4 style="margin:0">Capture health</h4>${statePill(dh.overall)}</div>
+      <div class="scroll"><table><thead><tr><th>Feed</th><th class="num">Age</th><th>State</th><th class="num">Errs</th></tr></thead><tbody>${feedRows}</tbody></table></div>
+      ${ps.snapshots!=null?`<div class="mini">PIT store ${intf(ps.snapshots)} snapshots · ${intf(ps.missing)} missing · ${ps.completeness!=null?pct1(ps.completeness):'—'} complete · ${statePill(ps.state)}</div>`:''}
+      <div class="brknote">as of ${human(dh.generated_ts)} · ${ago(dh.generated_ts)} ago · ${(dh.provenance||[]).join(", ")}</div>
+    </div>
+  </div>`;
+}
+
+function panelFeatures(S){
+  const F=S.feature_processing, fm=F.feature_monitor||{};
+  const stale=isStale(fm.generated_ts,3600);
+  const feeds=fm.feeds||[];
+  const feedRows=feeds.map(f=>`<tr><td>${esc(f.name)}</td><td class="num">${f.age_s!=null?f.age_s+"s":"—"}</td><td>${statePill(f.state)}</td><td class="num">${f.errors!=null?intf(f.errors):"—"}</td></tr>`).join("");
+  const mn=fm.missingness||{}, ps=fm.pit_store||{}, can=fm.canaries||{};
+  const canRows=(can.checks||[]).map(c=>`<tr><td>${esc(c.name)}</td><td>${statePill(c.result)}</td></tr>`).join("");
+  const canDetail=(can.checks||[]).map(c=>`<div class="kv" style="align-items:flex-start"><span style="min-width:150px">${esc(c.name)}</span><span style="text-align:left;color:var(--muted);font-variant-numeric:normal;font-size:11px;line-height:1.5">${esc(c.detail)}</span></div>`).join("");
+  const timing=(fm.timing||[]).map(t=>`${esc(t.variant)} <span class="pill miss">${esc(t.class)}</span>`).join(" · ");
+  const cal=fm.calibration||{}, cm=cal.model||[], ck=cal.market||[];
+  const calRows=cm.map((r,i)=>{ const mk=ck[i]||{};
+    return `<tr><td class="num">${pct1(r.p)}</td><td class="num">${pct1(r.freq)}</td><td class="num">${intf(r.n)}</td><td class="num">${mk.freq!=null?pct1(mk.freq):"—"}</td><td class="num">${mk.n!=null?intf(mk.n):"—"}</td></tr>`; }).join("");
+  return `<div class="sec-head">
+      <div class="chips"><h4 style="margin:0;font-family:var(--display);font-size:14px">Feature health</h4>${statePill(fm.overall)}${fm.n_settled!=null?`<span class="stale-chip">${intf(fm.n_settled)} settled</span>`:''}</div>
+      ${stale?`<span class="stale-chip" title="feature_monitor block is behind the snapshot">STALE · captured ${ago(fm.generated_ts)} ago</span>`:`<span class="stale-chip">captured ${ago(fm.generated_ts)} ago</span>`}
+    </div>
+    <div class="grid wide">
+      <div class="cell"><h4>Capture feeds</h4>
+        <div class="scroll"><table><thead><tr><th>Feed</th><th class="num">Age*</th><th>State</th><th class="num">Errs</th></tr></thead><tbody>${feedRows}</tbody></table></div>
+        <div class="brknote">*ages are as of the ${stale?'stale ':''}feature-monitor capture (${human(fm.generated_ts)}), not now.</div>
+      </div>
+      <div class="cell"><h4>Data quality</h4>
+        ${kv("mkt p_up null-rate", mn.mkt_p_up_null_rate!=null?pct2(mn.mkt_p_up_null_rate):"—")}
+        ${kv("ask_c null-rate", mn.ask_c_null_rate!=null?pct1(mn.ask_c_null_rate):"—")}
+        <div class="kv"><span>missingness</span><span>${statePill(mn.state)}</span></div>
+        ${ps.snapshots!=null?kv("PIT snapshots", intf(ps.snapshots)):''}
+        ${ps.completeness!=null?kv("PIT completeness", pct1(ps.completeness)+" ("+intf(ps.missing)+" missing)"):''}
+        <div class="cap">Market-quote disagreement timing: ${timing||"—"} — no exploitable early-signal skill found.</div>
+      </div>
+      <div class="cell"><h4>Leakage & placebo canaries</h4>
+        <div class="scroll"><table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody>${canRows}</tbody></table></div>
+        <div class="mini">Overall ${statePill(can.overall)}</div>
+      </div>
+    </div>
+    <details><summary>Canary detail (${(can.checks||[]).length} checks)</summary>${canDetail}</details>
+    ${cm.length?`<details><summary>Reliability — model vs market (precomputed bins)</summary>
+      <div class="scroll"><table><thead><tr><th class="num">Forecast p</th><th class="num">Model freq</th><th class="num">Model n</th><th class="num">Market freq</th><th class="num">Market n</th></tr></thead><tbody>${calRows}</tbody></table></div>
+      <div class="brknote">Empirical up-rate observed in each forecast bin. A calibrated forecaster tracks the diagonal (freq ≈ p).</div></details>`:''}
+    <div class="cap b">Distributions, calibration and drift are computed server-side — ${esc(F.provenance)}. ${esc(F.note||"")}</div>`;
+}
+
+function panelModelling(S){
+  const M=S.modelling, on=M.online||{};
+  const cards=(M.model_cards||[]).map(m=>`<div class="cell">
+    <div class="sec-head"><h4 style="margin:0">${esc(m.model_id)}</h4><span class="pill ${m.offline_mean_bss>0?'ok':(m.offline_mean_bss<0?'miss':'pending')}">offline BSS</span></div>
+    <div class="acc"><span class="big ${signCls(m.offline_mean_bss)}" style="font-size:22px;font-weight:650;font-variant-numeric:tabular-nums">${m.offline_mean_bss!=null?m.offline_mean_bss.toFixed(4):'—'}</span><span class="ci">mean over ${intf(m.n_folds)} folds</span></div>
+    <div class="brknote">${esc(m.provenance)}</div></div>`).join("");
+  // online window ladder for the live A/B models — verbatim precomputed fields
+  const order=["LIFETIME","LAST_100","LAST_50","LAST_25"];
+  let onRows="";
+  Object.keys(on.models||{}).forEach(mid=>{ const wins=on.models[mid].windows||{};
+    order.filter(w=>wins[w]).forEach((w,i)=>{ const x=wins[w];
+      onRows+=`<tr><td>${i===0?'<b>'+esc(mid)+'</b>':''}</td><td>${w.replace('_',' ')}</td><td class="num">${intf(x.n)}</td>
+        <td class="num">${fx(x.brier,3)}</td><td class="num">${fx(x.log_loss,3)}</td>
+        <td class="num ${signCls(x.bss_vs_market)}">${x.bss_vs_market!=null?x.bss_vs_market.toFixed(4):'—'}</td>
+        <td class="num">${x.selective_acc_75!=null?pct1(x.selective_acc_75):'—'}</td>
+        <td class="num">${intf(x.selective_n_75)}</td></tr>`; }); });
+  const md=on.min_n||{};
+  return `<div class="sec-head"><div class="chips"><h4 style="margin:0;font-family:var(--display);font-size:14px">Offline model registry</h4>
+      <span class="stale-chip">${intf(M.registry_count)} registered</span>${M.loss_functions_visible?'<span class="pill ok">loss functions visible</span>':''}</div></div>
+    <div class="grid">${cards}</div>
+    <div class="cap b">Offline mean Brier Skill Score vs the market benchmark, averaged over walk-forward folds by <code>btc_rl.metrics</code>. Positive = beats market; values sit near zero — no offline model has demonstrated durable skill.</div>
+    <div class="sec-head" style="margin-top:18px"><h4 style="margin:0;font-family:var(--display);font-size:14px">Online A/B — live scoring windows</h4>
+      <span class="stale-chip">${esc(on.metric_contract)}</span></div>
+    <div class="scroll"><table><thead><tr><th>Model</th><th>Window</th><th class="num">n</th><th class="num">Brier</th><th class="num">LogLoss</th><th class="num">BSS vs mkt</th><th class="num">Sel-acc ≥.75</th><th class="num">Sel-n</th></tr></thead><tbody>${onRows||'<tr><td colspan="8" class="role">no online windows yet</td></tr>'}</tbody></table></div>
+    <div class="brknote">min n — display ${md.display} · compare ${md.compare} · gate ${md.gate}. Short windows (LAST 25/50) carry tiny selective-n; treat them as noise until n clears the gate.</div>`;
+}
+
+function panelOutput(S){
+  const O=S.output_processing;
+  const rows=(O.outputs||[]).map(o=>`<tr><td><b>${esc(o.id)}</b></td><td style="color:var(--muted)">${esc(o.source)}</td></tr>`).join("");
+  return `<div class="scroll"><table><thead><tr><th>Output field</th><th>Source</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="cap b">Oracle spec hash <code>${esc(O.spec_hash)}</code> · ${esc(O.provenance)}. Outputs are the frozen contract the desk consumes; <code>lock_state</code> is a fail-closed gate.</div>`;
+}
+
+function panelSevs(S){
+  const T=S.sevs_and_tickets;
+  const aw=(T.architecture_watch||[]).map(i=>`<div class="cell watch">
+    <div class="role">${esc(i.category)} · ${esc(i.severity)}</div>
+    <h4>${esc(i.id)} — ${esc(i.status)}</h4>
+    <div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">${esc(i.summary)}</div>
+    <div class="brknote">checkpoint: ${esc(i.checkpoint)}</div></div>`).join("");
+  const open=T.open_count||[];
+  const openList=open.slice(0,6).map(o=>`<div class="kv"><span><span class="pill ${o.sev===0?'bad':(o.sev<=1?'no':'pending')}">SEV-${esc(o.sev)}</span></span><span style="color:var(--muted);font-variant-numeric:normal;font-size:11.5px;text-align:left">${esc(o.title)}</span></div>`).join("");
+  const inc=(T.incidents||[]).slice(-6).reverse().map(i=>`<div class="cell">
+    <div class="sec-head"><span class="pill ${i.sev===0?'bad':(i.sev<=1?'no':'pending')}">SEV-${esc(i.sev)}</span><span class="role">${esc(i.opened)}</span></div>
+    <div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">${esc(i.title)}</div>
+    <div class="brknote">${esc(i.status)}${i.detected_by?' · '+esc(i.detected_by):''}</div></div>`).join("");
+  return `<div class="role" style="margin-bottom:8px">Architecture watch — kept visible until activation</div>
+    <div class="grid wide">${aw}</div>
+    <div class="grid wide" style="margin-top:14px">
+      <div class="cell"><div class="sec-head"><h4 style="margin:0">Open items</h4><span class="stale-chip">${open.length} open</span></div>${openList||'<div class="role">none</div>'}</div>
+    </div>
+    <div class="role" style="margin:16px 0 8px">Recent incidents (${(T.incidents||[]).length} total)</div>
+    <div class="grid wide">${inc}</div>
+    <div class="cap b">${esc(T.provenance)}</div>`;
+}
+
+function panelGraveyard(S){
+  const G=S.graveyard;
+  const chips=a=>(a&&a.length)?a.map(x=>`<span class="stale-chip">${esc(x)}</span>`).join(" "):'<span class="role">none</span>';
+  return `<div class="grid wide">
+    <div class="cell"><h4>Retired models</h4><div class="chips">${chips(G.retired_models)}</div></div>
+    <div class="cell"><h4>Retired traders</h4><div class="chips">${chips(G.retired_traders)}</div></div>
+    <div class="cell"><h4>Retired treatments</h4><div class="chips">${chips(G.retired_treatments)}</div></div>
+    <div class="cell"><h4>wait-for-dip</h4><div style="font-size:12.5px;color:var(--ink-2);line-height:1.5">${esc(G.wait_for_dip)}</div></div>
+  </div>
+  <div class="cap b">${esc(G.provenance)}. Retired lines are kept on the record so dead ideas are not silently re-proposed.</div>`;
+}
+
+function renderTabs(snap){
+  if(!snap){ document.getElementById("panels").innerHTML=`<div class="empty"><h2>Waiting for the live desk</h2><div class="role">No current Oracle snapshot (results/oracle_snapshot.json) is available yet.</div></div>`; return; }
+  const S=snap.subtabs;
+  const P={ input_data:panelInput(S), feature_processing:panelFeatures(S), modelling:panelModelling(S),
+    output_processing:panelOutput(S), sevs_and_tickets:panelSevs(S), graveyard:panelGraveyard(S) };
+  const tabsEl=document.getElementById("tabs"), panelsEl=document.getElementById("panels");
+  tabsEl.innerHTML=""; panelsEl.innerHTML="";
+  TABS.forEach(([k,label],i)=>{
+    const btn=document.createElement("button"); btn.textContent=label; btn.type="button"; if(i===0) btn.classList.add("on");
+    btn.onclick=()=>{ document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("on"));
+      document.querySelectorAll(".panel").forEach(x=>x.classList.remove("on"));
+      btn.classList.add("on"); document.getElementById("panel-"+k).classList.add("on"); };
+    tabsEl.appendChild(btn);
+    const div=document.createElement("div"); div.className="panel"+(i===0?" on":""); div.id="panel-"+k;
+    div.innerHTML=P[k]||"<div class='cell'>—</div>"; panelsEl.appendChild(div);
+  });
+}
+
+function renderProv(snap,calls){
+  const el=document.getElementById("prov");
+  if(!snap){ el.innerHTML="results/oracle_snapshot.json unavailable."; return; }
+  const dag=snap.dag||{};
+  const stale=isStale(snap.generated_at,900);
+  el.innerHTML=`<span class="live-dot ${stale?'stale':''}"></span>`
+    +`<b>schema</b> ${esc(snap.schema_version)} · <b>metrics</b> ${esc(snap.metric_definition_version)} · `
+    +`<b>generated</b> ${human(snap.generated_at)} (${ago(snap.generated_at)} ago)`
+    +`${stale?' · <span class="stale-chip">STALE</span>':''}<br>`
+    +`<b>DAG</b> ${intf((dag.nodes||[]).length)} nodes · ${intf((dag.edges||[]).length)} edges · ${intf((dag.drift_edges||[]).length)} drift edges`
+    +`${calls?` · <b>calls generated</b> ${human(calls.generated_ts)} (${ago(calls.generated_ts)} ago)`:''}<br>`
+    +`source: results/oracle_snapshot.json + oracle_calls.json (backend-computed)`;
+}
+
+// ---- fetch both, render, degrade gracefully ----
+Promise.all([
+  fetch("oracle_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null),
+  fetch("oracle_calls.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null)
+]).then(([snap,calls])=>{
+  renderHero(calls);
+  renderTabs(snap);
+  renderProv(snap,calls);
+}).catch(e=>{ document.getElementById("prov").textContent="load error: "+e; });
 </script>

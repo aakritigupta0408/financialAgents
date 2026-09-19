@@ -1,81 +1,281 @@
 <!-- Experiments (DT-07 §11) — renders results/experiments_snapshot.json VERBATIM.
-     Every statistic (paired delta, CI, ESS, verdict) is computed by the backend
-     (btc_rl/economics.paired_delta via scripts/emit_experiments_snapshot.py). No
-     science in the browser; enforced by tests/test_no_frontend_science.py. -->
+     Every statistic (paired Δ, 95% CI, effective n, verdict, sequential state) is
+     computed by the backend (btc_rl/economics.paired_delta via
+     scripts/emit_experiments_snapshot.py). The browser ONLY formats precomputed
+     values — no science here; enforced by tests/test_no_frontend_science.py. -->
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Experiment Ledger — BTC Oracle</title>
 <link rel="stylesheet" href="theme.css">
 <style>
-  /* inherit the shared site tokens (theme.css) — no foreign palette */
+  /* inherit the shared site tokens (theme.css) — single light theme, no foreign palette */
   :root{--line:var(--border);--card:var(--surface);--bg:var(--page);
         --good:var(--up);--bad:var(--down);--warn:var(--series-4);--accent:var(--series-2)}
-  .x{max-width:960px;margin:0 auto;padding:16px;background:var(--bg);color:var(--ink);
-     font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  h1{font-size:20px;margin:0 0 2px} .sub{color:var(--muted);font-size:13px;margin:0 0 12px}
-  .caveat{background:rgba(154,103,0,.08);border:1px solid var(--warn);border-radius:8px;
-     padding:8px 12px;font-size:12px;color:var(--warn);margin-bottom:14px}
-  .exp{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
-  .exp.win{border-left:3px solid var(--good)} .exp.lose{border-left:3px solid var(--bad)}
-  .exp.flat{border-left:3px solid var(--muted)}
-  .hdr{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px}
-  h2{font-size:16px;margin:0} .hyp{color:var(--muted);font-size:13px;margin:4px 0 10px}
-  .verdict{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;border:1px solid var(--line)}
-  .win .verdict{color:var(--good)} .lose .verdict{color:var(--bad)} .flat .verdict{color:var(--muted)}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
-  .b{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
-  .b b{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
-  .b span{font-size:16px;font-variant-numeric:tabular-nums}
-  .tl{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-  .tl span{font-size:11px;padding:2px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
-  .tl span.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-  .kv{font-size:12.5px;color:var(--muted);padding:1px 0}.kv b{color:var(--ink)}
-  .prov{color:var(--muted);font-size:11px;margin-top:14px}
-  .shadow{font-size:10px;color:var(--warn);border:1px solid var(--warn);border-radius:999px;padding:1px 7px}
+  .head h1{margin-bottom:2px}
+  .headchips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+  .chip.warn{color:var(--warn);background:rgba(143,96,0,.08);border-color:rgba(143,96,0,.35)}
+  .chip.stale{color:var(--muted);background:var(--surface-2);border-color:var(--border)}
+  .chip.mono{font-variant-numeric:tabular-nums}
+  .whatis{margin-top:12px;font-size:13px;line-height:1.6;color:var(--ink-2)}
+  .whatis b{color:var(--ink)}
+
+  /* caveats — amber, read-before-citing */
+  .caveats{border:1px solid rgba(143,96,0,.35);background:rgba(143,96,0,.06)}
+  .caveats .eyebrow{color:var(--warn)}
+  .caveats ul{margin:10px 0 0;padding-left:18px;color:var(--ink-2);font-size:13px;line-height:1.6}
+  .caveats li{margin:4px 0}
+  .caveats .mini{margin-top:8px}
+
+  /* experiment card */
+  .exp{border-left:4px solid var(--muted)}
+  .exphdr{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px}
+  .exphdr h2{margin-top:4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .shadowtag{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--warn);
+    border:1px solid rgba(143,96,0,.4);background:rgba(143,96,0,.08);border-radius:6px;padding:2px 8px}
+  .hyp{color:var(--ink-2);font-size:14px;margin:8px 0 0;max-width:74ch}
+  .verdict{font-size:11.5px;font-weight:700;letter-spacing:.04em}
+
+  .primaryrow{display:grid;grid-template-columns:minmax(200px,1fr) 2fr;gap:12px;margin:16px 0 4px}
+  .pbig{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .pbig .huge{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.1;margin:4px 0 2px}
+  .unit{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.06em}
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+  .stat{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .stat .v{font-size:17px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
+  .stat .v.ci{font-size:14px}
+  @media (max-width:640px){.primaryrow{grid-template-columns:1fr}}
+
+  .rawsep{border:1px dashed var(--line);border-radius:10px;padding:11px 14px;margin:14px 0}
+  .rawgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 22px;margin-top:8px;
+    font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+  .rawgrid b{color:var(--ink)}
+  .rk{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+
+  .kvrow{display:flex;flex-wrap:wrap;gap:6px 26px;margin:14px 0;font-size:13px;color:var(--ink-2)}
+  .kvrow b{color:var(--ink)} .kvrow code{font-size:12px;background:var(--surface-2);
+    border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:var(--ink-2)}
+
+  details.mech{margin:12px 0}
+  .mech .grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+  .mech .comp{background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:9px 11px}
+  .mech .comp .v{font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:3px}
+  .unavail{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);
+    background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 8px}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+  @media (max-width:640px){.split{grid-template-columns:1fr}}
+  .split .k{margin-bottom:6px}
+  .line{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);
+    padding:3px 0;border-bottom:1px solid var(--grid);font-variant-numeric:tabular-nums}
+  .line b{color:var(--ink)}
+
+  .lifecycle{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .flow{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .flow .arrow{color:var(--faint);font-size:13px}
+  .flow .chip{cursor:default}
+  .flow .chip.on{color:var(--ink);border-color:var(--accent);background:rgba(36,97,184,.10);font-weight:700}
+
+  footer.prov{margin-top:6px;display:flex;align-items:center;flex-wrap:wrap;gap:10px 14px;
+    font-size:12px;color:var(--faint);border-top:1px solid var(--line);padding-top:14px}
+  footer.prov .provline{font-variant-numeric:tabular-nums}
+  footer.prov b{color:var(--muted)}
+
+  .waiting{text-align:center;padding:56px 20px}
+  .waiting h2{font-family:var(--display);margin-bottom:8px}
+  .waiting p{color:var(--muted);max-width:46ch;margin:0 auto}
 </style>
-<div class="x">
-  <h1>Experiments — A/B</h1>
-  <p class="sub">Control vs treatment, paired by <b>market_window_id</b>. Primary estimand:
-     paired Δ of realized paper EV per eligible window. <a href="home.html" style="color:var(--accent);text-decoration:none">← HOME</a></p>
-  <div class="caveat" id="caveat"></div>
-  <div id="exps"></div>
-  <div class="prov" id="prov">loading results/experiments_snapshot.json…</div>
+
+<div class="topnav">
+  <a class="brand" href="home.html">BTC Oracle</a>
+  <a class="nav" href="home.html">Home</a>
+  <a class="nav" href="oracle.html">Oracle</a>
+  <a class="nav here" href="experiments.html">Experiments</a>
+  <span class="spacer"></span>
+  <span class="tag">Paper Research</span>
 </div>
+<div class="research-banner"><b>Paper / simulation.</b> Real money disabled. Research, not advice.</div>
+
+<main id="app">
+  <section class="waiting"><h2>Loading the ledger…</h2><p>Fetching the current experiment snapshot.</p></section>
+</main>
+
 <script>
-const c=v=>v==null?"—":(v/100).toFixed(2)+"$/win".replace("/win","");
-const cc=v=>v==null?"—":v.toFixed(1)+"c";
-function expCard(e){
-  const d=e.effect, sig=d&&d.significant;
-  const klass=e.verdict==="TREATMENT_WINS"?"win":e.verdict==="TREATMENT_LOSES"?"lose":"flat";
-  const s=e.sample_sizes;
-  const tl=["REGISTERED","SMOKE","SHADOW","LIVE","PROMOTE_CANDIDATE","REJECT_CANDIDATE","CONTINUE"];
-  return `<div class="exp ${klass}">
-    <div class="hdr"><h2>${e.control} vs ${e.treatment} ${e.shadow?'<span class="shadow">SHADOW</span>':''}</h2>
-      <span class="verdict">${e.verdict}</span></div>
-    <div class="hyp">${e.hypothesis}</div>
-    <div class="grid">
-      <div class="b"><b>Paired Δ EV/eligible</b><span>${d?cc(d.paired_delta):"—"}</span></div>
-      <div class="b"><b>95% CI</b><span style="font-size:13px">${d?("["+cc(d.ci95[0])+", "+cc(d.ci95[1])+"]"):"—"}</span></div>
-      <div class="b"><b>Significant</b><span>${sig?"YES":"no"}</span></div>
-      <div class="b"><b>Paired windows</b><span>${s.paired_windows}</span></div>
-      <div class="b"><b>Effective n</b><span>${s.effective_n}</span></div>
-    </div>
-    <div class="kv">Raw obs: <b>${s.raw_observations_control}</b> ctrl / <b>${s.raw_observations_treatment}</b> trt ·
-      windows <b>${s.windows_control}</b> / <b>${s.windows_treatment}</b> (never shown as sample size)</div>
-    <div class="kv">Estimand: <b>${e.estimand}</b> · unit <b>${e.unit}</b></div>
-    <div class="kv">Mechanism (registered): <b>${e.mechanism_decomposition.registered_mechanism}</b> ·
-      net Δ <b>${cc(e.mechanism_decomposition.net_treatment_ev_per_eligible_c)}</b>;
-      components ${e.mechanism_decomposition.gross_price_improvement} (need counterfactual fills)</div>
-    <div class="kv">Guardrails: max drawdown <b>${c(e.guardrails.max_drawdown_c_treatment)}</b> ·
-      bad-entry <b>${e.guardrails.bad_entry_rate_treatment==null?"—":(100*e.guardrails.bad_entry_rate_treatment).toFixed(1)+"%"}</b></div>
-    <div class="kv">Integrity: eligibility overlap <b>${e.integrity.eligibility_overlap}</b> ·
-      control-only ${e.integrity.control_only_windows} · treatment-only ${e.integrity.treatment_only_windows}</div>
-    <div class="tl">${tl.map(t=>`<span class="${e.timeline.includes(t)?'on':''}">${t}</span>`).join("")}</div>
-  </div>`;
+const $=(s,e=document)=>e.querySelector(s);
+// UNAVAILABLE / null guard — a field that isn't a real value renders as "unavailable", never a fabricated number
+const A=v=>(v==null||v==="UNAVAILABLE")?null:v;
+const esc=s=>String(s==null?"—":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// clean cents -> dollars formatting (replaces the old dead ".replace('/win','')" formatter)
+const usd=(c,dec=2)=>c==null?"—":(c<0?"−$":"$")+Math.abs(c/100).toLocaleString(undefined,
+  {minimumFractionDigits:dec,maximumFractionDigits:dec});
+const usd0=c=>usd(c,0);
+// percent DISPLAY of an already-computed rate (rate is precomputed server-side)
+const pct=(x,d=1)=>x==null?"—":(x*100).toFixed(d)+"%";
+const num=v=>v==null?"—":Number(v).toLocaleString();
+function fmtAge(sec){sec=Math.max(0,Math.round(sec));
+  if(sec<60)return sec+"s";
+  if(sec<3600)return Math.floor(sec/60)+"m "+(sec%60)+"s";
+  if(sec<86400)return Math.floor(sec/3600)+"h "+Math.floor(sec%3600/60)+"m";
+  return Math.floor(sec/86400)+"d "+Math.floor(sec%86400/3600)+"h";}
+const STALE_S=900; // 15 min — beyond this the ledger snapshot reads as stale, never fresh/green
+
+const VPILL={TREATMENT_WINS:"ok",TREATMENT_LOSES:"no",NO_SIGNIFICANT_DIFFERENCE:"miss"};
+const VACCENT={TREATMENT_WINS:"var(--good)",TREATMENT_LOSES:"var(--bad)",NO_SIGNIFICANT_DIFFERENCE:"var(--muted)"};
+const SEQPILL={PROMOTE_CANDIDATE:"ok",REJECT_CANDIDATE:"no"};
+
+function comp(label,val){
+  const v=A(val);
+  return `<div class="comp"><div class="rk">${esc(label)}</div>
+    <div class="v">${v==null?'<span class="unavail">UNAVAILABLE</span>':usd(v)}</div></div>`;
 }
-fetch("experiments_snapshot.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(d=>{
-  if(!d){document.getElementById("exps").innerHTML="<div class='exp flat' style='text-align:center;padding:40px'><h2>Waiting for the live desk</h2><div class='kv'>No current experiment snapshot is available yet.</div></div>";document.getElementById("prov").textContent="";return;}
-  document.getElementById("caveat").innerHTML="⚠ "+(d.caveats||[]).join(" · ");
-  document.getElementById("exps").innerHTML=d.experiments.map(expCard).join("");
-  document.getElementById("prov").textContent=`schema ${d.schema_version} · metric owner ${d.metric_owner} · `
-    +`settlement ${d.settlement_provenance} · ${d.evidence_class} · source: results/experiments_snapshot.json`;
-}).catch(e=>{document.getElementById("prov").textContent="load error: "+e;});
+
+function card(e){
+  const d=e.effect, s=e.sample_sizes, md=e.mechanism_decomposition,
+        g=e.guardrails, ig=e.integrity, sq=e.sequential;
+  const accent=VACCENT[e.verdict]||"var(--muted)";
+  const sig=!!(d&&d.significant);
+  const cs=e.control_summary||{}, ts=e.treatment_summary||{};
+  const tl=e.timeline||[];
+  return `<section class="exp" style="border-left-color:${accent}">
+    <div class="exphdr">
+      <div>
+        <span class="eyebrow">${esc(e.experiment_id)}</span>
+        <h2><span class="arm-tag control">${esc(e.control)}</span>
+          <span class="muted" style="font-family:inherit;font-weight:400">vs</span>
+          <span class="arm-tag">${esc(e.treatment)}</span>
+          ${e.shadow?'<span class="shadowtag">SHADOW · stakes 0</span>':''}</h2>
+      </div>
+      <span class="pill ${VPILL[e.verdict]||'miss'} verdict">${esc(e.verdict).replace(/_/g," ")}</span>
+    </div>
+    <p class="hyp"><b>Hypothesis.</b> ${esc(e.hypothesis)}</p>
+
+    <div class="primaryrow">
+      <div class="pbig">
+        <div class="k">Paired Δ EV / eligible window <span class="unit">PRIMARY ESTIMAND</span></div>
+        <div class="huge" style="color:${accent}">${d?usd(d.paired_delta):"—"}</div>
+        <div class="mini">${sig?"Significant — 95% CI excludes $0":"Not significant — 95% CI spans $0"}</div>
+      </div>
+      <div class="metrics">
+        <div class="stat"><div class="k">95% CI</div><div class="v ci">${d?usd(d.ci95[0])+" … "+usd(d.ci95[1]):"—"}</div></div>
+        <div class="stat"><div class="k">Significant</div><div class="v">${sig?"Yes":"No"}</div></div>
+        <div class="stat"><div class="k">Paired windows</div><div class="v">${num(s.paired_windows)}</div></div>
+        <div class="stat"><div class="k">Effective n</div><div class="v">${num(s.effective_n)}</div></div>
+      </div>
+    </div>
+
+    <div class="rawsep">
+      <div class="rk">Raw counts — context only, NOT the paired sample size</div>
+      <div class="rawgrid">
+        <div><span class="rk">Observations</span><br><b>${num(s.raw_observations_control)}</b> ctrl · <b>${num(s.raw_observations_treatment)}</b> trt</div>
+        <div><span class="rk">Windows</span><br><b>${num(s.windows_control)}</b> ctrl · <b>${num(s.windows_treatment)}</b> trt</div>
+        <div><span class="rk">Unpaired EV / eligible</span><br><b>${usd(cs.ev_per_eligible_c)}</b> ctrl · <b>${usd(ts.ev_per_eligible_c)}</b> trt</div>
+        <div><span class="rk">Coverage</span><br><b>${pct(cs.coverage)}</b> ctrl · <b>${pct(ts.coverage)}</b> trt</div>
+      </div>
+    </div>
+
+    <div class="kvrow">
+      <span><span class="rk">Estimand</span> <code>${esc(e.estimand)}</code></span>
+      <span><span class="rk">Unit</span> <b>${esc(e.unit)}</b></span>
+      <span><span class="rk">Primary metric</span> <b>${esc(e.primary_metric)}</b></span>
+    </div>
+
+    <details class="mech">
+      <summary>Mechanism decomposition — ${esc(md.registered_mechanism)}</summary>
+      <div class="line"><span>Net Δ EV / eligible (registered mechanism)</span><b>${usd(A(md.net_treatment_ev_per_eligible_c))}</b></div>
+      <div class="grid4">
+        ${comp("Gross price improvement",md.gross_price_improvement)}
+        ${comp("Missed-winner cost",md.missed_winner_cost)}
+        ${comp("Fees Δ",md.fees_delta)}
+        ${comp("Adverse selection",md.adverse_selection)}
+      </div>
+      <p class="mini">${esc(md.note)}</p>
+    </details>
+
+    <div class="split">
+      <div>
+        <div class="k">Guardrails</div>
+        <div class="line"><span>Max drawdown (treatment)</span><b>${usd0(A(g.max_drawdown_c_treatment))}</b></div>
+        <div class="line"><span>Bad-entry rate (treatment)</span><b>${pct(A(g.bad_entry_rate_treatment))}</b></div>
+      </div>
+      <div>
+        <div class="k">Integrity &amp; eligibility</div>
+        <div class="line"><span>Eligibility overlap</span><b>${pct(A(ig.eligibility_overlap))}</b></div>
+        <div class="line"><span>Control-only windows</span><b>${num(ig.control_only_windows)}</b></div>
+        <div class="line"><span>Treatment-only windows</span><b>${num(ig.treatment_only_windows)}</b></div>
+      </div>
+    </div>
+    <p class="mini">${esc(ig.note)}</p>
+
+    <div class="lifecycle">
+      <div class="k">Lifecycle</div>
+      <div class="flow">${tl.map((t,i)=>`<span class="chip ${i===tl.length-1?"on":""}">${esc(t)}</span>`)
+        .join('<span class="arrow">→</span>')}</div>
+      <div class="mini">Sequential boundary <b>${esc(sq.boundary)}</b> ·
+        state <span class="pill ${SEQPILL[sq.state]||"pending"}">${esc(sq.state)}</span></div>
+      <div class="mini">${esc(e.slices_note)}</div>
+    </div>
+  </section>`;
+}
+
+function render(d){
+  const arms=(d.experiments||[]).map(e=>e.treatment);
+  const control=(d.experiments&&d.experiments[0])?d.experiments[0].control:"control";
+  const header=`
+    <section class="head">
+      <span class="eyebrow">Paired A/B experiments</span>
+      <h1>Experiment ledger</h1>
+      <p class="sub">Formal, pre-registered paired experiments. Each treatment is matched to control by
+        <b>${esc(d.unit_default)}</b>; the primary estimand is the
+        <b>paired Δ of realized paper EV per eligible window</b> — not win rate, not Brier.</p>
+      <div class="headchips">
+        <span class="chip mono">Unit: ${esc(d.unit_default)}</span>
+        <span class="chip mono">Primary: ${esc(d.primary_trader_metric)}</span>
+        <span class="chip warn">Evidence: ${esc(d.evidence_class)}</span>
+        <span class="chip warn">Settlement: ${esc(d.settlement_provenance)}</span>
+      </div>
+      <p class="whatis">These are the settled paired experiments (control <b>${esc(control)}</b> vs
+        <b>${arms.map(esc).join("</b>, <b>")}</b>). This is <b>separate</b> from the
+        <a href="home.html">live arm scoreboard on Home</a> (T0 vs tv / ob / cg33 / fm), which races the current
+        production treatments. The arms tested here (${arms.map(esc).join(", ")}) are <b>retired</b> experiment
+        arms — read this as a settled ledger, not a live race.</p>
+    </section>`;
+
+  const caveats=(d.caveats&&d.caveats.length)?`
+    <section class="caveats">
+      <span class="eyebrow">Caveats — read before citing</span>
+      <ul>${d.caveats.map(c=>`<li>${esc(c)}</li>`).join("")}</ul>
+      <p class="mini">${esc(d.note)}</p>
+    </section>`:"";
+
+  const cards=(d.experiments||[]).map(card).join("");
+
+  // provenance + freshness (age is presentation only — no science)
+  const age=Math.max(0,Date.now()/1000-(d.generated_at||0));
+  const stale=age>STALE_S;
+  const human=d.generated_at?new Date(d.generated_at*1000).toLocaleString():"—";
+  const footer=`
+    <footer class="prov">
+      <span><span class="live-dot ${stale?"stale":""}"></span></span>
+      ${stale?'<span class="chip stale">STALE</span>':''}
+      <span class="provline"><b>schema</b> ${esc(d.schema_version)} ·
+        <b>owner</b> ${esc(d.metric_owner)} ·
+        <b>settlement</b> ${esc(d.settlement_provenance)} ·
+        <b>evidence</b> ${esc(d.evidence_class)} ·
+        <b>generated</b> ${esc(human)} (${fmtAge(age)} ago) ·
+        <b>source</b> results/experiments_snapshot.json</span>
+    </footer>`;
+
+  $("#app").innerHTML=header+caveats+cards+footer;
+}
+
+function waiting(){
+  $("#app").innerHTML=`<section class="waiting">
+    <span class="eyebrow" style="justify-content:center"><span class="live-dot stale"></span> Experiment ledger</span>
+    <h2>No experiment snapshot yet</h2>
+    <p>The desk publishes a fresh <code>experiments_snapshot.json</code> each cycle — check back shortly.</p></section>`;
+}
+
+fetch("experiments_snapshot.json",{cache:"no-store"})
+  .then(r=>r.ok?r.json():null)
+  .then(d=>{ if(!d||!d.experiments){waiting();return;} render(d); })
+  .catch(()=>waiting());
 </script>
