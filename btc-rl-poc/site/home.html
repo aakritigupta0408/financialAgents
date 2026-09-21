@@ -370,7 +370,7 @@ function abPanel(){
     <p class="pdesc" style="margin-top:4px">Every treatment vs the <b>T0 control</b>, metric = <b>EV per trade</b> (net $ / trade), not hit-rate — a 69% hit still loses money buying favorites. <b>Δ EV vs T0</b> is the paired per-contract difference on matched windows; 95% CI = bootstrap; p = paired t-test. Small n → "collecting".</p>
     ${body}
     <style>.abtab{width:100%;border-collapse:collapse;font-size:13px}.abtab td{padding:5px 10px 5px 0;border-bottom:1px solid var(--border,#232c3a);white-space:nowrap}.abtab td.h{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--border,#232c3a)}.abtab td.n{text-align:right;font-variant-numeric:tabular-nums}.mini2{color:var(--muted);font-size:11px}</style>
-    <div class="mini" style="margin-top:12px"><span class="live-dot ${active?'':'stale'}"></span> Offline: the value gate flips T0 from −$48 to +$22 (edge≥2c, 31% coverage). Full coverage-vs-EV curve on Models Lab.</div></div>`;
+    <div class="mini" style="margin-top:12px"><span class="live-dot ${active?'':'stale'}"></span> Reality check: at window <b>open</b> the contract is a ~coin flip (market acc 0.59, Bayes ceiling 0.59); the house profits from the ~7% vig, not prediction. The only edge is positive-EV value-gating net of fee — see the live coverage-vs-EV curve on <b>Models Lab</b>.</div></div>`;
 }
 function liveDeskStrip(){
   const L=LIVE; if(!L||!L.session) return "";
