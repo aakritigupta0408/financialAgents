@@ -22,10 +22,27 @@ from btc_rl import economics as E  # noqa: E402
 RES = ROOT / "results"
 CONTROL = {"id": "pt", "log": "pt_trades.jsonl", "name": "The $1K Desk"}
 TREATMENTS = [
-    {"id": "pt3", "log": "pt3_trades.jsonl", "name": "The Disciplined",
+    # LIVE roster — the current A/B vs the T0 control (2026-09-15 roster cut). These are
+    # the arms actually deployed; the published experiments page must show THESE, not the
+    # retired pt3/pt6 it shipped before (audit 2026-09-21).
+    {"id": "tv", "log": "tv_trades.jsonl", "name": "Value Gate", "cohort": "LIVE",
+     "hypothesis": "Value-gating the follower (edge>=0.05 over price+fee, half-Kelly) raises per-contract net EV vs T0",
+     "mechanism": "TV edge gate + half-Kelly"},
+    {"id": "ob", "log": "ob_trades.jsonl", "name": "Open+6 Barrier", "cohort": "LIVE",
+     "hypothesis": "An open+6min first-passage barrier (decide from the first 6 min of price action) beats the follower on per-contract net EV",
+     "mechanism": "open+6 analytic barrier P(close>=strike)"},
+    {"id": "cg33", "log": "cg33_trades.jsonl", "name": "Gated · 33%", "cohort": "LIVE",
+     "hypothesis": "Confidence-gated 33% stake (~1.6x Kelly) over-betting — a RUIN test, expected to underperform/ruin",
+     "mechanism": "CG33 conf>=0.20, 33% stake"},
+    {"id": "fm", "log": "fm_trades.jsonl", "name": "Chronos-Bolt", "cohort": "LIVE",
+     "hypothesis": "A Chronos-Bolt foundation-model directional trader (conf>=0.60) beats the control on per-contract net EV",
+     "mechanism": "chronos-bolt-base directional"},
+    # HISTORICAL registered experiments — retired arms, frozen ledgers, kept as evidence
+    # (NOT live). Shown for provenance, tagged so the UI never sells them as current.
+    {"id": "pt3", "log": "pt3_trades.jsonl", "name": "The Disciplined", "cohort": "HISTORICAL_FROZEN",
      "hypothesis": "A tighter conviction gate (0.77 vs 0.62) raises EV/eligible-window",
      "mechanism": "PT3_TAU 0.77"},
-    {"id": "pt6", "log": "pt6_trades.jsonl", "name": "The MLE",
+    {"id": "pt6", "log": "pt6_trades.jsonl", "name": "The MLE", "cohort": "HISTORICAL_FROZEN",
      "hypothesis": "An MLE edge model with EV>=10c improves selective EV",
      "mechanism": "pt6-mle edge logit (shadow)"},
 ]
@@ -134,6 +151,8 @@ def _evaluate(treat):
         "experiment_id": f"trader-{treat['id']}-vs-pt",
         "hypothesis": treat["hypothesis"],
         "control": CONTROL["id"], "treatment": treat["id"],
+        "treatment_name": treat.get("name"),
+        "cohort": treat.get("cohort", "LIVE"),
         "shadow": treat["id"] == "pt6",
         "unit": "market_window_id",
         "estimand": "paired_delta(realized_paper_ev_per_eligible_window_c)",
