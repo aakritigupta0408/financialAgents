@@ -1,0 +1,83 @@
+{
+ "estimand": "paired per-window per-contract net-of-vig EV, value-gated model vs market, CI=moving-block bootstrap (block=10), win iff CI_low>0",
+ "envelope_mins_left": 12.0,
+ "variants": {
+  "kb5": {
+   "n_windows": 192,
+   "by_margin": {
+    "0": {
+     "n_gated": 112,
+     "coverage": 0.5833,
+     "hit_rate": 0.8125,
+     "model_ev_per_gated_c": 52.8,
+     "paired_delta_vs_market_c": -0.89,
+     "delta_ci95_c": [
+      -2.5,
+      0.0
+     ],
+     "wins": false
+    },
+    "1": {
+     "n_gated": 108,
+     "coverage": 0.5625,
+     "hit_rate": 0.8056,
+     "model_ev_per_gated_c": 53.75,
+     "paired_delta_vs_market_c": -0.93,
+     "delta_ci95_c": [
+      -2.727,
+      0.0
+     ],
+     "wins": false
+    },
+    "2": {
+     "n_gated": 102,
+     "coverage": 0.5312,
+     "hit_rate": 0.8235,
+     "model_ev_per_gated_c": 57.63,
+     "paired_delta_vs_market_c": 0.0,
+     "delta_ci95_c": [
+      0.0,
+      0.0
+     ],
+     "wins": false
+    },
+    "3": {
+     "n_gated": 100,
+     "coverage": 0.5208,
+     "hit_rate": 0.83,
+     "model_ev_per_gated_c": 58.79,
+     "paired_delta_vs_market_c": 0.0,
+     "delta_ci95_c": [
+      0.0,
+      0.0
+     ],
+     "wins": false
+    },
+    "5": {
+     "n_gated": 98,
+     "coverage": 0.5104,
+     "hit_rate": 0.8367,
+     "model_ev_per_gated_c": 59.99,
+     "paired_delta_vs_market_c": 0.0,
+     "delta_ci95_c": [
+      0.0,
+      0.0
+     ],
+     "wins": false
+    },
+    "8": {
+     "n_gated": 96,
+     "coverage": 0.5,
+     "hit_rate": 0.8333,
+     "model_ev_per_gated_c": 60.18,
+     "paired_delta_vs_market_c": 0.0,
+     "delta_ci95_c": [
+      0.0,
+      0.0
+     ],
+     "wins": false
+    }
+   }
+  }
+ }
+}
