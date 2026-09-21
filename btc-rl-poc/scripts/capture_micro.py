@@ -17,6 +17,7 @@ not duplicated here.
 """
 from __future__ import annotations
 
+import calendar
 import hashlib
 import json
 import threading
@@ -146,12 +147,17 @@ def _kalshi():
                     _write({"src": "k_trade", "ticker": tk,
                             "ts_recv": round(time.time(), 3),
                             "trade": t})
-                trade_cursor = max(
-                    trade_cursor,
-                    max(int(time.mktime(time.strptime(
-                        t["created_time"][:19],
-                        "%Y-%m-%dT%H:%M:%S")))
-                        for t in trades if t.get("created_time")))
+                # created_time is UTC; calendar.timegm treats the parsed struct
+                # as UTC. time.mktime treated it as LOCAL, pushing the cursor
+                # +7h (PDT) into the future -> the next poll asked for future
+                # trades -> the tape went dark for hours. Clamp to now+60 guard.
+                trade_cursor = min(
+                    int(time.time()) + 60,
+                    max(trade_cursor,
+                        max(int(calendar.timegm(time.strptime(
+                            t["created_time"][:19],
+                            "%Y-%m-%dT%H:%M:%S")))
+                            for t in trades if t.get("created_time"))))
         except Exception:
             _counts["errors"] += 1
         time.sleep(1.0)

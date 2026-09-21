@@ -38,6 +38,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "results"
 
+# Single canonical fee owner (DT-08) — never a parallel/buggy local copy.
+import sys as _sys
+if str(ROOT) not in _sys.path:
+    _sys.path.insert(0, str(ROOT))
+from btc_rl.metrics import kalshi_fee_c  # noqa: E402
+
 ENGINE_VERSION = "1.0.0"
 SEED = 20260830
 EPS = 1e-6
@@ -121,10 +127,6 @@ def _auc(ps, ys):
     return round(wins / (len(pos) * len(neg)), 4)
 
 
-def _fee_frac(ask_c):
-    return 7 * (ask_c / 100.0) * (1 - ask_c / 100.0)
-
-
 def _econ_replay(rows, side_fn, tau=PRODUCT_TAU):
     """Frozen taker convention: qty 1 at the logged decision-time
     ask; enter when claimed confidence >= tau. Per METRICS.yaml
@@ -139,7 +141,7 @@ def _econ_replay(rows, side_fn, tau=PRODUCT_TAU):
             continue
         fills += 1
         ask = r["ask_c"]
-        cost = ask + 100 * _fee_frac(ask)
+        cost = ask + kalshi_fee_c(ask)   # canonical fee (was 100x-inflated: ask+100*fee_frac)
         won = bool(r["y"]) == bool(side_up)
         pnls.append((100 - cost) / cost if won else -1.0)
     cum = peak = dd = 0.0
