@@ -69,7 +69,29 @@ _Remediation staged to a controlled post-audit pass (online.py is the live daemo
 
 **KILL (delete, 19 files):** `_sev_reopen_watch/_sev_repro/_tmp_sev/_sev_idempotence/_sev_zombie_check/_sev_recovery_watch`, `_f1_rerun_watch`, `_gate_watch`, `chrome_ctl`, `build_site`, `train_l3`, `demo_trader`, `mech_fair`/`oracle`/`oracle_residual` (DT-03 superseded), `analyst_deep` (v1), `analyst_foundation`, `av_open6_features`, `official_outcomes_refresh`. **Cron-remove:** `emit_a3` + the 4 `agent_*`/`architecture_checkpoint` ceremonies. **Dead code:** `emit_home_snapshot:328/183`, `mine_legacy:152`, `trackA_exec_timing:81`.
 
-### Wave 3 — tests/ — running
-### Wave 4 — site/ — COVERAGE 34/34, every line — rolling up
-~7 live pages (in PAGES) vs ~24 DEAD orphan pages (pruned at publish, still in repo). P1 hazards: `home_classic.html` (fake front door, frontend-computed $2M get-rich theater), `archive.html` (labels ~20 dead pages "fully live"). Full orphan-KILL list + live-page fixes pending roll-up.
-### Wave 5 — docs/config/architecture/adapters — running
+### Wave 3 — tests/ — COVERAGE 154/154, every line
+**Junk drawer:** ~20 real guardrails (only 2 actually run — `invariants.py`+`leakage_canaries.py` via audit_chain), 57 dead one-offs, 13 theater/cheat. **Biggest systemic gap: NO CI / pytest runner** → every real leakage/label/economics test sits dark. P1: 2 tautological cohort tests + `paper_account` reconcile-by-construction (never fail); `chaos_drills` pkills the live daemon; `test_m5_system` writes the real ledger. `invariants.py:119` pct==0.0 hole (FIXED). Correction: `introspect_model_internals` is clean, not the div-by-zero hypothesized in W1.
+
+### Wave 4 — site/ — COVERAGE 34/34, every line
+7 live pages clean; **23 orphan pages** (pruned at publish) carried the ENTIRE UI hazard surface (frontend-science, $2M theater, $100M-EV, "matches market"). Live fixes: `home.html:373` stale caption, `nav.js` dead search links.
+
+### Wave 5 — docs/config/architecture/adapters — COVERAGE 58/58, every line
+Docs **broadly HONEST** (newest canon candid, reality-aligned; 89%@90% explicitly retired). Narrow over-claim risk: headline numbers without market benchmark — `COMBINED_STUDENT_FINDINGS.md` (P1: barrier artifact called "tradeable edge the live T2 arm uses"), `DECISIONS.md` M14 (90.9%@6.5% "productized"), `SYSTEM_AUDIT` chronos 0.73. Adapter bugs (brti/derivatives FIXED, av_news dedup). Stale: MANUAL, COMPONENT_REGISTRY roster, NOTES, requirements.txt (missing deps), OFFLINE_METRICS. KILL: A3_SHADOW_SPEC, A3_CHANGE_CONTROL, golden_snapshot.py. Theater: RME/SEV/cert ladder, PROGRAM org-charter, M6_REPAIRS.
+
+---
+
+## REMEDIATION LOG (post-100%-coverage)
+**Done + committed:**
+- `607a388` security: redact GitHub token from publish-log (was leaking 13,679×).
+- `a08c716` site: **delete 23 orphan pages** + fix nav dead links + home.html honest caption. (tests 9/9)
+- `49f4195` cleanup: **delete 67 dead one-off scripts + tests** (14 scripts + 53 tests; footguns removed).
+- `<this>` bugs: fetch_contract_specs MERGE (P1 truncation), brti reorder, derivatives missingness, invariants pct==0.0. (invariants 29/29)
+
+**Remaining (next phases):**
+- Emitter honesty (~7 LIVE emitters): `emit_coverage_ab` $100M control, `run_audit`/`emit_diagnosis` retired-arm-as-current, `emit_experiments_snapshot` pt6 $0→TREATMENT_WINS, `emit_home_snapshot`/`emit_modelling_techniques` hardcoded literals, `emit_pm_snapshot` frozen a3.
+- Cron de-churn: pull `emit_a3` + the 4 `agent_*` ceremonies + `architecture_checkpoint` from audit_chain/cron.
+- `online.py` (LIVE — needs daemon restart): delete ~250 lines dead retired-arm entry code + kbf/kb6 blocks + duplicate settlement loader + fshare/evlead; fix misleading status numbers (kbf headline, gross kb_bets pnl, PT0 $100M); make fail-closed cover all live arms.
+- Guardrail runner (biggest systemic gap): wire the ~18 dark `test_*.py` into audit_chain/pytest so they actually gate.
+- Docs: correct the 3 over-claims; refresh MANUAL/COMPONENT_REGISTRY/NOTES; fix requirements.txt; stamp dead A3 specs.
+- Tautological tests: replace the 3 reconcile-by-construction gates with independent recompute.
+- `repair_planes` STATE canary off frozen a3_live; `contract_truth` MIN_SAMPLES; `features.py:49` vol guard; fee canonicalization; `rl_treatment_dataset` schedule-or-kill.
