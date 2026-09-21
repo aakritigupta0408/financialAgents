@@ -26,7 +26,12 @@ def test_reward_spec():
     assert reward(68000.4, 68000.9, shaped=False) == config.REWARD_HIT
     assert reward(68000.0, 68005.0, shaped=False) == config.REWARD_HIT  # $5 floor
     assert reward(68000.0, 68005.2, shaped=False) == config.REWARD_MISS
-    assert abs(reward(68000.0, 68050.0, shaped=True) + 0.5) < 1e-9
+    # shaped miss ramps 2-u in BAND units (HIT_BAND=5, per the asserts above), and
+    # clamps to REWARD_MISS three bands out (see env.reward docstring). u=2.5 => $12.5
+    # => -0.5 (ramp midpoint); $50 is u=10 => clamped to -1. (Was a single $50 -> -0.5
+    # assertion, stale from a pre-"three-bands-out" ramp / wider band — audit 2026-09-21.)
+    assert abs(reward(68000.0, 68012.5, shaped=True) + 0.5) < 1e-9
+    assert reward(68000.0, 68050.0, shaped=True) == config.REWARD_MISS
     # vol-scaled band: a +15m sigma of $200 widens the hit band to $20
     assert reward(68000.0, 68018.0, shaped=False, band=20.0) == config.REWARD_HIT
     assert reward(68000.0, 68021.0, shaped=False, band=20.0) == config.REWARD_MISS

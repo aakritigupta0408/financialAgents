@@ -39,23 +39,31 @@ def test_disagreement_fixture():
     """Toxic markouts AND poor thesis integrity -> BOTH."""
     import agent_execution_researcher as ax
     with tempfile.TemporaryDirectory() as td:
-        res = Path(td)
+        # nested results/ + pinned fw.ROOT so this is HERMETIC. The fixture had
+        # drifted: it wrote the old name a3_window_evaluation.jsonl while the code was
+        # renamed to a3v21_window_evaluation.jsonl, and it never pinned fw.ROOT — so
+        # fw.stale() read the REAL repo file and tripped STALE_INPUT nondeterministically
+        # (audit 2026-09-21). Write the current name into an isolated results/.
+        root = Path(td)
+        res = root / "results"
+        res.mkdir()
         # 10 fills that mostly lose (thesis AS) with badly negative
         # short markouts (execution AS); 10 unfilled winners
         rows = [_mkrow("FILLED", won=(i < 4), markout10=-8.0)
                 for i in range(10)]
         rows += [_mkrow("MISSED", won=True) for _ in range(10)]
-        (res / "a3_window_evaluation.jsonl").write_text(
+        (res / "a3v21_window_evaluation.jsonl").write_text(
             "".join(json.dumps(r) + "\n" for r in rows))
-        old_res, old_led = ax.RES, fw.LEDGER
+        old_res, old_led, old_root = ax.RES, fw.LEDGER, fw.ROOT
         try:
             ax.RES = res
+            fw.ROOT = root
             fw.LEDGER = res / "agent_recommendations.jsonl"
             ax.main()
             out = json.loads(
                 (res / "execution_research.json").read_text())
         finally:
-            ax.RES, fw.LEDGER = old_res, old_led
+            ax.RES, fw.LEDGER, fw.ROOT = old_res, old_led, old_root
     assert out["thesis_adverse_selection"]["state"] == "PRESENT", out
     assert out["execution_adverse_selection"]["state"] == "PRESENT"
     assert out["dominant_channel"] == "BOTH", out["dominant_channel"]
@@ -67,7 +75,14 @@ def test_stale_input():
     """Old canonical input -> STALE_INPUT, no recommendation."""
     import agent_experiment_analyst as ea
     with tempfile.TemporaryDirectory() as td:
-        res = Path(td)
+        # results/ NESTED inside the tempdir so fw.ROOT/"results" == res naturally.
+        # The old code symlinked a SHARED path (res.parent == /tmp) -> /tmp/results,
+        # which persisted across sessions and parallel jobs: a dangling symlink from a
+        # prior run made this test fail FileExistsError/FileNotFoundError (audit
+        # 2026-09-21). No shared path, no symlink, no cross-job collision.
+        root = Path(td)
+        res = root / "results"
+        res.mkdir()
         p = res / "a3_live.json"
         p.write_text(json.dumps({"forward": {"eligible": 99}}))
         old = time.time() - 7200
@@ -75,9 +90,7 @@ def test_stale_input():
         old_res, old_led, old_root = ea.RES, fw.LEDGER, fw.ROOT
         try:
             ea.RES = res
-            fw.ROOT = res.parent          # stale() resolves results/
-            (res.parent / "results").symlink_to(res) \
-                if not (res.parent / "results").exists() else None
+            fw.ROOT = root                # stale() resolves fw.ROOT/"results" == res
             fw.LEDGER = res / "agent_recommendations.jsonl"
             ea.main()
             rows = [json.loads(l) for l in
