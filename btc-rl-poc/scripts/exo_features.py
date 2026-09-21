@@ -121,7 +121,13 @@ def run():
                     if a["cb_first"] is None:
                         a["cb_first"] = px
                     a["cb_last"] = px
-                    if r.get("side") == "buy":
+                    # Coinbase 'match' side is the MAKER side; the aggressor
+                    # (TAKER) BOUGHT when maker side == 'sell'. Mirror
+                    # sources.fetch_recent_trades(taker_buy = side=='sell') so
+                    # cb_ofi shares the taker sign convention of bn_ofi — it was
+                    # inverted here, giving corr(cb_ofi,bn_ofi) = -0.31 and
+                    # teaching any model fed both a corrupted coefficient.
+                    if r.get("side") == "sell":
                         a["buy"] += sz; a["buy_n"] += sz * px
                     else:
                         a["sell"] += sz; a["sell_n"] += sz * px

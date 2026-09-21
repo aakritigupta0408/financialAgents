@@ -47,15 +47,30 @@ def _rows(log):
     return out
 
 
-def _per_window_pnl(rows):
-    """window close_ts -> realized pnl_c for that window (sum if multiple entries).
-    Untraded/skipped windows are absent (0 contributed at pairing time)."""
-    w = {}
+def _per_window_pc(rows):
+    """window close_ts -> per-CONTRACT net pnl (cents) on windows the arm actually
+    TRADED (filled, contracts>0). Untraded/skipped windows are ABSENT and are a
+    coverage axis — never a 0-pnl credit. (Crediting abstention as 0 while the
+    control was forced to trade laundered 93% of pt6's 'win'; and raw-cents pnl
+    across arms whose stakes differ 136x is a stake-size artifact — normalize
+    per contract.)"""
+    acc = {}
     for r in rows:
         if r.get("skipped") or r.get("pnl_c") is None or r.get("close_ts") is None:
             continue
-        w[r["close_ts"]] = w.get(r["close_ts"], 0.0) + r["pnl_c"]
-    return w
+        c = r.get("contracts") or 0
+        if c <= 0:
+            continue
+        a = acc.setdefault(r["close_ts"], [0.0, 0])
+        a[0] += r["pnl_c"]; a[1] += c
+    return {k: v[0] / v[1] for k, v in acc.items() if v[1] > 0}
+
+
+def _traded_windows(rows):
+    """windows the arm actually FILLED (contracts>0) — the honest pairing universe."""
+    return {r["close_ts"] for r in rows
+            if not r.get("skipped") and (r.get("contracts") or 0) > 0
+            and r.get("close_ts") is not None}
 
 
 def _eligible_windows(rows):
@@ -79,25 +94,34 @@ def _ess(diffs, block=6):
 
 def _evaluate(treat):
     c_rows, t_rows = _rows(CONTROL["log"]), _rows(treat["log"])
-    c_pnl, t_pnl = _per_window_pnl(c_rows), _per_window_pnl(t_rows)
+    c_pc, t_pc = _per_window_pc(c_rows), _per_window_pc(t_rows)
+    c_traded, t_traded = _traded_windows(c_rows), _traded_windows(t_rows)
     c_elig, t_elig = _eligible_windows(c_rows), _eligible_windows(t_rows)
-    shared = sorted(c_elig & t_elig)                      # paired eligible windows
-    # per-eligible-window pnl (untraded eligible window contributes 0) — §7 metric
-    ctrl = [c_pnl.get(w, 0.0) for w in shared]
-    trt = [t_pnl.get(w, 0.0) for w in shared]
+    shared = sorted(c_traded & t_traded)     # BOTH arms actually FILLED — honest paired set
+    ctrl = [c_pc[w] for w in shared]
+    trt = [t_pc[w] for w in shared]
     delta = E.paired_delta(ctrl, trt)
     diffs = [trt[i] - ctrl[i] for i in range(len(shared))]
     ess = _ess(diffs)
-    # integrity (§10)
+    is_shadow = treat["id"] == "pt6" or len(t_traded) == 0
+    # integrity (§10): abstention is a SEPARATE coverage axis, never a 0-pnl credit
     integrity = {
-        "eligibility_overlap": round(len(shared) / max(1, len(c_elig | t_elig)), 3),
+        "eligibility_overlap": round(len(c_elig & t_elig) / max(1, len(c_elig | t_elig)), 3),
         "control_only_windows": len(c_elig - t_elig),
         "treatment_only_windows": len(t_elig - c_elig),
-        "shadow_treatment": treat["id"] == "pt6",
-        "note": "unit=market_window_id; per-eligible-window pnl (untraded=0)"}
-    # verdict / boundary (§11): CI vs 0 with a simple promote/reject/continue rule
+        "jointly_traded_n": len(shared),
+        "treatment_coverage": round(len(t_traded) / max(1, len(t_elig)), 3),
+        "control_coverage": round(len(c_traded) / max(1, len(c_elig)), 3),
+        "treatment_abstained_windows": len(t_elig - t_traded),
+        "shadow_treatment": is_shadow,
+        "note": "unit=market_window_id; PAIRED per-contract net pnl on JOINTLY-TRADED "
+                "windows; abstention is coverage, never a 0-pnl credit"}
+    # verdict / boundary (§11): a 0-stake SHADOW arm can never PROMOTE (its 'win'
+    # is counterfactual abstention, not realized cash)
     if delta is None:
         verdict, state = "INSUFFICIENT_N", "REGISTERED"
+    elif is_shadow:
+        verdict, state = "SHADOW_NO_REALIZED_STAKE", "SHADOW"
     elif delta["ci95"][0] > 0:
         verdict, state = "TREATMENT_WINS", "PROMOTE_CANDIDATE"
     elif delta["ci95"][1] < 0:
