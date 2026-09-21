@@ -122,11 +122,31 @@ def calibration_bins(ps: list[float], ys: list[int],
 
 
 def kalshi_fee_c(price_c: float) -> float:
-    """Kalshi trading fee per contract in cents: 7% x P x (1-P) x 100,
-    rounded UP to the next whole cent (their published general schedule).
-    7 * p * (1-p) is already in cents for one contract."""
+    """Kalshi trading fee for ONE contract (C=1), in cents: ceil(7 * P * (1-P)),
+    P in dollars (their published general schedule). 7*p*(1-p) is already cents/contract.
+
+    ⚠ C=1 ONLY. Kalshi rounds the fee UP once *per ORDER*, on the whole contract
+    count: ceil(7 * C * p * (1-p)). Because ceil(sum) != sum(ceil), you must NOT
+    compute an order's fee as C * kalshi_fee_c(price) — that rounds up C separate
+    times and OVERCHARGES (e.g. 100 lots @ 80c: true = ceil(7*100*.8*.2)=112c, but
+    100*kalshi_fee_c(80)=200c). For an order of C>1 contracts use kalshi_order_fee_c.
+    This function is correct for per-contract EV / break-even math and single-contract
+    decision rows only. (2026-09-21 audit: the live ledgers already charge the per-ORDER
+    fee via online._order_fee_c; a reviewer that treats C*kalshi_fee_c as truth will
+    falsely 'find' understated fees — see docs/AUDIT_COMPLIANCE.md.)"""
     p = price_c / 100
     return float(math.ceil(7 * p * (1 - p)))
+
+
+def kalshi_order_fee_c(contracts: int, price_c: float) -> float:
+    """Canonical Kalshi fee for an ORDER of `contracts` at price_c cents:
+    ceil(7 * C * P * (1-P)) — rounded up ONCE for the whole order (their real
+    schedule). This is the fee actually charged; kalshi_fee_c is its C=1 special
+    case. online._order_fee_c is the daemon-side sibling of this owner."""
+    if not contracts or contracts < 1:
+        return 0.0
+    p = price_c / 100
+    return float(math.ceil(7 * contracts * p * (1 - p)))
 
 
 def max_drawdown(cum: list[float]) -> float:

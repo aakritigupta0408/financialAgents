@@ -95,3 +95,20 @@ Docs **broadly HONEST** (newest canon candid, reality-aligned; 89%@90% explicitl
 - Docs: correct the 3 over-claims; refresh MANUAL/COMPONENT_REGISTRY/NOTES; fix requirements.txt; stamp dead A3 specs.
 - Tautological tests: replace the 3 reconcile-by-construction gates with independent recompute.
 - `repair_planes` STATE canary off frozen a3_live; `contract_truth` MIN_SAMPLES; `features.py:49` vol guard; fee canonicalization; `rl_treatment_dataset` schedule-or-kill.
+
+---
+
+## SESSION 2026-09-21 — HONESTY HARDENING (grounded in the real ledgers)
+Trade-log census (real counts): **pt 1352 windows / 4.06M contracts, tv 169, ob 367, cg33 310, fm 385**; kalshi_binary_log = 8 kb variants × ~195 settled decision-windows (the whole offline universe is only ~195 windows — small, and ~13.7 autocorrelated rows/window shrink effective N further). Retired arms (pt2-pt8/cg5/cg10) confirmed frozen.
+
+**Settlement machinery VERIFIED SOUND** (forensic cross-check vs contract_outcomes.jsonl): 0 `win` mismatches, 0 `actual`-vs-official-`exact_yes` disagreements, 100% pnl internally consistent, 0 dupes — all 5 active arms. The truth layer is trustworthy.
+
+**Real fixes committed this session:**
+- `8d3e34c` fix(honesty): `emit_experiments_snapshot` — killed pt6's manufactured `TREATMENT_WINS`. It credited pt6's ~892 ABSTAINED windows as $0 vs the control's forced losses, then compared raw cents across arms whose stakes differ 136×. Now pairs only on JOINTLY-TRADED windows, per-CONTRACT, and forces 0-stake shadow arms to `SHADOW_NO_REALIZED_STAKE` (can never PROMOTE). On the 28 windows pt6 actually traded it is **−3.57¢/contract vs control** — the opposite of the fake win. Also `exo_features` cb_ofi taker-sign inversion (was corr −0.31 with bn_ofi).
+- `9aed229` fix(honesty): **cg33 was rendering "LIVE" while ruined** ($1.30 of $300 seed, no trade since 09-19; it is the deliberate 33%-Kelly RUIN-RISK arm and blew up as designed). Liveness was "has any rows", not recency vs the 15-min cadence. Added `_honest_state` → LIVE / STALE (≥8 windows missed) / HALTED-ruined, wired into home_snapshot + the home board badge/chip. Also reframed tv's card, which hardcoded "flips T0 from −$48 to positive" while tv is live −$616.
+
+**CRYING WOLF AVERTED (real-vs-fancy-guardrail):** a forensic pass "found" that treatments understate fees vs `kalshi_fee_c` → "$21.5k hidden on pt, ob's edge vanishes." **FALSE.** Verified on every row: `pnl == per-ORDER fee (ceil(7·C·p·(1-p)) via online._order_fee_c) = 100% (1352/1352, 169/169, 367/367, 310/310, 385/385).` The ledger already charges Kalshi's TRUE per-order fee. The trap: `ceil(Σ) ≠ Σ ceil`, so `C·kalshi_fee_c(price)` rounds up C times and OVERCHARGES (100 lots @80c: true 112c vs 200c). "Fixing" the P&L would have INJECTED a $21,562 overcharge on pt. Hardened the canonical owner: `kalshi_fee_c` docstring now flags C=1-only, and added `metrics.kalshi_order_fee_c(contracts, price_c)` as the named per-order owner. All existing `kalshi_fee_c` call sites verified C=1 (eval_engine per-contract EV, value_gate 1-lot rows, break-even, kb 1-lot bets) → no code bug existed. The DECISIVE value_gate_backtest was already fee-correct (uses kalshi_fee_c on 1-lot rows) → STOP-NULL stands.
+
+**pt "The $1K Desk" is misnamed — seeded $100,000,000, not $1K** (bankroll moved ±0.09%). Its +$69,202 is a **size-concentration artifact**, NOT edge: per-contract EV ≈ **−0.034¢**, hit rate 69.5% *below* breakeven, top-5 largest-size windows = 60% of the "profit", one adverse window −$16,408. To reframe in emitters/UI (task #69).
+
+**Operational:** ~30h system-wide capture outage 09-19→09-20 (all live arms; resumed 09-20 14:xx). Schema drift across arms: `late_settle_ts` only in pt; `p_arm` (pt/tv/cg33) vs `p_up` (ob/fm); ob/fm add model/quantile fields (task #70).
