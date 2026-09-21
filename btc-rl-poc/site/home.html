@@ -215,7 +215,7 @@ function selCard(t){
     style="border-color:${on?c:'var(--border)'};${on?'background:'+bg:''}">
     <div class="hd"><span class="tag" style="color:${c};background:${bg}">${t.id} · ${t.role.replace(/_/g," ")}</span>
       <span class="ic" style="color:${c}">${icon(ic,c,20)}</span></div>
-    <div class="nm">${t.name}</div><div class="tl">${t.tagline||t.blurb||""}</div></button>`;
+    <div class="nm">${t.name}${(t.live&&t.live.halted)?`<span style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;color:#e5534b;background:rgba(229,83,75,.14);border:1px solid rgba(229,83,75,.4);border-radius:4px;padding:1px 5px;margin-left:6px;vertical-align:middle">${t.live.ruined?'HALTED':'STALE'}</span>`:''}</div><div class="tl">${t.tagline||t.blurb||""}</div></button>`;
 }
 function equitySVG(curve){
   if(!curve||curve.length<3) return `<div class="emptychart">No equity curve for this policy.</div>`;
@@ -248,7 +248,9 @@ function traderPanel(){
       <div class="b"><div class="v ${s.ev_per_trade_c>=0?'pos':'neg'}">${s.ev_per_trade_c!=null?(s.ev_per_trade_c>=0?'+':'−')+Math.abs(s.ev_per_trade_c).toFixed(1)+'¢':'—'}</div><div class="k">EV / trade</div></div>
       <div class="b"><div class="v">${usd(s.max_drawdown_c)}</div><div class="k">Max DD</div></div></div>`;
     chart=equitySVG(LV.equity_curve);
-    badge=`<span class="notstarted"><span class="live-dot"></span> Live · settles on official BRTI</span>`;
+    badge=s.halted
+      ? `<span class="notstarted"><span class="live-dot stale"></span> ${s.state||'Halted'}</span>`
+      : `<span class="notstarted"><span class="live-dot"></span> Live · settles on official BRTI</span>`;
   } else if(mode==="live"){
     kpi=`<div class="kpi"><div class="big mut">—</div><div class="cap">Live results collecting</div></div>`;
     stats="";

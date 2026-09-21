@@ -99,10 +99,16 @@ def _trader_summary(t, n_eligible):
     last_k = [{"ticker": r.get("ticker"), "side": r.get("side"), "pnl_c": r.get("pnl_c"),
                "win": r.get("win"), "close_ts": r.get("close_ts")}
               for r in settled[-10:]]
+    _recent_asks = [a for a in (r.get("ask_c") for r in settled[-20:]) if a]
+    _st = _honest_state(settled, econ.get("ending_capital_c") or 0, _recent_asks, time.time())
+    _status = ("SHADOW" if t["id"] == "pt6"
+               else "HALTED" if _st["ruined"] else "STALE" if _st["halted"]
+               else "ACTIVE")
     return {
         "trader_id": t["id"], "name": t["name"], "role": t["role"],
         "strategy_type": t["strategy"],
-        "status": "SHADOW" if t["id"] == "pt6" else "ACTIVE",
+        "status": _status, "lifecycle_state": _st["state"],
+        "last_trade_age_s": _st["last_trade_age_s"],
         "online_summary": econ,                       # §7 online/prospective paper
         "offline_summary": None,                       # replay not yet wired per-trader
         "latest_action": (settled[-1].get("ticker") if settled else None),
@@ -220,6 +226,35 @@ def _oracle_strip():
     }
 
 
+def _honest_state(settled, bank_c, recent_asks_c, now):
+    """Truthful lifecycle state for a live arm, DERIVED from the ledger — never a
+    hardcoded 'LIVE'. An arm that stopped acting while 15-min windows keep arriving is
+    not live (liveness == recency vs opportunity cadence, not 'has any rows'); an arm
+    that can't afford a single contract is ruined. Reports reality — changes no trading
+    behavior, so it is honesty, not a guardrail."""
+    if not settled:
+        return {"state": "COLLECTING (no settled trade yet)", "halted": False,
+                "last_trade_age_s": None, "ruined": False}
+    last_ts = max((r.get("close_ts") or 0) for r in settled)
+    age = max(0.0, now - last_ts)
+    cheapest = min(recent_asks_c) if recent_asks_c else None
+    ruined = cheapest is not None and bank_c < cheapest       # can't buy 1 contract
+    WIN = 900.0                                                # 15-min window cadence
+    missed = int(age / WIN)
+
+    def _ago(s):
+        h = s / 3600.0
+        return f"{h:.1f}h" if h < 48 else f"{h / 24:.1f}d"
+    if ruined:
+        return {"state": f"HALTED — ruined (${bank_c / 100:.2f} left, no trade in {_ago(age)})",
+                "halted": True, "last_trade_age_s": int(age), "ruined": True}
+    if missed >= 8:            # ~2h of missed 15-min windows => provably dark
+        return {"state": f"STALE — no trade in {_ago(age)} ({missed} windows missed)",
+                "halted": True, "last_trade_age_s": int(age), "ruined": False}
+    return {"state": "LIVE (official BRTI)", "halted": False,
+            "last_trade_age_s": int(age), "ruined": False}
+
+
 def _cg_family_entries():
     """The two live treatments after the 2026-09-15 roster cut: T1 (cg33) and T2 (fm =
     Chronos-Bolt base), with LIVE stats read from their own ledgers (official-BRTI
@@ -228,8 +263,9 @@ def _cg_family_entries():
     specs = [
         ("tv", "Value Gate", "EV north-star.", "LIVE_CANDIDATE", "tv_trades.jsonl",
          "EV — follows the leader ONLY when the edge beats the price+fee (p_arm − ask/100 >= 0.05) "
-         "and the leader is strong (rec10>=0.7); half-Kelly sizing. The value gate that flips T0 "
-         "from -$48 to positive (ev_optimize.json). North-star = EV, not hit-rate. Official settle."),
+         "and the leader is strong (rec10>=0.7); half-Kelly sizing. OFFLINE replay hypothesis: "
+         "value-gating lifts T0's EV (ev_optimize.json). LIVE is prospective and still accruing — "
+         "read the live P&L on this card, not the offline claim. North-star = EV, not hit-rate. Official settle."),
         ("ob", "Open+6 Barrier", "The honest model.", "LIVE_CANDIDATE", "ob_trades.jsonl",
          "T3 — decides at open+6min (~9 min left) from the first 6 minutes of price action via the "
          "analytic first-passage barrier P(close>=strike). Trades every window and logs confidence "
@@ -285,23 +321,28 @@ def _cg_family_entries():
                  [_trow(r, "Settled") for r in reversed(settled[-12:])]
         eq = [{"i": i, "equity_c": r.get("bankroll_c")} for i, r in enumerate(settled)
               if r.get("bankroll_c") is not None]
+        _recent_asks = [a for a in (r.get("ask_c") for r in settled[-20:]) if a]
+        _st = _honest_state(settled, bank, _recent_asks, time.time())
         sess = {"n": len(settled), "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 4) if settled else None,
                 "ev_per_trade_c": round(pnl / len(pnls), 2) if pnls else None,
-                "max_drawdown_c": None, "label": "since launch"}
+                "max_drawdown_c": None, "label": "since launch",
+                "state": _st["state"], "halted": _st["halted"],
+                "last_trade_age_s": _st["last_trade_age_s"]}
         livedesk = {"session": sess, "since_activation": sess, "recent_trades": recent,
                     "equity_curve": eq, "daemon_alive_age_s": 0, "current_window": None,
                     "settlement": "OFFICIAL_EXACT_BRTI"}
         live = {"n": len(settled), "wins": wins, "pnl_c": pnl, "bankroll_c": bank,
                 "hit_rate": round(wins / len(settled), 3) if settled else None,
-                "state": "LIVE (official BRTI)" if rows else "COLLECTING (no trade yet)"}
+                "state": _st["state"], "halted": _st["halted"], "ruined": _st["ruined"],
+                "last_trade_age_s": _st["last_trade_age_s"]}
         is_fm = cid == "fm"; is_ob = cid == "ob"; is_tv = cid == "tv"
         _type = ("Value gate (EV, half-Kelly)" if is_tv
                  else "First-passage barrier @ open+6min" if is_ob
                  else "Foundation model (Chronos-Bolt base)" if is_fm
                  else "Rule-based (confidence-gated)")
-        _reason = ("Bets only +EV windows (edge>=0.05 over price+fee); the value gate flips T0 "
-                   "from -$48 to positive (EV north-star)." if is_tv
+        _reason = ("Bets only +EV windows (edge>=0.05 over price+fee). OFFLINE: value-gating "
+                   "lifted T0's EV in replay; LIVE evidence is still accruing (see live P&L)." if is_tv
                    else "Analytic barrier on the first 6 minutes; the exhaustively-verified honest "
                         "ceiling (~0.74 hit @90% coverage). Coverage A/B on Models Lab." if is_ob
                         else "Directional foundation-model trader; benchmark winner among "
