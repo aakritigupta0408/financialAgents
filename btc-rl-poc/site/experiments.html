@@ -141,7 +141,8 @@ function card(e){
         <span class="eyebrow">${esc(e.experiment_id)}</span>
         <h2><span class="arm-tag control">${esc(e.control)}</span>
           <span class="muted" style="font-family:inherit;font-weight:400">vs</span>
-          <span class="arm-tag">${esc(e.treatment)}</span>
+          <span class="arm-tag">${esc(e.treatment_name?e.treatment_name+" ("+e.treatment+")":e.treatment)}</span>
+          ${e.cohort==="LIVE"?'<span class="shadowtag" style="color:var(--good,#2ecc71)">LIVE</span>':'<span class="shadowtag">FROZEN · historical</span>'}
           ${e.shadow?'<span class="shadowtag">SHADOW · stakes 0</span>':''}</h2>
       </div>
       <span class="pill ${VPILL[e.verdict]||'miss'} verdict">${esc(e.verdict).replace(/_/g," ")}</span>
@@ -218,6 +219,8 @@ function card(e){
 
 function render(d){
   const arms=(d.experiments||[]).map(e=>e.treatment);
+  const liveArms=(d.experiments||[]).filter(e=>e.cohort==="LIVE").map(e=>e.treatment);
+  const histArms=(d.experiments||[]).filter(e=>e.cohort==="HISTORICAL_FROZEN").map(e=>e.treatment);
   const control=(d.experiments&&d.experiments[0])?d.experiments[0].control:"control";
   const header=`
     <section class="head">
@@ -232,11 +235,13 @@ function render(d){
         <span class="chip warn">Evidence: ${esc(d.evidence_class)}</span>
         <span class="chip warn">Settlement: ${esc(d.settlement_provenance)}</span>
       </div>
-      <p class="whatis">These are the settled paired experiments (control <b>${esc(control)}</b> vs
-        <b>${arms.map(esc).join("</b>, <b>")}</b>). This is <b>separate</b> from the
-        <a href="home.html">live arm scoreboard on Home</a> (T0 vs tv / ob / cg33 / fm), which races the current
-        production treatments. The arms tested here (${arms.map(esc).join(", ")}) are <b>retired</b> experiment
-        arms — read this as a settled ledger, not a live race.</p>
+      <p class="whatis">Paired experiments, control <b>${esc(control)}</b>, matched by
+        <b>${esc(d.unit_default)}</b> on the windows both arms actually traded (per-contract net P&amp;L).
+        <b>LIVE cohort</b> — ${liveArms.length?("<b>"+liveArms.map(esc).join("</b>, <b>")+"</b>"):"—"} —
+        is the current production A/B (also on <a href="home.html">Home</a>). <b>Frozen historical</b> —
+        ${histArms.length?("<b>"+histArms.map(esc).join("</b>, <b>")+"</b>"):"—"} — are retired arms kept as a
+        settled ledger, not a live race. Every live-cohort CI currently straddles 0 (no arm beats control) —
+        consistent with the STOP-NULL value-gate backtest.</p>
     </section>`;
 
   const caveats=(d.caveats&&d.caveats.length)?`
