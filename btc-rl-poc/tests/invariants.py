@@ -116,9 +116,17 @@ def _evaluable():
         d = json.loads((RES / "decision_board.json").read_text())
     except Exception:
         return False, ["decision_board.json unreadable"]
-    bad = [a["key"] for a in d.get("treatments", [])
-           if a.get("completeness")
-           and (a["completeness"].get("pct") or 1.0) < 1.0]
+    # pct==0.0 (maximally incomplete — the exact case this guard exists to
+    # catch) must FAIL. The old `(pct or 1.0) < 1.0` treated 0.0 as 1.0 and let
+    # it pass; test `pct is not None and pct < 1.0` explicitly.
+    bad = []
+    for a in d.get("treatments", []):
+        comp = a.get("completeness")
+        if not comp:
+            continue
+        pct = comp.get("pct")
+        if pct is not None and pct < 1.0:
+            bad.append(a["key"])
     return not bad, bad
 
 

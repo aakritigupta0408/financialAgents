@@ -119,11 +119,11 @@ def probe():
     path = "/trade-api/v2/cfbenchmarks/values"
     for host in HOSTS:
         code, body = _req(host, path, {"id": "BRTI"})
+        if code == 200 and not body:
+            return {"state": "AUTHORIZED_BUT_EMPTY", "host": host}
         if code == 200:
             return {"state": "AVAILABLE", "host": host, "sample": body,
                     "endpoint_exists": True}
-        if code == 200 and not body:
-            return {"state": "AUTHORIZED_BUT_EMPTY", "host": host}
         if code in (401, 403):
             last = {"state": "ENTITLEMENT_DENIED", "host": host, "code": code,
                     "detail": body.get("error", body)}

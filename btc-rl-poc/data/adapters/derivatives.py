@@ -83,6 +83,10 @@ def snapshot():
         if d:
             rec["long_short_ratio"] = float(d[0][1])
             rec["source_ts_ls"] = int(d[0][0]) / 1000.0
+        else:
+            # explicit missingness: an empty (non-error) response must be
+            # distinguishable from "never attempted", per the module contract.
+            rec["long_short_ratio_missing"] = True
     field("long_short_ratio", posn)
 
     rec["ok"] = not rec["errors"]

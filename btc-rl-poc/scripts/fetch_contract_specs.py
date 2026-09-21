@@ -29,7 +29,22 @@ def _get(params):
 
 
 def main():
+    # MERGE, don't overwrite: seed from the existing store so a short/partial
+    # Kalshi page can never truncate historical labels (every score/PnL/BSS
+    # number rests on this file; a truncation is the 2026-09-15 zombie-freeze
+    # failure class). The API pull below upserts by ticker onto this base.
     rows = {}
+    if OUT.exists():
+        for _ln in OUT.read_text().splitlines():
+            _ln = _ln.strip()
+            if not _ln:
+                continue
+            try:
+                _r = json.loads(_ln)
+                if _r.get("ticker"):
+                    rows[_r["ticker"]] = _r
+            except Exception:
+                continue
     cursor = None
     pages = 0
     while pages < 60:
