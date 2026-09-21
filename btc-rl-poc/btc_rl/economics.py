@@ -18,6 +18,18 @@ def _nz(xs):
     return [x for x in xs if x is not None]
 
 
+def arm_p(row: dict) -> float | None:
+    """The arm's decision probability, normalized across the ledger schema drift:
+    the follower/gate family (pt, tv, cg33) logs it as `p_arm`; the model family
+    (ob, fm) logs it as `p_up`. Same concept, two names — read via this accessor so
+    cross-arm analysis never silently drops half the roster. See
+    docs/TRADE_LEDGER_SCHEMA.md."""
+    p = row.get("p_arm")
+    if p is None:
+        p = row.get("p_up")
+    return p
+
+
 def realized_pnl(pnls: list[float]) -> float | None:
     """Total realized paper P&L (sum of settled trade pnls)."""
     xs = _nz(pnls)
