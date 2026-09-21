@@ -171,6 +171,31 @@ def _push_url(repo) -> str:
     return url
 
 
+def _redact(s: str) -> str:
+    """Scrub any GitHub token before it is printed. The tokenized push URL
+    lands in git's error output on a failed push, and this script's stdout is
+    appended to a world-readable /tmp log by cron — so a raw print leaks a live
+    credential (SEV, 2026-09-20 audit: it had leaked 13,679 times). Belt-and-
+    suspenders: redact at every print regardless of how the URL surfaces."""
+    if not s:
+        return s
+    out = s
+    while "x-access-token:" in out:            # x-access-token:<tok>@  ->  ***
+        i = out.index("x-access-token:")
+        j = out.find("@", i)
+        out = out[:i] + "x-access-token:***" + (out[j:] if j != -1 else "")
+        if j == -1:
+            break
+    for pfx in ("gho_", "ghp_", "ghs_", "ghr_", "github_pat_"):
+        while pfx in out:                       # bare gho_XXX -> gho_***
+            i = out.index(pfx)
+            k = i + len(pfx)
+            while k < len(out) and (out[k].isalnum() or out[k] == "_"):
+                k += 1
+            out = out[:i] + pfx + "***" + out[k:]
+    return out
+
+
 def copy_bundle(dest: Path) -> None:
     (dest / "site").mkdir(parents=True, exist_ok=True)
     (dest / "results").mkdir(parents=True, exist_ok=True)
@@ -230,7 +255,7 @@ def publish_ghpages() -> None:
                 f"--force-with-lease=refs/heads/gh-pages:{expected}",
                 _push_url(GH), "HEAD:refs/heads/gh-pages", check=False)
     print("gh-pages:", "published" if push.returncode == 0
-          else f"deferred ({push.stderr.strip()[:80]})")
+          else f"deferred ({_redact(push.stderr.strip())[:80]})")
 
 
 def sync_main() -> None:
@@ -314,7 +339,7 @@ def main() -> None:
         try:
             sync_main()
         except subprocess.CalledProcessError as e:
-            print("main sync failed:", str(e)[:120])
+            print("main sync failed:", _redact(str(e))[:120])
 
 
 if __name__ == "__main__":
