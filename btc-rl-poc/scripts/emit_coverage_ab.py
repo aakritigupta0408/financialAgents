@@ -36,11 +36,17 @@ def _arm_summary(rows, start_c):
     wins = sum(1 for r in s if r.get("win"))
     pnl = sum(r.get("pnl_c") or 0 for r in s)
     open_stake = sum(r.get("stake_c") or 0 for r in rows if r.get("actual") is None)
+    # bankroll = the ledger's OWN last bankroll_c, not start_c + pnl. Passing a
+    # hardcoded ob seed of $10k showed a $10,080 bankroll while ob's ledger read $380
+    # (audit 2026-09-21). start_c stays only as the fallback when no bankroll_c exists.
+    last_bank = next((r.get("bankroll_c") for r in reversed(rows)
+                      if r.get("bankroll_c") is not None), None)
+    bank_c = last_bank if last_bank is not None else (start_c + pnl - open_stake)
     return {"settled": len(s), "wins": wins,
             "hit_rate": round(wins / len(s), 4) if s else None,
             "net_usd": round(pnl / 100, 2),
             "ev_per_trade_usd": round(pnl / 100 / len(s), 4) if s else None,
-            "bankroll_usd": round((start_c + pnl - open_stake) / 100, 2)}
+            "bankroll_usd": round(bank_c / 100, 2)}
 
 
 def run():

@@ -26,8 +26,9 @@ METRIC_DEFS_VERSION = "econ-1/prob-1"
 # treatments. Every prior treatment (cg5/cg10/tv/pt3/pt6/pt2/pt4/pt5/pt7/pt8)
 # retired — ledgers kept as frozen evidence, off the board.
 ROSTER = [
-    {"id": "pt", "name": "The $1K Desk", "role": "CONTROL", "log": "pt_trades.jsonl",
-     "strategy": "T0 — Follower (leaderboard leader, PT_TAU 0.62)"},
+    {"id": "pt", "name": "T0 · Follower Control", "role": "CONTROL", "log": "pt_trades.jsonl",
+     "strategy": "T0 — Follower (leaderboard leader, PT_TAU 0.62). Paper seed $100M @ 10%/window, "
+                 "so its $ P&L is stake-scaled — read per-contract EV (~0), not the headline dollars."},
     {"id": "tv", "name": "Value Gate", "role": "TREATMENT", "log": "tv_trades.jsonl",
      "strategy": "EV — value-gated follower (edge>=0.05 over price+fee, half-Kelly); the EV north-star arm"},
     {"id": "ob", "name": "Open+6 Barrier", "role": "TREATMENT", "log": "ob_trades.jsonl",
@@ -273,7 +274,8 @@ def _cg_family_entries():
          "exhaustively-verified honest ceiling; see the coverage A/B on Models Lab. Official settle."),
         ("cg33", "Gated · 33%", "Ruin-risk experiment.", "RUIN_RISK_EXPERIMENT", "cg33_trades.jsonl",
          "T1 — follows the leader only when confidence >= 0.20 (skips coin-flips), 33% stake, hold to "
-         "close. Demonstrates over-betting (backtest $300 -> ~$60, 98% drawdown). Official Kalshi settle."),
+         "close. Over-betting demonstrated LIVE: it RUINED — $300 -> $1.30 (−99.6%), halted 09-19 "
+         "(bankroll can't cover one contract). Official Kalshi settle."),
         ("fm", "Chronos-Bolt", "Foundation model.", "LIVE_CANDIDATE", "fm_trades.jsonl",
          "T2 — chronos-bolt-base reads P(close>=strike) from the window price path and takes its own "
          "side when confident (>=0.60), half-Kelly sizing, one bid/window, hold to close. Benchmark "
@@ -300,7 +302,15 @@ def _cg_family_entries():
         pnls = [r.get("pnl_c") or 0 for r in settled]
         pnl = sum(pnls)
         open_stakes = sum(r.get("stake_c") or 0 for r in opens)
-        bank = start + pnl - open_stakes
+        # bankroll = the ledger's OWN last bankroll_c (the daemon's paper balance,
+        # already net of reserved open stakes). Deriving it from a hardcoded START_C
+        # shipped a $10,080 bankroll for ob while its own ledger read $380 — two
+        # conflicting bankrolls in one snapshot (audit 2026-09-21). START_C is now only
+        # the return baseline; current cash comes from the ledger. (When the daemon is
+        # restarted to re-seed ob at $10k, its ledger will say so and this reads it.)
+        last_bank = next((r.get("bankroll_c") for r in reversed(rows)
+                          if r.get("bankroll_c") is not None), None)
+        bank = last_bank if last_bank is not None else (start + pnl - open_stakes)
 
         def _pt(ts):
             try:
@@ -348,7 +358,7 @@ def _cg_family_entries():
                         else "Directional foundation-model trader; benchmark winner among "
                              "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
                              else "Live candidate accruing paired evidence vs T0 (offline n=218, small).")
-        _bt = ({"coverage": 0.31, "label": "OFFLINE (value gate on T0: +$22 @31% cov, EV +17c/trade)"}
+        _bt = ({"coverage": 0.31, "label": "OFFLINE value-gate replay INCONCLUSIVE; the decisive net-of-vig backtest is STOP-NULL — no edge (value_gate_backtest.json)"}
                if is_tv
                else {"coverage": 0.90, "label": "OFFLINE (open+6min barrier: 0.74 hit @90% cov, 0.87 @20%)"}
                if is_ob
