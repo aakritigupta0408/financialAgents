@@ -32,7 +32,7 @@ ROSTER = [
     {"id": "tv", "name": "Value Gate", "role": "TREATMENT", "log": "tv_trades.jsonl",
      "strategy": "EV — value-gated follower (edge>=0.05 over price+fee, half-Kelly); the EV north-star arm"},
     {"id": "ob", "name": "Open+6 Barrier", "role": "TREATMENT", "log": "ob_trades.jsonl",
-     "strategy": "T3 — open+6min first-passage barrier; the honest ~0.74@0.90 model, coverage-sliced"},
+     "strategy": "T3 — open+6min first-passage barrier; the honest ~0.74@0.90 model (OFFLINE), coverage-sliced (live curve on Models Lab)"},
     {"id": "cg33", "name": "Gated ·33%", "role": "TREATMENT", "log": "cg33_trades.jsonl",
      "strategy": "T1 — Confidence-Gated Follower, 33% stake (RUIN-RISK experiment)"},
     {"id": "fm", "name": "Chronos-Bolt", "role": "TREATMENT", "log": "fm_trades.jsonl",
@@ -278,8 +278,9 @@ def _cg_family_entries():
          "(bankroll can't cover one contract). Official Kalshi settle."),
         ("fm", "Chronos-Bolt", "Foundation model.", "LIVE_CANDIDATE", "fm_trades.jsonl",
          "T2 — chronos-bolt-base reads P(close>=strike) from the window price path and takes its own "
-         "side when confident (>=0.60), half-Kelly sizing, one bid/window, hold to close. Benchmark "
-         "winner (F1 0.68, precision 0.74, fewest false positives). Official Kalshi settlement."),
+         "side when confident (>=0.60), half-Kelly sizing, one bid/window, hold to close. OFFLINE "
+         "benchmark winner (F1 0.68, precision 0.74 on 148 OOS windows — offline, not live). "
+         "Official Kalshi settlement."),
     ]
     START_C = {"tv": 100000, "ob": 1000000}   # tv $1,000; ob $10,000 (2026-09-15); others $300
     out = []
@@ -353,10 +354,10 @@ def _cg_family_entries():
                  else "Rule-based (confidence-gated)")
         _reason = ("Bets only +EV windows (edge>=0.05 over price+fee). OFFLINE: value-gating "
                    "lifted T0's EV in replay; LIVE evidence is still accruing (see live P&L)." if is_tv
-                   else "Analytic barrier on the first 6 minutes; the exhaustively-verified honest "
-                        "ceiling (~0.74 hit @90% coverage). Coverage A/B on Models Lab." if is_ob
-                        else "Directional foundation-model trader; benchmark winner among "
-                             "Chronos/TimesFM/market (F1 0.68, precision 0.74)." if is_fm
+                   else "Analytic barrier on the first 6 minutes; the honest OFFLINE ceiling "
+                        "(~0.74 hit @90% coverage). Live coverage A/B on Models Lab." if is_ob
+                        else "Directional foundation-model trader; OFFLINE benchmark winner among "
+                             "Chronos/TimesFM/market (F1 0.68, precision 0.74 — offline, not live)." if is_fm
                              else "Live candidate accruing paired evidence vs T0 (offline n=218, small).")
         _bt = ({"coverage": 0.31, "label": "OFFLINE value-gate replay INCONCLUSIVE; the decisive net-of-vig backtest is STOP-NULL — no edge (value_gate_backtest.json)"}
                if is_tv
