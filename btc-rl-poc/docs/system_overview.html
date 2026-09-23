@@ -1,0 +1,447 @@
+<title>Open Oracle 15M</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#f6f8fb; --surface:#ffffff; --surface-2:#eef2f7; --ink:#1a1f2b; --ink-dim:#3a4150;
+    --muted:#5b6472; --faint:#8a93a3; --border:#e2e7ef; --border-2:#d3dae4;
+    --accent:#0e7c86; --accent-soft:#d3ebee; --accent-ink:#0a5b63;
+    --good:#2e7d5b; --warn:#b4632a; --bad:#b5453a; --info:#3767b0;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 1px 2px rgba(20,30,50,.05),0 4px 16px rgba(20,30,50,.06);
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0d1117; --surface:#151b23; --surface-2:#1c232d; --ink:#e6edf3; --ink-dim:#c4cdd8;
+    --muted:#8b949e; --faint:#5c6673; --border:#262d38; --border-2:#333c48;
+    --accent:#40b8c4; --accent-soft:#123037; --accent-ink:#7fd6df;
+    --good:#4cae83; --warn:#d78b52; --bad:#e0655b; --info:#6b9be0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0d1117; --surface:#151b23; --surface-2:#1c232d; --ink:#e6edf3; --ink-dim:#c4cdd8;
+    --muted:#8b949e; --faint:#5c6673; --border:#262d38; --border-2:#333c48;
+    --accent:#40b8c4; --accent-soft:#123037; --accent-ink:#7fd6df;
+    --good:#4cae83; --warn:#d78b52; --bad:#e0655b; --info:#6b9be0;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 18px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{display:grid;grid-template-columns:248px minmax(0,1fr);gap:0;max-width:1240px;margin:0 auto}
+  /* ---- sidebar ---- */
+  aside{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
+    border-right:1px solid var(--border);padding:26px 18px 40px;background:var(--surface)}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:-.01em;margin-bottom:2px}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+  .brand-sub{color:var(--muted);font-size:12px;margin:0 0 22px 20px}
+  nav a{display:block;color:var(--muted);text-decoration:none;font-size:13.5px;padding:5px 10px;
+    border-radius:7px;border-left:2px solid transparent}
+  nav a:hover{color:var(--ink);background:var(--surface-2)}
+  nav a.on{color:var(--accent-ink);border-left-color:var(--accent);background:var(--accent-soft);font-weight:600}
+  nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);margin:18px 10px 6px}
+  .themebtn{margin-top:24px;width:100%;border:1px solid var(--border-2);background:var(--surface-2);color:var(--muted);
+    border-radius:8px;padding:7px;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .themebtn:hover{color:var(--ink)}
+  /* ---- main ---- */
+  main{padding:40px 46px 120px;min-width:0}
+  .hero h1{font-size:34px;line-height:1.1;letter-spacing:-.02em;margin:0 0 6px;text-wrap:balance}
+  .hero .tag{color:var(--muted);font-size:16px;max-width:62ch;margin:0 0 20px}
+  .paper{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.03em;
+    color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);
+    border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);border-radius:6px;padding:4px 10px}
+  section{scroll-margin-top:20px;padding:30px 0;border-top:1px solid var(--border)}
+  section:first-of-type{border-top:none}
+  h2{font-size:22px;letter-spacing:-.01em;margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+  h2 .n{font:600 12px/1 var(--mono);color:var(--accent);background:var(--accent-soft);padding:4px 7px;border-radius:5px}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--ink-dim);letter-spacing:.01em}
+  p{margin:8px 0}
+  .lead{color:var(--muted);max-width:70ch}
+  code,.mono{font-family:var(--mono);font-size:.88em}
+  code{background:var(--surface-2);padding:1.5px 5px;border-radius:4px;color:var(--accent-ink)}
+  /* stat tiles */
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:18px 0}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:14px 16px;box-shadow:var(--shadow)}
+  .tile .v{font:700 24px/1 var(--sans);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .tile .k{color:var(--muted);font-size:12px;margin-top:5px}
+  .tile.accent .v{color:var(--accent)}
+  /* tables */
+  .scroll{overflow-x:auto;margin:14px 0;border:1px solid var(--border);border-radius:11px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--surface)}
+  th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:top}
+  th{background:var(--surface-2);color:var(--ink-dim);font-weight:600;font-size:12px;
+    text-transform:uppercase;letter-spacing:.04em;position:sticky;top:0}
+  tr:last-child td{border-bottom:none}
+  td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap}
+  .p-live{color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+  .p-halt{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+  .p-warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,transparent)}
+  .p-ctrl{color:var(--info);background:color-mix(in srgb,var(--info) 14%,transparent)}
+  .p-ret{color:var(--faint);background:var(--surface-2)}
+  /* architecture flow */
+  .flow{display:flex;flex-direction:column;gap:0;margin:20px 0}
+  .layer{display:grid;grid-template-columns:118px 1fr;gap:14px;align-items:center;padding:12px 0}
+  .layer + .layer{border-top:1px dashed var(--border-2)}
+  .layer .lab{font:600 12px/1.3 var(--sans);color:var(--accent-ink);text-align:right}
+  .layer .lab small{display:block;color:var(--faint);font-weight:400;font-size:10.5px;margin-top:3px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font:500 12px/1 var(--mono);background:var(--surface);border:1px solid var(--border-2);
+    color:var(--ink-dim);border-radius:7px;padding:7px 9px}
+  .chip b{color:var(--accent);font-weight:700}
+  .arrow{text-align:center;color:var(--faint);font-size:15px;line-height:0;margin:-2px 0}
+  /* callout */
+  .call{border-left:3px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;
+    padding:13px 16px;margin:16px 0;color:var(--ink-dim);font-size:14px}
+  .call.bad{border-left-color:var(--bad);background:color-mix(in srgb,var(--bad) 9%,transparent)}
+  .call.warn{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent)}
+  .call b{color:var(--ink)}
+  ul.tight{margin:8px 0;padding-left:20px}ul.tight li{margin:4px 0}
+  /* timeline */
+  .tl{position:relative;margin:18px 0 4px;padding-left:22px}
+  .tl::before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--border-2)}
+  .ev{position:relative;padding:0 0 16px 14px}
+  .ev::before{content:"";position:absolute;left:-20px;top:5px;width:9px;height:9px;border-radius:50%;
+    background:var(--surface);border:2px solid var(--accent)}
+  .ev .d{font:600 12px/1 var(--mono);color:var(--accent)}
+  .ev .t{font-weight:600;margin:2px 0}
+  .ev .s{color:var(--muted);font-size:13px}
+  .foot{color:var(--faint);font-size:12.5px;margin-top:40px;padding-top:18px;border-top:1px solid var(--border)}
+  @media (max-width:820px){
+    .wrap{grid-template-columns:1fr}
+    aside{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+    nav{columns:2;column-gap:10px}main{padding:28px 20px 90px}
+    .layer{grid-template-columns:1fr}.layer .lab{text-align:left}
+  }
+</style>
+
+<div class="wrap">
+<aside>
+  <div class="brand"><span class="dot"></span>Open Oracle 15M</div>
+  <p class="brand-sub">BTC-RL · paper research desk</p>
+  <nav id="nav">
+    <div class="grp">Orientation</div>
+    <a href="#what">What it is</a>
+    <a href="#arch">Architecture</a>
+    <div class="grp">Pipeline</div>
+    <a href="#collect">Data collection</a>
+    <a href="#data">Data we have</a>
+    <a href="#features">Features</a>
+    <a href="#models">Models</a>
+    <a href="#traders">Traders &amp; trades</a>
+    <div class="grp">Evaluation</div>
+    <a href="#metrics">Metrics</a>
+    <a href="#eval">Offline &amp; online eval</a>
+    <a href="#perf">Performance</a>
+    <div class="grp">Surfaces</div>
+    <a href="#frontend">Frontend / UI</a>
+    <a href="#backend">Backend modules</a>
+    <div class="grp">Meta</div>
+    <a href="#evolution">How it evolved</a>
+    <a href="#resources">Resources / APIs</a>
+    <a href="#missing">What's missing</a>
+  </nav>
+  <button class="themebtn" id="tg">◐ Toggle theme</button>
+</aside>
+
+<main>
+  <div class="hero">
+    <h1>Open Oracle 15M — system map</h1>
+    <p class="tag">A paper-simulation research desk that forecasts and paper-trades Kalshi <code>KXBTC15M</code> — the 15-minute BTC binary "will BTC be ≥ strike at the close." One document: every layer, every file group, the data, the models, the metrics, what's proven, and what's missing.</p>
+    <span class="paper">● PAPER / SIMULATION — REAL MONEY DISABLED — RESEARCH, NOT ADVICE</span>
+  </div>
+
+  <div class="tiles">
+    <div class="tile accent"><div class="v">540</div><div class="k">commits · Apr→Sep 2026</div></div>
+    <div class="tile"><div class="v">4.0 GB</div><div class="k">raw event tape (496 shards)</div></div>
+    <div class="tile"><div class="v">~2,583</div><div class="k">live-arm windows traded</div></div>
+    <div class="tile"><div class="v">~19.9k</div><div class="k">settled model predictions</div></div>
+    <div class="tile"><div class="v">8,275</div><div class="k">lines in the ML core (btc_rl)</div></div>
+  </div>
+
+  <section id="what">
+    <h2><span class="n">01</span> What it is &amp; why we built it</h2>
+    <p class="lead">Kalshi lists a fresh binary every 15 minutes: <b>will BTC be above the strike at the window close?</b> The strike is set near the money at the open, so at decision time the outcome is close to a coin-flip. The house (Kalshi) makes money on the <b>vig</b> (a ~7% fee, maxed at-the-money) and the bid–ask spread — not on forecasting. We built this system to answer one scientific question honestly:</p>
+    <div class="call"><b>Is there a forecasting edge that survives the vig?</b> Everything here — the data tape, the feature store, the model zoo, the paper-trading arms, and the A/B platform — exists to test that, offline and online, without fooling ourselves.</div>
+    <p>It is deliberately a <b>pre-guardrail research project</b>: the goal is a correct answer, not a production trading system. The honest current answer is <b>STOP-NULL</b> — no arm beats the market at the open net of vig. That null <em>is</em> the deliverable.</p>
+    <p>The system runs on a single laptop: a long-lived Python daemon (<code>btc_rl/online.py</code>) captures market data, runs the models, paper-trades several strategy "arms," and settles them on official Kalshi outcomes; a cron chain regenerates JSON snapshots that a static site renders.</p>
+  </section>
+
+  <section id="arch">
+    <h2><span class="n">02</span> Architecture — the data flow</h2>
+    <p class="lead">Seven layers, one direction. Raw venue data on the left becomes forecasts, paper trades, statistics, and finally a rendered page. The browser only formats precomputed JSON — no scientific math runs client-side (enforced by a guard test).</p>
+    <div class="flow">
+      <div class="layer"><div class="lab">1 · Collect<small>real-time feeds</small></div><div class="chips">
+        <span class="chip"><b>Coinbase</b> WS trade+L1 tape</span><span class="chip"><b>Binance</b> cross-venue trades</span>
+        <span class="chip"><b>Kalshi</b> REST book+trades+settle</span><span class="chip"><b>BRTI</b> settlement index</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">2 · Store<small>append-only ledgers</small></div><div class="chips">
+        <span class="chip">events/*.jsonl (tape)</span><span class="chip">ticks.jsonl</span>
+        <span class="chip">xvenue_state.jsonl</span><span class="chip">contract_outcomes.jsonl (truth)</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">3 · Feature store<small>PIT-bounded</small></div><div class="chips">
+        <span class="chip">exo_features.jsonl (microstructure)</span><span class="chip">feature_snapshots.jsonl</span>
+        <span class="chip"><b>barrier</b> (price vs strike)</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">4 · Models<small>forecast P(yes)</small></div><div class="chips">
+        <span class="chip">kb2–kb9 (logit/bandit)</span><span class="chip">ob (open+6 barrier)</span>
+        <span class="chip">fm (Chronos-Bolt)</span><span class="chip">dqn / linucb / lstm</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">5 · Traders<small>paper arms</small></div><div class="chips">
+        <span class="chip"><b>pt</b> T0 control</span><span class="chip">tv · ob · cg33 · fm</span>
+        <span class="chip">real ask + per-order fee</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">6 · Evaluate<small>offline + online</small></div><div class="chips">
+        <span class="chip">eval_engine (offline)</span><span class="chip">value_gate_backtest</span>
+        <span class="chip">paired A/B + block-bootstrap</span></div></div>
+      <div class="arrow">↓</div>
+      <div class="layer"><div class="lab">7 · Surface<small>snapshot → page</small></div><div class="chips">
+        <span class="chip">39 emit_*.py → JSON</span><span class="chip">7 static HTML pages</span>
+        <span class="chip">no browser-side science</span></div></div>
+    </div>
+  </section>
+
+  <section id="collect">
+    <h2><span class="n">03</span> Data collection</h2>
+    <p class="lead">Four data-source adapters plus two capture daemons feed the tape. The settlement truth is <b>official Kalshi outcomes only</b> — never a candle proxy.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Source</th><th>Adapter / capture</th><th>What it gives</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>Coinbase</td><td><code>event_capture</code> (WS) · <code>capture_micro</code> (L2)</td><td>trade prints, L1 top-of-book, L2 depth</td><td>primary price tape</td></tr>
+        <tr><td>Binance</td><td><code>xvenue_sync.py</code></td><td>cross-venue trade flow (order-flow imbalance)</td><td>lead–lag / basis</td></tr>
+        <tr><td>Kalshi</td><td><code>capture_micro</code> · REST poll</td><td>orderbook, trades, market status, <b>settlement</b></td><td>contract + truth</td></tr>
+        <tr><td>CF Benchmarks BRTI</td><td><code>data/adapters/brti.py</code></td><td>4-venue BTC reference index (settlement basis)</td><td>contract truth</td></tr>
+        <tr><td>Alpha Vantage</td><td><code>data/adapters/av_news.py</code>, <code>av_options.py</code></td><td>news sentiment, options chain</td><td>exogenous (needs OAuth)</td></tr>
+        <tr><td>Deribit / Fear&amp;Greed / mempool</td><td><code>btc_rl/sources.py</code></td><td>mark price, sentiment index, fee pressure</td><td>context features</td></tr>
+      </tbody>
+    </table></div>
+    <p>Collection is watchdog-restarted; each shard is timestamped so staleness is detectable. A ~30 h capture outage (09-19→09-20) is recorded in the ledgers — a known gap, not hidden.</p>
+  </section>
+
+  <section id="data">
+    <h2><span class="n">04</span> Data we have</h2>
+    <p class="lead">The <code>results/</code> directory is the whole memory of the system: ~4 GB of raw tape plus dozens of append-only ledgers. The largest and most load-bearing:</p>
+    <div class="scroll"><table>
+      <thead><tr><th>File</th><th class="num">Size</th><th>Holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>events/*.jsonl</code></td><td class="num">4.0 GB</td><td>496 Coinbase trade+L1 shards — the raw tape</td></tr>
+        <tr><td><code>events_micro/*.jsonl</code></td><td class="num">485 shards</td><td>Kalshi orderbook + Coinbase L2 depth</td></tr>
+        <tr><td><code>feature_snapshots.jsonl</code></td><td class="num">129 MB</td><td>per-decision streamed feature vectors</td></tr>
+        <tr><td><code>ticks.jsonl</code></td><td class="num">40 MB</td><td>1 s BRTI/price sampling history</td></tr>
+        <tr><td><code>prediction_log.jsonl</code></td><td class="num">29 MB</td><td>every model's per-tick forecast</td></tr>
+        <tr><td><code>brti_decision_dataset.jsonl</code></td><td class="num">12 MB</td><td>PIT training rows on exact BRTI</td></tr>
+        <tr><td><code>xvenue_state.jsonl</code></td><td class="num">11 MB</td><td>aligned Binance cross-venue state</td></tr>
+        <tr><td><code>kalshi_binary_log.jsonl</code></td><td class="num">8.2 MB</td><td>~19.9k settled kb model predictions (ask, mkt_p, actual)</td></tr>
+        <tr><td><code>contract_outcomes.jsonl</code></td><td class="num">—</td><td><b>official settlement truth</b> (exact_yes, strike, times)</td></tr>
+        <tr><td><code>&lt;arm&gt;_trades.jsonl</code></td><td class="num">14 files</td><td>per-arm paper trade ledgers (see §08)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="call"><b>Integrity, verified.</b> Settlement is forensically sound — 0 <code>win</code> mismatches, 0 <code>actual</code>-vs-official disagreements, 100% P&amp;L-consistent across all arms; an independent Coinbase cross-check agreed on 84% of a sample (all disagreements in the ATM basis band, i.e. expected, not errors).</div>
+  </section>
+
+  <section id="features">
+    <h2><span class="n">05</span> Features</h2>
+    <p class="lead">Two families. <b>Barrier</b> — the analytic distance from price to strike at open+6 min — is the one strong signal. The <b>exogenous microstructure</b> set was built to add orthogonal information; an audit showed most of it is noise or collinear with the barrier.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Feature</th><th>Meaning</th><th class="num">Univariate AUC</th><th>Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><code>barrier</code> (ent_vs_open/floor)</td><td>price vs strike, first-passage P(close≥strike)</td><td class="num">0.729</td><td><span class="pill p-live">signal</span></td></tr>
+        <tr><td><code>bn_ofi</code></td><td>Binance cross-venue order-flow imbalance</td><td class="num">0.675</td><td><span class="pill p-live">signal</span></td></tr>
+        <tr><td><code>cb_ofi</code></td><td>Coinbase order-flow imbalance <span class="mono">(sign fixed 09-22)</span></td><td class="num">~0.55</td><td><span class="pill p-warn">weak</span></td></tr>
+        <tr><td><code>book_imb</code>, <code>spread_bps</code></td><td>L1 book imbalance, spread</td><td class="num">0.505–0.51</td><td><span class="pill p-ret">noise</span></td></tr>
+        <tr><td><code>cb_trades</code>, <code>bn_trades</code>, <code>basis_bps</code></td><td>trade intensity, cross-venue basis</td><td class="num">0.505–0.51</td><td><span class="pill p-ret">noise</span></td></tr>
+        <tr><td><code>cb_ofi_notional</code></td><td>notional-weighted OFI</td><td class="num">—</td><td><span class="pill p-halt">dropped (dup)</span></td></tr>
+      </tbody>
+    </table></div>
+    <p>Target label <code>exact_yes</code> is a clean coin-flip: <b>P(yes) = 0.5027</b> (n = 6,497), no imbalance or drift. The feature store is PIT-bounded (entry = close − 11 min) and passes a leakage canary (OOS ≈ 0.507, i.e. no future peeking).</p>
+    <div class="call warn"><b>The honest FE finding:</b> even with the sign bug fixed, <code>barrier + exo</code> OOS accuracy (0.676) is <em>below</em> <code>barrier alone</code> (0.694). The 7-column microstructure store adds nothing over the 2-column barrier — order-flow, realized drift, and the barrier are the same underlying concept.</div>
+  </section>
+
+  <section id="models">
+    <h2><span class="n">06</span> Models</h2>
+    <p class="lead">A zoo accreted over time. The pattern the audit surfaced: <b>the fancier the model, the worse it scores.</b> A plain market-blend logit beats the DQN beats the foundation model on out-of-sample log-loss.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Model</th><th>Type / task</th><th class="num">OOS logloss ↓</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><code>kb2</code></td><td>market-blend logit (≈ the market itself, corr 0.997)</td><td class="num">0.459</td><td><span class="pill p-ctrl">best baseline</span></td></tr>
+        <tr><td><code>kb3</code></td><td>direct binary logit on features</td><td class="num">0.466</td><td><span class="pill p-live">live selector</span></td></tr>
+        <tr><td><code>kb4–kb9</code></td><td>context ablations, TimesFM, fine-tune variants</td><td class="num">0.47–0.50</td><td><span class="pill p-ret">variants</span></td></tr>
+        <tr><td><code>ob</code></td><td>open+6 analytic first-passage barrier (0 params)</td><td class="num">acc 0.694</td><td><span class="pill p-live">strongest</span></td></tr>
+        <tr><td><code>dqn</code></td><td>price-Δ Q-network (wrong objective for a binary)</td><td class="num">0.479</td><td><span class="pill p-warn">mismatched</span></td></tr>
+        <tr><td><code>fm</code></td><td>Chronos-Bolt foundation model, directional</td><td class="num">0.500</td><td><span class="pill p-warn">over-promoted</span></td></tr>
+        <tr><td><code>linucb / lstm</code></td><td>contextual bandit / sequence (price-MSE curriculum)</td><td class="num">below floor</td><td><span class="pill p-ret">inactive</span></td></tr>
+      </tbody>
+    </table></div>
+    <p>Model selection <em>tooling</em> exists and was run (walk-forward + holdout, Bayes-ceiling kNN, calibration, a sealed <code>TEST_V2</code>). The gap is <b>promotion discipline</b>: <code>fm</code> took a live capital slot on a within-noise 3.4 pp offline win (n = 148). The recommended control is the calibrated logit <code>kb3</code> / market-blend <code>kb2</code>, not the price-MSE DQN.</p>
+  </section>
+
+  <section id="traders">
+    <h2><span class="n">07</span> Traders &amp; trades logged</h2>
+    <p class="lead">Each "arm" is a policy that turns a forecast into paper bets — real Kalshi asks, the true per-order fee, official settlement. <code>pt</code> is the frozen T0 control; the rest are treatments in a live A/B.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Arm</th><th>Strategy</th><th class="num">Windows</th><th class="num">Bankroll</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td><code>pt</code> · T0</td><td>Follower control (leaderboard leader, seed $100M @10%)</td><td class="num">1,352</td><td class="num">$100.06M</td><td><span class="pill p-ctrl">CONTROL</span></td></tr>
+        <tr><td><code>tv</code></td><td>Value gate (edge ≥ 0.05 over price+fee, half-Kelly)</td><td class="num">169</td><td class="num">$360</td><td><span class="pill p-live">LIVE</span></td></tr>
+        <tr><td><code>ob</code></td><td>Open+6 barrier (the honest model)</td><td class="num">367</td><td class="num">$380</td><td><span class="pill p-live">LIVE</span></td></tr>
+        <tr><td><code>cg33</code></td><td>Confidence-gated 33% stake (~1.6× Kelly, ruin test)</td><td class="num">310</td><td class="num">$1.30</td><td><span class="pill p-halt">RUINED</span></td></tr>
+        <tr><td><code>fm</code></td><td>Chronos-Bolt directional (conf ≥ 0.60)</td><td class="num">385</td><td class="num">$80</td><td><span class="pill p-live">LIVE</span></td></tr>
+        <tr><td><code>pt2–pt8, cg5, cg10</code></td><td>retired experiment arms (frozen ledgers)</td><td class="num">~2,924</td><td class="num">—</td><td><span class="pill p-ret">RETIRED</span></td></tr>
+      </tbody>
+    </table></div>
+    <p><b>~2,583</b> windows traded across the live roster; <b>~19.9k</b> settled model-prediction rows in <code>kalshi_binary_log</code>. cg33 blew up exactly as designed (33% staking → ruin at $1.30), which is why it now shows HALTED — a feature of the experiment, honestly surfaced.</p>
+    <div class="call"><b>Read per-contract EV, not the $ headline.</b> pt's "+$69k" is a sizing artifact of its $100M seed (per-contract EV ≈ −0.03¢, hit rate 69% is <em>below</em> breakeven). Every live A/B arm is statistically <b>NO_SIGNIFICANT_DIFFERENCE</b> vs the control.</p></div>
+  </section>
+
+  <section id="metrics">
+    <h2><span class="n">08</span> Metrics we use</h2>
+    <p class="lead">Two canonical owners so no number drifts: <code>btc_rl/metrics.py</code> (probability) and <code>btc_rl/economics.py</code> (money). Win-rate is explicitly <em>demoted</em> — it is never a primary decision metric.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Metric</th><th>What it measures</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Brier score</td><td>mean squared forecast error (calibration + sharpness)</td><td>offline</td></tr>
+        <tr><td>Brier Skill Score</td><td>Brier improvement vs the market baseline</td><td>offline</td></tr>
+        <tr><td>Calibration / ECE</td><td>do 60% forecasts happen 60% of the time?</td><td>offline</td></tr>
+        <tr><td>AUC / accuracy</td><td>ranking &amp; classification quality</td><td>offline</td></tr>
+        <tr><td><b>EV per eligible window</b> (paired)</td><td>primary trader metric — per-contract net-of-vig P&amp;L, paired vs control</td><td>online A/B</td></tr>
+        <tr><td>Moving-block bootstrap 95% CI</td><td>significance that respects window autocorrelation</td><td>online A/B</td></tr>
+        <tr><td>Coverage / hit-rate / max-drawdown / bad-entry-rate</td><td>selectivity, risk, execution quality</td><td>both</td></tr>
+      </tbody>
+    </table></div>
+    <p>Fees use the true Kalshi schedule: <code>kalshi_order_fee_c = ceil(7·C·p·(1−p))</code> charged once per order — not a per-contract ceil (which would overcharge).</p>
+  </section>
+
+  <section id="eval">
+    <h2><span class="n">09</span> Offline &amp; online evaluation</h2>
+    <p class="lead">Kept strictly separate. Offline is prequential/walk-forward on stored predictions; online is the live paper A/B. The decisive experiment is the <b>value-gate backtest</b> — bet only when calibrated <code>p − ask/100 ≥ margin</code>, net of vig.</p>
+    <ul class="tight">
+      <li><b>Offline:</b> walk-forward + a sealed <code>TEST_V2</code> (175/672 rows, never opened); leakage canaries on cron; a leaked Alpha-Vantage "edge" preserved as INVALIDATED. N is honest — only ~195 settled windows, deduped from ~13.7 correlated rows/window.</li>
+      <li><b>Online:</b> unit = <code>market_window_id</code>, paired per-contract net-EV, moving-block bootstrap. All four live arms straddle 0.</li>
+      <li><b>Decisive result:</b> value-gate = <b>STOP-NULL</b> — no margin clears the CI above 0.</li>
+    </ul>
+    <div class="call warn"><b>Known eval gaps (fix list):</b> ad-hoc significance scripts pseudo-replicate (pool minutes not windows → z inflated ~3.6×); the offline econ/value-gate is evaluable on only 1 of 8 arms because decision-time <code>ask_c</code> is logged for one — the other seven should report UNAVAILABLE, not 0.0.</div>
+  </section>
+
+  <section id="perf">
+    <h2><span class="n">10</span> Performance — the honest numbers</h2>
+    <div class="tiles">
+      <div class="tile"><div class="v">0.5027</div><div class="k">base rate P(yes) · n=6,497</div></div>
+      <div class="tile"><div class="v">0.225</div><div class="k">market open Brier (vs 0.25)</div></div>
+      <div class="tile accent"><div class="v">~0.595</div><div class="k">Bayes ceiling accuracy @ open</div></div>
+      <div class="tile"><div class="v">0.694</div><div class="k">barrier OOS acc (open+6)</div></div>
+      <div class="tile"><div class="v">STOP-NULL</div><div class="k">value-gate net of vig</div></div>
+    </div>
+    <p>At the open the outcome is a <b>calibrated coin-flip</b>. The in-window accuracy ramp (0.76 → 0.92 as the close nears) is ~74% mechanical random-walk convergence, not forecasting — at the close, market Brier 0.138 ≈ the mechanical 0.137 (zero residual skill). Breakeven net of vig + spread is <b>0.518–0.528</b>, above the best achievable open predictor's already-priced 0.57–0.60. <b>There is no headroom at the open.</b></p>
+  </section>
+
+  <section id="frontend">
+    <h2><span class="n">11</span> Frontend / UI</h2>
+    <p class="lead">A static site of <b>7 published pages</b> plus shared JS/CSS. Backend emitters write JSON; the browser only formats and plots. A guard test (<code>test_no_frontend_science.py</code>) fails the build if any scientific formula appears in shipped HTML.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Page</th><th>Shows</th><th>Fed by</th></tr></thead>
+      <tbody>
+        <tr><td><code>home.html</code></td><td>live oracle strip + trader scoreboard + A/B table</td><td>home_snapshot, ab_table, trader_detail</td></tr>
+        <tr><td><code>oracle.html</code></td><td>the forecasting pipeline (6 sub-tabs, input→graveyard)</td><td>oracle_snapshot, oracle_calls</td></tr>
+        <tr><td><code>experiments.html</code></td><td>paired A/B experiment ledger (live + frozen cohorts)</td><td>experiments_snapshot</td></tr>
+        <tr><td><code>modelling.html</code> · <code>models_lab.html</code></td><td>model cards, coverage A/B, technique board</td><td>modelling_snapshot, coverage_ab</td></tr>
+        <tr><td><code>architecture.html</code></td><td>system DAG + component registry</td><td>architecture_dag</td></tr>
+        <tr><td><code>research.html</code></td><td>private research narrator / live capture health</td><td>research_live_snapshot</td></tr>
+      </tbody>
+    </table></div>
+    <p>Shared: <code>nav.js</code>, <code>header.js</code>, <code>glossary.js</code>, <code>theme.css</code>. Published via <code>scripts/publish_dashboard.py</code> (which redacts any leaked tokens from its logs). ~30 orphan pages were deleted in the honesty cleanup.</p>
+  </section>
+
+  <section id="backend">
+    <h2><span class="n">12</span> Backend modules (<code>btc_rl/</code>, 8,275 lines)</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Module</th><th class="num">Lines</th><th>Responsibility</th></tr></thead>
+      <tbody>
+        <tr><td><code>online.py</code></td><td class="num">4,916</td><td>the live daemon — capture, models, paper arms, settlement, fail-closed wall</td></tr>
+        <tr><td><code>agents.py</code></td><td class="num">530</td><td>the kb model family (logit/bandit selectors)</td></tr>
+        <tr><td><code>sources.py</code></td><td class="num">341</td><td>exogenous feed fetchers (Deribit, F&amp;G, mempool, news)</td></tr>
+        <tr><td><code>treatments.py</code></td><td class="num">290</td><td>treatment-arm policies (tv/ob/cg33/fm)</td></tr>
+        <tr><td><code>features.py</code></td><td class="num">262</td><td>feature construction (PIT-bounded)</td></tr>
+        <tr><td><code>train.py</code> · <code>env.py</code> · <code>agents.py</code></td><td class="num">386</td><td>RL training loop, reward spec, episodes</td></tr>
+        <tr><td><code>contract_truth.py</code></td><td class="num">212</td><td>exact-BRTI contract state &amp; settlement</td></tr>
+        <tr><td><code>economics.py</code> · <code>metrics.py</code></td><td class="num">325</td><td>canonical money + probability metric owners</td></tr>
+        <tr><td><code>prospective_capture.py</code> · <code>preopen_oracle.py</code></td><td class="num">268</td><td>p_mech / p_oracle live belief</td></tr>
+        <tr><td>+ 12 more</td><td class="num">—</td><td>paper_account, exec_timing, ticks, live, llm_sentiment, …</td></tr>
+      </tbody>
+    </table></div>
+    <p>Around it: <b>165 scripts</b> (39 <code>emit_*</code> snapshot writers, the rest analysis/eval/backfill), <b>33 test files</b>, and <b>4 data adapters</b>. A 10-minute cron <code>audit_chain.py</code> regenerates every surface; a 1-minute line publishes.</p>
+  </section>
+
+  <section id="evolution">
+    <h2><span class="n">13</span> How it evolved</h2>
+    <p class="lead">540 commits over ~5.5 months. The arc: an RL price-forecaster → a live paper desk → a rigorous binary-classification research platform → a self-audited honesty machine.</p>
+    <div class="tl">
+      <div class="ev"><div class="d">Apr 2026</div><div class="t">RL foundation</div><div class="s">first commit; env/reward/train, DQN &amp; bandit agents on BTC price forecasting.</div></div>
+      <div class="ev"><div class="d">May–Jul</div><div class="t">Live paper desk + capture</div><div class="s">online daemon, Coinbase/Binance tape, Kalshi paper trading, the kb model family.</div></div>
+      <div class="ev"><div class="d">Aug</div><div class="t">OPEN_ORACLE_15M reframing</div><div class="s">the real task named: a 15-min binary. PIT dataset, MECH_FAIR control, residual model ladder M0–M6, falsification battery, model/run registry.</div></div>
+      <div class="ev"><div class="d">Aug–Sep</div><div class="t">Platform &amp; governance</div><div class="s">professional A/B platform, RME/M5/M6 rollout ladders, sealed test governance, exact-BRTI migration (DT-01…08), HOME/ORACLE consolidation.</div></div>
+      <div class="ev"><div class="d">Sep 21</div><div class="t">Honesty-hardening audit</div><div class="s">killed a manufactured A/B "win", fixed a ruined-arm-shown-as-live and a $10k↔$380 bankroll contradiction, unblocked the dark test suite (0→134 passing), averted a fee "crying-wolf".</div></div>
+      <div class="ev"><div class="d">Sep 22</div><div class="t">Deep science audit</div><div class="s">7-agent grounded audit settled the "near-perfect predictor" thesis (false), activated the stale feature store, completed the independent settlement cross-check.</div></div>
+    </div>
+  </section>
+
+  <section id="resources">
+    <h2><span class="n">14</span> Resources &amp; APIs</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Resource</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>Compute</td><td>single laptop (macOS); a long-lived Python daemon + cron chain. No GPU cluster; models are light (logit/bandit/analytic + one hosted foundation model).</td></tr>
+        <tr><td>Market APIs</td><td>Coinbase WS, Binance REST, Kalshi trade-API v2 (public), CF Benchmarks BRTI.</td></tr>
+        <tr><td>Exogenous APIs</td><td>Alpha Vantage (news + options, OAuth-gated), Deribit, Fear&amp;Greed, mempool.space.</td></tr>
+        <tr><td>Storage</td><td>~4 GB append-only JSONL ledgers in <code>results/</code>; no database.</td></tr>
+        <tr><td>Hosting</td><td>static site published to GitHub Pages via <code>publish_dashboard.py</code>.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="missing">
+    <h2><span class="n">15</span> What's missing / what's next</h2>
+    <h3>Owner-gated (need a daemon restart / auth / capital call)</h3>
+    <ul class="tight">
+      <li>Rebase the pt "control" off its $100M seed; make per-contract EV the headline.</li>
+      <li>Repoint the binary control from the price-MSE DQN to the calibrated logit <code>kb3</code> / market-blend <code>kb2</code>.</li>
+      <li>Retire ceremony: pull the duplicate 5-agent "org" crons; freeze the RME R-ladder/chaos work on a no-edge sim.</li>
+      <li>Authorize Alpha Vantage for a strictly-independent settlement cross-check.</li>
+      <li>Delete ~250 lines of dead retired-arm code in the daemon in a controlled restart.</li>
+    </ul>
+    <h3>The one real scientific lever — Phase B</h3>
+    <p>The at-open <em>direction</em> problem is at its Bayes ceiling. The only untested question is whether <b>orthogonal, non-price</b> information at the entry survives the vig. Build it as a disciplined ladder, not another arm:</p>
+    <ol class="tight">
+      <li><b>Curated feature store</b> — gated by univariate AUC + dup/collinearity scan, PIT-bounded, on the correct BRTI statistic; add order-flow, cross-venue basis dynamics, funding/liquidation signals — not more price-derived microstructure.</li>
+      <li><b>Calibrated model</b> — direct binary log-loss (logit/GBT) + Platt/isotonic calibration; no price-MSE detour.</li>
+      <li><b>Ablation ladder</b> — market-blend → barrier-only → +orthogonal, each reported with paired window-level CIs against the market-implied prob at the same decision time.</li>
+      <li><b>Sealed test</b> — evaluate finalists once against <code>TEST_V2</code>; a pass must clear the 0.518–0.528 breakeven net of vig with a CI excluding it. Anything less is STOP-NULL — the honest, expected outcome.</li>
+    </ol>
+    <div class="call"><b>The system's real achievement</b> is not an edge — it's an honest, self-auditing measurement apparatus that refused to manufacture one. The correct next deliverable is a clean answer to the orthogonal-information question, not another trading arm.</div>
+  </section>
+
+  <div class="foot">
+    Open Oracle 15M · paper/simulation research · generated 2026-09-23 from the live repo.
+    Sources of record: <code>docs/DEEP_AUDIT_2026-09-22.md</code>, <code>docs/AUDIT_COMPLIANCE.md</code>, <code>docs/TRADE_LEDGER_SCHEMA.md</code>. Every figure computed on real ledgers.
+  </div>
+</main>
+</div>
+
+<script>
+  // theme toggle (light/dark/system-aware)
+  const root=document.documentElement, btn=document.getElementById('tg');
+  btn.onclick=()=>{
+    const cur=root.getAttribute('data-theme');
+    const sysDark=matchMedia('(prefers-color-scheme:dark)').matches;
+    const next = cur ? (cur==='dark'?'light':'dark') : (sysDark?'light':'dark');
+    root.setAttribute('data-theme',next);
+  };
+  // scrollspy
+  const links=[...document.querySelectorAll('#nav a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver(es=>{
+    es.forEach(e=>{ if(e.isIntersecting){ links.forEach(l=>l.classList.remove('on'));
+      const a=map.get(e.target.id); if(a)a.classList.add('on'); } });
+  },{rootMargin:'-10% 0px -80% 0px'});
+  document.querySelectorAll('section[id]').forEach(s=>obs.observe(s));
+  links.forEach(a=>a.onclick=e=>{e.preventDefault();
+    document.getElementById(a.getAttribute('href').slice(1)).scrollIntoView({behavior:'smooth',block:'start'});});
+</script>
