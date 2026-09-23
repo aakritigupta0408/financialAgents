@@ -103,7 +103,8 @@ def run():
         rows = [r for r in rows if r.get("ticker") in lab]
         rows.sort(key=lambda r: lab[r["ticker"]][1])
         y = np.array([lab[r["ticker"]][0] for r in rows], int)
-        exok = ["cb_ofi", "cb_ofi_notional", "cb_trades", "book_imb", "spread_bps",
+        # cb_ofi_notional dropped (audit 2026-09-22): exact duplicate of cb_ofi.
+        exok = ["cb_ofi", "cb_trades", "book_imb", "spread_bps",
                 "bn_ofi", "bn_trades", "basis_bps"]
         Xe = np.nan_to_num(np.array([[r.get(k) or 0.0 for k in exok] for r in rows], float))
         # on-path barrier baseline from the captured coinbase mids vs floor

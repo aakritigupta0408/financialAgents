@@ -171,7 +171,9 @@ def run():
             row = {
                 "ticker": tk, "label": w["label"], "entry_ts": w["entry"], "floor": w["floor"],
                 "cb_ofi": (a["buy"] - a["sell"]) / tot if tot else 0.0,
-                "cb_ofi_notional": (a["buy_n"] - a["sell_n"]) / totn if totn else 0.0,
+                # cb_ofi_notional dropped (audit 2026-09-22): byte-for-byte duplicate of
+                # cb_ofi (corr +1.000000, maxdiff 0.0007 over 1821 windows) — notional
+                # weighting is meaningless when intra-window price moves <0.2%.
                 "cb_trades": a["n"],
                 "book_imb": a["bimb"] / a["bimb_n"] if a["bimb_n"] else 0.0,
                 "spread_bps": a["spread"] / a["bimb_n"] if a["bimb_n"] else 0.0,
