@@ -88,6 +88,13 @@ Also open (lower severity): ~250 lines dead retired-arm code in the 4,916-line d
 - **Re-ran exo_eval on the corrected+pruned data — the honest conclusion is REINFORCED, not overturned:** barrier_only OOS logit **0.694**, exo_only **0.612** (>coin-flip, so real but weak), **barrier+exo 0.676 < barrier alone** — the 7-col microstructure store adds NOTHING over the zero-param barrier and slightly hurts (collinear: order-flow ≈ realized drift ≈ barrier). time_only 0.479 (noise), leakage_canary 0.464 (clean, no leak). Finding #6 confirmed on corrected data.
 - **Independent settlement cross-check COMPLETED** (see below): 84.4% agreement, all disagreements in the ATM basis band → settlement confirmed.
 
+## STOP-NULL RE-EXAMINATION 2026-09-23 (owner challenged the verdict — re-run harder)
+The original value-gate had a real weakness: decision-time `ask_c` is logged for **kb5 only**, so it tested **1 of 8 models, at the open, on uncalibrated probabilities**. Re-ran across all 8 kb variants, using `p_cal` where present (kb2 only), the side-correct **spread-free market-implied ask** (optimistic — a lower bound on cost), one row per window, moving-block bootstrap.
+- **Result: STOP-NULL holds — NO arm's value-gate CI clears 0**, even at the optimistic (no-spread) price. kb5 with its REAL asks loses significantly (ev≥−5: −10.8¢/bet, CI [−17.8,−3.4]).
+- **One genuine soft spot surfaced (that the kb5-only test never saw):** **kb3 (the direct logit)** has a POSITIVE point estimate at every margin (+2.5 to +6.7¢/bet, hit 0.56–0.61), but the CI includes 0 (n≈128 windows — underpowered). This is *absence of evidence*, not an edge.
+- **Most likely explanation kb3 is not real:** it uses the spread-free ask; kb5 (real asks) loses; kb3's p_up is uncalibrated (kb2, the only calibrated arm, shows no edge). kb3's "+5.5¢" is probably the spread it isn't paying.
+- **The decisive test to settle kb3:** log kb3's true decision-time ask (real book, both sides) for N≥400 windows, then re-run the paired value-gate. If kb3's CI clears 0 net of the *real* spread+vig, the null is overturned; otherwise it stands. Until then STOP-NULL is the honest verdict, now robust across all 8 arms rather than resting on one.
+
 ## WHAT WE'RE DOING RIGHT
 - **Answered the real question honestly** and resisted manufacturing an edge — the grounded NULL ("NO QUALIFIED EDGE") is the correct scientific deliverable.
 - **Settlement is forensically sound:** official Kalshi outcomes only, 0 win/actual mismatches across all arms; per-order fee owner correct.
